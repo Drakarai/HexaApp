@@ -7,13 +7,17 @@ import {
   type FormState,
 } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { ImageInput } from "@/components/image-input";
+import { IMAGE_SIZES } from "@/lib/image";
 
 export function ProfileForms({
   displayName,
   avatarColor,
+  avatarImage,
 }: {
   displayName: string;
   avatarColor: string;
+  avatarImage: string | null;
 }) {
   const [profileState, profileAction] = useActionState<FormState, FormData>(
     updateMyProfileAction,
@@ -38,6 +42,14 @@ export function ProfileForms({
               required
             />
           </div>
+          <ImageInput
+            name="avatarImage"
+            label="Foto de perfil"
+            defaultValue={avatarImage}
+            maxSize={IMAGE_SIZES.avatar}
+            shape="circle"
+            hint="Se verá en la clasificación, el cementerio y las jornadas."
+          />
           <div className="w-28">
             <label className="label">Color</label>
             <input
@@ -46,6 +58,9 @@ export function ProfileForms({
               className="input h-9.5 p-1"
               defaultValue={avatarColor}
             />
+            <p className="mt-1 text-xs text-slate-500">
+              Se usa si no pones foto.
+            </p>
           </div>
           <FormMessage state={profileState} />
           <SubmitButton>Guardar</SubmitButton>

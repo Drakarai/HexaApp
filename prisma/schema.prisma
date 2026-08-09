@@ -23,6 +23,8 @@ model User {
   // "ADMIN" | "PLAYER". Los admin globales pueden crear competiciones y usuarios.
   role         String   @default("PLAYER")
   avatarColor  String   @default("#6366f1")
+  // Foto de perfil: URL externa o imagen subida (data URL ya redimensionada)
+  avatarImage  String?
   createdAt    DateTime @default(now())
 
   participations Participant[]
@@ -166,6 +168,10 @@ model Death {
   cause         String?
   diedAt        DateTime @default(now())
   notes         String?
+  // Sprite pequeño que se ve en la caja. Se elige al registrar la baja.
+  boxImage      String?
+  // Imagen grande del panel de detalle. Es independiente de la de la caja.
+  detailImage   String?
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

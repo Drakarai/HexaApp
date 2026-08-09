@@ -12,6 +12,7 @@ export type CurrentUser = {
   displayName: string;
   role: string;
   avatarColor: string;
+  avatarImage: string | null;
 };
 
 /** Usuario de la petición actual, o null si no hay sesión válida. */
@@ -26,6 +27,7 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
       displayName: true,
       role: true,
       avatarColor: true,
+      avatarImage: true,
     },
   });
   return user;

@@ -13,6 +13,7 @@ export type StandingRow = {
   displayName: string;
   gameVersion: string | null;
   color: string;
+  avatarImage: string | null;
   isAdmin: boolean;
   points: number;
   deaths: number;
@@ -58,7 +59,11 @@ export const getParticipants = cache(async (competitionId: string) =>
   prisma.participant.findMany({
     where: { competitionId },
     orderBy: { displayName: "asc" },
-    include: { user: { select: { id: true, username: true, role: true } } },
+    include: {
+      user: {
+        select: { id: true, username: true, role: true, avatarImage: true },
+      },
+    },
   }),
 );
 
@@ -130,7 +135,10 @@ export async function getStandings(
   const startingPoints = competition?.startingPoints ?? 0;
 
   const [participants, pointSums, deathCounts, matches] = await Promise.all([
-    prisma.participant.findMany({ where: { competitionId } }),
+    prisma.participant.findMany({
+      where: { competitionId },
+      include: { user: { select: { avatarImage: true } } },
+    }),
     prisma.pointEntry.groupBy({
       by: ["participantId"],
       where: { competitionId },
@@ -198,6 +206,7 @@ export async function getStandings(
       displayName: participant.displayName,
       gameVersion: participant.gameVersion,
       color: participant.color,
+      avatarImage: participant.user.avatarImage,
       isAdmin: participant.isAdmin,
       points: startingPoints + (deltaByParticipant.get(participant.id) ?? 0),
       deaths: deathsByParticipant.get(participant.id) ?? 0,

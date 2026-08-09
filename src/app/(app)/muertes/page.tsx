@@ -8,12 +8,12 @@ import {
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
-import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
-import { cx, formatDate } from "@/lib/utils";
-import { deleteDeathAction } from "@/app/actions/deaths";
+import { EmptyState } from "@/components/ui";
+import { cx, formatDate, toDateInputValue } from "@/lib/utils";
 import { NewDeathForm } from "./death-form";
+import { DeathBox, type BoxDeath } from "./death-box";
 
-export const metadata = { title: "Muertes — HexaApp" };
+export const metadata = { title: "Cementerio — HexaApp" };
 
 export default async function DeathsPage({
   searchParams,
@@ -35,45 +35,69 @@ export default async function DeathsPage({
     (participant) => participant.userId === user.id,
   );
 
-  const deaths = await prisma.death.findMany({
-    where: {
-      participant: {
-        competitionId: competition.id,
-        ...(selected ? { id: selected.id } : {}),
+  const [deaths, counts] = await Promise.all([
+    prisma.death.findMany({
+      where: {
+        participant: {
+          competitionId: competition.id,
+          ...(selected ? { id: selected.id } : {}),
+        },
       },
-    },
-    orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
-    include: { participant: true },
-  });
+      orderBy: [{ diedAt: "asc" }, { createdAt: "asc" }],
+      include: {
+        participant: {
+          include: { user: { select: { avatarImage: true } } },
+        },
+      },
+    }),
+    prisma.death.groupBy({
+      by: ["participantId"],
+      where: { participant: { competitionId: competition.id } },
+      _count: { _all: true },
+    }),
+  ]);
 
-  const countByParticipant = new Map<string, number>();
-  for (const participant of participants) countByParticipant.set(participant.id, 0);
-  const allDeaths = selected
-    ? await prisma.death.findMany({
-        where: { participant: { competitionId: competition.id } },
-        select: { participantId: true },
-      })
-    : deaths.map((death) => ({ participantId: death.participantId }));
-  for (const death of allDeaths) {
-    countByParticipant.set(
-      death.participantId,
-      (countByParticipant.get(death.participantId) ?? 0) + 1,
-    );
-  }
+  const countFor = (participantId: string) =>
+    counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
+  const total = counts.reduce((sum, row) => sum + row._count._all, 0);
+
+  const boxDeaths: BoxDeath[] = deaths.map((death) => ({
+    id: death.id,
+    species: death.species,
+    nickname: death.nickname,
+    cause: death.cause,
+    level: death.level,
+    location: death.location,
+    notes: death.notes,
+    boxImage: death.boxImage,
+    detailImage: death.detailImage,
+    diedAtLabel: formatDate(death.diedAt),
+    diedAtInput: toDateInputValue(death.diedAt),
+    editable: canManage || death.participant.userId === user.id,
+    participant: {
+      id: death.participant.id,
+      displayName: death.participant.displayName,
+      color: death.participant.color,
+      avatarImage: death.participant.user.avatarImage,
+    },
+  }));
 
   return (
     <>
       <PageHeader
         title="Cementerio"
-        subtitle="Cada pokémon caído queda registrado aquí. Los pokémon muertos cuentan como primer desempate de la clasificación."
+        subtitle="La caja de los caídos. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
       />
 
       <div className="mb-5 flex flex-wrap gap-2">
         <Link
           href="/muertes"
-          className={cx("chip", !selected && "border-brand-500/40 bg-brand-600/20 text-white")}
+          className={cx(
+            "chip",
+            !selected && "border-brand-500/40 bg-brand-600/20 text-white",
+          )}
         >
-          Todos ({allDeaths.length})
+          Todos ({total})
         </Link>
         {participants.map((participant) => (
           <Link
@@ -90,7 +114,7 @@ export default async function DeathsPage({
               style={{ background: participant.color }}
               aria-hidden
             />
-            {participant.displayName} ({countByParticipant.get(participant.id) ?? 0})
+            {participant.displayName} ({countFor(participant.id)})
           </Link>
         ))}
       </div>
@@ -110,82 +134,17 @@ export default async function DeathsPage({
         </div>
       ) : null}
 
-      {deaths.length === 0 ? (
+      {boxDeaths.length === 0 ? (
         <EmptyState
-          title={selected ? `${selected.displayName} no ha perdido a nadie` : "Sin bajas registradas"}
+          title={
+            selected
+              ? `${selected.displayName} no ha perdido a nadie`
+              : "La caja está vacía"
+          }
           hint="De momento todo bien."
         />
       ) : (
-        <div className="card">
-          <div className="table-wrap">
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Jugador</th>
-                  <th>Pokémon</th>
-                  <th>Nv.</th>
-                  <th>Dónde</th>
-                  <th>Causa</th>
-                  <th>Fecha</th>
-                  <th />
-                </tr>
-              </thead>
-              <tbody>
-                {deaths.map((death) => {
-                  const editable =
-                    canManage || death.participant.userId === user.id;
-                  return (
-                    <tr key={death.id}>
-                      <td>
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            name={death.participant.displayName}
-                            color={death.participant.color}
-                            size={24}
-                          />
-                          <span className="whitespace-nowrap">
-                            {death.participant.displayName}
-                          </span>
-                        </div>
-                      </td>
-                      <td>
-                        <span className="font-medium text-white">
-                          {death.nickname ?? death.species}
-                        </span>
-                        {death.nickname ? (
-                          <span className="text-slate-500"> · {death.species}</span>
-                        ) : null}
-                        {death.notes ? (
-                          <p className="text-xs text-slate-500">{death.notes}</p>
-                        ) : null}
-                      </td>
-                      <td className="tabular-nums text-slate-400">
-                        {death.level ?? "—"}
-                      </td>
-                      <td className="text-slate-400">{death.location ?? "—"}</td>
-                      <td className="text-slate-400">{death.cause ?? "—"}</td>
-                      <td className="whitespace-nowrap text-slate-400">
-                        {formatDate(death.diedAt)}
-                      </td>
-                      <td className="text-right">
-                        {editable ? (
-                          <form action={deleteDeathAction}>
-                            <input type="hidden" name="deathId" value={death.id} />
-                            <ConfirmSubmit
-                              message={`¿Borrar el registro de ${death.nickname ?? death.species}?`}
-                            >
-                              ✕
-                            </ConfirmSubmit>
-                          </form>
-                        ) : null}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <DeathBox deaths={boxDeaths} grouped={!selected} />
       )}
     </>
   );

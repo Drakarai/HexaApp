@@ -52,7 +52,12 @@ export function StandingsTable({
               </td>
               <td>
                 <div className="flex items-center gap-2.5">
-                  <Avatar name={row.displayName} color={row.color} size={28} />
+                  <Avatar
+                    name={row.displayName}
+                    color={row.color}
+                    image={row.avatarImage}
+                    size={28}
+                  />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-white">
                       {row.displayName}

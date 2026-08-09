@@ -15,7 +15,12 @@ export default async function ProfilePage() {
       <PageHeader title="Mi perfil" />
 
       <div className="card mb-6 flex items-center gap-4">
-        <Avatar name={user.displayName} color={user.avatarColor} size={56} />
+        <Avatar
+          name={user.displayName}
+          color={user.avatarColor}
+          image={user.avatarImage}
+          size={56}
+        />
         <div>
           <p className="text-lg font-semibold text-white">{user.displayName}</p>
           <p className="muted">
@@ -28,6 +33,7 @@ export default async function ProfilePage() {
       <ProfileForms
         displayName={user.displayName}
         avatarColor={user.avatarColor}
+        avatarImage={user.avatarImage}
       />
 
       <form action={logoutAction} className="mt-6">

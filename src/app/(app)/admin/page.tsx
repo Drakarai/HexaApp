@@ -36,6 +36,7 @@ export default async function AdminPage() {
                 <Avatar
                   name={user.displayName}
                   color={user.avatarColor}
+                  image={user.avatarImage}
                   size={32}
                 />
                 <div className="min-w-0 flex-1">

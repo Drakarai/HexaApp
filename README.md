@@ -16,13 +16,29 @@ en cualquier momento desde el selector de la barra lateral.
 | **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas y últimos giros de ruleta. |
 | **Reglas** | Normativa del locke por secciones y categorías. Editable por administradores, con orden configurable. |
 | **Level caps** | Nivel máximo de cada gimnasio / Alto Mando / Liga. Cada jugador marca cuándo lo supera, así se ve quién frena al grupo. |
-| **Muertes** | Cementerio con pokémon, mote, nivel, sitio y causa. Filtrable por jugador. Cada uno registra las suyas; los admin pueden tocar todas. |
+| **Cementerio** | Caja estilo PC de Pokémon: una casilla con sprite por cada caído. Al pinchar se abre su ficha, con una imagen grande independiente del sprite. Filtrable por jugador. |
 | **Jornadas** | Emparejamientos por jornada, ganador y diferencia de pokémon. Marcar el ganador **suma automáticamente** el punto de la victoria. |
 | **Puntos** | Clasificación con desempates, ajuste rápido ±1, ajustes con motivo, ajuste masivo a todos e historial completo de movimientos. |
 | **Ruleta** | Ruletas totalmente personalizables: opciones, pesos, colores, duración del giro y modo sin repetición. El sorteo se decide en el servidor. |
 | **Mis notas** | Cuaderno **privado** con un sub-apartado por jugador (incluido uno mismo) más notas generales. Nadie más las ve, tampoco los administradores. |
 | **Competiciones** | Crear ediciones nuevas copiando reglas/level caps/jugadores/ruletas, archivar, reactivar y gestionar participantes. |
 | **Administración** | Alta de usuarios, roles y contraseñas. |
+
+### Imágenes
+
+En el cementerio y en el perfil puedes **subir una imagen del ordenador** o
+**pegar el enlace** de una imagen de internet. Las que subes se reducen de
+tamaño en el navegador y se guardan dentro de la propia base de datos, así que
+el fichero `.db` se lleva todo consigo: copiarlo es copiar la aplicación entera
+con sus fotos.
+
+Cada baja tiene dos imágenes distintas y opcionales: el **sprite de la caja**
+(el cuadradito de la cuadrícula, se elige al registrarla) y la **imagen de la
+ficha** (la grande que se ve al pincharla). Si falta la de la ficha, se usa el
+sprite; si falta el sprite, sale una pokéball de relleno.
+
+La foto de perfil aparece en la clasificación, el cementerio, las jornadas y la
+cabecera. Si no pones ninguna, se usa la inicial sobre tu color.
 
 ### Clasificación y desempates
 
@@ -62,6 +78,22 @@ await prisma.user.create({ data: {
 }});
 "
 ```
+
+### Actualizar a una versión nueva
+
+Los datos viven en `prisma/dev.db`, que **no** se sobrescribe al actualizar el
+código. Con Git:
+
+```bash
+git pull
+npm install
+npm run db:push   # aplica los cambios del modelo de datos, sin borrar nada
+npm run dev
+```
+
+Si bajaste el proyecto como ZIP en vez de con Git: descomprime la versión nueva
+en otra carpeta, copia tu `prisma/dev.db` de la carpeta vieja a la nueva y
+ejecuta ahí los mismos comandos (`npm install`, `npm run db:push`, `npm run dev`).
 
 ### Producción
 

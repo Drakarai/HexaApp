@@ -31,7 +31,14 @@ export default async function MatchdaysPage() {
       include: {
         matches: {
           orderBy: { position: "asc" },
-          include: { participantA: true, participantB: true },
+          include: {
+            participantA: {
+              include: { user: { select: { avatarImage: true } } },
+            },
+            participantB: {
+              include: { user: { select: { avatarImage: true } } },
+            },
+          },
         },
       },
     }),
@@ -104,12 +111,14 @@ export default async function MatchdaysPage() {
                             <PlayerChip
                               name={match.participantA.displayName}
                               color={match.participantA.color}
+                              image={match.participantA.user.avatarImage}
                               winner={match.winnerId === match.participantAId}
                             />
                             <span className="text-xs text-slate-500">vs</span>
                             <PlayerChip
                               name={match.participantB.displayName}
                               color={match.participantB.color}
+                              image={match.participantB.user.avatarImage}
                               winner={match.winnerId === match.participantBId}
                             />
                           </div>
@@ -194,10 +203,12 @@ export default async function MatchdaysPage() {
 function PlayerChip({
   name,
   color,
+  image,
   winner,
 }: {
   name: string;
   color: string;
+  image: string | null;
   winner: boolean;
 }) {
   return (
@@ -209,7 +220,7 @@ function PlayerChip({
           : "text-slate-300",
       )}
     >
-      <Avatar name={name} color={color} size={20} />
+      <Avatar name={name} color={color} image={image} size={20} />
       <span className="truncate">{name}</span>
       {winner ? <span aria-hidden>👑</span> : null}
     </span>

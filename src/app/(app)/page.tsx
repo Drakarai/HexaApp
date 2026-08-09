@@ -27,7 +27,11 @@ export default async function DashboardPage() {
         where: { participant: { competitionId: competition.id } },
         orderBy: { diedAt: "desc" },
         take: 6,
-        include: { participant: true },
+        include: {
+          participant: {
+            include: { user: { select: { avatarImage: true } } },
+          },
+        },
       }),
       prisma.rouletteSpin.findMany({
         where: { roulette: { competitionId: competition.id } },
@@ -173,11 +177,22 @@ export default async function DashboardPage() {
                   key={death.id}
                   className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
                 >
-                  <Avatar
-                    name={death.participant.displayName}
-                    color={death.participant.color}
-                    size={28}
-                  />
+                  {death.boxImage ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={death.boxImage}
+                      alt={death.species}
+                      loading="lazy"
+                      className="h-8 w-8 shrink-0 rounded-lg bg-ink-850 object-contain"
+                    />
+                  ) : (
+                    <Avatar
+                      name={death.participant.displayName}
+                      color={death.participant.color}
+                      image={death.participant.user.avatarImage}
+                      size={28}
+                    />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-white">
                       {death.nickname ? `${death.nickname} ` : ""}
@@ -187,8 +202,8 @@ export default async function DashboardPage() {
                       ) : null}
                     </p>
                     <p className="truncate text-xs text-slate-500">
-                      {[death.location, death.cause].filter(Boolean).join(" · ") ||
-                        "Sin detalles"}
+                      {death.participant.displayName}
+                      {death.cause ? ` · ${death.cause}` : ""}
                     </p>
                   </div>
                   <span className="shrink-0 text-xs text-slate-500">

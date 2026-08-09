@@ -71,11 +71,31 @@ export function Avatar({
   name,
   color,
   size = 36,
+  image,
 }: {
   name: string;
   color: string;
   size?: number;
+  /** Foto de perfil. Si falta, se pinta la inicial sobre el color del jugador. */
+  image?: string | null;
 }) {
+  if (image) {
+    return (
+      <span
+        className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-white/15"
+        style={{ width: size, height: size, background: color }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={image}
+          alt={name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+        />
+      </span>
+    );
+  }
+
   return (
     <span
       className="inline-flex shrink-0 items-center justify-center rounded-full text-xs font-bold"

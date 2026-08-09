@@ -42,7 +42,7 @@ export default async function CompetitionsPage() {
           where: { competitionId: active.id },
           orderBy: { displayName: "asc" },
           include: {
-            user: { select: { username: true } },
+            user: { select: { username: true, avatarImage: true } },
             _count: { select: { deaths: true } },
           },
         })
@@ -103,6 +103,7 @@ export default async function CompetitionsPage() {
                     <Avatar
                       name={participant.displayName}
                       color={participant.color}
+                      image={participant.user.avatarImage}
                       size={32}
                     />
                     <div className="min-w-0 flex-1">

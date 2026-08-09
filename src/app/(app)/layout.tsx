@@ -49,7 +49,12 @@ export default async function AppLayout({
             href="/perfil"
             className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 text-xs text-slate-300 transition hover:bg-white/10"
           >
-            <Avatar name={user.displayName} color={user.avatarColor} size={26} />
+            <Avatar
+              name={user.displayName}
+              color={user.avatarColor}
+              image={user.avatarImage}
+              size={26}
+            />
             <span className="max-w-24 truncate">{user.displayName}</span>
           </Link>
         </div>
