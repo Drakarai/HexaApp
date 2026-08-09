@@ -1,0 +1,319 @@
+// HexaApp — gestor de competiciones tipo "Hexalocke"
+// SQLite no soporta enums en Prisma, por eso los campos de tipo enumerado son String
+// y los valores válidos están centralizados en src/lib/constants.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Usuarios y sesiones
+// ---------------------------------------------------------------------------
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  passwordHash String
+  // "ADMIN" | "PLAYER". Los admin globales pueden crear competiciones y usuarios.
+  role         String   @default("PLAYER")
+  avatarColor  String   @default("#6366f1")
+  createdAt    DateTime @default(now())
+
+  participations Participant[]
+  notes          Note[]
+  pointsGiven    PointEntry[]  @relation("PointAuthor")
+  spins          RouletteSpin[]
+  competitions   Competition[] @relation("CompetitionCreator")
+}
+
+// ---------------------------------------------------------------------------
+// Competiciones
+// ---------------------------------------------------------------------------
+
+model Competition {
+  id             String    @id @default(cuid())
+  name           String
+  slug           String    @unique
+  // Juego / edición sobre la que se juega ("Pokémon HeartGold y SoulSilver")
+  game           String?
+  // Modalidad ("Random", "Nuzlocke clásico", ...)
+  modality       String?
+  description    String?
+  // "ACTIVE" | "ARCHIVED"
+  status         String    @default("ACTIVE")
+  // Puntos con los que arranca cada participante
+  startingPoints Int       @default(5)
+  maxPlayers     Int       @default(6)
+  startedAt      DateTime  @default(now())
+  endedAt        DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  createdById String?
+  createdBy   User?   @relation("CompetitionCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  participants Participant[]
+  rules        RuleSection[]
+  levelCaps    LevelCap[]
+  matchdays    Matchday[]
+  roulettes    Roulette[]
+  notes        Note[]
+  pointEntries PointEntry[]
+}
+
+model Participant {
+  id            String   @id @default(cuid())
+  competitionId String
+  userId        String
+  // Nombre mostrado dentro de esta competición (mote/nick del jugador)
+  displayName   String
+  // Edición del juego que le tocó ("HeartGold" / "SoulSilver")
+  gameVersion   String?
+  color         String   @default("#6366f1")
+  // Admin de esta competición concreta (puede editar reglas, ruletas y puntos)
+  isAdmin       Boolean  @default(false)
+  joinedAt      DateTime @default(now())
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  deaths       Death[]
+  pointEntries PointEntry[]
+  gymClears    GymClear[]
+  notesAbout   Note[]       @relation("NoteSubject")
+  matchesAsA   Match[]      @relation("MatchPlayerA")
+  matchesAsB   Match[]      @relation("MatchPlayerB")
+  matchesWon   Match[]      @relation("MatchWinner")
+
+  @@unique([competitionId, userId])
+  @@index([competitionId])
+}
+
+// ---------------------------------------------------------------------------
+// Reglas y level caps
+// ---------------------------------------------------------------------------
+
+model RuleSection {
+  id            String   @id @default(cuid())
+  competitionId String
+  title         String
+  // Texto de la sección. Se admite una sintaxis ligera: líneas que empiezan por
+  // "- " se renderizan como lista y **texto** en negrita.
+  body          String
+  // Agrupador opcional ("Básicas", "Jornadas", "Puntos"...)
+  category      String?
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId, position])
+}
+
+model LevelCap {
+  id            String  @id @default(cuid())
+  competitionId String
+  // Nombre del líder / hito ("Pegaso", "Alto Mando", "Liga Pokémon")
+  label         String
+  cap           Int
+  // "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER"
+  kind          String  @default("GYM")
+  badge         String?
+  notes         String?
+  position      Int     @default(0)
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  clears      GymClear[]
+
+  @@index([competitionId, position])
+}
+
+// Marca de "gimnasio superado" por participante, para saber quién va por dónde
+model GymClear {
+  id            String   @id @default(cuid())
+  participantId String
+  levelCapId    String
+  clearedAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  levelCap    LevelCap    @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, levelCapId])
+}
+
+// ---------------------------------------------------------------------------
+// Muertes
+// ---------------------------------------------------------------------------
+
+model Death {
+  id            String   @id @default(cuid())
+  participantId String
+  // Especie del pokémon ("Typhlosion")
+  species       String
+  // Mote obligatorio en el locke
+  nickname      String?
+  level         Int?
+  // Dónde murió (ruta, gimnasio, combate de jornada...)
+  location      String?
+  // Qué lo mató
+  cause         String?
+  diedAt        DateTime @default(now())
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+}
+
+// ---------------------------------------------------------------------------
+// Notas privadas (solo visibles para su autor)
+// ---------------------------------------------------------------------------
+
+model Note {
+  id            String   @id @default(cuid())
+  competitionId String
+  authorId      String
+  // Sub-apartado: sobre qué jugador va la nota. null = notas generales.
+  subjectId     String?
+  title         String
+  body          String   @default("")
+  pinned        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  subject     Participant? @relation("NoteSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId, authorId])
+}
+
+// ---------------------------------------------------------------------------
+// Puntos
+// ---------------------------------------------------------------------------
+
+// Historial de movimientos de puntos. El total de un participante es
+// competition.startingPoints + suma de todos sus deltas.
+model PointEntry {
+  id            String   @id @default(cuid())
+  competitionId String
+  participantId String
+  delta         Int
+  reason        String
+  createdById   String?
+  createdAt     DateTime @default(now())
+  // Si el punto viene de ganar un combate de jornada, se enlaza con él para
+  // poder rehacerlo si se corrige el resultado.
+  sourceMatchId String?  @unique
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdBy   User?       @relation("PointAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([competitionId])
+  @@index([participantId])
+}
+
+// ---------------------------------------------------------------------------
+// Jornadas y combates
+// ---------------------------------------------------------------------------
+
+model Matchday {
+  id            String    @id @default(cuid())
+  competitionId String
+  label         String
+  // Hito al que corresponde ("2da medalla", "Endgame")
+  milestone     String?
+  position      Int       @default(0)
+  playedAt      DateTime?
+  // Puntos que se llevan los ganadores de esta jornada
+  pointsForWin  Int       @default(1)
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches     Match[]
+
+  @@index([competitionId, position])
+}
+
+model Match {
+  id             String    @id @default(cuid())
+  matchdayId     String
+  participantAId String
+  participantBId String
+  winnerId       String?
+  // Diferencia de pokémon del combate (desempate de la clasificación)
+  pokemonDiff    Int?
+  playedAt       DateTime?
+  notes          String?
+  position       Int       @default(0)
+
+  matchday     Matchday    @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+  participantA Participant @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB Participant @relation("MatchPlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winner       Participant? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@index([matchdayId])
+}
+
+// ---------------------------------------------------------------------------
+// Ruleta personalizable
+// ---------------------------------------------------------------------------
+
+model Roulette {
+  id            String   @id @default(cuid())
+  competitionId String
+  name          String
+  description   String?
+  // Si es false, las opciones ya salidas se desactivan automáticamente
+  allowRepeats  Boolean  @default(true)
+  spinSeconds   Int      @default(5)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  competition Competition     @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  options     RouletteOption[]
+  spins       RouletteSpin[]
+
+  @@index([competitionId])
+}
+
+model RouletteOption {
+  id         String  @id @default(cuid())
+  rouletteId String
+  label      String
+  // Peso relativo: una opción con peso 3 sale el triple que una de peso 1
+  weight     Int     @default(1)
+  color      String?
+  enabled    Boolean @default(true)
+  position   Int     @default(0)
+
+  roulette Roulette       @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
+  spins    RouletteSpin[]
+
+  @@index([rouletteId, position])
+}
+
+model RouletteSpin {
+  id          String   @id @default(cuid())
+  rouletteId  String
+  optionId    String?
+  // Copia del texto por si luego se borra o renombra la opción
+  optionLabel String
+  spunById    String?
+  note        String?
+  createdAt   DateTime @default(now())
+
+  roulette Roulette        @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
+  option   RouletteOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  spunBy   User?           @relation(fields: [spunById], references: [id], onDelete: SetNull)
+
+  @@index([rouletteId])
+}
