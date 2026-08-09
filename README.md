@@ -33,9 +33,17 @@ el fichero `.db` se lleva todo consigo: copiarlo es copiar la aplicación entera
 con sus fotos.
 
 Cada baja tiene dos imágenes distintas y opcionales: el **sprite de la caja**
-(el cuadradito de la cuadrícula, se elige al registrarla) y la **imagen de la
-ficha** (la grande que se ve al pincharla). Si falta la de la ficha, se usa el
-sprite; si falta el sprite, sale una pokéball de relleno.
+(el cuadradito de la cuadrícula) y la **imagen de la ficha** (la grande que se
+ve al pincharla). Si falta la de la ficha, se usa el sprite; si falta el
+sprite, sale una pokéball de relleno.
+
+Lo normal es no tener que buscarlas: al escribir la especie en el buscador
+salen las dos solas, el **render de Pokémon HOME** para la caja y la
+**ilustración oficial** para la ficha, con selector de **forma alterna** (Alola,
+Galar, Rotom, megas…) y casilla de **shiny**. Se descargan una vez, se reducen
+en el navegador y se guardan como copia propia, así que después no dependen de
+ningún servidor ajeno. La lista de especies vive en `src/lib/pokedex.json` y se
+regenera con `npm run pokedex` cuando salgan pokémon nuevos.
 
 La foto de perfil aparece en la clasificación, el cementerio, las jornadas y la
 cabecera. Si no pones ninguna, se usa la inicial sobre tu color.
@@ -164,6 +172,7 @@ prisma/
   seed.ts           datos de ejemplo del Hexalocke 2
 scripts/
   users.ts          listar usuarios y cambiar contraseñas desde la terminal
+  generate-pokedex.ts  regenera la lista de especies y formas (PokéAPI)
   export-sqlite.ts  migración desde la versión antigua con SQLite
   import-json.ts    carga ese volcado en la base de datos actual
 public/

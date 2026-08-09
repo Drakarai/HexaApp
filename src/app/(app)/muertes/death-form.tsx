@@ -4,8 +4,7 @@ import { useActionState, useRef, useEffect, useState } from "react";
 import { createDeathAction } from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
-import { ImageInput } from "@/components/image-input";
-import { IMAGE_SIZES } from "@/lib/image";
+import { SpeciesPicker } from "@/components/species-picker";
 
 export function NewDeathForm({
   participants,
@@ -48,7 +47,7 @@ export function NewDeathForm({
           />
         ) : null}
 
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-3">
           {lockedToParticipantId ? null : (
             <div>
               <label className="label">Jugador</label>
@@ -70,22 +69,14 @@ export function NewDeathForm({
             <input name="nickname" className="input" placeholder="Chispas" />
           </div>
           <div>
-            <label className="label">Especie</label>
-            <input name="species" className="input" placeholder="Quilava" required />
-          </div>
-          <div>
             <label className="label">Causa (opcional)</label>
             <input name="cause" className="input" placeholder="Crítico de Scyther" />
           </div>
         </div>
 
-        <ImageInput
-          key={resetKey}
-          name="boxImage"
-          label="Sprite para la caja"
-          maxSize={IMAGE_SIZES.box}
-          hint="La imagen que se verá en la cuadrícula. Luego podrás poner otra distinta en la ficha."
-        />
+        {/* La clave lo reinicia tras guardar, para que no se quede el pokémon
+            anterior en el buscador ni en las vistas previas */}
+        <SpeciesPicker key={resetKey} />
 
         <FormMessage state={state} />
         <SubmitButton>Registrar baja</SubmitButton>

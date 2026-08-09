@@ -12,16 +12,17 @@ export const IMAGE_SIZES = {
 export const MAX_IMAGE_CHARS = 4_000_000;
 
 /**
- * Reduce una imagen del disco del usuario y la devuelve como data URL, para
- * poder guardarla en la base de datos sin depender de ficheros sueltos.
- * Se ejecuta en el navegador.
+ * Reduce una imagen y la devuelve como data URL, para poder guardarla en la
+ * base de datos sin depender de ficheros sueltos ni de servidores ajenos.
+ * Se ejecuta en el navegador, y vale tanto para un archivo elegido por el
+ * usuario como para una imagen descargada de internet.
  */
-export async function fileToDataUrl(file: File, maxSize: number) {
-  if (!file.type.startsWith("image/")) {
+export async function imageToDataUrl(source: Blob, maxSize: number) {
+  if (source.type && !source.type.startsWith("image/")) {
     throw new Error("Ese archivo no es una imagen.");
   }
 
-  const bitmap = await createImageBitmap(file);
+  const bitmap = await createImageBitmap(source);
   const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
   const width = Math.max(1, Math.round(bitmap.width * scale));
   const height = Math.max(1, Math.round(bitmap.height * scale));

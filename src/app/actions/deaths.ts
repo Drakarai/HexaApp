@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
@@ -81,6 +82,20 @@ export async function updateDeathAction(
   revalidatePath("/muertes");
   revalidatePath("/");
   return { success: "Ficha actualizada." };
+}
+
+/**
+ * La ilustración de la ficha se pide solo al abrirla. Si viajara junto al
+ * resto de la caja, cada visita al cementerio arrastraría todas las imágenes
+ * grandes de golpe.
+ */
+export async function getDeathDetailImageAction(deathId: string) {
+  await requireUser();
+  const death = await prisma.death.findUnique({
+    where: { id: deathId },
+    select: { detailImage: true },
+  });
+  return death?.detailImage ?? null;
 }
 
 export async function deleteDeathAction(formData: FormData) {

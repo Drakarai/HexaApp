@@ -11,6 +11,7 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "users": "tsx scripts/users.ts",
+    "pokedex": "tsx scripts/generate-pokedex.ts",
     "setup": "prisma db push && prisma db seed"
   },
   "prisma": {
@@ -29,7 +30,6 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
-    "playwright": "^1.62.1",
     "prisma": "6.19.3",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.2",

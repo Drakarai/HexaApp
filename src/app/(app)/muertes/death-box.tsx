@@ -1,10 +1,15 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { deleteDeathAction, updateDeathAction } from "@/app/actions/deaths";
+import {
+  deleteDeathAction,
+  getDeathDetailImageAction,
+  updateDeathAction,
+} from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
 import { Avatar, ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { ImageInput } from "@/components/image-input";
+import { SpeciesPicker } from "@/components/species-picker";
 import { IMAGE_SIZES } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
@@ -17,7 +22,8 @@ export type BoxDeath = {
   location: string | null;
   notes: string | null;
   boxImage: string | null;
-  detailImage: string | null;
+  /** La ilustración grande se carga aparte, al abrir la ficha */
+  hasDetailImage: boolean;
   diedAtLabel: string;
   diedAtInput: string;
   editable: boolean;
@@ -140,6 +146,9 @@ function DeathDetail({
   onClose: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [manualImages, setManualImages] = useState(false);
+  const [detailImage, setDetailImage] = useState<string | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(death.hasDetailImage);
   const [state, formAction] = useActionState<FormState, FormData>(
     updateDeathAction,
     null,
@@ -148,6 +157,27 @@ function DeathDetail({
   useEffect(() => {
     if (state?.success) setEditing(false);
   }, [state]);
+
+  // La ilustración grande se pide al abrir la ficha, no antes
+  useEffect(() => {
+    let cancelled = false;
+    if (!death.hasDetailImage) {
+      setDetailImage(null);
+      setLoadingDetail(false);
+      return;
+    }
+    setLoadingDetail(true);
+    getDeathDetailImageAction(death.id)
+      .then((image) => {
+        if (!cancelled) setDetailImage(image);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingDetail(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [death.id, death.hasDetailImage]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -194,13 +224,17 @@ function DeathDetail({
           </button>
         </div>
 
-        <div className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
-          {death.detailImage ?? death.boxImage ? (
+        <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
+          {detailImage ?? death.boxImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={death.detailImage ?? death.boxImage ?? ""}
+              src={detailImage ?? death.boxImage ?? ""}
               alt={death.species}
-              className="h-full w-full object-contain p-2"
+              className={cx(
+                "h-full w-full object-contain p-2 transition",
+                // Mientras llega la ilustración se ve el sprite de la caja
+                loadingDetail && "scale-75 opacity-60 blur-[1px]",
+              )}
             />
           ) : (
             <span className="text-slate-600">
@@ -230,39 +264,57 @@ function DeathDetail({
           editing ? (
             <form action={formAction} className="mt-5 space-y-4 border-t border-white/10 pt-4">
               <input type="hidden" name="deathId" value={death.id} />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="label">Mote</label>
-                  <input
-                    name="nickname"
-                    className="input"
-                    defaultValue={death.nickname ?? ""}
-                  />
-                </div>
-                <div>
-                  <label className="label">Especie</label>
-                  <input
-                    name="species"
-                    className="input"
-                    defaultValue={death.species}
-                    required
-                  />
-                </div>
+              <div>
+                <label className="label">Mote</label>
+                <input
+                  name="nickname"
+                  className="input"
+                  defaultValue={death.nickname ?? ""}
+                />
               </div>
 
-              <ImageInput
-                name="detailImage"
-                label="Imagen de la ficha"
-                defaultValue={death.detailImage}
-                maxSize={IMAGE_SIZES.detail}
-                hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
-              />
-              <ImageInput
-                name="boxImage"
-                label="Sprite de la caja"
-                defaultValue={death.boxImage}
-                maxSize={IMAGE_SIZES.box}
-              />
+              {manualImages ? (
+                <>
+                  <div>
+                    <label className="label">Especie</label>
+                    <input
+                      name="species"
+                      className="input"
+                      defaultValue={death.species}
+                      required
+                    />
+                  </div>
+                  <ImageInput
+                    name="detailImage"
+                    label="Imagen de la ficha"
+                    defaultValue={detailImage}
+                    maxSize={IMAGE_SIZES.detail}
+                    hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
+                  />
+                  <ImageInput
+                    name="boxImage"
+                    label="Sprite de la caja"
+                    defaultValue={death.boxImage}
+                    maxSize={IMAGE_SIZES.box}
+                  />
+                </>
+              ) : (
+                <SpeciesPicker
+                  defaultSpecies={death.species}
+                  defaultBoxImage={death.boxImage}
+                  defaultDetailImage={detailImage}
+                />
+              )}
+
+              <button
+                type="button"
+                className="text-xs text-brand-400 hover:underline"
+                onClick={() => setManualImages((manual) => !manual)}
+              >
+                {manualImages
+                  ? "← Volver a las imágenes automáticas"
+                  : "Prefiero poner mis propias imágenes →"}
+              </button>
 
               <div>
                 <label className="label">Causa</label>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { fileToDataUrl } from "@/lib/image";
+import { imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
 /**
@@ -35,7 +35,7 @@ export function ImageInput({
     setBusy(true);
     setError(null);
     try {
-      setValue(await fileToDataUrl(file, maxSize));
+      setValue(await imageToDataUrl(file, maxSize));
     } catch (err) {
       setError((err as Error).message);
     } finally {

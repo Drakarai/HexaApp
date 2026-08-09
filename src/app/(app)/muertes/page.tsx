@@ -35,20 +35,28 @@ export default async function DeathsPage({
     (participant) => participant.userId === user.id,
   );
 
-  const [deaths, counts] = await Promise.all([
+  const deathsWhere = {
+    participant: {
+      competitionId: competition.id,
+      ...(selected ? { id: selected.id } : {}),
+    },
+  };
+
+  const [deaths, withDetail, counts] = await Promise.all([
     prisma.death.findMany({
-      where: {
-        participant: {
-          competitionId: competition.id,
-          ...(selected ? { id: selected.id } : {}),
-        },
-      },
+      where: deathsWhere,
       orderBy: [{ diedAt: "asc" }, { createdAt: "asc" }],
+      // La ilustración grande ni se lee aquí: se pide al abrir cada ficha
+      omit: { detailImage: true },
       include: {
         participant: {
           include: { user: { select: { avatarImage: true } } },
         },
       },
+    }),
+    prisma.death.findMany({
+      where: { ...deathsWhere, detailImage: { not: null } },
+      select: { id: true },
     }),
     prisma.death.groupBy({
       by: ["participantId"],
@@ -56,6 +64,8 @@ export default async function DeathsPage({
       _count: { _all: true },
     }),
   ]);
+
+  const detailIds = new Set(withDetail.map((death) => death.id));
 
   const countFor = (participantId: string) =>
     counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
@@ -70,7 +80,7 @@ export default async function DeathsPage({
     location: death.location,
     notes: death.notes,
     boxImage: death.boxImage,
-    detailImage: death.detailImage,
+    hasDetailImage: detailIds.has(death.id),
     diedAtLabel: formatDate(death.diedAt),
     diedAtInput: toDateInputValue(death.diedAt),
     editable: canManage || death.participant.userId === user.id,
