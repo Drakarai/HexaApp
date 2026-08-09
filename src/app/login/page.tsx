@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { LoginForm } from "./login-form";
 
 export const metadata = { title: "Entrar" };
@@ -7,6 +8,9 @@ export const metadata = { title: "Entrar" };
 export default async function LoginPage() {
   const user = await getCurrentUser();
   if (user) redirect("/");
+
+  // Aplicación recién instalada: aún no hay ninguna cuenta que crear
+  if ((await prisma.user.count()) === 0) redirect("/instalacion");
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-10">

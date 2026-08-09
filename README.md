@@ -56,15 +56,24 @@ instalarla en cada teléfono está en **[DEPLOY.md](DEPLOY.md)**.
 ## Puesta en marcha
 
 Necesitas una base de datos PostgreSQL. Lo más rápido es crear una gratis en
-[neon.tech](https://neon.tech) (2 minutos, sin tarjeta) y pegar su cadena de
+[neon.com](https://neon.com) (2 minutos, sin tarjeta) y pegar su cadena de
 conexión en el `.env`.
 
 ```bash
 npm install
 cp .env.example .env      # pon tu DATABASE_URL y cambia AUTH_SECRET
-npm run setup             # crea las tablas y carga los datos de ejemplo
+npm run db:push           # crea las tablas
 npm run dev               # http://localhost:3000
 ```
+
+La primera vez que abras la aplicación con la base de datos vacía te saldrá una
+**pantalla de instalación** para crear tu cuenta de administrador, con la opción
+de cargar la competición de ejemplo. No hace falta nada más.
+
+Si prefieres los datos de ejemplo completos (los seis jugadores del Hexalocke 2
+con sus jornadas ya emparejadas), usa `npm run setup` en lugar de `db:push`: crea
+las cuentas `admin`, `draka`, `pablo`, `hector`, `rodri`, `enzo` y `alex`, todas
+con la contraseña de `SEED_PASSWORD` (`hexalocke` por defecto).
 
 El seed crea la competición de ejemplo *Hexalocke 2* (reglas, 10 level caps,
 5 jornadas con sus parejas y 2 ruletas) más siete cuentas: `admin`, `draka`,
