@@ -5,7 +5,7 @@ import { logoutAction } from "@/app/actions/auth";
 import { ROLES } from "@/lib/constants";
 import { ProfileForms } from "./profile-forms";
 
-export const metadata = { title: "Mi perfil — HexaApp" };
+export const metadata = { title: "Mi perfil" };
 
 export default async function ProfilePage() {
   const user = await requireUser();

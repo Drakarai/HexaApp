@@ -16,7 +16,7 @@ import {
 } from "@/app/actions/points";
 import { PointsForms } from "./points-forms";
 
-export const metadata = { title: "Puntos — HexaApp" };
+export const metadata = { title: "Puntos" };
 
 export default async function PointsPage() {
   const user = await requireUser();
@@ -59,7 +59,12 @@ export default async function PointsPage() {
                   key={row.participantId}
                   className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1"
                 >
-                  <Avatar name={row.displayName} color={row.color} size={22} />
+                  <Avatar
+                    name={row.displayName}
+                    color={row.color}
+                    image={row.avatarImage}
+                    size={22}
+                  />
                   <span className="mx-1 text-sm text-slate-200">
                     {row.displayName}
                   </span>

@@ -46,12 +46,23 @@ El orden sigue las reglas del locke: **puntos** → **menos pokémon muertos** �
 **mejor diferencia de pokémon** en los combates de jornada. Los dos primeros
 aparecen marcados como clasificados directos para la Final Four.
 
+### App de móvil
+
+La aplicación es una **PWA**: desde el navegador del móvil se instala en la
+pantalla de inicio y se abre a pantalla completa, con su icono, como una app
+nativa. La misma dirección sirve para el PC. Cómo publicarla gratis y cómo
+instalarla en cada teléfono está en **[DEPLOY.md](DEPLOY.md)**.
+
 ## Puesta en marcha
+
+Necesitas una base de datos PostgreSQL. Lo más rápido es crear una gratis en
+[neon.tech](https://neon.tech) (2 minutos, sin tarjeta) y pegar su cadena de
+conexión en el `.env`.
 
 ```bash
 npm install
-cp .env.example .env      # y cambia AUTH_SECRET
-npm run setup             # crea la base de datos y carga los datos de ejemplo
+cp .env.example .env      # pon tu DATABASE_URL y cambia AUTH_SECRET
+npm run setup             # crea las tablas y carga los datos de ejemplo
 npm run dev               # http://localhost:3000
 ```
 
@@ -81,8 +92,7 @@ await prisma.user.create({ data: {
 
 ### Actualizar a una versión nueva
 
-Los datos viven en `prisma/dev.db`, que **no** se sobrescribe al actualizar el
-código. Con Git:
+Los datos viven en el servidor, así que actualizar el código no toca nada:
 
 ```bash
 git pull
@@ -91,20 +101,30 @@ npm run db:push   # aplica los cambios del modelo de datos, sin borrar nada
 npm run dev
 ```
 
-Si bajaste el proyecto como ZIP en vez de con Git: descomprime la versión nueva
-en otra carpeta, copia tu `prisma/dev.db` de la carpeta vieja a la nueva y
-ejecuta ahí los mismos comandos (`npm install`, `npm run db:push`, `npm run dev`).
+### Si no puedes entrar
+
+```bash
+npm run users                             # lista los usuarios que hay
+npx tsx scripts/users.ts admin nuevaclave # cambia una contraseña
+```
+
+### Venías de la versión con SQLite
+
+Hasta hace poco los datos vivían en un fichero `prisma/dev.db`. Para llevártelos
+a la base de datos nueva:
+
+```bash
+npx tsx scripts/export-sqlite.ts   # en la carpeta antigua → hexaapp-export.json
+npx tsx scripts/import-json.ts     # en la nueva, con DATABASE_URL ya configurada
+```
+
+Repetir la importación no duplica nada.
 
 ### Producción
 
-```bash
-npm run build
-npm start
-```
-
-La base de datos es un fichero SQLite (`prisma/dev.db` por defecto). Para
-desplegar, monta ese fichero en un volumen persistente y define `DATABASE_URL` y
-`AUTH_SECRET` en el entorno.
+Ver **[DEPLOY.md](DEPLOY.md)**. En resumen: `DATABASE_URL` y `AUTH_SECRET` como
+variables de entorno, y `npm run build` / `npm start` (o directamente Vercel,
+que lo hace solo).
 
 ## Roles
 
@@ -119,7 +139,8 @@ desplegar, monta ese fichero en un volumen persistente y define `DATABASE_URL` y
 ## Stack
 
 Next.js 16 (App Router y Server Actions) · React 19 · TypeScript · Tailwind CSS 4 ·
-Prisma 6 sobre SQLite · sesiones propias con cookie firmada (JWT) y bcrypt.
+Prisma 6 sobre PostgreSQL · PWA instalable · sesiones propias con cookie firmada
+(JWT) y bcrypt.
 
 ```
 src/
@@ -127,11 +148,17 @@ src/
     (app)/          páginas con sesión iniciada (una carpeta por sección)
     actions/        server actions, agrupadas por dominio
     login/          pantalla de acceso
-  components/       UI compartida (ruleta, clasificación, formularios base)
+  components/       UI compartida (ruleta, clasificación, navegación, formularios)
   lib/              db, auth, sesión, permisos y cálculo de la clasificación
 prisma/
   schema.prisma     modelo de datos
   seed.ts           datos de ejemplo del Hexalocke 2
+scripts/
+  users.ts          listar usuarios y cambiar contraseñas desde la terminal
+  export-sqlite.ts  migración desde la versión antigua con SQLite
+  import-json.ts    carga ese volcado en la base de datos actual
+public/
+  sw.js, icons/     piezas de la PWA (service worker e iconos)
 ```
 
 ## Ideas para más adelante

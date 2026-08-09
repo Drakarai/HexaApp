@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/ui";
 import { cx, formatDateTime } from "@/lib/utils";
 import { NewNoteForm, NoteCard } from "./note-forms";
 
-export const metadata = { title: "Mis notas — HexaApp" };
+export const metadata = { title: "Mis notas" };
 
 export default async function NotesPage({
   searchParams,

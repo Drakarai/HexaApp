@@ -16,7 +16,7 @@ import {
 } from "@/app/actions/level-caps";
 import { NewLevelCapForm, EditLevelCapForm } from "./level-cap-forms";
 
-export const metadata = { title: "Level caps — HexaApp" };
+export const metadata = { title: "Level caps" };
 
 export default async function LevelCapsPage() {
   const user = await requireUser();

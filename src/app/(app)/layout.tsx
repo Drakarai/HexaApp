@@ -4,18 +4,24 @@ import { getActiveCompetition, listCompetitions } from "@/lib/competition";
 import { logoutAction } from "@/app/actions/auth";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
 import { Nav, type NavItem } from "@/components/nav";
+import { MobileTabBar } from "@/components/mobile-nav";
 import { Avatar } from "@/components/ui";
 
-const BASE_ITEMS: NavItem[] = [
+/** Las 4 primeras salen en la barra inferior del móvil; el resto, en "Más". */
+const PRIMARY_ITEMS: NavItem[] = [
   { href: "/", label: "Resumen", icon: "🏠" },
-  { href: "/reglas", label: "Reglas", icon: "📜" },
-  { href: "/level-caps", label: "Level caps", icon: "🎯" },
-  { href: "/muertes", label: "Muertes", icon: "💀" },
-  { href: "/jornadas", label: "Jornadas", icon: "⚔️" },
+  { href: "/muertes", label: "Caja", icon: "💀" },
   { href: "/puntos", label: "Puntos", icon: "🏆" },
   { href: "/ruleta", label: "Ruleta", icon: "🎡" },
+];
+
+const SECONDARY_ITEMS: NavItem[] = [
+  { href: "/reglas", label: "Reglas", icon: "📜" },
+  { href: "/level-caps", label: "Level caps", icon: "🎯" },
+  { href: "/jornadas", label: "Jornadas", icon: "⚔️" },
   { href: "/notas", label: "Mis notas", icon: "🗒️" },
-  { href: "/competiciones", label: "Competiciones", icon: "🗂️" },
+  { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
+  { href: "/perfil", label: "Mi perfil", icon: "👤" },
 ];
 
 export default async function AppLayout({
@@ -29,13 +35,56 @@ export default async function AppLayout({
     getActiveCompetition(),
   ]);
 
-  const items = isAdmin(user)
-    ? [...BASE_ITEMS, { href: "/admin", label: "Administración", icon: "⚙️" }]
-    : BASE_ITEMS;
+  const adminItem: NavItem = {
+    href: "/admin",
+    label: "Administración",
+    icon: "⚙️",
+  };
+  const secondary = isAdmin(user)
+    ? [...SECONDARY_ITEMS, adminItem]
+    : SECONDARY_ITEMS;
+  const sidebarItems = [...PRIMARY_ITEMS, ...secondary];
+
+  const switcher = (
+    <CompetitionSwitcher
+      competitions={competitions.map((competition) => ({
+        id: competition.id,
+        name: competition.name,
+        status: competition.status,
+      }))}
+      currentId={active?.id ?? null}
+    />
+  );
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 py-5 lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
-      <aside className="lg:w-64 lg:shrink-0">
+    <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
+      {/* Cabecera compacta en móvil */}
+      <header className="flex items-center justify-between gap-3 lg:hidden">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-xl" aria-hidden>
+            ⬢
+          </span>
+          <span className="text-base font-black tracking-tight text-white">
+            HexaApp
+          </span>
+        </Link>
+        <div className="flex min-w-0 flex-1 items-center justify-end gap-2">
+          <div className="min-w-0 max-w-44 flex-1 [&_.label]:sr-only">
+            {switcher}
+          </div>
+          <Link href="/perfil" aria-label="Mi perfil">
+            <Avatar
+              name={user.displayName}
+              color={user.avatarColor}
+              image={user.avatarImage}
+              size={32}
+            />
+          </Link>
+        </div>
+      </header>
+
+      {/* Barra lateral en pantallas grandes */}
+      <aside className="hidden lg:block lg:w-64 lg:shrink-0">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2">
             <span className="text-2xl" aria-hidden>
@@ -59,20 +108,11 @@ export default async function AppLayout({
           </Link>
         </div>
 
-        <div className="mt-5">
-          <CompetitionSwitcher
-            competitions={competitions.map((competition) => ({
-              id: competition.id,
-              name: competition.name,
-              status: competition.status,
-            }))}
-            currentId={active?.id ?? null}
-          />
-        </div>
+        <div className="mt-5">{switcher}</div>
 
         <div className="mt-5 lg:sticky lg:top-6">
-          <Nav items={items} />
-          <form action={logoutAction} className="mt-4 hidden lg:block">
+          <Nav items={sidebarItems} />
+          <form action={logoutAction} className="mt-4">
             <button type="submit" className="btn-ghost btn-sm w-full">
               Cerrar sesión
             </button>
@@ -80,7 +120,9 @@ export default async function AppLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-16">{children}</main>
+      <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
+
+      <MobileTabBar primary={PRIMARY_ITEMS} secondary={secondary} />
     </div>
   );
 }

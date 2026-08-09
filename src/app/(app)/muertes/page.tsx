@@ -13,7 +13,7 @@ import { cx, formatDate, toDateInputValue } from "@/lib/utils";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
 
-export const metadata = { title: "Cementerio — HexaApp" };
+export const metadata = { title: "Cementerio" };
 
 export default async function DeathsPage({
   searchParams,

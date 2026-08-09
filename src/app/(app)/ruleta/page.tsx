@@ -20,7 +20,7 @@ import {
   RouletteSettingsForm,
 } from "./roulette-forms";
 
-export const metadata = { title: "Ruleta — HexaApp" };
+export const metadata = { title: "Ruleta" };
 
 export default async function RoulettePage({
   searchParams,

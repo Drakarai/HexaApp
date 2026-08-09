@@ -8,7 +8,7 @@ import { EmptyState, ConfirmSubmit } from "@/components/ui";
 import { deleteRuleAction, moveRuleAction } from "@/app/actions/rules";
 import { NewRuleForm, EditRuleForm } from "./rule-forms";
 
-export const metadata = { title: "Reglas — HexaApp" };
+export const metadata = { title: "Reglas" };
 
 export default async function RulesPage() {
   const user = await requireUser();

@@ -22,7 +22,7 @@ import {
   EditParticipantForm,
 } from "./competition-forms";
 
-export const metadata = { title: "Competiciones — HexaApp" };
+export const metadata = { title: "Competiciones" };
 
 export default async function CompetitionsPage() {
   const user = await requireUser();

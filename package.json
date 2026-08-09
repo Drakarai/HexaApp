@@ -10,6 +10,7 @@
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
+    "users": "tsx scripts/users.ts",
     "setup": "prisma db push && prisma db seed"
   },
   "prisma": {

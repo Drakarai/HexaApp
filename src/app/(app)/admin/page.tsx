@@ -7,7 +7,7 @@ import { formatDate } from "@/lib/utils";
 import { deleteUserAction, updateUserRoleAction } from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
 
-export const metadata = { title: "Administración — HexaApp" };
+export const metadata = { title: "Administración" };
 
 export default async function AdminPage() {
   const me = await requireAdmin();

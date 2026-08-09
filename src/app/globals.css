@@ -18,6 +18,14 @@
   color-scheme: dark;
 }
 
+/* Por defecto un ítem de rejilla se niega a encoger por debajo de su contenido
+   (min-width: auto), lo que en móvil provocaba scroll horizontal en toda la
+   página. Con esto el contenido ancho se ajusta o se desplaza dentro de su
+   propia caja, no arrastrando la pantalla entera. */
+.grid > * {
+  min-width: 0;
+}
+
 body {
   background:
     radial-gradient(
@@ -37,12 +45,14 @@ body {
 
 /* Clases propias declaradas como utilidades para poder componerlas con @apply */
 
+/* min-w-0 evita que una tarjeta dentro de una rejilla se niegue a encoger por
+   culpa de su contenido (tablas anchas), que provocaba scroll horizontal */
 @utility card {
-  @apply rounded-2xl border border-white/10 bg-ink-900/70 p-5 shadow-lg shadow-black/30 backdrop-blur;
+  @apply min-w-0 rounded-2xl border border-white/10 bg-ink-900/70 p-5 shadow-lg shadow-black/30 backdrop-blur;
 }
 
 @utility card-tight {
-  @apply rounded-xl border border-white/10 bg-ink-900/70 p-4;
+  @apply min-w-0 rounded-xl border border-white/10 bg-ink-900/70 p-4;
 }
 
 @utility label {
@@ -94,7 +104,9 @@ body {
 }
 
 @utility data-table {
-  @apply w-full min-w-[36rem] border-collapse text-sm;
+  /* Ancho mínimo bajo para que la clasificación quepa en un móvil; si aun así
+     no cabe, el contenedor .table-wrap la deja desplazarse en horizontal */
+  @apply w-full min-w-[20rem] border-collapse text-sm;
 
   & th {
     @apply border-b border-white/10 px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-slate-400;

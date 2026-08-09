@@ -15,7 +15,7 @@ import {
 } from "@/app/actions/matchdays";
 import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
 
-export const metadata = { title: "Jornadas — HexaApp" };
+export const metadata = { title: "Jornadas" };
 
 export default async function MatchdaysPage() {
   const user = await requireUser();

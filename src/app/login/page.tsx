@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
-export const metadata = { title: "Entrar — HexaApp" };
+export const metadata = { title: "Entrar" };
 
 export default async function LoginPage() {
   const user = await getCurrentUser();
