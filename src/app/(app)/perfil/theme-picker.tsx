@@ -53,7 +53,9 @@ export function ThemePicker({ current }: { current: string }) {
                   <span
                     className="h-5 w-5 shrink-0 rounded-full ring-1 ring-white/20"
                     style={{
-                      background: `linear-gradient(135deg, ${theme.swatch}, ${theme.vars["--color-ink-850"]})`,
+                      background: `linear-gradient(135deg, ${theme.swatch}, ${
+                        theme.swatchTo ?? theme.vars["--color-ink-850"]
+                      })`,
                     }}
                     aria-hidden
                   />

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (pokémon as de cada jugador).
+Última actualización: 10 de agosto de 2026 (temas de los ases del Hexalocke 1).
 
 ---
 
@@ -152,6 +152,14 @@ cargar, y la paleta de cada uno se calcula a partir de un color de acento y un
 tono en `src/lib/themes.ts` en vez de escribir a mano cientos de valores. El
 tema es **de cada usuario**, no de la competición.
 
+**Los temas admiten dos colores.** Los de los juegos usan uno solo, pero los de
+los **ases del Hexalocke 1** (Kojima/Emboar, Josuke/Scrafty,
+Eramosdos/Ninjask, David Evil/Drapion, Dinotren/Haxorus) llevan el color del
+cuerpo del pokémon en los botones y un segundo color suyo en los detalles:
+enlaces, rótulos de sección, la pestaña activa y el segundo halo del fondo. Por
+eso `ThemeSeed` tiene un campo `detail` opcional, y la muestra del selector se
+pinta como degradado entre los dos.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -257,3 +265,4 @@ lugar de destruir datos, y hay que avisar antes.
    fundido, también en la tarjeta de resumen del inicio.
 7. **Muro de actividad** y **temas por juego** elegibles desde el perfil.
 8. **Pokémon as** de cada jugador, con su ficha, su mote y su porqué.
+9. **Temas de los ases del Hexalocke 1**, a dos colores cada uno.

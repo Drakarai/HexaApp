@@ -17,8 +17,14 @@ type ThemeSeed = {
   id: string;
   name: string;
   group: string;
-  /** Color de acento, en tono medio-oscuro */
+  /** Color de acento, en tono medio-oscuro. Manda en botones y en lo activo. */
   accent: string;
+  /**
+   * Segundo color del pokémon, para los detalles: enlaces, rótulos de sección,
+   * la pestaña activa y el halo del fondo. Si no se pone, se usa una versión
+   * aclarada del acento, como en los temas de los juegos.
+   */
+  detail?: string;
   /** Tono con el que se tiñen los fondos (0-360) */
   hue: number;
   /** Saturación del tinte de fondo, en porcentaje */
@@ -80,6 +86,59 @@ const SEEDS: ThemeSeed[] = [
 
   { id: "escarlata", name: "Escarlata", group: "9ª generación", accent: "#b34a2a", hue: 14, tint: 26 },
   { id: "purpura", name: "Púrpura", group: "9ª generación", accent: "#6f3f9e", hue: 270, tint: 30 },
+
+  // Ases del Hexalocke 1, con la paleta de cada pokémon: el color de su cuerpo
+  // manda, y un segundo color suyo se lleva los detalles.
+  {
+    id: "kojima",
+    name: "Kojima",
+    group: "Ases del Hexalocke 1",
+    // Emboar: brasa del cuerpo y oro de la barba de fuego
+    accent: "#b04a22",
+    detail: "#e0ac3c",
+    hue: 22,
+    tint: 26,
+  },
+  {
+    id: "josuke",
+    name: "Josuke",
+    group: "Ases del Hexalocke 1",
+    // Scrafty: granate de la piel mudada y crema del cuerpo
+    accent: "#8e3b34",
+    detail: "#d8c07d",
+    hue: 8,
+    tint: 18,
+  },
+  {
+    id: "eramosdos",
+    name: "Eramosdos",
+    group: "Ases del Hexalocke 1",
+    // Ninjask: turquesa de las alas y amarillo del cuerpo
+    accent: "#2f9b94",
+    detail: "#d6a91c",
+    hue: 185,
+    tint: 20,
+  },
+  {
+    id: "david-evil",
+    name: "David Evil",
+    group: "Ases del Hexalocke 1",
+    // Drapion: violeta del caparazón y magenta venenoso de las pinzas
+    accent: "#6b3d94",
+    detail: "#c05a9c",
+    hue: 275,
+    tint: 26,
+  },
+  {
+    id: "dinotren",
+    name: "Dinotren",
+    group: "Ases del Hexalocke 1",
+    // Haxorus: oro del cuerpo y rojo de los colmillos hacha
+    accent: "#8f7a1c",
+    detail: "#c0402e",
+    hue: 48,
+    tint: 22,
+  },
 ];
 
 // --- utilidades de color -----------------------------------------------------
@@ -149,6 +208,8 @@ export type Theme = {
   group: string;
   /** Color con el que se pinta la muestra en el selector */
   swatch: string;
+  /** Segundo color de la muestra, cuando el tema tiene color de detalle */
+  swatchTo?: string;
   /** Variables CSS que se aplican al <html> */
   vars: Record<string, string>;
 };
@@ -164,19 +225,25 @@ function buildTheme(seed: ThemeSeed): Theme {
     name: seed.name,
     group: seed.group,
     swatch: seed.accent,
+    swatchTo: seed.detail,
     vars: {
       "--color-brand-600": seed.accent,
       "--color-brand-500": lighten(seed.accent, 8),
-      "--color-brand-400": lighten(seed.accent, 20),
+      // El tono claro es el que se lee como texto (enlaces, rótulos, pestaña
+      // activa): si el tema tiene color de detalle, manda ese.
+      "--color-brand-400": seed.detail
+        ? lighten(seed.detail, 12)
+        : lighten(seed.accent, 20),
       "--color-ink-950": surface(4.5),
       "--color-ink-900": surface(7),
       "--color-ink-850": surface(9.5),
       "--color-ink-800": surface(12),
       "--color-ink-700": surface(17, Math.max(10, tint - 6)),
       "--color-ink-600": surface(24, Math.max(8, tint - 10)),
-      // Los dos halos de color del fondo de la página
+      // Los dos halos de color del fondo de la página. Con color de detalle,
+      // el segundo halo lo lleva él y el fondo queda a dos tintas.
       "--glow-a": rgba(seed.accent, 0.22),
-      "--glow-b": rgba(lighten(seed.accent, 22), 0.12),
+      "--glow-b": rgba(seed.detail ?? lighten(seed.accent, 22), seed.detail ? 0.14 : 0.12),
       ...seed.overrides,
     },
   };
