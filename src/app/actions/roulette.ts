@@ -205,14 +205,15 @@ export async function spinRouletteAction(
     if (!participant) {
       return { ok: false, error: "No eres jugador de esta competición." };
     }
+    // Los tickets son de cada ruleta: el de otra no vale aquí
     const balance = await prisma.rouletteTicket.aggregate({
-      where: { participantId: participant.id },
+      where: { participantId: participant.id, rouletteId },
       _sum: { delta: true },
     });
     if ((balance._sum.delta ?? 0) < 1) {
       return {
         ok: false,
-        error: "No te quedan tickets. Pídele uno a un administrador.",
+        error: `No te quedan tickets de "${roulette.name}". Pídele uno a un administrador.`,
       };
     }
   }
@@ -253,7 +254,7 @@ export async function spinRouletteAction(
           // Se vuelve a sumar dentro de la transacción: si dos tiradas a la
           // vez dejaran el saldo en negativo, esta se deshace entera.
           const balance = await tx.rouletteTicket.aggregate({
-            where: { participantId: participant.id },
+            where: { participantId: participant.id, rouletteId },
             _sum: { delta: true },
           });
           if ((balance._sum.delta ?? 0) < 0) {

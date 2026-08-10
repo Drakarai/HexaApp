@@ -20,9 +20,13 @@ export type TicketRow = {
 /** Panel de administrador: quién tiene tickets y reparto de los mismos. */
 export function TicketsPanel({
   competitionId,
+  rouletteId,
+  rouletteName,
   rows,
 }: {
   competitionId: string;
+  rouletteId: string;
+  rouletteName: string;
   rows: TicketRow[];
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -37,10 +41,10 @@ export function TicketsPanel({
 
   return (
     <section className="card">
-      <h2 className="section-title mb-1">Tickets</h2>
+      <h2 className="section-title mb-1">Tickets de {rouletteName}</h2>
       <p className="muted mb-4">
-        Un ticket es una tirada. Se gasta al girar y los administradores giran
-        sin gastar.
+        Un ticket es una tirada <strong>de esta ruleta</strong>: no sirve para
+        las demás. Se gasta al girar, y los administradores giran sin gastar.
       </p>
 
       <ul className="space-y-2">
@@ -61,6 +65,7 @@ export function TicketsPanel({
 
             <form action={quickGrantTicketAction}>
               <input type="hidden" name="competitionId" value={competitionId} />
+              <input type="hidden" name="rouletteId" value={rouletteId} />
               <input
                 type="hidden"
                 name="participantId"
@@ -88,6 +93,7 @@ export function TicketsPanel({
 
             <form action={quickGrantTicketAction}>
               <input type="hidden" name="competitionId" value={competitionId} />
+              <input type="hidden" name="rouletteId" value={rouletteId} />
               <input
                 type="hidden"
                 name="participantId"
@@ -112,6 +118,7 @@ export function TicketsPanel({
         className="mt-4 space-y-3 border-t border-white/10 pt-4"
       >
         <input type="hidden" name="competitionId" value={competitionId} />
+        <input type="hidden" name="rouletteId" value={rouletteId} />
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="sm:col-span-2">
             <label className="label">Jugador</label>
@@ -143,7 +150,9 @@ export function TicketsPanel({
           />
         </div>
         <FormMessage state={state} />
-        <SubmitButton className="btn-ghost">Dar tickets</SubmitButton>
+        <SubmitButton className="btn-ghost">
+          Dar tickets de {rouletteName}
+        </SubmitButton>
       </form>
     </section>
   );
@@ -153,9 +162,11 @@ export function TicketsPanel({
 export function MyTickets({
   balance,
   isManager,
+  rouletteName,
 }: {
   balance: number;
   isManager: boolean;
+  rouletteName: string;
 }) {
   if (isManager) {
     return (
@@ -177,10 +188,14 @@ export function MyTickets({
       {balance > 0 ? (
         <>
           🎟️ Tienes <strong>{balance}</strong>{" "}
-          {balance === 1 ? "ticket" : "tickets"}: cada tirada gasta uno.
+          {balance === 1 ? "ticket" : "tickets"} de {rouletteName}: cada tirada
+          gasta uno.
         </>
       ) : (
-        <>No tienes tickets. Pídele uno a un administrador para poder girar.</>
+        <>
+          No tienes tickets de {rouletteName}. Pídele uno a un administrador
+          para poder girar aquí.
+        </>
       )}
     </p>
   );

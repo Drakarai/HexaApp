@@ -52,12 +52,14 @@ export default async function RoulettePage({
   const myParticipant = participants.find(
     (participant) => participant.userId === user.id,
   );
-  const myTickets = myParticipant ? (balances.get(myParticipant.id) ?? 0) : 0;
-  // Los administradores giran siempre; el resto, solo con ticket
-  const canSpin = canManage || myTickets > 0;
-
   const selectedId = roulettes.find((roulette) => roulette.id === r)?.id ??
     roulettes[0]?.id;
+
+  // Los tickets son de cada ruleta, así que el saldo depende de cuál se mire
+  const myTickets =
+    myParticipant && selectedId ? balances.get(myParticipant.id, selectedId) : 0;
+  // Los administradores giran siempre; el resto, solo con ticket de esta ruleta
+  const canSpin = canManage || myTickets > 0;
 
   const selected = selectedId
     ? await prisma.roulette.findUnique({
@@ -93,6 +95,11 @@ export default async function RoulettePage({
               )}
             >
               🎡 {roulette.name} ({roulette._count.options})
+              {myParticipant && balances.get(myParticipant.id, roulette.id) > 0 ? (
+                <span className="text-amber-300">
+                  🎟️ {balances.get(myParticipant.id, roulette.id)}
+                </span>
+              ) : null}
             </Link>
           ))}
         </div>
@@ -125,7 +132,11 @@ export default async function RoulettePage({
               ) : null}
             </div>
 
-            <MyTickets balance={myTickets} isManager={canManage} />
+            <MyTickets
+              balance={myTickets}
+              isManager={canManage}
+              rouletteName={selected.name}
+            />
 
             <RouletteWheel
               rouletteId={selected.id}
@@ -271,16 +282,18 @@ export default async function RoulettePage({
         />
       )}
 
-      {canManage && participants.length ? (
+      {canManage && participants.length && selected ? (
         <div className="mt-6">
           <TicketsPanel
             competitionId={competition.id}
+            rouletteId={selected.id}
+            rouletteName={selected.name}
             rows={participants.map((participant) => ({
               participantId: participant.id,
               displayName: participant.displayName,
               color: participant.color,
               avatarImage: participant.user.avatarImage,
-              balance: balances.get(participant.id) ?? 0,
+              balance: balances.get(participant.id, selected.id),
             }))}
           />
         </div>

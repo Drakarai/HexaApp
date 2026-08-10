@@ -108,14 +108,34 @@ export async function requireCompetitionManager(competitionId: string) {
   return user;
 }
 
-/** Saldo de tickets de ruleta de cada participante de la competición. */
+/**
+ * Saldo de tickets por jugador y ruleta: un ticket vale solo para la ruleta
+ * para la que se dio. Se devuelve todo junto para poder pintar de una vez el
+ * saldo de cada ruleta en la lista.
+ */
 export async function getTicketBalances(competitionId: string) {
   const sums = await prisma.rouletteTicket.groupBy({
-    by: ["participantId"],
-    where: { competitionId },
+    by: ["participantId", "rouletteId"],
+    where: { competitionId, rouletteId: { not: null } },
     _sum: { delta: true },
   });
-  return new Map(sums.map((row) => [row.participantId, row._sum.delta ?? 0]));
+
+  const byRoulette = new Map<string, Map<string, number>>();
+  for (const row of sums) {
+    if (!row.rouletteId) continue;
+    const forThis = byRoulette.get(row.rouletteId) ?? new Map<string, number>();
+    forThis.set(row.participantId, row._sum.delta ?? 0);
+    byRoulette.set(row.rouletteId, forThis);
+  }
+
+  return {
+    /** Saldo de un jugador en una ruleta concreta */
+    get: (participantId: string, rouletteId: string) =>
+      byRoulette.get(rouletteId)?.get(participantId) ?? 0,
+    /** Saldos de todos los jugadores en una ruleta */
+    forRoulette: (rouletteId: string) =>
+      byRoulette.get(rouletteId) ?? new Map<string, number>(),
+  };
 }
 
 /**

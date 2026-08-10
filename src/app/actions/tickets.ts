@@ -5,9 +5,18 @@ import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
 
+/** Comprueba que la ruleta es de esa competición antes de tocar sus tickets. */
+async function findRoulette(competitionId: string, rouletteId: string) {
+  return prisma.roulette.findFirst({
+    where: { id: rouletteId, competitionId },
+    select: { id: true, name: true },
+  });
+}
+
 /**
- * Un ticket da derecho a una tirada de ruleta y se gasta al usarlo. Solo los
- * administradores los reparten; el saldo es la suma de los movimientos.
+ * Un ticket da derecho a una tirada **de su ruleta**: el de una no sirve para
+ * otra. Solo los administradores los reparten, y el saldo es la suma de los
+ * movimientos de esa ruleta.
  */
 export async function grantTicketsAction(
   _prev: FormState,
@@ -20,6 +29,10 @@ export async function grantTicketsAction(
   } catch (error) {
     return { error: (error as Error).message };
   }
+
+  const rouletteId = String(formData.get("rouletteId") ?? "");
+  const roulette = await findRoulette(competitionId, rouletteId);
+  if (!roulette) return { error: "Esa ruleta no es de esta competición." };
 
   const participantId = String(formData.get("participantId") ?? "");
   const amount = Number(formData.get("amount") ?? 0);
@@ -38,6 +51,7 @@ export async function grantTicketsAction(
     data: {
       competitionId,
       participantId,
+      rouletteId: roulette.id,
       delta: Math.trunc(amount),
       reason: reason || null,
       createdById: manager.id,
@@ -50,15 +64,19 @@ export async function grantTicketsAction(
   return {
     success:
       cantidad > 0
-        ? `${cantidad} ticket(s) para ${participant.displayName}.`
-        : `Retirados ${Math.abs(cantidad)} ticket(s) a ${participant.displayName}.`,
+        ? `${cantidad} ticket(s) de ${roulette.name} para ${participant.displayName}.`
+        : `Retirados ${Math.abs(cantidad)} ticket(s) de ${roulette.name} a ${participant.displayName}.`,
   };
 }
 
-/** Botón de +1 desde la lista de saldos. */
+/** Botón de ±1 desde la lista de saldos de una ruleta. */
 export async function quickGrantTicketAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");
   const manager = await requireCompetitionManager(competitionId);
+
+  const rouletteId = String(formData.get("rouletteId") ?? "");
+  const roulette = await findRoulette(competitionId, rouletteId);
+  if (!roulette) return;
 
   const participantId = String(formData.get("participantId") ?? "");
   const delta = Number(formData.get("delta") ?? 1);
@@ -73,6 +91,7 @@ export async function quickGrantTicketAction(formData: FormData) {
     data: {
       competitionId,
       participantId,
+      rouletteId: roulette.id,
       delta: Math.trunc(delta),
       reason: "Ajuste rápido",
       createdById: manager.id,

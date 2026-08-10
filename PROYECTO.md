@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (tickets de ruleta).
+Última actualización: 10 de agosto de 2026 (tickets por ruleta).
 
 ---
 
@@ -43,7 +43,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Administración** | Alta de usuarios, roles y contraseñas. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
-| **Ruleta** | Sorteos personalizables; girar gasta un ticket, salvo los administradores. |
+| **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta y resultados de jornada. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
 
@@ -85,14 +85,18 @@ esta opción frente a "autor + admins" a petición del usuario.
 decidió; así nadie puede manipular el sorteo desde las herramientas del
 navegador. Los pesos hacen que unas opciones salgan más que otras.
 
-**Girar cuesta un ticket.** Los reparten los administradores, y son ellos los
-únicos que giran gratis. Los tickets son un historial como los puntos (`+n` al
-concederlos, `-1` al gastarlos) en vez de un contador, así queda constancia de
-quién dio qué y por qué, y el muro de actividad puede contarlo. El gasto y el
-giro van en una misma transacción **serializable** que vuelve a sumar el saldo
-por dentro: si se colara una tirada de más, la transacción entera se deshace y
-no se puede quedar en negativo. El saldo también se comprueba antes, para
-poder dar un mensaje claro sin llegar a la transacción.
+**Girar cuesta un ticket, y cada ticket es de su ruleta.** El de una no sirve
+para otra: el saldo se lleva por pareja jugador-ruleta. Los reparten los
+administradores, que son los únicos que giran gratis. Los tickets son un
+historial como los puntos (`+n` al concederlos, `-1` al gastarlos) en vez de un
+contador, así queda constancia de quién dio qué y por qué, y el muro de
+actividad puede contarlo. El gasto y el giro van en una misma transacción
+**serializable** que vuelve a sumar el saldo por dentro: si se colara una
+tirada de más, la transacción entera se deshace y no se puede quedar en
+negativo. El saldo también se comprueba antes, para dar un mensaje claro sin
+llegar a la transacción. En la base de datos `rouletteId` quedó opcional para
+no romper las filas de la primera versión, en la que los tickets valían para
+cualquier ruleta; el código lo exige siempre y esas filas antiguas no cuentan.
 
 **Los puntos son un historial, no un contador.** Cada movimiento guarda motivo,
 autor y fecha, y el total se calcula sumando. Permite deshacer y auditar. Los
@@ -294,4 +298,5 @@ lugar de destruir datos, y hay que avisar antes.
 8. **Pokémon as** de cada jugador, con su ficha, su mote y su porqué.
 9. **Temas de los ases del Hexalocke 1**, a dos colores cada uno.
 10. **Final Four** y **hall de la fama**, el cierre del locke.
-11. **Tickets de ruleta**: girar deja de ser cosa solo de administradores.
+11. **Tickets de ruleta**, uno por ruleta: girar deja de ser cosa solo de
+    administradores.

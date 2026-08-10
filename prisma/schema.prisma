@@ -398,7 +398,12 @@ model RouletteTicket {
   participantId String
   delta         Int
   reason        String?
-  /** En qué ruleta se gastó, cuando el movimiento es un gasto */
+  /**
+   * De qué ruleta es el ticket: valen solo para la suya. En la base de datos
+   * es opcional para no romper las filas de la primera versión, en la que los
+   * tickets servían para cualquiera; el código lo exige siempre y esas filas
+   * antiguas no cuentan para ninguna ruleta.
+   */
   rouletteId    String?
   createdById   String?
   createdAt     DateTime @default(now())
