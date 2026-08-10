@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (varias imágenes por level cap).
+Última actualización: 10 de agosto de 2026 (muro de actividad y temas por juego).
 
 ---
 
@@ -32,7 +32,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 | Sección | Qué hace |
 | --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas, últimos giros. |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
@@ -41,6 +41,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas. |
+| **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta y resultados de jornada. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
 
 Roles: **administrador global** (crea competiciones y usuarios),
@@ -121,6 +122,22 @@ línea de comandos, que es donde más se atascaba el usuario. Ahora el build
 ejecuta `prisma db push` (las tablas se crean solas) y, con la base de datos
 vacía, la aplicación lleva a una pantalla que crea la cuenta de administrador.
 
+**El muro de actividad no guarda eventos propios.** Consulta cada fuente
+(muertes, puntos, gimnasios superados, giros, combates) y las mezcla por fecha.
+Así no hay una tabla de eventos que pueda desincronizarse de los datos reales,
+y borrar algo lo quita también del muro. Los puntos que vienen de ganar un
+combate se omiten para no contar la misma cosa dos veces.
+
+**Temas: uno por juego principal de Pokémon.** El criterio es un tema por cada
+juego con nombre propio; quedan fuera las variantes del mismo nombre (Rubí
+Omega, Ultrasol, Blanco 2, HeartGold) porque compartirían color, y sí entran las
+terceras ediciones, que tienen nombre y color propios. Todos son oscuros: lo que
+cambia es el acento y el tinte de los fondos. Se guardan como variables CSS
+aplicadas al `<html>` desde el servidor, así que no hay parpadeo de color al
+cargar, y la paleta de cada uno se calcula a partir de un color de acento y un
+tono en `src/lib/themes.ts` en vez de escribir a mano cientos de valores. El
+tema es **de cada usuario**, no de la competición.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -165,6 +182,8 @@ Piezas con truco:
 - `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
+- `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
+- `lib/themes.ts` — genera la paleta de cada tema a partir de un acento.
 - `components/image-carousel.tsx` — el fundido entre imágenes, tanto en primer
   plano como de fondo. `level-caps/level-cap-art.tsx` mete los dos en el mismo
   componente para que cambien a la vez.
@@ -182,7 +201,9 @@ Hasta entonces la aplicación solo corre en su ordenador.
 
 Ideas comentadas y no hechas:
 
-- **Equipos vivos**: fichar los 6 pokémon en juego, no solo los muertos.
+- **Equipos vivos**: fichar los 6 pokémon en juego, no solo los muertos. Sería
+  la siguiente en valor: permitiría el botón "ha caído" que rellena la ficha
+  sola y avisar de quién se pasa del level cap.
 - **Encuentros por ruta**: qué salió en cada zona y si se capturó.
 - **Final Four**: cuadro del torneo con los 4 clasificados.
 - **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
@@ -220,3 +241,4 @@ lugar de destruir datos, y hay que avisar antes.
 5. **Imágenes automáticas** del cementerio desde PokéAPI, con formas y shiny.
 6. **Medallas o líderes** en cada level cap, una o varias alternándose con un
    fundido, también en la tarjeta de resumen del inicio.
+7. **Muro de actividad** y **temas por juego** elegibles desde el perfil.

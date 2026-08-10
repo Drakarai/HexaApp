@@ -16,6 +16,9 @@
 
 :root {
   color-scheme: dark;
+  /* Halos de color del fondo. Cada tema los sustituye desde el <html>. */
+  --glow-a: rgba(99, 102, 241, 0.18);
+  --glow-b: rgba(16, 185, 129, 0.12);
 }
 
 /* Por defecto un ítem de rejilla se niega a encoger por debajo de su contenido
@@ -28,16 +31,8 @@
 
 body {
   background:
-    radial-gradient(
-      1200px 600px at 15% -10%,
-      rgba(99, 102, 241, 0.18),
-      transparent 60%
-    ),
-    radial-gradient(
-      900px 500px at 100% 0%,
-      rgba(16, 185, 129, 0.12),
-      transparent 55%
-    ),
+    radial-gradient(1200px 600px at 15% -10%, var(--glow-a), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, var(--glow-b), transparent 55%),
     var(--color-ink-950);
   color: #e6e9f5;
   min-height: 100vh;

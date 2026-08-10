@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { ServiceWorkerRegistration } from "@/components/service-worker";
+import { getCurrentUser } from "@/lib/auth";
+import { getTheme } from "@/lib/themes";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,11 +31,20 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // El tema es de cada usuario, así que se aplica en el servidor y llega ya
+  // pintado: nada de cambio de color a mitad de carga.
+  const user = await getCurrentUser();
+  const theme = getTheme(user?.theme);
+
   return (
-    <html lang="es">
+    <html
+      lang="es"
+      data-theme={theme.id}
+      style={theme.vars as React.CSSProperties}
+    >
       <body className="font-sans antialiased">
         {children}
         <ServiceWorkerRegistration />

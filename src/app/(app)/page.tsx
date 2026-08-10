@@ -6,8 +6,10 @@ import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, EmptyState } from "@/components/ui";
+import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
+import { getActivity } from "@/lib/activity";
 import { effectiveImages } from "@/lib/image";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
@@ -17,7 +19,7 @@ export default async function DashboardPage() {
 
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [standings, levelCaps, recentDeaths, recentSpins, nextMatchday, myParticipant] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -25,16 +27,7 @@ export default async function DashboardPage() {
         orderBy: { position: "asc" },
         include: { _count: { select: { clears: true } } },
       }),
-      prisma.death.findMany({
-        where: { participant: { competitionId: competition.id } },
-        orderBy: { diedAt: "desc" },
-        take: 6,
-        include: {
-          participant: {
-            include: { user: { select: { avatarImage: true } } },
-          },
-        },
-      }),
+      getActivity(competition.id, 7),
       prisma.rouletteSpin.findMany({
         where: { roulette: { competitionId: competition.id } },
         orderBy: { createdAt: "desc" },
@@ -168,56 +161,15 @@ export default async function DashboardPage() {
 
         <section className="card lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="section-title">Últimas bajas</h2>
-            <Link href="/muertes" className="text-xs text-brand-400 hover:underline">
-              Ver todas →
+            <h2 className="section-title">Actividad reciente</h2>
+            <Link
+              href="/actividad"
+              className="text-xs text-brand-400 hover:underline"
+            >
+              Ver todo →
             </Link>
           </div>
-          {recentDeaths.length ? (
-            <ul className="space-y-2">
-              {recentDeaths.map((death) => (
-                <li
-                  key={death.id}
-                  className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
-                >
-                  {death.boxImage ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={death.boxImage}
-                      alt={death.species}
-                      loading="lazy"
-                      className="h-8 w-8 shrink-0 rounded-lg bg-ink-850 object-contain"
-                    />
-                  ) : (
-                    <Avatar
-                      name={death.participant.displayName}
-                      color={death.participant.color}
-                      image={death.participant.user.avatarImage}
-                      size={28}
-                    />
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-white">
-                      {death.nickname ? `${death.nickname} ` : ""}
-                      <span className="text-slate-400">({death.species})</span>
-                      {death.level ? (
-                        <span className="text-slate-500"> · Nv. {death.level}</span>
-                      ) : null}
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      {death.participant.displayName}
-                      {death.cause ? ` · ${death.cause}` : ""}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-slate-500">
-                    {formatDate(death.diedAt)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <EmptyState title="Todavía no ha muerto nadie. De momento." />
-          )}
+          <ActivityFeed entries={activity} compact />
         </section>
 
         <section className="card">

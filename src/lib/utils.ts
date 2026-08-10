@@ -44,6 +44,22 @@ export function toDateInputValue(date: Date | string | null | undefined) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+/** "hace 5 min", "ayer", "hace 3 días"… y fecha larga a partir de una semana. */
+export function relativeTime(date: Date | string) {
+  const value = new Date(date);
+  const seconds = Math.round((Date.now() - value.getTime()) / 1000);
+
+  if (seconds < 60) return "justo ahora";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.round(hours / 24);
+  if (days === 1) return "ayer";
+  if (days < 7) return `hace ${days} días`;
+  return formatDate(value);
+}
+
 export function initials(name: string) {
   return name
     .split(/\s+/)

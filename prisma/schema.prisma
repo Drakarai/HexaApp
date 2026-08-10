@@ -25,6 +25,8 @@ model User {
   avatarColor  String   @default("#6366f1")
   // Foto de perfil: URL externa o imagen subida (data URL ya redimensionada)
   avatarImage  String?
+  // Tema de color elegido, uno por juego principal. Ver src/lib/themes.ts
+  theme        String   @default("hexa")
   createdAt    DateTime @default(now())
 
   participations Participant[]

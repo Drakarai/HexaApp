@@ -16,6 +16,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 ];
 
 const SECONDARY_ITEMS: NavItem[] = [
+  { href: "/actividad", label: "Actividad", icon: "📰" },
   { href: "/reglas", label: "Reglas", icon: "📜" },
   { href: "/level-caps", label: "Level caps", icon: "🎯" },
   { href: "/jornadas", label: "Jornadas", icon: "⚔️" },

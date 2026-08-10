@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword, requireUser } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
 import { sanitizeImageValue } from "@/lib/image";
+import { getTheme, isThemeId } from "@/lib/themes";
 
 export type FormState = { error?: string; success?: string } | null;
 
@@ -63,6 +64,19 @@ export async function changeMyPasswordAction(
   });
 
   return { success: "Contraseña actualizada." };
+}
+
+export async function updateMyThemeAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const me = await requireUser();
+  const theme = String(formData.get("theme") ?? "");
+
+  if (!isThemeId(theme)) return { error: "Ese tema no existe." };
+
+  await prisma.user.update({ where: { id: me.id }, data: { theme } });
+  return { success: `Tema cambiado a ${getTheme(theme).name}.` };
 }
 
 export async function updateMyProfileAction(
