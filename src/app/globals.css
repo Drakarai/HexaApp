@@ -21,6 +21,23 @@
   --glow-b: rgba(16, 185, 129, 0.12);
 }
 
+/* En un monitor la interfaz se quedaba pequeña. Como las medidas de Tailwind
+   van en rem, subir la base escala de golpe texto, espaciados y esquinas sin
+   tocar ni una clase. Las media queries siguen midiendo en los 16px de
+   siempre, así que los puntos de ruptura no se mueven. En móvil no se toca:
+   ahí el tamaño ya era el bueno. */
+@media (min-width: 1024px) {
+  :root {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1536px) {
+  :root {
+    font-size: 18px;
+  }
+}
+
 /* Por defecto un ítem de rejilla se niega a encoger por debajo de su contenido
    (min-width: auto), lo que en móvil provocaba scroll horizontal en toda la
    página. Con esto el contenido ancho se ajusta o se desplaza dentro de su

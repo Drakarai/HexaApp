@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (votación del MVP por entrenador).
+Última actualización: 10 de agosto de 2026 (escala en PC y nombres en móvil).
 
 ---
 
@@ -279,7 +279,12 @@ Piezas con truco:
   componente para que cambien a la vez.
 - `globals.css` — las clases propias son `@utility` (Tailwind 4 no deja
   componerlas con `@apply` de otro modo), y hay una regla `.grid > * {
-  min-width: 0 }` que evita el scroll horizontal en móvil.
+  min-width: 0 }` que evita el scroll horizontal en móvil. También sube la
+  base de `rem` a 17px desde 1024px y a 18px desde 1536px: en un monitor la
+  interfaz se quedaba pequeña, y como las medidas de Tailwind van en rem, eso
+  escala texto, espaciados y esquinas de golpe sin tocar ninguna clase. Los
+  puntos de ruptura no se mueven, porque las media queries siempre miden con
+  los 16px iniciales.
 
 ---
 

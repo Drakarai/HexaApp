@@ -156,15 +156,22 @@ export default async function MatchdaysPage() {
                         key={match.id}
                         className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5"
                       >
-                        <div className="flex flex-wrap items-center gap-3">
-                          <div className="flex min-w-0 flex-1 items-center gap-2">
+                        {/* En móvil los datos del combate bajan a su propia
+                            línea: si comparten fila con los nombres, estos se
+                            quedan sin sitio y se cortan a una letra. */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          {/* En pantallas muy estrechas los dos nombres pasan
+                              a dos líneas antes que recortarse */}
+                          <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
                             <PlayerChip
                               name={match.participantA.displayName}
                               color={match.participantA.color}
                               image={match.participantA.user.avatarImage}
                               winner={match.winnerId === match.participantAId}
                             />
-                            <span className="text-xs text-slate-500">vs</span>
+                            <span className="shrink-0 text-xs text-slate-500">
+                              vs
+                            </span>
                             <PlayerChip
                               name={match.participantB.displayName}
                               color={match.participantB.color}
@@ -172,7 +179,7 @@ export default async function MatchdaysPage() {
                               winner={match.winnerId === match.participantBId}
                             />
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-slate-500">
+                          <div className="flex w-full items-center gap-2 text-xs text-slate-500 sm:w-auto">
                             {match.pokemonDiff !== null ? (
                               <span className="chip">
                                 dif. {match.pokemonDiff}
