@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   createLevelCapAction,
   updateLevelCapAction,
 } from "@/app/actions/level-caps";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { ImageInput } from "@/components/image-input";
+import { IMAGE_SIZES } from "@/lib/image";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 
 const KINDS = Object.entries(LEVEL_CAP_KIND_LABELS);
@@ -16,6 +18,17 @@ export function NewLevelCapForm({ competitionId }: { competitionId: string }) {
     createLevelCapAction,
     null,
   );
+  const formRef = useRef<HTMLFormElement>(null);
+  // Reinicia el selector de imagen tras guardar, para que no se quede la
+  // medalla del level cap anterior
+  const [resetKey, setResetKey] = useState(0);
+
+  useEffect(() => {
+    if (state?.success) {
+      formRef.current?.reset();
+      setResetKey((key) => key + 1);
+    }
+  }, [state]);
 
   return (
     <details className="card group">
@@ -23,7 +36,7 @@ export function NewLevelCapForm({ competitionId }: { competitionId: string }) {
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
         Añadir level cap
       </summary>
-      <form action={formAction} className="mt-4 space-y-3">
+      <form ref={formRef} action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="competitionId" value={competitionId} />
         <div className="grid gap-3 sm:grid-cols-4">
           <div className="sm:col-span-2">
@@ -62,6 +75,13 @@ export function NewLevelCapForm({ competitionId }: { competitionId: string }) {
             <input name="notes" className="input" />
           </div>
         </div>
+        <ImageInput
+          key={resetKey}
+          name="image"
+          label="Medalla o líder"
+          maxSize={IMAGE_SIZES.badge}
+          hint="Se ve grande junto al nivel, y de fondo difuminado en la tarjeta."
+        />
         <FormMessage state={state} />
         <SubmitButton>Añadir</SubmitButton>
       </form>
@@ -79,6 +99,7 @@ export function EditLevelCapForm({
     kind: string;
     badge: string | null;
     notes: string | null;
+    image: string | null;
   };
 }) {
   const [open, setOpen] = useState(false);
@@ -141,6 +162,13 @@ export function EditLevelCapForm({
           <input name="notes" className="input" defaultValue={levelCap.notes ?? ""} />
         </div>
       </div>
+      <ImageInput
+        name="image"
+        label="Medalla o líder"
+        defaultValue={levelCap.image}
+        maxSize={IMAGE_SIZES.badge}
+        hint="Se ve grande junto al nivel, y de fondo difuminado en la tarjeta."
+      />
       <div className="flex gap-2">
         <SubmitButton>Guardar</SubmitButton>
         <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>

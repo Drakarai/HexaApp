@@ -129,6 +129,8 @@ model LevelCap {
   kind          String  @default("GYM")
   badge         String?
   notes         String?
+  // Medalla o retrato del líder: URL o imagen subida (data URL redimensionada)
+  image         String?
   position      Int     @default(0)
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)

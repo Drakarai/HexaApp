@@ -6,6 +6,8 @@ export const IMAGE_SIZES = {
   detail: 720,
   /** Foto de perfil */
   avatar: 256,
+  /** Medalla o líder de un level cap */
+  badge: 320,
 } as const;
 
 /** Límite de lo que aceptamos guardar, para no inflar la base de datos. */

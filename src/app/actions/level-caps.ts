@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireUser, isAdmin } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
+import { sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
 
 export async function createLevelCapAction(
@@ -38,6 +39,7 @@ export async function createLevelCapAction(
       kind,
       badge: String(formData.get("badge") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      image: sanitizeImageValue(formData.get("image")),
       position: (last?.position ?? 0) + 1,
     },
   });
@@ -62,6 +64,7 @@ export async function updateLevelCapAction(formData: FormData) {
       kind: String(formData.get("kind") ?? levelCap.kind),
       badge: String(formData.get("badge") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      image: sanitizeImageValue(formData.get("image")),
     },
   });
 

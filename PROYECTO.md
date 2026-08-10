@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026.
+Última actualización: 10 de agosto de 2026 (medallas en los level caps).
 
 ---
 
@@ -34,7 +34,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas, últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio; cada jugador marca cuándo lo supera. |
+| **Level caps** | Nivel máximo por gimnasio, con la medalla o el líder en imagen; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. |
 | **Puntos** | Clasificación con desempates, ajustes ±1, con motivo, masivos, e historial. |
@@ -89,6 +89,10 @@ corregir un resultado no duplica puntos.
 **Las imágenes se guardan dentro de la base de datos** como data URL, ya
 reducidas en el navegador. Ventaja: copiar la base de datos es copiar la
 aplicación entera con sus fotos, sin ficheros sueltos ni servicios de terceros.
+Se usan en cuatro sitios: sprite y ficha de cada baja, foto de perfil, y medalla
+o líder de cada level cap. En este último, la imagen se ve en grande con el
+nivel como chapita encima, y de fondo difuminado en la tarjeta; sin imagen se
+mantiene el cuadrado con el número.
 
 **Imágenes automáticas del cementerio.** Buscarlas a mano era lo más lento de
 registrar una baja. Ahora se escribe la especie en español y se rellenan solas:
@@ -202,3 +206,4 @@ lugar de destruir datos, y hay que avisar antes.
    barra inferior, y guía de despliegue.
 4. **Instalación desde el navegador**: sin terminal, con pantalla de bienvenida.
 5. **Imágenes automáticas** del cementerio desde PokéAPI, con formas y shiny.
+6. **Medalla o líder** en cada level cap, y en la tarjeta de resumen del inicio.

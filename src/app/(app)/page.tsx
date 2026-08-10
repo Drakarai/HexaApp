@@ -86,6 +86,7 @@ export default async function DashboardPage() {
           value={currentCap ? String(currentCap.cap) : "—"}
           hint={currentCap?.label ?? "Sin level caps configurados"}
           href="/level-caps"
+          image={currentCap?.image}
         />
         <StatCard
           label="Jugadores"
@@ -264,17 +265,32 @@ function StatCard({
   value,
   hint,
   href,
+  image,
 }: {
   label: string;
   value: string;
   hint?: string;
   href: string;
+  /** Ilustración opcional, que se asoma al fondo de la tarjeta */
+  image?: string | null;
 }) {
   return (
     <Link
       href={href}
-      className="card-tight transition hover:border-brand-500/40 hover:bg-ink-850"
+      className="card-tight relative isolate overflow-hidden transition hover:border-brand-500/40 hover:bg-ink-850"
     >
+      {image ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -bottom-3 -right-3 -z-10 h-20 w-20 opacity-25 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]"
+          style={{
+            backgroundImage: `url(${JSON.stringify(image)})`,
+            backgroundSize: "contain",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "center",
+          }}
+        />
+      ) : null}
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 truncate text-2xl font-bold text-white">{value}</p>
       {hint ? <p className="mt-0.5 truncate text-xs text-slate-500">{hint}</p> : null}
