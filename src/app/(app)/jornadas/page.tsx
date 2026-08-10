@@ -3,8 +3,10 @@ import { requireUser, isAdmin } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
+  getMyParticipant,
   getParticipants,
 } from "@/lib/competition";
+import { getMvpStates } from "@/lib/mvp";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
@@ -14,7 +16,8 @@ import {
   deleteMatchdayAction,
 } from "@/app/actions/matchdays";
 import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
-import { MvpBadge, type MvpOwner } from "@/components/mvp-badge";
+import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
+import { MatchTeams, type TeamSide } from "@/components/match-team";
 
 export const metadata = { title: "Jornadas" };
 
@@ -23,14 +26,13 @@ export default async function MatchdaysPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, participants, matchdays] = await Promise.all([
+  const [canManage, myParticipant, participants, matchdays] = await Promise.all([
     canManageCompetition(competition.id, user),
+    getMyParticipant(competition.id, user.id),
     getParticipants(competition.id),
     prisma.matchday.findMany({
       where: { competitionId: competition.id },
       orderBy: { position: "asc" },
-      // La ilustración grande del MVP se pide solo al abrir su ficha
-      omit: { mvpDetailImage: true },
       include: {
         matches: {
           orderBy: { position: "asc" },
@@ -41,6 +43,8 @@ export default async function MatchdaysPage() {
             participantB: {
               include: { user: { select: { avatarImage: true } } },
             },
+            // Los sprites de caja son ligeros; la ilustración grande no viaja
+            team: { orderBy: { position: "asc" }, omit: { detailImage: true } },
           },
         },
       },
@@ -52,26 +56,26 @@ export default async function MatchdaysPage() {
     displayName: participant.displayName,
   }));
 
-  // Los dueños posibles del MVP, con lo justo para pintar la chapa
-  const mvpOwners: MvpOwner[] = participants.map((participant) => ({
-    participantId: participant.id,
-    displayName: participant.displayName,
-    color: participant.color,
-    avatarImage: participant.user.avatarImage,
-  }));
-  const ownersById = new Map(
-    mvpOwners.map((owner) => [owner.participantId, owner]),
+  const avatarByParticipant = new Map(
+    participants.map((participant) => [
+      participant.id,
+      participant.user.avatarImage,
+    ]),
   );
 
-  // Se pregunta aparte porque la ilustración grande no se trae con la lista
-  const withMvpArt = new Set(
-    (
-      await prisma.matchday.findMany({
-        where: { competitionId: competition.id, mvpDetailImage: { not: null } },
-        select: { id: true },
-      })
-    ).map((row) => row.id),
+  const mvpStates = await getMvpStates(
+    competition.id,
+    matchdays.map((matchday) => matchday.id),
+    myParticipant?.id ?? null,
   );
+
+  /** Añade la foto de perfil del dueño, que no viaja con el recuento */
+  const withAvatar = (
+    candidate: Omit<MvpCandidateView, "ownerAvatar">,
+  ): MvpCandidateView => ({
+    ...candidate,
+    ownerAvatar: avatarByParticipant.get(candidate.ownerId) ?? null,
+  });
 
   return (
     <>
@@ -91,6 +95,7 @@ export default async function MatchdaysPage() {
             const played = matchday.matches.filter((match) => match.winnerId).length;
             const complete =
               matchday.matches.length > 0 && played === matchday.matches.length;
+            const mvpState = mvpStates.get(matchday.id);
 
             return (
               <section
@@ -110,22 +115,25 @@ export default async function MatchdaysPage() {
                         {matchday.pointsForWin} pto/victoria
                       </p>
                     </div>
-                    <MvpBadge
-                      mvp={{
-                        matchdayId: matchday.id,
-                        matchdayLabel: matchday.label,
-                        species: matchday.mvpSpecies,
-                        nickname: matchday.mvpNickname,
-                        reason: matchday.mvpReason,
-                        image: matchday.mvpImage,
-                        hasDetailImage: withMvpArt.has(matchday.id),
-                        owner: matchday.mvpParticipantId
-                          ? (ownersById.get(matchday.mvpParticipantId) ?? null)
-                          : null,
-                        editable: canManage,
-                      }}
-                      participants={mvpOwners}
-                    />
+                    {mvpState ? (
+                      <MvpBadge
+                        mvp={{
+                          matchdayId: matchday.id,
+                          matchdayLabel: matchday.label,
+                          reason: matchday.mvpReason,
+                          candidates: mvpState.candidates.map(withAvatar),
+                          winner: mvpState.winner
+                            ? withAvatar(mvpState.winner)
+                            : null,
+                          tied: mvpState.tied.map(withAvatar),
+                          myVoteId: mvpState.myVoteId,
+                          votesCast: mvpState.votesCast,
+                          voterCount: mvpState.voterCount,
+                          canVote: Boolean(myParticipant),
+                          canManage,
+                        }}
+                      />
+                    ) : null}
                   </div>
                   {canManage ? (
                     <form action={deleteMatchdayAction}>
@@ -196,6 +204,15 @@ export default async function MatchdaysPage() {
                           </p>
                         ) : null}
 
+                        <MatchTeams
+                          matchId={match.id}
+                          canManage={canManage}
+                          sides={[
+                            teamSide(match.participantA, match.team),
+                            teamSide(match.participantB, match.team),
+                          ]}
+                        />
+
                         {canManage ? (
                           <MatchResultForm
                             match={{
@@ -240,6 +257,38 @@ export default async function MatchdaysPage() {
       ) : null}
     </>
   );
+}
+
+/** El lado de un combate: el jugador y los pokémon que sacó. */
+function teamSide(
+  participant: {
+    id: string;
+    displayName: string;
+    color: string;
+    user: { avatarImage: string | null };
+  },
+  team: {
+    id: string;
+    participantId: string;
+    species: string;
+    nickname: string | null;
+    boxImage: string | null;
+  }[],
+): TeamSide {
+  return {
+    participantId: participant.id,
+    displayName: participant.displayName,
+    color: participant.color,
+    avatarImage: participant.user.avatarImage,
+    team: team
+      .filter((pokemon) => pokemon.participantId === participant.id)
+      .map((pokemon) => ({
+        id: pokemon.id,
+        species: pokemon.species,
+        nickname: pokemon.nickname,
+        boxImage: pokemon.boxImage,
+      })),
+  };
 }
 
 function PlayerChip({

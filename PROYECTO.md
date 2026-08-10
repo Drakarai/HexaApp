@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (MVP de cada jornada).
+Última actualización: 10 de agosto de 2026 (equipos por combate y MVP votado).
 
 ---
 
@@ -36,7 +36,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
-| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Cada jornada tiene su MVP, con ficha propia. |
+| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador. El MVP de la jornada se vota entre todos. |
 | **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
@@ -146,14 +146,26 @@ pincharlo se abre su ficha con la ilustración grande, el mote y el motivo por e
 que es su as. **A propósito no aparece en las jornadas**: el usuario prefiere no
 perder el factor sorpresa antes de un combate.
 
-**Cada jornada tiene un MVP**, al lado de su nombre: sprite, mote y dueño, y al
-pincharlo su ficha con la ilustración grande y el porqué (opcional). Lo nombran
-los **administradores**, no cada jugador, porque es un premio de la organización
-como el resultado de un combate. Se guarda en la jornada, no en un combate
-concreto, porque premia la jornada entera, y con **copia propia de las
-imágenes**: así queda congelado aunque ese pokémon cambie de mote o muera
-después. Es la única cosa del as que sí aparece en jornadas, y no rompe la
-sorpresa porque se pone cuando la jornada ya está jugada.
+**Cada combate lleva el equipo de los dos jugadores**, debajo del
+emparejamiento, con los **sprites de caja de Pokémon HOME** (la ilustración
+oficial queda para la ficha del MVP, que es donde luce). Los apunta el
+administrador, como el resultado, con tope de 6 por jugador y combate. De cada
+pokémon se guardan **las dos imágenes**: el sprite para la lista y la
+ilustración por si gana la votación, y con copia propia, así que el equipo de
+una jornada no cambia aunque ese pokémon muera después.
+
+**El MVP de la jornada sale de una votación**, no lo elige nadie a dedo. Los
+candidatos son todos los pokémon que jugaron esa jornada, y vota cada jugador de
+la competición (uno por jornada; volver a votar cambia el voto en vez de sumar
+otro). Gana por **mayoría simple**: el más votado, aunque no pase de la mitad.
+El ganador **no se guarda**, se recalcula del recuento, para que no pueda quedar
+desincronizado si alguien cambia su voto o se borra un pokémon. Si hay empate
+arriba no hay MVP: o alguien mueve su voto, o un administrador desempata, y ese
+desempate solo vale **mientras el empate siga** — si los votos lo deshacen,
+manda la votación. Lo único que sí escribe un administrador es el porqué.
+
+Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
+se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
 
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
@@ -243,8 +255,12 @@ Piezas con truco:
   desempates; `assertCanActForParticipant()` centraliza los permisos.
 - `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
   Lo comparten el cementerio, el as, el hall de la fama y el MVP de jornada.
-- `components/mvp-badge.tsx` — la chapa del MVP y su ficha. Igual que la del as:
-  la ilustración grande no viaja con la lista, se pide al abrir la ficha.
+- `lib/mvp.ts` — el recuento de la votación al MVP: quién gana, si hay empate y
+  cuándo vale el desempate manual. Es la única fuente de verdad del MVP.
+- `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
+  que la del as: la ilustración grande no viaja con la lista, se pide al abrir.
+- `components/match-team.tsx` — los equipos bajo cada combate y el editor del
+  administrador.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
@@ -313,3 +329,5 @@ lugar de destruir datos, y hay que avisar antes.
 11. **Tickets de ruleta**, uno por ruleta: girar deja de ser cosa solo de
     administradores.
 12. **MVP de cada jornada**, con su pokémon, su dueño y su porqué.
+13. **Equipos por combate** y el MVP pasa a decidirse **por votación** entre
+    todos los pokémon que jugaron la jornada.

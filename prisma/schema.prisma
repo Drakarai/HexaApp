@@ -109,7 +109,8 @@ model Participant {
   finalsWon    FinalMatch[] @relation("FinalMatchWinner")
   hallOfFame   HallOfFameEntry[]
   tickets      RouletteTicket[]
-  mvpOf        Matchday[]   @relation("MatchdayMvp")
+  matchTeams   MatchPokemon[]
+  mvpVotes     MvpVote[]    @relation("MvpVoter")
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -267,21 +268,22 @@ model Matchday {
   // Puntos que se llevan los ganadores de esta jornada
   pointsForWin  Int       @default(1)
 
-  // MVP de la jornada: el pokémon que se lució, con su dueño. Se guarda en la
-  // jornada y no en un combate porque premia la jornada entera, y con copia
-  // propia de las imágenes igual que el as, para que quede congelado aunque
-  // luego ese pokémon cambie o muera.
-  mvpParticipantId String?
-  mvpSpecies       String?
-  mvpNickname      String?
-  /** Por qué fue el MVP. Opcional. */
-  mvpReason        String?
-  mvpImage         String?
-  mvpDetailImage   String?
+  /**
+   * Por qué el MVP es el MVP. Lo escribe un administrador; el pokémon en sí no
+   * se guarda aquí, sale de la votación.
+   */
+  mvpReason     String?
+  /**
+   * Solo se usa cuando la votación acaba empatada arriba: el administrador
+   * elige entre los empatados y ese desempate manda. Si luego los votos
+   * deshacen el empate, se ignora.
+   */
+  mvpTiebreakId String?
 
-  competition    Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  matches        Match[]
-  mvpParticipant Participant? @relation("MatchdayMvp", fields: [mvpParticipantId], references: [id], onDelete: SetNull)
+  competition Competition   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches     Match[]
+  mvpVotes    MvpVote[]
+  mvpTiebreak MatchPokemon? @relation("MatchdayTiebreak", fields: [mvpTiebreakId], references: [id], onDelete: SetNull)
 
   @@index([competitionId, position])
 }
@@ -302,8 +304,53 @@ model Match {
   participantA Participant @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
   participantB Participant @relation("MatchPlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
   winner       Participant? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  team         MatchPokemon[]
 
   @@index([matchdayId])
+}
+
+/**
+ * Un pokémon del equipo que un jugador sacó en un combate concreto. Los pone el
+ * administrador y son los candidatos a MVP de esa jornada.
+ */
+model MatchPokemon {
+  id            String  @id @default(cuid())
+  matchId       String
+  participantId String
+  species       String
+  nickname      String?
+  /** Sprite de caja de Pokémon HOME: es el que se ve en la lista del combate. */
+  boxImage      String?
+  /** Ilustración oficial. Solo se usa en la ficha si gana la votación de MVP. */
+  detailImage   String?
+  position      Int     @default(0)
+
+  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  votes       MvpVote[]
+  tiebreakOf  Matchday[]  @relation("MatchdayTiebreak")
+
+  @@index([matchId])
+  @@index([participantId])
+}
+
+/**
+ * Voto de un jugador al MVP de una jornada. Uno por jugador y jornada: volver a
+ * votar cambia el voto anterior en vez de sumar otro.
+ */
+model MvpVote {
+  id             String   @id @default(cuid())
+  matchdayId     String
+  voterId        String
+  matchPokemonId String
+  createdAt      DateTime @default(now())
+
+  matchday Matchday     @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+  voter    Participant  @relation("MvpVoter", fields: [voterId], references: [id], onDelete: Cascade)
+  pokemon  MatchPokemon @relation(fields: [matchPokemonId], references: [id], onDelete: Cascade)
+
+  @@unique([matchdayId, voterId])
+  @@index([matchPokemonId])
 }
 
 // ---------------------------------------------------------------------------
