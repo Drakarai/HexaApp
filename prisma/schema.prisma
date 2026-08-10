@@ -109,6 +109,7 @@ model Participant {
   finalsWon    FinalMatch[] @relation("FinalMatchWinner")
   hallOfFame   HallOfFameEntry[]
   tickets      RouletteTicket[]
+  mvpOf        Matchday[]   @relation("MatchdayMvp")
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -266,8 +267,21 @@ model Matchday {
   // Puntos que se llevan los ganadores de esta jornada
   pointsForWin  Int       @default(1)
 
-  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  matches     Match[]
+  // MVP de la jornada: el pokémon que se lució, con su dueño. Se guarda en la
+  // jornada y no en un combate porque premia la jornada entera, y con copia
+  // propia de las imágenes igual que el as, para que quede congelado aunque
+  // luego ese pokémon cambie o muera.
+  mvpParticipantId String?
+  mvpSpecies       String?
+  mvpNickname      String?
+  /** Por qué fue el MVP. Opcional. */
+  mvpReason        String?
+  mvpImage         String?
+  mvpDetailImage   String?
+
+  competition    Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches        Match[]
+  mvpParticipant Participant? @relation("MatchdayMvp", fields: [mvpParticipantId], references: [id], onDelete: SetNull)
 
   @@index([competitionId, position])
 }

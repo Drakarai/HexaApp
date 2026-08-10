@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (tickets por ruleta).
+Última actualización: 10 de agosto de 2026 (MVP de cada jornada).
 
 ---
 
@@ -36,7 +36,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
-| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. |
+| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Cada jornada tiene su MVP, con ficha propia. |
 | **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
@@ -146,6 +146,15 @@ pincharlo se abre su ficha con la ilustración grande, el mote y el motivo por e
 que es su as. **A propósito no aparece en las jornadas**: el usuario prefiere no
 perder el factor sorpresa antes de un combate.
 
+**Cada jornada tiene un MVP**, al lado de su nombre: sprite, mote y dueño, y al
+pincharlo su ficha con la ilustración grande y el porqué (opcional). Lo nombran
+los **administradores**, no cada jugador, porque es un premio de la organización
+como el resultado de un combate. Se guarda en la jornada, no en un combate
+concreto, porque premia la jornada entera, y con **copia propia de las
+imágenes**: así queda congelado aunque ese pokémon cambie de mote o muera
+después. Es la única cosa del as que sí aparece en jornadas, y no rompe la
+sorpresa porque se pone cuando la jornada ya está jugada.
+
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 `position: fixed` se posicionen respecto a la tarjeta en vez de a la pantalla:
@@ -233,6 +242,9 @@ Piezas con truco:
 - `lib/competition.ts` — `getStandings()` calcula la clasificación con sus
   desempates; `assertCanActForParticipant()` centraliza los permisos.
 - `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
+  Lo comparten el cementerio, el as, el hall de la fama y el MVP de jornada.
+- `components/mvp-badge.tsx` — la chapa del MVP y su ficha. Igual que la del as:
+  la ilustración grande no viaja con la lista, se pide al abrir la ficha.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
@@ -300,3 +312,4 @@ lugar de destruir datos, y hay que avisar antes.
 10. **Final Four** y **hall de la fama**, el cierre del locke.
 11. **Tickets de ruleta**, uno por ruleta: girar deja de ser cosa solo de
     administradores.
+12. **MVP de cada jornada**, con su pokémon, su dueño y su porqué.

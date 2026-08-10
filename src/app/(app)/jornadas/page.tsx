@@ -14,6 +14,7 @@ import {
   deleteMatchdayAction,
 } from "@/app/actions/matchdays";
 import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
+import { MvpBadge, type MvpOwner } from "@/components/mvp-badge";
 
 export const metadata = { title: "Jornadas" };
 
@@ -28,6 +29,8 @@ export default async function MatchdaysPage() {
     prisma.matchday.findMany({
       where: { competitionId: competition.id },
       orderBy: { position: "asc" },
+      // La ilustración grande del MVP se pide solo al abrir su ficha
+      omit: { mvpDetailImage: true },
       include: {
         matches: {
           orderBy: { position: "asc" },
@@ -48,6 +51,27 @@ export default async function MatchdaysPage() {
     id: participant.id,
     displayName: participant.displayName,
   }));
+
+  // Los dueños posibles del MVP, con lo justo para pintar la chapa
+  const mvpOwners: MvpOwner[] = participants.map((participant) => ({
+    participantId: participant.id,
+    displayName: participant.displayName,
+    color: participant.color,
+    avatarImage: participant.user.avatarImage,
+  }));
+  const ownersById = new Map(
+    mvpOwners.map((owner) => [owner.participantId, owner]),
+  );
+
+  // Se pregunta aparte porque la ilustración grande no se trae con la lista
+  const withMvpArt = new Set(
+    (
+      await prisma.matchday.findMany({
+        where: { competitionId: competition.id, mvpDetailImage: { not: null } },
+        select: { id: true },
+      })
+    ).map((row) => row.id),
+  );
 
   return (
     <>
@@ -77,13 +101,31 @@ export default async function MatchdaysPage() {
                 )}
               >
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <h2 className="section-title">{matchday.label}</h2>
-                    <p className="text-xs text-slate-500">
-                      {matchday.milestone ? `${matchday.milestone} · ` : ""}
-                      {played}/{matchday.matches.length} combates jugados ·{" "}
-                      {matchday.pointsForWin} pto/victoria
-                    </p>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    <div>
+                      <h2 className="section-title">{matchday.label}</h2>
+                      <p className="text-xs text-slate-500">
+                        {matchday.milestone ? `${matchday.milestone} · ` : ""}
+                        {played}/{matchday.matches.length} combates jugados ·{" "}
+                        {matchday.pointsForWin} pto/victoria
+                      </p>
+                    </div>
+                    <MvpBadge
+                      mvp={{
+                        matchdayId: matchday.id,
+                        matchdayLabel: matchday.label,
+                        species: matchday.mvpSpecies,
+                        nickname: matchday.mvpNickname,
+                        reason: matchday.mvpReason,
+                        image: matchday.mvpImage,
+                        hasDetailImage: withMvpArt.has(matchday.id),
+                        owner: matchday.mvpParticipantId
+                          ? (ownersById.get(matchday.mvpParticipantId) ?? null)
+                          : null,
+                        editable: canManage,
+                      }}
+                      participants={mvpOwners}
+                    />
                   </div>
                   {canManage ? (
                     <form action={deleteMatchdayAction}>
