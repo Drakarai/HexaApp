@@ -7,7 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (equipos como caja de 3x2 en PC).
+Última actualización: 10 de agosto de 2026 (las imágenes dejan de viajar
+dentro del HTML).
 
 ---
 
@@ -130,8 +131,10 @@ patrones de Spinda, las letras de Unown, Vivillon), que solo ensuciarían el
 desplegable. Las imágenes se descargan una vez y se guardan como copia propia.
 
 **La ilustración grande se carga aparte.** Al ponerse imagen automáticamente en
-todo, el listado del cementerio habría engordado sin control. La caja solo manda
-los sprites pequeños; cada ficha pide su ilustración al abrirse.
+todo, el listado del cementerio habría engordado sin control. Antes esto se
+hacía con una acción que pedía la ilustración al abrir cada ficha; desde que las
+imágenes se sirven por dirección ya no hace falta: la etiqueta `<img>` de la
+ficha se baja sola su archivo cuando toca, y esas acciones se han borrado.
 
 **Instalación sin terminal.** El despliegue exigía preparar la base de datos por
 línea de comandos, que es donde más se atascaba el usuario. Ahora el build
@@ -175,6 +178,31 @@ desplegar: cada jugador lleva al lado la suma de los suyos.
 
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
+
+**Las imágenes se guardan en la base de datos pero se sirven como archivos.**
+Esta fue la causa de que la aplicación se arrastrara según se iba llenando. Las
+fotos se guardan como data URL (base64) dentro de la base de datos, y al
+pintarlas se incrustaban en el HTML: un cementerio con 72 bajas mandaba **4,2 MB
+de HTML en cada visita**, sin poder guardarse en caché, y cada acción (votar,
+cambiar de página) volvía a mandarlo entero. Ahora la página lleva solo una
+dirección de unos 50 caracteres por imagen (`/api/imagen/...`) y el navegador se
+baja cada archivo aparte y lo guarda. El HTML de esa página bajó a 152 KB, y de
+9 KB una vez comprimido.
+
+Tres piezas lo sostienen:
+
+- **La firma en la dirección.** Cada dirección lleva `?v=` con un resumen del
+  contenido, que calcula PostgreSQL con `md5()`: por el cable vuelven 10
+  caracteres en vez de 44 KB. Como la dirección cambia si cambia la imagen, la
+  caché puede ser de un año sin riesgo de enseñar la vieja.
+- **Nada de imágenes por defecto.** El cliente de Prisma descarta las columnas
+  de imagen en todas las consultas (`omit` en `lib/db.ts`). Quien las necesita
+  las pide a mano. Así un descuido futuro sale como una imagen que no aparece,
+  no como una página de 4 MB otra vez.
+- **"No lo he tocado" es distinto de "quítalo".** Los formularios ya no llevan
+  dentro la imagen actual, así que mandan la marca `__igual__` cuando no se ha
+  cambiado nada; dejarlo vacío sigue significando borrarla. Sin esto, editar la
+  causa de una baja le habría borrado la foto.
 
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
@@ -264,6 +292,8 @@ Piezas con truco:
   desempates; `assertCanActForParticipant()` centraliza los permisos.
 - `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
   Lo comparten el cementerio, el as, el hall de la fama y el MVP de jornada.
+- `lib/imagenes.ts` y `lib/imagen-url.ts` — las direcciones de las imágenes y
+  sus firmas. `app/api/imagen/[...partes]/route.ts` es quien las sirve.
 - `lib/mvp.ts` — el recuento de la votación al MVP: quién gana, si hay empate y
   cuándo vale el desempate manual. Es la única fuente de verdad del MVP.
 - `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
@@ -351,3 +381,5 @@ lugar de destruir datos, y hay que avisar antes.
 12. **MVP de cada jornada**, con su pokémon, su dueño y su porqué.
 13. **Equipos por combate** y el MVP pasa a decidirse **por votación** entre
     todos los pokémon que jugaron la jornada.
+14. **Las imágenes dejan de viajar dentro del HTML** y se sirven como archivos
+    cacheables: era la razón de que todo fuera cada vez más lento.

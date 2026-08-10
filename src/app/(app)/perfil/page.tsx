@@ -1,6 +1,8 @@
 import { requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { AceBadge } from "@/components/ace-badge";
+import { firmaDeImagen } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
 import { logoutAction } from "@/app/actions/auth";
@@ -16,6 +18,22 @@ export default async function ProfilePage() {
   const myParticipant = competition
     ? await getMyParticipant(competition.id, user.id)
     : null;
+
+  // Direcciones de las imágenes del as, que ya no viajan dentro de la página
+  const miAs = myParticipant
+    ? {
+        image: urlDeImagen(
+          "as",
+          myParticipant.id,
+          await firmaDeImagen("as", myParticipant.id),
+        ),
+        detailImage: urlDeImagen(
+          "as-ficha",
+          myParticipant.id,
+          await firmaDeImagen("as-ficha", myParticipant.id),
+        ),
+      }
+    : { image: null, detailImage: null };
 
   return (
     <>
@@ -60,8 +78,8 @@ export default async function ProfilePage() {
               species: myParticipant.aceSpecies,
               nickname: myParticipant.aceNickname,
               reason: myParticipant.aceReason,
-              image: myParticipant.aceImage,
-              hasDetailImage: Boolean(myParticipant.aceDetailImage),
+              image: miAs.image,
+              detailImage: miAs.detailImage,
               editable: true,
             }}
           />

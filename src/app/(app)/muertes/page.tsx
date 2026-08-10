@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx, formatDate, toDateInputValue } from "@/lib/utils";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
 
@@ -42,26 +43,12 @@ export default async function DeathsPage({
     },
   };
 
-  const [deaths, withDetail, withAceArt, counts] = await Promise.all([
+  const [deaths, counts] = await Promise.all([
+    // Sin `include` del participante: los 6 jugadores ya están cargados arriba
+    // y repetirlos en cada baja multiplicaba el peso de la página
     prisma.death.findMany({
       where: deathsWhere,
       orderBy: [{ diedAt: "asc" }, { createdAt: "asc" }],
-      // La ilustración grande ni se lee aquí: se pide al abrir cada ficha
-      omit: { detailImage: true },
-      include: {
-        participant: {
-          omit: { aceDetailImage: true },
-          include: { user: { select: { avatarImage: true } } },
-        },
-      },
-    }),
-    prisma.death.findMany({
-      where: { ...deathsWhere, detailImage: { not: null } },
-      select: { id: true },
-    }),
-    prisma.participant.findMany({
-      where: { competitionId: competition.id, aceDetailImage: { not: null } },
-      select: { id: true },
     }),
     prisma.death.groupBy({
       by: ["participantId"],
@@ -70,12 +57,42 @@ export default async function DeathsPage({
     }),
   ]);
 
-  const detailIds = new Set(withDetail.map((death) => death.id));
-  const aceDetailIds = new Set(withAceArt.map((row) => row.id));
+  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
+  const ids = deaths.map((death) => death.id);
+  const [cajas, fichas, asesFicha] = await Promise.all([
+    urlsDeImagen("baja", ids),
+    urlsDeImagen("baja-ficha", ids),
+    urlsDeImagen(
+      "as-ficha",
+      participants.map((participante) => participante.id),
+    ),
+  ]);
+  const porId = new Map(participants.map((p) => [p.id, p]));
 
   const countFor = (participantId: string) =>
     counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
   const total = counts.reduce((sum, row) => sum + row._count._all, 0);
+
+  const esMio = (participantId: string) =>
+    canManage || porId.get(participantId)?.userId === user.id;
+
+  const fichaDeJugador = (participantId: string) => {
+    const jugador = porId.get(participantId)!;
+    return {
+      id: jugador.id,
+      displayName: jugador.displayName,
+      color: jugador.color,
+      avatarImage: jugador.user.avatarImage,
+      ace: {
+        species: jugador.aceSpecies,
+        nickname: jugador.aceNickname,
+        reason: jugador.aceReason,
+        image: jugador.aceImage,
+        detailImage: asesFicha(jugador.id),
+        editable: esMio(jugador.id),
+      },
+    };
+  };
 
   const boxDeaths: BoxDeath[] = deaths.map((death) => ({
     id: death.id,
@@ -85,25 +102,12 @@ export default async function DeathsPage({
     level: death.level,
     location: death.location,
     notes: death.notes,
-    boxImage: death.boxImage,
-    hasDetailImage: detailIds.has(death.id),
+    boxImage: cajas(death.id),
+    detailImage: fichas(death.id),
     diedAtLabel: formatDate(death.diedAt),
     diedAtInput: toDateInputValue(death.diedAt),
-    editable: canManage || death.participant.userId === user.id,
-    participant: {
-      id: death.participant.id,
-      displayName: death.participant.displayName,
-      color: death.participant.color,
-      avatarImage: death.participant.user.avatarImage,
-      ace: {
-        species: death.participant.aceSpecies,
-        nickname: death.participant.aceNickname,
-        reason: death.participant.aceReason,
-        image: death.participant.aceImage,
-        hasDetailImage: aceDetailIds.has(death.participant.id),
-        editable: canManage || death.participant.userId === user.id,
-      },
-    },
+    editable: esMio(death.participantId),
+    participant: fichaDeJugador(death.participantId),
   }));
 
   return (

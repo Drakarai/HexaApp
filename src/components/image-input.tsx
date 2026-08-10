@@ -1,13 +1,17 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { imageToDataUrl } from "@/lib/image";
+import { IMAGEN_SIN_CAMBIOS, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
 /**
  * Selector de imagen con dos vías: subir un archivo del ordenador (se
  * redimensiona en el navegador y se guarda dentro de la base de datos) o pegar
  * la URL de una imagen de internet. El valor final viaja en un input oculto.
+ *
+ * `defaultValue` es la **dirección** de la imagen que ya hay, solo para verla:
+ * mientras no se toque nada se manda la marca IMAGEN_SIN_CAMBIOS, para no
+ * reenviar esa dirección y borrar la imagen buena. Vaciarlo sí la borra.
  */
 export function ImageInput({
   name,
@@ -24,7 +28,11 @@ export function ImageInput({
   hint?: string;
   shape?: "square" | "circle";
 }) {
-  const [value, setValue] = useState(defaultValue ?? "");
+  // Vista previa de la que ya había; desaparece en cuanto se elige otra
+  const [previa, setPrevia] = useState(defaultValue ?? "");
+  const [value, setValue] = useState("");
+  const sinCambios = !value && Boolean(previa);
+  const mostrada = value || previa;
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -36,6 +44,7 @@ export function ImageInput({
     setError(null);
     try {
       setValue(await imageToDataUrl(file, maxSize));
+      setPrevia("");
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -54,11 +63,11 @@ export function ImageInput({
             shape === "circle" ? "rounded-full" : "rounded-xl",
           )}
         >
-          {value ? (
+          {mostrada ? (
             // Puede ser un data URL o un enlace externo, así que <img> normal
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={value}
+              src={mostrada}
               alt=""
               className="h-full w-full object-contain"
               onError={() => setError("No se pudo cargar esa imagen.")}
@@ -86,12 +95,13 @@ export function ImageInput({
               className="hidden"
               onChange={(event) => handleFile(event.target.files?.[0])}
             />
-            {value ? (
+            {mostrada ? (
               <button
                 type="button"
                 className="btn-ghost btn-sm"
                 onClick={() => {
                   setValue("");
+                  setPrevia("");
                   setError(null);
                 }}
               >
@@ -107,6 +117,7 @@ export function ImageInput({
             value={value.startsWith("data:") ? "" : value}
             onChange={(event) => {
               setValue(event.target.value);
+              setPrevia("");
               setError(null);
             }}
           />
@@ -121,7 +132,11 @@ export function ImageInput({
         </div>
       </div>
 
-      <input type="hidden" name={name} value={value} />
+      <input
+        type="hidden"
+        name={name}
+        value={sinCambios ? IMAGEN_SIN_CAMBIOS : value}
+      />
     </div>
   );
 }

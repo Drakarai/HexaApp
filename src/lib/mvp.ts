@@ -1,12 +1,14 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { urlsDeImagen } from "@/lib/imagenes";
 
 export type MvpCandidate = {
   id: string;
   species: string;
   nickname: string | null;
+  /** Direcciones, no imágenes: ver lib/imagen-url.ts */
   boxImage: string | null;
-  hasDetailImage: boolean;
+  detailImage: string | null;
   /** Sitio que ocupa en el equipo de su dueño */
   position: number;
   ownerId: string;
@@ -47,8 +49,6 @@ export async function getMvpStates(
   const [pokemon, votes, matchdays, voterCount] = await Promise.all([
     prisma.matchPokemon.findMany({
       where: { match: { matchdayId: { in: matchdayIds } } },
-      // La ilustración grande solo se pide al abrir la ficha del MVP
-      omit: { detailImage: true },
       orderBy: { position: "asc" },
       include: {
         match: { select: { matchdayId: true } },
@@ -67,17 +67,11 @@ export async function getMvpStates(
     prisma.participant.count({ where: { competitionId } }),
   ]);
 
-  const withArt = new Set(
-    (
-      await prisma.matchPokemon.findMany({
-        where: {
-          match: { matchdayId: { in: matchdayIds } },
-          detailImage: { not: null },
-        },
-        select: { id: true },
-      })
-    ).map((row) => row.id),
-  );
+  const ids = pokemon.map((row) => row.id);
+  const [sprites, ilustraciones] = await Promise.all([
+    urlsDeImagen("equipo", ids),
+    urlsDeImagen("equipo-ficha", ids),
+  ]);
 
   const myVotes = myParticipantId
     ? await prisma.mvpVote.findMany({
@@ -103,8 +97,8 @@ export async function getMvpStates(
       id: row.id,
       species: row.species,
       nickname: row.nickname,
-      boxImage: row.boxImage,
-      hasDetailImage: withArt.has(row.id),
+      boxImage: sprites(row.id),
+      detailImage: ilustraciones(row.id),
       position: row.position,
       ownerId: row.participantId,
       ownerName: row.participant.displayName,

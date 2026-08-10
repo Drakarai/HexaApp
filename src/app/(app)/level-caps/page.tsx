@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
-import { effectiveImages } from "@/lib/image";
+import { urlsDeMedallas } from "@/lib/imagenes";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
 import {
@@ -41,6 +41,9 @@ export default async function LevelCapsPage() {
     ),
   );
 
+  // Direcciones de las medallas: ver lib/imagen-url.ts
+  const medallas = await urlsDeMedallas(levelCaps.map((cap) => cap.id));
+
   return (
     <>
       <PageHeader
@@ -59,7 +62,7 @@ export default async function LevelCapsPage() {
             const clearedCount = levelCap.clears.length;
             const allCleared =
               participants.length > 0 && clearedCount === participants.length;
-            const images = effectiveImages(levelCap);
+            const images = medallas(levelCap.id);
 
             return (
               <article

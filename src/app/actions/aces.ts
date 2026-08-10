@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { sanitizeImageValue } from "@/lib/image";
+import { imagenEditada } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -31,8 +31,9 @@ export async function updateAceAction(
       aceSpecies: species,
       aceNickname: String(formData.get("nickname") ?? "").trim() || null,
       aceReason: String(formData.get("reason") ?? "").trim() || null,
-      aceImage: sanitizeImageValue(formData.get("boxImage")),
-      aceDetailImage: sanitizeImageValue(formData.get("detailImage")),
+      // Vacío = no se eligió especie nueva, así que se dejan las de antes
+      aceImage: imagenEditada(formData.get("boxImage")),
+      aceDetailImage: imagenEditada(formData.get("detailImage")),
     },
   });
 
@@ -58,12 +59,3 @@ export async function clearAceAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
-/** La ilustración grande solo se pide al abrir la ficha del as. */
-export async function getAceDetailImageAction(participantId: string) {
-  await requireUser();
-  const participant = await prisma.participant.findUnique({
-    where: { id: participantId },
-    select: { aceDetailImage: true },
-  });
-  return participant?.aceDetailImage ?? null;
-}

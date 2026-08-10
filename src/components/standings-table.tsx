@@ -72,7 +72,7 @@ export function StandingsTable({
                       nickname: row.ace.nickname,
                       reason: row.ace.reason,
                       image: row.ace.image,
-                      hasDetailImage: row.ace.hasDetailImage,
+                      detailImage: row.ace.detailImage,
                       editable: editableParticipantIds.includes(
                         row.participantId,
                       ),

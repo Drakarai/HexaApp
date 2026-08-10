@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { urlsDeImagen } from "@/lib/imagenes";
 
 export type ActivityEntry = {
   id: string;
@@ -32,10 +33,9 @@ export async function getActivity(competitionId: string, limit = 60) {
       where: { participant: { competitionId } },
       orderBy: { diedAt: "desc" },
       take,
-      omit: { detailImage: true },
       include: {
         participant: {
-          include: { user: { select: { avatarImage: true } } },
+          include: { user: { select: { id: true } } },
         },
       },
     }),
@@ -45,7 +45,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
       include: {
         participant: {
-          include: { user: { select: { avatarImage: true } } },
+          include: { user: { select: { id: true } } },
         },
       },
     }),
@@ -56,7 +56,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       include: {
         levelCap: { select: { label: true, cap: true } },
         participant: {
-          include: { user: { select: { avatarImage: true } } },
+          include: { user: { select: { id: true } } },
         },
       },
     }),
@@ -66,7 +66,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
       include: {
         roulette: { select: { name: true } },
-        spunBy: { select: { displayName: true, avatarImage: true } },
+        spunBy: { select: { id: true, displayName: true } },
       },
     }),
     prisma.rouletteTicket.findMany({
@@ -76,7 +76,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
       include: {
         participant: {
-          include: { user: { select: { avatarImage: true } } },
+          include: { user: { select: { id: true } } },
         },
       },
     }),
@@ -89,10 +89,29 @@ export async function getActivity(competitionId: string, limit = 60) {
         participantA: true,
         participantB: true,
         winner: {
-          include: { user: { select: { avatarImage: true } } },
+          include: { user: { select: { id: true } } },
         },
       },
     }),
+  ]);
+
+  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts. Antes
+  // el muro incrustaba el sprite de cada baja y la foto de cada jugador.
+  const usuarios = [
+    ...deaths.map((death) => death.participant.userId),
+    ...points.map((punto) => punto.participant.userId),
+    ...clears.map((clear) => clear.participant.userId),
+    ...spins.flatMap((spin) => (spin.spunById ? [spin.spunById] : [])),
+    ...tickets.map((ticket) => ticket.participant.userId),
+    ...matches.flatMap((match) => (match.winner ? [match.winner.userId] : [])),
+  ];
+
+  const [avatares, sprites] = await Promise.all([
+    urlsDeImagen("avatar", usuarios),
+    urlsDeImagen(
+      "baja",
+      deaths.map((death) => death.id),
+    ),
   ]);
 
   const entries: ActivityEntry[] = [];
@@ -107,9 +126,9 @@ export async function getActivity(competitionId: string, limit = 60) {
       detail: [death.nickname ? death.species : null, death.cause]
         .filter(Boolean)
         .join(" · "),
-      image: death.boxImage,
+      image: sprites(death.id),
       who: death.participant.displayName,
-      whoImage: death.participant.user.avatarImage,
+      whoImage: avatares(death.participant.userId),
     });
   }
 
@@ -124,7 +143,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${entry.participant.displayName} ${entry.delta > 0 ? "gana" : "pierde"} ${Math.abs(entry.delta)} ${Math.abs(entry.delta) === 1 ? "punto" : "puntos"}`,
       detail: entry.reason,
       who: entry.participant.displayName,
-      whoImage: entry.participant.user.avatarImage,
+      whoImage: avatares(entry.participant.userId),
     });
   }
 
@@ -137,7 +156,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${clear.participant.displayName} ha superado a ${clear.levelCap.label}`,
       detail: `Level cap ${clear.levelCap.cap}`,
       who: clear.participant.displayName,
-      whoImage: clear.participant.user.avatarImage,
+      whoImage: avatares(clear.participant.userId),
     });
   }
 
@@ -152,7 +171,7 @@ export async function getActivity(competitionId: string, limit = 60) {
         .filter(Boolean)
         .join(" · "),
       who: spin.spunBy?.displayName,
-      whoImage: spin.spunBy?.avatarImage,
+      whoImage: spin.spunById ? avatares(spin.spunById) : null,
     });
   }
 
@@ -165,7 +184,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${ticket.participant.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
       detail: ticket.reason ?? undefined,
       who: ticket.participant.displayName,
-      whoImage: ticket.participant.user.avatarImage,
+      whoImage: avatares(ticket.participant.userId),
     });
   }
 
@@ -190,7 +209,7 @@ export async function getActivity(competitionId: string, limit = 60) {
         .filter(Boolean)
         .join(" · "),
       who: match.winner.displayName,
-      whoImage: match.winner.user.avatarImage,
+      whoImage: avatares(match.winner.userId),
     });
   }
 

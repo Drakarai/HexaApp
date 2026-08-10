@@ -73,3 +73,27 @@ export function sanitizeImageValue(raw: FormDataEntryValue | null) {
   if (!value) return null;
   return isValidImageValue(value) ? value : null;
 }
+
+/**
+ * Marca de "esta imagen no se ha tocado".
+ *
+ * Los formularios de edición ya no llevan dentro la imagen actual, solo su
+ * dirección para la vista previa; reenviar esa dirección la borraría. Así que
+ * mandan esta marca cuando no se ha cambiado nada, y hay que distinguirla de
+ * venir vacío, que sí significa "quítala".
+ */
+export const IMAGEN_SIN_CAMBIOS = "__igual__";
+
+/**
+ * Lo que hay que guardar según lo que mande un formulario de edición:
+ * `undefined` es "no toques esa columna" en Prisma, y null es "bórrala".
+ */
+export function imagenEditada(
+  raw: FormDataEntryValue | null,
+): string | null | undefined {
+  const value = String(raw ?? "").trim();
+  if (value === IMAGEN_SIN_CAMBIOS) return undefined;
+  if (!value) return null;
+  // Una dirección de nuestra propia ruta no es una imagen: no se guarda
+  return isValidImageValue(value) ? value : undefined;
+}

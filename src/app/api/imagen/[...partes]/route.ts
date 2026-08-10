@@ -1,0 +1,88 @@
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
+import { FUENTES, type TipoConsultable } from "@/lib/imagenes";
+import { effectiveImages } from "@/lib/image";
+
+/**
+ * Sirve una imagen guardada en la base de datos como un archivo de verdad.
+ *
+ * Antes cada imagen viajaba incrustada en el HTML en base64: una página del
+ * cementerio eran megas de texto en cada visita, sin poder guardarse en caché.
+ * Ahora el HTML lleva solo la dirección y el navegador se baja cada imagen una
+ * vez. La dirección incluye una firma del contenido (`?v=`), así que se puede
+ * cachear para siempre: si la imagen cambia, cambia la dirección.
+ */
+
+/** Un año. Vale porque la dirección cambia si cambia la imagen. */
+const CACHE = "private, max-age=31536000, immutable";
+
+function respuestaDeImagen(valor: string) {
+  // Enlace a una imagen de fuera: no hay nada que servir, se redirige
+  if (/^https?:\/\//.test(valor)) {
+    return NextResponse.redirect(valor, 307);
+  }
+
+  const coincide = /^data:([^;,]+);base64,(.*)$/s.exec(valor);
+  if (!coincide) return new NextResponse("Imagen no válida", { status: 415 });
+
+  const [, tipoMime, base64] = coincide;
+  const bytes = Buffer.from(base64, "base64");
+
+  return new NextResponse(new Uint8Array(bytes), {
+    headers: {
+      "Content-Type": tipoMime,
+      "Content-Length": String(bytes.length),
+      "Cache-Control": CACHE,
+    },
+  });
+}
+
+async function buscarValor(
+  tipo: string,
+  id: string,
+  indice: string | undefined,
+): Promise<string | null> {
+  if (tipo === "medalla") {
+    const cap = await prisma.levelCap.findUnique({
+      where: { id },
+      select: { images: true, image: true },
+    });
+    if (!cap) return null;
+    const lista = effectiveImages(cap);
+    return lista[Number(indice ?? 0)] ?? null;
+  }
+
+  const fuente = FUENTES[tipo as TipoConsultable];
+  if (!fuente) return null;
+
+  // El modelo de Prisma es el nombre de la tabla con la primera en minúscula
+  const modelo = (fuente.tabla.charAt(0).toLowerCase() +
+    fuente.tabla.slice(1)) as "user";
+  const fila = (await (prisma[modelo] as {
+    findUnique: (args: unknown) => Promise<Record<string, string | null> | null>;
+  }).findUnique({
+    where: { id },
+    select: { [fuente.columna]: true },
+  })) as Record<string, string | null> | null;
+
+  return fila?.[fuente.columna] ?? null;
+}
+
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ partes: string[] }> },
+) {
+  // Las imágenes son de una competición privada: hay que tener sesión
+  const usuario = await getCurrentUser();
+  if (!usuario) return new NextResponse("No autorizado", { status: 401 });
+
+  const { partes } = await params;
+  const [tipo, id, indice] = partes;
+  if (!tipo || !id) return new NextResponse("No encontrada", { status: 404 });
+
+  const valor = await buscarValor(tipo, id, indice);
+  if (!valor) return new NextResponse("No encontrada", { status: 404 });
+
+  return respuestaDeImagen(valor);
+}

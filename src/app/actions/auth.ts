@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword, requireUser } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
-import { sanitizeImageValue } from "@/lib/image";
+import { imagenEditada } from "@/lib/image";
 import { getTheme, isThemeId } from "@/lib/themes";
 
 export type FormState = { error?: string; success?: string } | null;
@@ -93,7 +93,7 @@ export async function updateMyProfileAction(
     where: { id: me.id },
     data: {
       displayName,
-      avatarImage: sanitizeImageValue(formData.get("avatarImage")),
+      avatarImage: imagenEditada(formData.get("avatarImage")),
       ...(/^#[0-9a-fA-F]{6}$/.test(avatarColor) ? { avatarColor } : {}),
     },
   });

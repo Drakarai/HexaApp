@@ -1,13 +1,18 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { imageToDataUrl } from "@/lib/image";
+import { IMAGEN_SIN_CAMBIOS, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
 /**
  * Lista ordenada de imágenes. Cada una se sube del ordenador o se pega como
  * enlace, igual que en el selector de una sola. Si hay más de una, en la
  * pantalla se irán alternando con un fundido.
+ *
+ * `defaultValues` son las **direcciones** de las que ya hay, solo para verlas.
+ * Cada una viaja de vuelta como "__igual__:N", donde N es el sitio que ocupaba
+ * al abrir el formulario: así se pueden reordenar y quitar sin tener que
+ * mandar las imágenes enteras otra vez.
  */
 export function ImageListInput({
   name,
@@ -24,7 +29,14 @@ export function ImageListInput({
   hint?: string;
   max?: number;
 }) {
-  const [values, setValues] = useState<string[]>(defaultValues);
+  // `vista` es lo que se enseña; `enviar`, lo que va al servidor
+  type Imagen = { vista: string; enviar: string };
+  const [values, setValues] = useState<Imagen[]>(() =>
+    defaultValues.map((vista, index) => ({
+      vista,
+      enviar: `${IMAGEN_SIN_CAMBIOS}:${index}`,
+    })),
+  );
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -39,9 +51,10 @@ export function ImageListInput({
     setError(null);
     try {
       const hueco = max - values.length;
-      const nuevas: string[] = [];
+      const nuevas: Imagen[] = [];
       for (const file of Array.from(files).slice(0, hueco)) {
-        nuevas.push(await imageToDataUrl(file, maxSize));
+        const dataUrl = await imageToDataUrl(file, maxSize);
+        nuevas.push({ vista: dataUrl, enviar: dataUrl });
       }
       setValues((current) => [...current, ...nuevas]);
     } catch (err) {
@@ -70,12 +83,16 @@ export function ImageListInput({
         <ul className="mb-3 flex flex-wrap gap-2">
           {values.map((image, index) => (
             <li
-              key={`${index}-${image.slice(-16)}`}
+              key={`${index}-${image.enviar.slice(-16)}`}
               className="rounded-xl border border-white/10 bg-ink-850 p-1.5"
             >
               <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={image} alt="" className="h-full w-full object-contain" />
+                <img
+                  src={image.vista}
+                  alt=""
+                  className="h-full w-full object-contain"
+                />
               </div>
               <div className="mt-1 flex items-center justify-between gap-0.5">
                 <button
@@ -144,7 +161,10 @@ export function ImageListInput({
             if (event.key !== "Enter") return;
             event.preventDefault();
             if (!url.trim()) return;
-            setValues((current) => [...current, url.trim()]);
+            setValues((current) => [
+              ...current,
+              { vista: url.trim(), enviar: url.trim() },
+            ]);
             setUrl("");
           }}
         />
@@ -153,7 +173,10 @@ export function ImageListInput({
           className="btn-ghost btn-sm"
           disabled={!url.trim() || full}
           onClick={() => {
-            setValues((current) => [...current, url.trim()]);
+            setValues((current) => [
+              ...current,
+              { vista: url.trim(), enviar: url.trim() },
+            ]);
             setUrl("");
           }}
         >
@@ -171,7 +194,7 @@ export function ImageListInput({
       {error ? <p className="mt-1 text-xs text-red-300">{error}</p> : null}
 
       {values.map((image, index) => (
-        <input key={index} type="hidden" name={name} value={image} />
+        <input key={index} type="hidden" name={name} value={image.enviar} />
       ))}
     </div>
   );

@@ -2,11 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import {
-  clearAceAction,
-  getAceDetailImageAction,
-  updateAceAction,
-} from "@/app/actions/aces";
+import { clearAceAction, updateAceAction } from "@/app/actions/aces";
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
@@ -19,8 +15,9 @@ export type AceInfo = {
   species: string | null;
   nickname: string | null;
   reason: string | null;
+  /** Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts */
   image: string | null;
-  hasDetailImage: boolean;
+  detailImage: string | null;
   /** Si el que mira puede cambiarlo (su dueño o un administrador) */
   editable: boolean;
 };
@@ -85,7 +82,6 @@ export function AceBadge({
 
 function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
   const [editing, setEditing] = useState(!ace.species);
-  const [detailImage, setDetailImage] = useState<string | null>(null);
   const [state, formAction] = useActionState<FormState, FormData>(
     updateAceAction,
     null,
@@ -94,17 +90,6 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
   useEffect(() => {
     if (state?.success) setEditing(false);
   }, [state]);
-
-  useEffect(() => {
-    let cancelled = false;
-    if (!ace.hasDetailImage) return;
-    getAceDetailImageAction(ace.participantId).then((image) => {
-      if (!cancelled) setDetailImage(image);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ace.participantId, ace.hasDetailImage]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -151,10 +136,10 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
               className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5"
               style={{ background: `${ace.color}14` }}
             >
-              {detailImage ?? ace.image ? (
+              {ace.detailImage ?? ace.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
-                  src={detailImage ?? ace.image ?? ""}
+                  src={ace.detailImage ?? ace.image ?? ""}
                   alt={ace.species}
                   className="h-full w-full object-contain p-2"
                 />
@@ -209,7 +194,7 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
             <SpeciesPicker
               defaultSpecies={ace.species ?? ""}
               defaultBoxImage={ace.image}
-              defaultDetailImage={detailImage}
+              defaultDetailImage={ace.detailImage}
             />
 
             <div>

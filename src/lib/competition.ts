@@ -3,6 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { COMPETITION_STATUS } from "@/lib/constants";
 
 export const COMPETITION_COOKIE = "hexaapp_competition";
@@ -19,8 +20,9 @@ export type StandingRow = {
     species: string | null;
     nickname: string | null;
     reason: string | null;
+    /** Direcciones, no imágenes: ver lib/imagen-url.ts */
     image: string | null;
-    hasDetailImage: boolean;
+    detailImage: string | null;
   };
   points: number;
   deaths: number;
@@ -62,18 +64,37 @@ export const listCompetitions = cache(async () =>
   }),
 );
 
-export const getParticipants = cache(async (competitionId: string) =>
-  prisma.participant.findMany({
+/**
+ * Participantes con las **direcciones** de sus imágenes, no las imágenes: los
+ * bytes se quedan en la base de datos y el navegador se los pide aparte una
+ * sola vez. Ver lib/imagen-url.ts.
+ */
+export const getParticipants = cache(async (competitionId: string) => {
+  const participantes = await prisma.participant.findMany({
     where: { competitionId },
     orderBy: { displayName: "asc" },
-    omit: { aceDetailImage: true },
     include: {
-      user: {
-        select: { id: true, username: true, role: true, avatarImage: true },
-      },
+      user: { select: { id: true, username: true, role: true } },
     },
-  }),
-);
+  });
+
+  const [avatares, ases] = await Promise.all([
+    urlsDeImagen(
+      "avatar",
+      participantes.map((p) => p.userId),
+    ),
+    urlsDeImagen(
+      "as",
+      participantes.map((p) => p.id),
+    ),
+  ]);
+
+  return participantes.map((participante) => ({
+    ...participante,
+    aceImage: ases(participante.id),
+    user: { ...participante.user, avatarImage: avatares(participante.userId) },
+  }));
+});
 
 /**
  * Participante del usuario actual dentro de una competición (null si sólo mira).
@@ -172,17 +193,8 @@ export async function getStandings(
   });
   const startingPoints = competition?.startingPoints ?? 0;
 
-  const [participants, withAceArt, pointSums, deathCounts, matches] = await Promise.all([
-    prisma.participant.findMany({
-      where: { competitionId },
-      // La ilustración grande del as se pide solo al abrir su ficha
-      omit: { aceDetailImage: true },
-      include: { user: { select: { avatarImage: true } } },
-    }),
-    prisma.participant.findMany({
-      where: { competitionId, aceDetailImage: { not: null } },
-      select: { id: true },
-    }),
+  const [participants, pointSums, deathCounts, matches] = await Promise.all([
+    getParticipants(competitionId),
     prisma.pointEntry.groupBy({
       by: ["participantId"],
       where: { competitionId },
@@ -204,7 +216,11 @@ export async function getStandings(
     }),
   ]);
 
-  const aceDetailIds = new Set(withAceArt.map((row) => row.id));
+  // La ilustración grande del as: solo su dirección, se baja al abrir la ficha
+  const aceArt = await urlsDeImagen(
+    "as-ficha",
+    participants.map((participant) => participant.id),
+  );
 
   const deltaByParticipant = new Map(
     pointSums.map((row) => [row.participantId, row._sum.delta ?? 0]),
@@ -259,7 +275,7 @@ export async function getStandings(
         nickname: participant.aceNickname,
         reason: participant.aceReason,
         image: participant.aceImage,
-        hasDetailImage: aceDetailIds.has(participant.id),
+        detailImage: aceArt(participant.id),
       },
       points: startingPoints + (deltaByParticipant.get(participant.id) ?? 0),
       deaths: deathsByParticipant.get(participant.id) ?? 0,

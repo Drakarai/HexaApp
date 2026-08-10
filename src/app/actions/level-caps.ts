@@ -5,17 +5,44 @@ import { prisma } from "@/lib/db";
 import { requireUser, isAdmin } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
-import { sanitizeImageValue } from "@/lib/image";
+import {
+  IMAGEN_SIN_CAMBIOS,
+  effectiveImages,
+  sanitizeImageValue,
+} from "@/lib/image";
 
-/** Lista de imágenes válidas que llega del formulario, sin huecos ni basura. */
-function readImages(formData: FormData) {
+import type { FormState } from "@/app/actions/auth";
+
+/**
+ * Lista de imágenes válidas que llega del formulario, sin huecos ni basura.
+ *
+ * Las que ya estaban guardadas no vuelven a viajar enteras: llegan como
+ * "__igual__:N", donde N es el sitio que ocupaban al abrir el formulario, y
+ * aquí se cambian por la imagen de verdad. Así se pueden reordenar o quitar
+ * sin mandar megas de base64 de ida y vuelta.
+ */
+function readImages(formData: FormData, anteriores: string[] = []) {
   return formData
     .getAll("images")
-    .map((value) => sanitizeImageValue(value))
+    .map((value) => {
+      const texto = String(value ?? "").trim();
+      if (texto.startsWith(`${IMAGEN_SIN_CAMBIOS}:`)) {
+        return anteriores[Number(texto.split(":")[1])] ?? null;
+      }
+      return sanitizeImageValue(texto);
+    })
     .filter((value): value is string => Boolean(value))
     .slice(0, 8);
 }
-import type { FormState } from "@/app/actions/auth";
+
+/** Imágenes efectivas que tiene ahora un level cap, para resolver las marcas. */
+async function imagenesActuales(id: string) {
+  const cap = await prisma.levelCap.findUnique({
+    where: { id },
+    select: { images: true, image: true },
+  });
+  return cap ? effectiveImages(cap) : [];
+}
 
 export async function createLevelCapAction(
   _prev: FormState,
@@ -73,7 +100,7 @@ export async function updateLevelCapAction(formData: FormData) {
       kind: String(formData.get("kind") ?? levelCap.kind),
       badge: String(formData.get("badge") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
-      images: readImages(formData),
+      images: readImages(formData, await imagenesActuales(id)),
       // El formulario ya trae la imagen antigua dentro de la lista
       image: null,
     },

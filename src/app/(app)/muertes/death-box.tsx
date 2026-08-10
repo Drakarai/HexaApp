@@ -4,7 +4,6 @@ import { useActionState, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   deleteDeathAction,
-  getDeathDetailImageAction,
   updateDeathAction,
 } from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
@@ -20,7 +19,7 @@ export type AceSummary = {
   nickname: string | null;
   reason: string | null;
   image: string | null;
-  hasDetailImage: boolean;
+  detailImage: string | null;
   editable: boolean;
 };
 
@@ -34,7 +33,7 @@ export type BoxDeath = {
   notes: string | null;
   boxImage: string | null;
   /** La ilustración grande se carga aparte, al abrir la ficha */
-  hasDetailImage: boolean;
+  detailImage: string | null;
   diedAtLabel: string;
   diedAtInput: string;
   editable: boolean;
@@ -169,8 +168,6 @@ function DeathDetail({
 }) {
   const [editing, setEditing] = useState(false);
   const [manualImages, setManualImages] = useState(false);
-  const [detailImage, setDetailImage] = useState<string | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(death.hasDetailImage);
   const [state, formAction] = useActionState<FormState, FormData>(
     updateDeathAction,
     null,
@@ -179,27 +176,6 @@ function DeathDetail({
   useEffect(() => {
     if (state?.success) setEditing(false);
   }, [state]);
-
-  // La ilustración grande se pide al abrir la ficha, no antes
-  useEffect(() => {
-    let cancelled = false;
-    if (!death.hasDetailImage) {
-      setDetailImage(null);
-      setLoadingDetail(false);
-      return;
-    }
-    setLoadingDetail(true);
-    getDeathDetailImageAction(death.id)
-      .then((image) => {
-        if (!cancelled) setDetailImage(image);
-      })
-      .finally(() => {
-        if (!cancelled) setLoadingDetail(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [death.id, death.hasDetailImage]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -247,16 +223,12 @@ function DeathDetail({
         </div>
 
         <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
-          {detailImage ?? death.boxImage ? (
+          {death.detailImage ?? death.boxImage ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={detailImage ?? death.boxImage ?? ""}
+              src={death.detailImage ?? death.boxImage ?? ""}
               alt={death.species}
-              className={cx(
-                "h-full w-full object-contain p-2 transition",
-                // Mientras llega la ilustración se ve el sprite de la caja
-                loadingDetail && "scale-75 opacity-60 blur-[1px]",
-              )}
+              className="h-full w-full object-contain p-2"
             />
           ) : (
             <span className="text-slate-600">
@@ -309,7 +281,7 @@ function DeathDetail({
                   <ImageInput
                     name="detailImage"
                     label="Imagen de la ficha"
-                    defaultValue={detailImage}
+                    defaultValue={death.detailImage}
                     maxSize={IMAGE_SIZES.detail}
                     hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
                   />
@@ -324,7 +296,7 @@ function DeathDetail({
                 <SpeciesPicker
                   defaultSpecies={death.species}
                   defaultBoxImage={death.boxImage}
-                  defaultDetailImage={detailImage}
+                  defaultDetailImage={death.detailImage}
                 />
               )}
 

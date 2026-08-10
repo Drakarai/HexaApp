@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
@@ -16,6 +17,12 @@ export default async function AdminPage() {
     orderBy: [{ role: "asc" }, { displayName: "asc" }],
     include: { _count: { select: { participations: true } } },
   });
+
+  // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
+  const avatares = await urlsDeImagen(
+    "avatar",
+    users.map((usuario) => usuario.id),
+  );
 
   return (
     <>
@@ -36,7 +43,7 @@ export default async function AdminPage() {
                 <Avatar
                   name={user.displayName}
                   color={user.avatarColor}
-                  image={user.avatarImage}
+                  image={avatares(user.id)}
                   size={32}
                 />
                 <div className="min-w-0 flex-1">

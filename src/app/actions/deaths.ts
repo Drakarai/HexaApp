@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { sanitizeImageValue } from "@/lib/image";
+import { imagenEditada, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -73,8 +73,9 @@ export async function updateDeathAction(
       level: level !== null && Number.isFinite(level) ? Math.trunc(level) : null,
       location: String(formData.get("location") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
-      boxImage: sanitizeImageValue(formData.get("boxImage")),
-      detailImage: sanitizeImageValue(formData.get("detailImage")),
+      // Si el formulario no tocó las imágenes se quedan las de antes
+      boxImage: imagenEditada(formData.get("boxImage")),
+      detailImage: imagenEditada(formData.get("detailImage")),
       ...(diedAtRaw ? { diedAt: new Date(diedAtRaw) } : {}),
     },
   });
@@ -84,19 +85,6 @@ export async function updateDeathAction(
   return { success: "Ficha actualizada." };
 }
 
-/**
- * La ilustración de la ficha se pide solo al abrirla. Si viajara junto al
- * resto de la caja, cada visita al cementerio arrastraría todas las imágenes
- * grandes de golpe.
- */
-export async function getDeathDetailImageAction(deathId: string) {
-  await requireUser();
-  const death = await prisma.death.findUnique({
-    where: { id: deathId },
-    select: { detailImage: true },
-  });
-  return death?.detailImage ?? null;
-}
 
 export async function deleteDeathAction(formData: FormData) {
   const id = String(formData.get("deathId") ?? "");

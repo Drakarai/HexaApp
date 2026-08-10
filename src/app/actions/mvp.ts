@@ -117,12 +117,3 @@ export async function setMvpTiebreakAction(formData: FormData) {
   revalidatePath("/jornadas");
 }
 
-/** La ilustración grande solo se pide al abrir la ficha del MVP. */
-export async function getMvpDetailImageAction(matchPokemonId: string) {
-  await requireUser();
-  const pokemon = await prisma.matchPokemon.findUnique({
-    where: { id: matchPokemonId },
-    select: { detailImage: true },
-  });
-  return pokemon?.detailImage ?? null;
-}

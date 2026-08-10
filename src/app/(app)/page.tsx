@@ -10,7 +10,7 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
-import { effectiveImages } from "@/lib/image";
+import { urlsDeMedallas } from "@/lib/imagenes";
 import { formatDate, formatDateTime } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -58,6 +58,11 @@ export default async function DashboardPage() {
     levelCaps.find((cap) => cap._count.clears < Math.max(1, totalPlayers)) ??
     levelCaps[levelCaps.length - 1];
 
+  // Direcciones de las medallas del level cap actual: ver lib/imagen-url.ts
+  const medallasDelCap = currentCap
+    ? (await urlsDeMedallas([currentCap.id]))(currentCap.id)
+    : [];
+
   return (
     <>
       <PageHeader
@@ -81,7 +86,7 @@ export default async function DashboardPage() {
           value={currentCap ? String(currentCap.cap) : "—"}
           hint={currentCap?.label ?? "Sin level caps configurados"}
           href="/level-caps"
-          images={currentCap ? effectiveImages(currentCap) : []}
+          images={medallasDelCap}
         />
         <StatCard
           label="Jugadores"

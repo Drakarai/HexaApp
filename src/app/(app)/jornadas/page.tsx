@@ -7,6 +7,7 @@ import {
   getParticipants,
 } from "@/lib/competition";
 import { getMvpStates } from "@/lib/mvp";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
@@ -37,14 +38,11 @@ export default async function MatchdaysPage() {
         matches: {
           orderBy: { position: "asc" },
           include: {
-            participantA: {
-              include: { user: { select: { avatarImage: true } } },
-            },
-            participantB: {
-              include: { user: { select: { avatarImage: true } } },
-            },
-            // Los sprites de caja son ligeros; la ilustración grande no viaja
-            team: { orderBy: { position: "asc" }, omit: { detailImage: true } },
+            // Sin los datos del jugador: los 6 ya vienen de getParticipants,
+            // y repetirlos por combate multiplicaba el peso de la página
+            participantA: { select: { id: true, displayName: true, color: true } },
+            participantB: { select: { id: true, displayName: true, color: true } },
+            team: { orderBy: { position: "asc" } },
           },
         },
       },
@@ -61,6 +59,14 @@ export default async function MatchdaysPage() {
       participant.id,
       participant.user.avatarImage,
     ]),
+  );
+
+  // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
+  const sprites = await urlsDeImagen(
+    "equipo",
+    matchdays.flatMap((jornada) =>
+      jornada.matches.flatMap((combate) => combate.team.map((p) => p.id)),
+    ),
   );
 
   const mvpStates = await getMvpStates(
@@ -166,7 +172,7 @@ export default async function MatchdaysPage() {
                             <PlayerChip
                               name={match.participantA.displayName}
                               color={match.participantA.color}
-                              image={match.participantA.user.avatarImage}
+                              image={avatarByParticipant.get(match.participantAId) ?? null}
                               winner={match.winnerId === match.participantAId}
                             />
                             <span className="shrink-0 text-xs text-slate-500">
@@ -175,7 +181,7 @@ export default async function MatchdaysPage() {
                             <PlayerChip
                               name={match.participantB.displayName}
                               color={match.participantB.color}
-                              image={match.participantB.user.avatarImage}
+                              image={avatarByParticipant.get(match.participantBId) ?? null}
                               winner={match.winnerId === match.participantBId}
                             />
                           </div>
@@ -215,8 +221,18 @@ export default async function MatchdaysPage() {
                           matchId={match.id}
                           canManage={canManage}
                           sides={[
-                            teamSide(match.participantA, match.team),
-                            teamSide(match.participantB, match.team),
+                            teamSide(
+                              match.participantA,
+                              match.team,
+                              sprites,
+                              avatarByParticipant.get(match.participantAId) ?? null,
+                            ),
+                            teamSide(
+                              match.participantB,
+                              match.team,
+                              sprites,
+                              avatarByParticipant.get(match.participantBId) ?? null,
+                            ),
                           ]}
                         />
 
@@ -268,32 +284,28 @@ export default async function MatchdaysPage() {
 
 /** El lado de un combate: el jugador y los pokémon que sacó. */
 function teamSide(
-  participant: {
-    id: string;
-    displayName: string;
-    color: string;
-    user: { avatarImage: string | null };
-  },
+  participant: { id: string; displayName: string; color: string },
   team: {
     id: string;
     participantId: string;
     species: string;
     nickname: string | null;
-    boxImage: string | null;
   }[],
+  sprites: (id: string) => string | null,
+  avatar: string | null,
 ): TeamSide {
   return {
     participantId: participant.id,
     displayName: participant.displayName,
     color: participant.color,
-    avatarImage: participant.user.avatarImage,
+    avatarImage: avatar,
     team: team
       .filter((pokemon) => pokemon.participantId === participant.id)
       .map((pokemon) => ({
         id: pokemon.id,
         species: pokemon.species,
         nickname: pokemon.nickname,
-        boxImage: pokemon.boxImage,
+        boxImage: sprites(pokemon.id),
       })),
   };
 }

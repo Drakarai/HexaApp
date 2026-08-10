@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import {
   castMvpVoteAction,
   clearMvpVoteAction,
-  getMvpDetailImageAction,
   setMvpReasonAction,
   setMvpTiebreakAction,
 } from "@/app/actions/mvp";
@@ -17,8 +16,9 @@ export type MvpCandidateView = {
   id: string;
   species: string;
   nickname: string | null;
+  /** Direcciones, no imágenes: ver lib/imagen-url.ts */
   boxImage: string | null;
-  hasDetailImage: boolean;
+  detailImage: string | null;
   position: number;
   ownerId: string;
   ownerName: string;
@@ -122,22 +122,6 @@ export function MvpBadge({ mvp }: { mvp: MvpView }) {
 }
 
 function MvpCard({ mvp, onClose }: { mvp: MvpView; onClose: () => void }) {
-  const [detailImage, setDetailImage] = useState<string | null>(null);
-  const winnerId = mvp.winner?.id ?? null;
-  const hasArt = mvp.winner?.hasDetailImage ?? false;
-
-  useEffect(() => {
-    let cancelled = false;
-    setDetailImage(null);
-    if (!winnerId || !hasArt) return;
-    getMvpDetailImageAction(winnerId).then((image) => {
-      if (!cancelled) setDetailImage(image);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [winnerId, hasArt]);
-
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
@@ -178,7 +162,7 @@ function MvpCard({ mvp, onClose }: { mvp: MvpView; onClose: () => void }) {
         </div>
 
         {mvp.winner ? (
-          <Ficha mvp={mvp} winner={mvp.winner} detailImage={detailImage} />
+          <Ficha mvp={mvp} winner={mvp.winner} />
         ) : mvp.tied.length ? (
           <Empate mvp={mvp} />
         ) : (
@@ -195,15 +179,7 @@ function MvpCard({ mvp, onClose }: { mvp: MvpView; onClose: () => void }) {
   );
 }
 
-function Ficha({
-  mvp,
-  winner,
-  detailImage,
-}: {
-  mvp: MvpView;
-  winner: MvpCandidateView;
-  detailImage: string | null;
-}) {
+function Ficha({ mvp, winner }: { mvp: MvpView; winner: MvpCandidateView }) {
   const [editingReason, setEditingReason] = useState(false);
   const [state, formAction] = useActionState<FormState, FormData>(
     setMvpReasonAction,
@@ -221,10 +197,10 @@ function Ficha({
         className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-white/5"
         style={{ background: `${winner.ownerColor}14` }}
       >
-        {detailImage ?? winner.boxImage ? (
+        {winner.detailImage ?? winner.boxImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={detailImage ?? winner.boxImage ?? ""}
+            src={winner.detailImage ?? winner.boxImage ?? ""}
             alt={winner.species}
             className="h-full w-full object-contain p-2"
           />

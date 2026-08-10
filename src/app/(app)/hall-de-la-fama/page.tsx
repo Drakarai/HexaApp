@@ -7,6 +7,7 @@ import {
   getStandings,
 } from "@/lib/competition";
 import { getFinalFourState } from "@/lib/final-four";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
@@ -57,8 +58,21 @@ export default async function HallOfFamePage() {
     }),
   ]);
 
+  // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
+  const sprites = await urlsDeImagen(
+    "salon",
+    entries.map((entry) => entry.id),
+  );
+
   const teamOf = (participantId: string) =>
-    entries.filter((entry) => entry.participantId === participantId);
+    entries
+      .filter((entry) => entry.participantId === participantId)
+      .map((entry) => ({
+        id: entry.id,
+        species: entry.species,
+        nickname: entry.nickname,
+        image: sprites(entry.id),
+      }));
 
   // Primero el campeón, después el subcampeón, y el resto por clasificación
   const orden = new Map<string, number>();

@@ -7,7 +7,7 @@ import {
   spriteCandidates,
   type PokedexSpecies,
 } from "@/lib/pokedex";
-import { IMAGE_SIZES, imageToDataUrl } from "@/lib/image";
+import { IMAGEN_SIN_CAMBIOS, IMAGE_SIZES, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
 /**
@@ -22,6 +22,11 @@ export function SpeciesPicker({
   defaultDetailImage = "",
 }: {
   defaultSpecies?: string;
+  /**
+   * Imágenes que ya tiene guardadas, **solo para la vista previa**: son
+   * direcciones, no las imágenes. Los campos ocultos arrancan vacíos, y vacío
+   * significa "deja las que había"; solo se llenan si se elige otra especie.
+   */
   defaultBoxImage?: string | null;
   defaultDetailImage?: string | null;
 }) {
@@ -31,8 +36,8 @@ export function SpeciesPicker({
   );
   const [formId, setFormId] = useState<number | null>(null);
   const [shiny, setShiny] = useState(false);
-  const [boxImage, setBoxImage] = useState(defaultBoxImage ?? "");
-  const [detailImage, setDetailImage] = useState(defaultDetailImage ?? "");
+  const [boxImage, setBoxImage] = useState("");
+  const [detailImage, setDetailImage] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
@@ -201,8 +206,8 @@ export function SpeciesPicker({
       </div>
 
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-        <Preview label="Caja" image={boxImage} />
-        <Preview label="Ficha" image={detailImage} />
+        <Preview label="Caja" image={boxImage || (defaultBoxImage ?? "")} />
+        <Preview label="Ficha" image={detailImage || (defaultDetailImage ?? "")} />
         <div className="min-w-0 flex-1 text-xs">
           {status === "loading" ? (
             <p className="text-slate-400">Descargando imágenes…</p>
@@ -216,6 +221,11 @@ export function SpeciesPicker({
               Sprite de Pokémon HOME e ilustración oficial, ya guardados. Podrás
               cambiarlos desde la ficha.
             </p>
+          ) : defaultBoxImage || defaultDetailImage ? (
+            <p className="text-slate-500">
+              Estas son las que tiene ahora. Si eliges otra especie se cambian
+              solas.
+            </p>
           ) : (
             <p className="text-slate-500">
               Elige la especie de la lista y las imágenes se ponen solas.
@@ -224,8 +234,18 @@ export function SpeciesPicker({
         </div>
       </div>
 
-      <input type="hidden" name="boxImage" value={boxImage} />
-      <input type="hidden" name="detailImage" value={detailImage} />
+      {/* Vacío hasta que se elige especie: mientras, la marca de "sin
+          cambios" para no pisar las imágenes que ya tuviera guardadas */}
+      <input
+        type="hidden"
+        name="boxImage"
+        value={boxImage || (defaultBoxImage ? IMAGEN_SIN_CAMBIOS : "")}
+      />
+      <input
+        type="hidden"
+        name="detailImage"
+        value={detailImage || (defaultDetailImage ? IMAGEN_SIN_CAMBIOS : "")}
+      />
     </div>
   );
 }
