@@ -172,7 +172,7 @@ export function RouletteWheel({
             {spinning ? "Girando…" : "🎡 Girar la ruleta"}
           </button>
         ) : (
-          <p className="muted">Solo los administradores pueden girar.</p>
+          <p className="muted">Necesitas un ticket para girar.</p>
         )}
 
         {result ? (

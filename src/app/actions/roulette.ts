@@ -189,9 +189,32 @@ export async function spinRouletteAction(
   });
   if (!roulette) return { ok: false, error: "Ruleta no encontrada." };
 
-  const allowed = await canManageCompetition(roulette.competitionId, me);
-  if (!allowed) {
-    return { ok: false, error: "Solo los administradores pueden girar." };
+  // Los administradores giran cuando quieren; el resto necesita un ticket,
+  // que se gasta con la tirada.
+  const isManager = await canManageCompetition(roulette.competitionId, me);
+  let participant = null;
+  if (!isManager) {
+    participant = await prisma.participant.findUnique({
+      where: {
+        competitionId_userId: {
+          competitionId: roulette.competitionId,
+          userId: me.id,
+        },
+      },
+    });
+    if (!participant) {
+      return { ok: false, error: "No eres jugador de esta competición." };
+    }
+    const balance = await prisma.rouletteTicket.aggregate({
+      where: { participantId: participant.id },
+      _sum: { delta: true },
+    });
+    if ((balance._sum.delta ?? 0) < 1) {
+      return {
+        ok: false,
+        error: "No te quedan tickets. Pídele uno a un administrador.",
+      };
+    }
   }
 
   const active = roulette.options.filter((option) => option.enabled);
@@ -213,21 +236,55 @@ export async function spinRouletteAction(
     }
   }
 
-  await prisma.rouletteSpin.create({
-    data: {
-      rouletteId,
-      optionId: winner.id,
-      optionLabel: winner.label,
-      spunById: me.id,
-    },
-  });
+  try {
+    await prisma.$transaction(
+      async (tx) => {
+        if (participant) {
+          await tx.rouletteTicket.create({
+            data: {
+              competitionId: roulette.competitionId,
+              participantId: participant.id,
+              delta: -1,
+              reason: `Tirada en ${roulette.name}`,
+              rouletteId,
+              createdById: me.id,
+            },
+          });
+          // Se vuelve a sumar dentro de la transacción: si dos tiradas a la
+          // vez dejaran el saldo en negativo, esta se deshace entera.
+          const balance = await tx.rouletteTicket.aggregate({
+            where: { participantId: participant.id },
+            _sum: { delta: true },
+          });
+          if ((balance._sum.delta ?? 0) < 0) {
+            throw new Error("SIN_TICKETS");
+          }
+        }
 
-  // Si la ruleta no permite repetir, la opción se desactiva tras salir
-  if (!roulette.allowRepeats) {
-    await prisma.rouletteOption.update({
-      where: { id: winner.id },
-      data: { enabled: false },
-    });
+        await tx.rouletteSpin.create({
+          data: {
+            rouletteId,
+            optionId: winner.id,
+            optionLabel: winner.label,
+            spunById: me.id,
+          },
+        });
+
+        // Si la ruleta no permite repetir, la opción se desactiva tras salir
+        if (!roulette.allowRepeats) {
+          await tx.rouletteOption.update({
+            where: { id: winner.id },
+            data: { enabled: false },
+          });
+        }
+      },
+      { isolationLevel: "Serializable" },
+    );
+  } catch {
+    return {
+      ok: false,
+      error: "No se ha podido gastar el ticket. Vuelve a intentarlo.",
+    };
   }
 
   revalidatePath("/ruleta");

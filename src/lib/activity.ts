@@ -27,7 +27,7 @@ const NEUTRAL = "#64748b";
 export async function getActivity(competitionId: string, limit = 60) {
   const take = Math.min(limit, 50);
 
-  const [deaths, points, clears, spins, matches] = await Promise.all([
+  const [deaths, points, clears, spins, tickets, matches] = await Promise.all([
     prisma.death.findMany({
       where: { participant: { competitionId } },
       orderBy: { diedAt: "desc" },
@@ -67,6 +67,17 @@ export async function getActivity(competitionId: string, limit = 60) {
       include: {
         roulette: { select: { name: true } },
         spunBy: { select: { displayName: true, avatarImage: true } },
+      },
+    }),
+    prisma.rouletteTicket.findMany({
+      // Solo los que concede un administrador: el gasto ya se ve en el giro
+      where: { competitionId, delta: { gt: 0 } },
+      orderBy: { createdAt: "desc" },
+      take,
+      include: {
+        participant: {
+          include: { user: { select: { avatarImage: true } } },
+        },
       },
     }),
     prisma.match.findMany({
@@ -142,6 +153,19 @@ export async function getActivity(competitionId: string, limit = 60) {
         .join(" · "),
       who: spin.spunBy?.displayName,
       whoImage: spin.spunBy?.avatarImage,
+    });
+  }
+
+  for (const ticket of tickets) {
+    entries.push({
+      id: `ticket-${ticket.id}`,
+      at: ticket.createdAt,
+      icon: "🎟️",
+      color: ticket.participant.color,
+      title: `${ticket.participant.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
+      detail: ticket.reason ?? undefined,
+      who: ticket.participant.displayName,
+      whoImage: ticket.participant.user.avatarImage,
     });
   }
 

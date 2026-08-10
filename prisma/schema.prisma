@@ -34,6 +34,7 @@ model User {
   pointsGiven    PointEntry[]  @relation("PointAuthor")
   spins          RouletteSpin[]
   competitions   Competition[] @relation("CompetitionCreator")
+  ticketsGiven   RouletteTicket[] @relation("TicketAuthor")
 }
 
 // ---------------------------------------------------------------------------
@@ -70,6 +71,7 @@ model Competition {
   notes        Note[]
   pointEntries PointEntry[]
   finalFour    FinalFour?
+  tickets      RouletteTicket[]
 }
 
 model Participant {
@@ -106,6 +108,7 @@ model Participant {
   matchesWon   Match[]      @relation("MatchWinner")
   finalsWon    FinalMatch[] @relation("FinalMatchWinner")
   hallOfFame   HallOfFameEntry[]
+  tickets      RouletteTicket[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -363,6 +366,7 @@ model Roulette {
   competition Competition     @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   options     RouletteOption[]
   spins       RouletteSpin[]
+  tickets     RouletteTicket[]
 
   @@index([competitionId])
 }
@@ -381,6 +385,31 @@ model RouletteOption {
   spins    RouletteSpin[]
 
   @@index([rouletteId, position])
+}
+
+/**
+ * Tickets de ruleta. Como los puntos, es un historial y no un contador: cada
+ * fila suma (los que concede un administrador) o resta (el que se gasta al
+ * girar), y el saldo es la suma. Así se ve quién dio qué y por qué.
+ */
+model RouletteTicket {
+  id            String   @id @default(cuid())
+  competitionId String
+  participantId String
+  delta         Int
+  reason        String?
+  /** En qué ruleta se gastó, cuando el movimiento es un gasto */
+  rouletteId    String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  roulette    Roulette?    @relation(fields: [rouletteId], references: [id], onDelete: SetNull)
+  createdBy   User?        @relation("TicketAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([competitionId])
+  @@index([participantId])
 }
 
 model RouletteSpin {

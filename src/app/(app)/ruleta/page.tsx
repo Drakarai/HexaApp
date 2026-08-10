@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser, isAdmin } from "@/lib/auth";
-import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getParticipants,
+  getTicketBalances,
+} from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { RouletteWheel } from "@/components/roulette-wheel";
@@ -19,6 +24,7 @@ import {
   AddOptionForm,
   RouletteSettingsForm,
 } from "./roulette-forms";
+import { MyTickets, TicketsPanel } from "./tickets";
 
 export const metadata = { title: "Ruleta" };
 
@@ -32,14 +38,23 @@ export default async function RoulettePage({
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
   const { r } = await searchParams;
-  const [canManage, roulettes] = await Promise.all([
+  const [canManage, roulettes, participants, balances] = await Promise.all([
     canManageCompetition(competition.id, user),
     prisma.roulette.findMany({
       where: { competitionId: competition.id },
       orderBy: { createdAt: "asc" },
       include: { _count: { select: { options: true, spins: true } } },
     }),
+    getParticipants(competition.id),
+    getTicketBalances(competition.id),
   ]);
+
+  const myParticipant = participants.find(
+    (participant) => participant.userId === user.id,
+  );
+  const myTickets = myParticipant ? (balances.get(myParticipant.id) ?? 0) : 0;
+  // Los administradores giran siempre; el resto, solo con ticket
+  const canSpin = canManage || myTickets > 0;
 
   const selectedId = roulettes.find((roulette) => roulette.id === r)?.id ??
     roulettes[0]?.id;
@@ -110,10 +125,12 @@ export default async function RoulettePage({
               ) : null}
             </div>
 
+            <MyTickets balance={myTickets} isManager={canManage} />
+
             <RouletteWheel
               rouletteId={selected.id}
               spinSeconds={selected.spinSeconds}
-              canSpin={canManage}
+              canSpin={canSpin}
               options={selected.options
                 .filter((option) => option.enabled)
                 .map((option) => ({
@@ -253,6 +270,21 @@ export default async function RoulettePage({
           hint={canManage ? "Crea la primera abajo." : undefined}
         />
       )}
+
+      {canManage && participants.length ? (
+        <div className="mt-6">
+          <TicketsPanel
+            competitionId={competition.id}
+            rows={participants.map((participant) => ({
+              participantId: participant.id,
+              displayName: participant.displayName,
+              color: participant.color,
+              avatarImage: participant.user.avatarImage,
+              balance: balances.get(participant.id) ?? 0,
+            }))}
+          />
+        </div>
+      ) : null}
 
       {canManage ? (
         <div className="mt-6">

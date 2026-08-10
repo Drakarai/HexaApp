@@ -108,6 +108,16 @@ export async function requireCompetitionManager(competitionId: string) {
   return user;
 }
 
+/** Saldo de tickets de ruleta de cada participante de la competición. */
+export async function getTicketBalances(competitionId: string) {
+  const sums = await prisma.rouletteTicket.groupBy({
+    by: ["participantId"],
+    where: { competitionId },
+    _sum: { delta: true },
+  });
+  return new Map(sums.map((row) => [row.participantId, row._sum.delta ?? 0]));
+}
+
 /**
  * Comprueba que el usuario puede actuar en nombre de un participante:
  * o es él mismo, o es administrador (global o de la competición).
