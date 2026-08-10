@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   addMatchPokemonAction,
@@ -137,10 +137,15 @@ function TeamEditor({
     addMatchPokemonAction,
     null,
   );
-  const formRef = useRef<HTMLFormElement>(null);
+  // El dueño se queda como lo dejaste: apuntar un equipo entero es meter seis
+  // seguidos del mismo, y volver al primero del combate cada vez era un lío.
+  const [owner, setOwner] = useState(sides[0].participantId);
+  // El buscador y el mote sí se vacían tras guardar, remontándolos: los dos
+  // llevan estado propio, así que un reset() del formulario no los limpiaría.
+  const [limpiezas, setLimpiezas] = useState(0);
 
   useEffect(() => {
-    if (state?.success) formRef.current?.reset();
+    if (state?.success) setLimpiezas((veces) => veces + 1);
   }, [state]);
 
   useEffect(() => {
@@ -241,19 +246,19 @@ function TeamEditor({
         </div>
 
         <form
-          ref={formRef}
           action={formAction}
           className="mt-4 space-y-3 border-t border-white/10 pt-4"
         >
           <input type="hidden" name="matchId" value={matchId} />
-          <SpeciesPicker />
+          <SpeciesPicker key={limpiezas} />
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="label">Entrenador</label>
               <select
                 name="participantId"
                 className="input"
-                defaultValue={sides[0].participantId}
+                value={owner}
+                onChange={(event) => setOwner(event.target.value)}
               >
                 {sides.map((side) => (
                   <option key={side.participantId} value={side.participantId}>
@@ -264,7 +269,12 @@ function TeamEditor({
             </div>
             <div>
               <label className="label">Mote</label>
-              <input name="nickname" className="input" placeholder="Chispas" />
+              <input
+                key={limpiezas}
+                name="nickname"
+                className="input"
+                placeholder="Chispas"
+              />
             </div>
           </div>
           <FormMessage state={state} />

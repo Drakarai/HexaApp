@@ -269,7 +269,10 @@ Piezas con truco:
 - `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
   que la del as: la ilustración grande no viaja con la lista, se pide al abrir.
 - `components/match-team.tsx` — los equipos bajo cada combate y el editor del
-  administrador.
+  administrador. Al guardar, el entrenador elegido se conserva (se apuntan seis
+  seguidos del mismo) y el buscador y el mote se vacían remontándolos con
+  `key`: los dos llevan estado propio y un `reset()` del formulario no los
+  limpiaría.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
