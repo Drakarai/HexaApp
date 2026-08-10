@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (temas de los ases del Hexalocke 1).
+Última actualización: 10 de agosto de 2026 (Final Four y hall de la fama).
 
 ---
 
@@ -41,6 +41,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas. |
+| **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
+| **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta y resultados de jornada. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
 
@@ -136,6 +138,21 @@ llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
 as como para la del cementerio.
 
+**La Final Four se abre sola, pero se siembra a mano.** Mientras quede un
+combate de jornada sin resultado, la pantalla está bloqueada con una barra de
+progreso: hasta entonces no se sabe cómo queda la tabla. Cuando están todos,
+un administrador genera el cuadro y ahí se **congela la clasificación** en
+`FinalFour.seeds`; si después se corrige un punto, el cuadro no se recoloca a
+mitad del torneo. Los emparejamientos no se guardan, se deducen de la siembra y
+de quién va ganando (3º-6º y 4º-5º en cruces, los ganadores contra 1º y 2º en
+semifinales, y la final entre esos dos), así que el cuadro no puede quedar
+incoherente. Cambiar un resultado limpia los de las rondas siguientes.
+
+**El hall de la fama se abre al haber campeón.** Cada jugador registra el
+equipo de 6 con el que terminó, con el mismo buscador de especie, y se ordena
+como una clasificación final: campeón, subcampeón y el resto por puntos. Se
+comprueba en el servidor que la Final Four esté decidida antes de admitir nada.
+
 **El muro de actividad no guarda eventos propios.** Consulta cada fuente
 (muertes, puntos, gimnasios superados, giros, combates) y las mezcla por fecha.
 Así no hay una tabla de eventos que pueda desincronizarse de los datos reales,
@@ -227,10 +244,10 @@ Ideas comentadas y no hechas:
   la siguiente en valor: permitiría el botón "ha caído" que rellena la ficha
   sola y avisar de quién se pasa del level cap.
 - **Encuentros por ruta**: qué salió en cada zona y si se capturó.
-- **Final Four**: cuadro del torneo con los 4 clasificados.
 - **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
 - **Enlaces a las grabaciones** de cada combate de gimnasio.
-- **Exportar una edición archivada** a PDF o imagen como recuerdo.
+- **Exportar una edición archivada** a PDF o imagen como recuerdo, ahora que
+  el hall de la fama da un buen cierre.
 
 ---
 
@@ -266,3 +283,4 @@ lugar de destruir datos, y hay que avisar antes.
 7. **Muro de actividad** y **temas por juego** elegibles desde el perfil.
 8. **Pokémon as** de cada jugador, con su ficha, su mote y su porqué.
 9. **Temas de los ases del Hexalocke 1**, a dos colores cada uno.
+10. **Final Four** y **hall de la fama**, el cierre del locke.

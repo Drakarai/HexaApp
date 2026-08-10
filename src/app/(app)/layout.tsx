@@ -20,6 +20,8 @@ const SECONDARY_ITEMS: NavItem[] = [
   { href: "/reglas", label: "Reglas", icon: "📜" },
   { href: "/level-caps", label: "Level caps", icon: "🎯" },
   { href: "/jornadas", label: "Jornadas", icon: "⚔️" },
+  { href: "/final-four", label: "Final Four", icon: "🏆" },
+  { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
   { href: "/notas", label: "Mis notas", icon: "🗒️" },
   { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
   { href: "/perfil", label: "Mi perfil", icon: "👤" },

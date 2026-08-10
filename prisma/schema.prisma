@@ -69,6 +69,7 @@ model Competition {
   roulettes    Roulette[]
   notes        Note[]
   pointEntries PointEntry[]
+  finalFour    FinalFour?
 }
 
 model Participant {
@@ -103,6 +104,8 @@ model Participant {
   matchesAsA   Match[]      @relation("MatchPlayerA")
   matchesAsB   Match[]      @relation("MatchPlayerB")
   matchesWon   Match[]      @relation("MatchWinner")
+  finalsWon    FinalMatch[] @relation("FinalMatchWinner")
+  hallOfFame   HallOfFameEntry[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -284,6 +287,62 @@ model Match {
   winner       Participant? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
 
   @@index([matchdayId])
+}
+
+// ---------------------------------------------------------------------------
+// Final Four y hall de la fama
+// ---------------------------------------------------------------------------
+
+/**
+ * El cuadro final. Se genera cuando ya están jugadas todas las jornadas, y
+ * guarda la clasificación de ese momento congelada (`seeds`): así, si después
+ * se corrige algún punto, el cuadro no se recoloca a mitad del torneo.
+ */
+model FinalFour {
+  id            String   @id @default(cuid())
+  competitionId String   @unique
+  /** Los 6 participantes en orden de clasificación, del 1º al 6º */
+  seeds         String[]
+  createdAt     DateTime @default(now())
+
+  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  matches     FinalMatch[]
+}
+
+/**
+ * Un combate del cuadro. Los emparejamientos no se guardan: se deducen de
+ * `seeds` y de quién va ganando, así que no pueden quedar incoherentes.
+ * key: CROSS_A (3º-6º), CROSS_B (4º-5º), SEMI_A (1º-ganador A),
+ * SEMI_B (2º-ganador B) y FINAL.
+ */
+model FinalMatch {
+  id          String    @id @default(cuid())
+  finalFourId String
+  key         String
+  winnerId    String?
+  pokemonDiff Int?
+  playedAt    DateTime?
+  notes       String?
+
+  finalFour FinalFour    @relation(fields: [finalFourId], references: [id], onDelete: Cascade)
+  winner    Participant? @relation("FinalMatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+
+  @@unique([finalFourId, key])
+}
+
+/** Un pokémon del equipo con el que cada jugador termina el locke. */
+model HallOfFameEntry {
+  id            String   @id @default(cuid())
+  participantId String
+  species       String
+  nickname      String?
+  image         String?
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
 }
 
 // ---------------------------------------------------------------------------
