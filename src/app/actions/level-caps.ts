@@ -6,6 +6,15 @@ import { requireUser, isAdmin } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { sanitizeImageValue } from "@/lib/image";
+
+/** Lista de imágenes válidas que llega del formulario, sin huecos ni basura. */
+function readImages(formData: FormData) {
+  return formData
+    .getAll("images")
+    .map((value) => sanitizeImageValue(value))
+    .filter((value): value is string => Boolean(value))
+    .slice(0, 8);
+}
 import type { FormState } from "@/app/actions/auth";
 
 export async function createLevelCapAction(
@@ -39,7 +48,7 @@ export async function createLevelCapAction(
       kind,
       badge: String(formData.get("badge") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
-      image: sanitizeImageValue(formData.get("image")),
+      images: readImages(formData),
       position: (last?.position ?? 0) + 1,
     },
   });
@@ -64,7 +73,9 @@ export async function updateLevelCapAction(formData: FormData) {
       kind: String(formData.get("kind") ?? levelCap.kind),
       badge: String(formData.get("badge") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
-      image: sanitizeImageValue(formData.get("image")),
+      images: readImages(formData),
+      // El formulario ya trae la imagen antigua dentro de la lista
+      image: null,
     },
   });
 

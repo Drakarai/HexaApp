@@ -7,7 +7,7 @@ import {
 } from "@/app/actions/level-caps";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
-import { ImageInput } from "@/components/image-input";
+import { ImageListInput } from "@/components/image-list-input";
 import { IMAGE_SIZES } from "@/lib/image";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 
@@ -75,10 +75,10 @@ export function NewLevelCapForm({ competitionId }: { competitionId: string }) {
             <input name="notes" className="input" />
           </div>
         </div>
-        <ImageInput
+        <ImageListInput
           key={resetKey}
-          name="image"
-          label="Medalla o líder"
+          name="images"
+          label="Medallas o líderes"
           maxSize={IMAGE_SIZES.badge}
           hint="Se ve grande junto al nivel, y de fondo difuminado en la tarjeta."
         />
@@ -99,7 +99,7 @@ export function EditLevelCapForm({
     kind: string;
     badge: string | null;
     notes: string | null;
-    image: string | null;
+    images: string[];
   };
 }) {
   const [open, setOpen] = useState(false);
@@ -162,10 +162,10 @@ export function EditLevelCapForm({
           <input name="notes" className="input" defaultValue={levelCap.notes ?? ""} />
         </div>
       </div>
-      <ImageInput
-        name="image"
-        label="Medalla o líder"
-        defaultValue={levelCap.image}
+      <ImageListInput
+        name="images"
+        label="Medallas o líderes"
+        defaultValues={levelCap.images}
         maxSize={IMAGE_SIZES.badge}
         hint="Se ve grande junto al nivel, y de fondo difuminado en la tarjeta."
       />

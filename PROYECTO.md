@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (medallas en los level caps).
+Última actualización: 10 de agosto de 2026 (varias imágenes por level cap).
 
 ---
 
@@ -34,7 +34,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas, últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio, con la medalla o el líder en imagen; cada jugador marca cuándo lo supera. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. |
 | **Puntos** | Clasificación con desempates, ajustes ±1, con motivo, masivos, e historial. |
@@ -89,10 +89,19 @@ corregir un resultado no duplica puntos.
 **Las imágenes se guardan dentro de la base de datos** como data URL, ya
 reducidas en el navegador. Ventaja: copiar la base de datos es copiar la
 aplicación entera con sus fotos, sin ficheros sueltos ni servicios de terceros.
-Se usan en cuatro sitios: sprite y ficha de cada baja, foto de perfil, y medalla
-o líder de cada level cap. En este último, la imagen se ve en grande con el
-nivel como chapita encima, y de fondo difuminado en la tarjeta; sin imagen se
-mantiene el cuadrado con el número.
+Se usan en cuatro sitios: sprite y ficha de cada baja, foto de perfil, y
+medallas o líderes de cada level cap. En este último, la imagen se ve en grande
+con el nivel como chapita encima, y de fondo difuminado en la tarjeta; sin
+imagen se mantiene el cuadrado con el número.
+
+**Un level cap admite varias imágenes**, que se van alternando con un fundido
+cada 4 segundos: nació para el Alto Mando, que son cuatro personas y no hay
+ilustración conjunta. Con una sola imagen no se mueve nada. La rotación se
+detiene cuando la pestaña no está a la vista y respeta la opción del sistema de
+reducir animaciones. Guardar la lista en una columna `String[]` de Postgres, en
+vez de en una tabla aparte, mantiene el orden sin joins; la columna antigua
+`image` se conserva como respaldo de lectura para no forzar una migración
+destructiva, y se vacía sola al guardar desde el formulario.
 
 **Imágenes automáticas del cementerio.** Buscarlas a mano era lo más lento de
 registrar una baja. Ahora se escribe la especie en español y se rellenan solas:
@@ -156,6 +165,9 @@ Piezas con truco:
 - `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
+- `components/image-carousel.tsx` — el fundido entre imágenes, tanto en primer
+  plano como de fondo. `level-caps/level-cap-art.tsx` mete los dos en el mismo
+  componente para que cambien a la vez.
 - `globals.css` — las clases propias son `@utility` (Tailwind 4 no deja
   componerlas con `@apply` de otro modo), y hay una regla `.grid > * {
   min-width: 0 }` que evita el scroll horizontal en móvil.
@@ -206,4 +218,5 @@ lugar de destruir datos, y hay que avisar antes.
    barra inferior, y guía de despliegue.
 4. **Instalación desde el navegador**: sin terminal, con pantalla de bienvenida.
 5. **Imágenes automáticas** del cementerio desde PokéAPI, con formas y shiny.
-6. **Medalla o líder** en cada level cap, y en la tarjeta de resumen del inicio.
+6. **Medallas o líderes** en cada level cap, una o varias alternándose con un
+   fundido, también en la tarjeta de resumen del inicio.

@@ -9,7 +9,9 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
+import { effectiveImages } from "@/lib/image";
 import { cx, readableTextColor } from "@/lib/utils";
+import { LevelCapArt } from "./level-cap-art";
 import {
   deleteLevelCapAction,
   toggleGymClearAction,
@@ -57,6 +59,7 @@ export default async function LevelCapsPage() {
             const clearedCount = levelCap.clears.length;
             const allCleared =
               participants.length > 0 && clearedCount === participants.length;
+            const images = effectiveImages(levelCap);
 
             return (
               <article
@@ -66,53 +69,14 @@ export default async function LevelCapsPage() {
                   allCleared && "border-emerald-500/30 bg-emerald-500/[0.04]",
                 )}
               >
-                {/* La propia imagen, muy difuminada, hace de fondo de la tarjeta */}
-                {levelCap.image ? (
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute -right-10 -top-10 -z-10 h-48 w-48 opacity-[0.13] blur-[2px] [mask-image:radial-gradient(circle_at_center,black,transparent_70%)]"
-                    style={{
-                      backgroundImage: `url(${JSON.stringify(levelCap.image)})`,
-                      backgroundSize: "contain",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "center",
-                    }}
-                  />
-                ) : null}
-
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-3.5">
-                    <span className="relative shrink-0">
-                      {levelCap.image ? (
-                        <span
-                          className={cx(
-                            "flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-ink-850 ring-1",
-                            allCleared
-                              ? "ring-emerald-400/40"
-                              : "ring-white/10",
-                          )}
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={levelCap.image}
-                            alt={levelCap.label}
-                            loading="lazy"
-                            className="h-full w-full object-contain p-1"
-                          />
-                        </span>
-                      ) : (
-                        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-600/20 text-2xl font-black text-brand-400 ring-1 ring-brand-500/30">
-                          {levelCap.cap}
-                        </span>
-                      )}
-
-                      {/* Con imagen, el nivel se queda como chapita en la esquina */}
-                      {levelCap.image ? (
-                        <span className="absolute -bottom-1.5 -right-1.5 rounded-lg bg-brand-600 px-1.5 py-0.5 text-xs font-black text-white shadow-lg shadow-black/40 ring-1 ring-brand-400/40">
-                          {levelCap.cap}
-                        </span>
-                      ) : null}
-                    </span>
+                    <LevelCapArt
+                      images={images}
+                      cap={levelCap.cap}
+                      label={levelCap.label}
+                      allCleared={allCleared}
+                    />
 
                     <div>
                       <h3 className="font-semibold text-white">
@@ -216,7 +180,7 @@ export default async function LevelCapsPage() {
                       kind: levelCap.kind,
                       badge: levelCap.badge,
                       notes: levelCap.notes,
-                      image: levelCap.image,
+                      images,
                     }}
                   />
                 ) : null}

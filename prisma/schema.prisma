@@ -129,7 +129,11 @@ model LevelCap {
   kind          String  @default("GYM")
   badge         String?
   notes         String?
-  // Medalla o retrato del líder: URL o imagen subida (data URL redimensionada)
+  // Medallas o retratos: si hay más de una, se van alternando con un fundido.
+  // Cada una es una URL o una imagen subida (data URL ya redimensionada).
+  images        String[] @default([])
+  // Legado de cuando solo se admitía una imagen. Se sigue leyendo como
+  // respaldo si "images" está vacío, y se vacía al guardar desde el formulario.
   image         String?
   position      Int     @default(0)
 

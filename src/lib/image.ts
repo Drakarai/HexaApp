@@ -55,6 +55,18 @@ export function isValidImageValue(value: string) {
     /^https?:\/\//.test(value);
 }
 
+/**
+ * Imágenes efectivas de un level cap: la lista nueva, y si está vacía, la
+ * imagen suelta de las versiones anteriores.
+ */
+export function effectiveImages(source: {
+  images?: string[];
+  image?: string | null;
+}) {
+  if (source.images?.length) return source.images;
+  return source.image ? [source.image] : [];
+}
+
 /** Normaliza lo que llega de un formulario: cadena vacía se guarda como null. */
 export function sanitizeImageValue(raw: FormDataEntryValue | null) {
   const value = String(raw ?? "").trim();
