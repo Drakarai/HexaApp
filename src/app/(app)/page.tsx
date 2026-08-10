@@ -113,7 +113,13 @@ export default async function DashboardPage() {
               Ver detalle →
             </Link>
           </div>
-          <StandingsTable rows={standings} highlightUserId={user.id} />
+          <StandingsTable
+            rows={standings}
+            highlightUserId={user.id}
+            editableParticipantIds={
+              myParticipant ? [myParticipant.id] : []
+            }
+          />
           <p className="mt-3 text-xs text-slate-500">
             Desempates: puntos → menos pokémon muertos → diferencia de pokémon en
             jornadas.

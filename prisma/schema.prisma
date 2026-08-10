@@ -84,6 +84,15 @@ model Participant {
   isAdmin       Boolean  @default(false)
   joinedAt      DateTime @default(now())
 
+  // Pokémon as: el representante del jugador en esta edición. Va aquí y no en
+  // User para que cada competición conserve el suyo cuando se archiva.
+  aceSpecies     String?
+  aceNickname    String?
+  // Por qué es su as. Opcional, para lucirse en la ficha.
+  aceReason      String?
+  aceImage       String?
+  aceDetailImage String?
+
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 

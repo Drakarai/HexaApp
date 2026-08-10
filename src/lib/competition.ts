@@ -15,6 +15,13 @@ export type StandingRow = {
   color: string;
   avatarImage: string | null;
   isAdmin: boolean;
+  ace: {
+    species: string | null;
+    nickname: string | null;
+    reason: string | null;
+    image: string | null;
+    hasDetailImage: boolean;
+  };
   points: number;
   deaths: number;
   wins: number;
@@ -59,6 +66,7 @@ export const getParticipants = cache(async (competitionId: string) =>
   prisma.participant.findMany({
     where: { competitionId },
     orderBy: { displayName: "asc" },
+    omit: { aceDetailImage: true },
     include: {
       user: {
         select: { id: true, username: true, role: true, avatarImage: true },
@@ -134,10 +142,16 @@ export async function getStandings(
   });
   const startingPoints = competition?.startingPoints ?? 0;
 
-  const [participants, pointSums, deathCounts, matches] = await Promise.all([
+  const [participants, withAceArt, pointSums, deathCounts, matches] = await Promise.all([
     prisma.participant.findMany({
       where: { competitionId },
+      // La ilustración grande del as se pide solo al abrir su ficha
+      omit: { aceDetailImage: true },
       include: { user: { select: { avatarImage: true } } },
+    }),
+    prisma.participant.findMany({
+      where: { competitionId, aceDetailImage: { not: null } },
+      select: { id: true },
     }),
     prisma.pointEntry.groupBy({
       by: ["participantId"],
@@ -159,6 +173,8 @@ export async function getStandings(
       },
     }),
   ]);
+
+  const aceDetailIds = new Set(withAceArt.map((row) => row.id));
 
   const deltaByParticipant = new Map(
     pointSums.map((row) => [row.participantId, row._sum.delta ?? 0]),
@@ -208,6 +224,13 @@ export async function getStandings(
       color: participant.color,
       avatarImage: participant.user.avatarImage,
       isAdmin: participant.isAdmin,
+      ace: {
+        species: participant.aceSpecies,
+        nickname: participant.aceNickname,
+        reason: participant.aceReason,
+        image: participant.aceImage,
+        hasDetailImage: aceDetailIds.has(participant.id),
+      },
       points: startingPoints + (deltaByParticipant.get(participant.id) ?? 0),
       deaths: deathsByParticipant.get(participant.id) ?? 0,
       wins: stat.wins,

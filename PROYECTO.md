@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (muro de actividad y temas por juego).
+Última actualización: 10 de agosto de 2026 (pokémon as de cada jugador).
 
 ---
 
@@ -37,7 +37,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. |
-| **Puntos** | Clasificación con desempates, ajustes ±1, con motivo, masivos, e historial. |
+| **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas. |
@@ -121,6 +121,20 @@ los sprites pequeños; cada ficha pide su ilustración al abrirse.
 línea de comandos, que es donde más se atascaba el usuario. Ahora el build
 ejecuta `prisma db push` (las tablas se crean solas) y, con la base de datos
 vacía, la aplicación lleva a una pantalla que crea la cuenta de administrador.
+
+**Cada jugador tiene un pokémon as**, su representante. Se guarda en el
+participante y no en el usuario, para que cada edición conserve el suyo al
+archivarse. Se elige desde Mi perfil con el mismo buscador del cementerio, y se
+enseña en la clasificación y en la cabecera de su caja del cementerio; al
+pincharlo se abre su ficha con la ilustración grande, el mote y el motivo por el
+que es su as. **A propósito no aparece en las jornadas**: el usuario prefiere no
+perder el factor sorpresa antes de un combate.
+
+**Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
+llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
+`position: fixed` se posicionen respecto a la tarjeta en vez de a la pantalla:
+el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
+as como para la del cementerio.
 
 **El muro de actividad no guarda eventos propios.** Consulta cada fuente
 (muertes, puntos, gimnasios superados, giros, combates) y las mezcla por fecha.
@@ -242,3 +256,4 @@ lugar de destruir datos, y hay que avisar antes.
 6. **Medallas o líderes** en cada level cap, una o varias alternándose con un
    fundido, también en la tarjeta de resumen del inicio.
 7. **Muro de actividad** y **temas por juego** elegibles desde el perfil.
+8. **Pokémon as** de cada jugador, con su ficha, su mote y su porqué.

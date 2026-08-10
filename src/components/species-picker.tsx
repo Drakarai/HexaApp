@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   findSpecies,
   searchSpecies,
@@ -39,6 +39,8 @@ export function SpeciesPicker({
   const suggestions = suggestionsOpen ? searchSpecies(query) : [];
   // Evita que una descarga lenta pise el resultado de otra más reciente
   const requestRef = useRef(0);
+  // Puede haber dos buscadores en la misma página (el alta y una ficha)
+  const fieldId = useId();
 
   async function loadImages(pokemonId: number, isShiny: boolean) {
     const request = ++requestRef.current;
@@ -89,11 +91,11 @@ export function SpeciesPicker({
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="relative">
-          <label className="label" htmlFor="species-input">
+          <label className="label" htmlFor={`${fieldId}-especie`}>
             Especie
           </label>
           <input
-            id="species-input"
+            id={`${fieldId}-especie`}
             name="species"
             className="input"
             value={query}
@@ -154,11 +156,11 @@ export function SpeciesPicker({
         <div className="flex items-end gap-3">
           {selected && selected.forms.length > 1 ? (
             <div className="min-w-0 flex-1">
-              <label className="label" htmlFor="species-form">
+              <label className="label" htmlFor={`${fieldId}-forma`}>
                 Forma
               </label>
               <select
-                id="species-form"
+                id={`${fieldId}-forma`}
                 className="input"
                 value={formId ?? selected.forms[0].id}
                 onChange={(event) => {

@@ -37,6 +37,13 @@ export default async function PointsPage() {
     }),
   ]);
 
+  // Cada uno puede tocar su propio as; los administradores, el de todos
+  const editableAces = canManage
+    ? standings.map((row) => row.participantId)
+    : standings
+        .filter((row) => row.userId === user.id)
+        .map((row) => row.participantId);
+
   return (
     <>
       <PageHeader
@@ -46,7 +53,11 @@ export default async function PointsPage() {
 
       <section className="card">
         <h2 className="section-title mb-4">Clasificación global</h2>
-        <StandingsTable rows={standings} highlightUserId={user.id} />
+        <StandingsTable
+          rows={standings}
+          highlightUserId={user.id}
+          editableParticipantIds={editableAces}
+        />
 
         {canManage ? (
           <div className="mt-5 space-y-2 border-t border-white/10 pt-4">

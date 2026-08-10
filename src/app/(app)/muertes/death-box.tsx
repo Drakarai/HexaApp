@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   deleteDeathAction,
   getDeathDetailImageAction,
@@ -8,10 +9,20 @@ import {
 } from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
 import { Avatar, ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
+import { AceBadge } from "@/components/ace-badge";
 import { ImageInput } from "@/components/image-input";
 import { SpeciesPicker } from "@/components/species-picker";
 import { IMAGE_SIZES } from "@/lib/image";
 import { cx } from "@/lib/utils";
+
+export type AceSummary = {
+  species: string | null;
+  nickname: string | null;
+  reason: string | null;
+  image: string | null;
+  hasDetailImage: boolean;
+  editable: boolean;
+};
 
 export type BoxDeath = {
   id: string;
@@ -32,6 +43,7 @@ export type BoxDeath = {
     displayName: string;
     color: string;
     avatarImage: string | null;
+    ace: AceSummary;
   };
 };
 
@@ -74,7 +86,17 @@ export function DeathBox({
                 <h2 className="font-semibold text-white">
                   {group.participant.displayName}
                 </h2>
-                <span className="chip">{group.items.length}</span>
+                <AceBadge
+                  size={26}
+                  showEmpty
+                  ace={{
+                    participantId: group.participant.id,
+                    playerName: group.participant.displayName,
+                    color: group.participant.color,
+                    ...group.participant.ace,
+                  }}
+                />
+                <span className="chip ml-auto">{group.items.length}</span>
               </div>
             ) : null}
 
@@ -191,7 +213,7 @@ function DeathDetail({
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
       onClick={(event) => {
@@ -405,7 +427,8 @@ function DeathDetail({
           )
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 

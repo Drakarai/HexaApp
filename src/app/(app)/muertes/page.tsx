@@ -42,7 +42,7 @@ export default async function DeathsPage({
     },
   };
 
-  const [deaths, withDetail, counts] = await Promise.all([
+  const [deaths, withDetail, withAceArt, counts] = await Promise.all([
     prisma.death.findMany({
       where: deathsWhere,
       orderBy: [{ diedAt: "asc" }, { createdAt: "asc" }],
@@ -50,12 +50,17 @@ export default async function DeathsPage({
       omit: { detailImage: true },
       include: {
         participant: {
+          omit: { aceDetailImage: true },
           include: { user: { select: { avatarImage: true } } },
         },
       },
     }),
     prisma.death.findMany({
       where: { ...deathsWhere, detailImage: { not: null } },
+      select: { id: true },
+    }),
+    prisma.participant.findMany({
+      where: { competitionId: competition.id, aceDetailImage: { not: null } },
       select: { id: true },
     }),
     prisma.death.groupBy({
@@ -66,6 +71,7 @@ export default async function DeathsPage({
   ]);
 
   const detailIds = new Set(withDetail.map((death) => death.id));
+  const aceDetailIds = new Set(withAceArt.map((row) => row.id));
 
   const countFor = (participantId: string) =>
     counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
@@ -89,6 +95,14 @@ export default async function DeathsPage({
       displayName: death.participant.displayName,
       color: death.participant.color,
       avatarImage: death.participant.user.avatarImage,
+      ace: {
+        species: death.participant.aceSpecies,
+        nickname: death.participant.aceNickname,
+        reason: death.participant.aceReason,
+        image: death.participant.aceImage,
+        hasDetailImage: aceDetailIds.has(death.participant.id),
+        editable: canManage || death.participant.userId === user.id,
+      },
     },
   }));
 

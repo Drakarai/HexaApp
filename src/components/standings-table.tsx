@@ -1,4 +1,5 @@
 import type { StandingRow } from "@/lib/competition";
+import { AceBadge } from "@/components/ace-badge";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
 
@@ -9,9 +10,12 @@ export function StandingsTable({
   highlightUserId,
   qualifiedSlots = 2,
   compact = false,
+  editableParticipantIds = [],
 }: {
   rows: StandingRow[];
   highlightUserId?: string;
+  /** Participantes cuyo as puede editar quien está mirando */
+  editableParticipantIds?: string[];
   /** Cuántos primeros puestos se marcan como clasificados directos. */
   qualifiedSlots?: number;
   compact?: boolean;
@@ -57,6 +61,22 @@ export function StandingsTable({
                     color={row.color}
                     image={row.avatarImage}
                     size={28}
+                  />
+                  <AceBadge
+                    size={24}
+                    ace={{
+                      participantId: row.participantId,
+                      playerName: row.displayName,
+                      color: row.color,
+                      species: row.ace.species,
+                      nickname: row.ace.nickname,
+                      reason: row.ace.reason,
+                      image: row.ace.image,
+                      hasDetailImage: row.ace.hasDetailImage,
+                      editable: editableParticipantIds.includes(
+                        row.participantId,
+                      ),
+                    }}
                   />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-white">

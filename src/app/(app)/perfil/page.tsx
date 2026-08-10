@@ -1,4 +1,6 @@
 import { requireUser } from "@/lib/auth";
+import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import { AceBadge } from "@/components/ace-badge";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
 import { logoutAction } from "@/app/actions/auth";
@@ -10,6 +12,10 @@ export const metadata = { title: "Mi perfil" };
 
 export default async function ProfilePage() {
   const user = await requireUser();
+  const competition = await getActiveCompetition();
+  const myParticipant = competition
+    ? await getMyParticipant(competition.id, user.id)
+    : null;
 
   return (
     <>
@@ -36,6 +42,36 @@ export default async function ProfilePage() {
         avatarColor={user.avatarColor}
         avatarImage={user.avatarImage}
       />
+
+      {myParticipant && competition ? (
+        <section className="card mt-4">
+          <h2 className="section-title mb-1">Tu pokémon as</h2>
+          <p className="muted mb-4">
+            Tu representante en {competition.name}. Se ve en la clasificación y
+            en tu cementerio; al pincharlo se abre su ficha.
+          </p>
+          <AceBadge
+            size={64}
+            showEmpty
+            ace={{
+              participantId: myParticipant.id,
+              playerName: myParticipant.displayName,
+              color: myParticipant.color,
+              species: myParticipant.aceSpecies,
+              nickname: myParticipant.aceNickname,
+              reason: myParticipant.aceReason,
+              image: myParticipant.aceImage,
+              hasDetailImage: Boolean(myParticipant.aceDetailImage),
+              editable: true,
+            }}
+          />
+          <p className="mt-2 text-xs text-slate-500">
+            {myParticipant.aceSpecies
+              ? `${myParticipant.aceNickname ?? myParticipant.aceSpecies} · pincha para cambiarlo`
+              : "Pincha en el hueco para elegirlo"}
+          </p>
+        </section>
+      ) : null}
 
       <section className="card mt-4">
         <h2 className="section-title mb-1">Tema</h2>
