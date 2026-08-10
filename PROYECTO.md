@@ -1,0 +1,204 @@
+# HexaApp — memoria del proyecto
+
+> Resumen de todo lo hablado y decidido, para no depender de que exista el chat
+> donde se construyó. Si retomas el proyecto en una conversación nueva, empieza
+> pasando este fichero: contiene el contexto, las decisiones y el porqué de cada
+> una.
+>
+> **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
+
+Última actualización: 10 de agosto de 2026.
+
+---
+
+## 1. Qué es esto
+
+Una aplicación para gestionar competiciones tipo **Hexalocke**: un nuzlocke por
+puntos entre seis jugadores, con reglas propias, level caps, jornadas y
+clasificación.
+
+Nació de un PDF, *"Hexalocke 2"* (16/06/2026), con las reglas de una edición en
+curso: seis jugadores en HeartGold/SoulSilver en modalidad random, level caps
+por gimnasio, jornadas cada dos medallas, sistema de puntos empezando en 5 y una
+Final Four. La aplicación **no es solo para esa edición**: es una base genérica,
+y los datos de ese PDF están cargados como ejemplo editable.
+
+Repositorio: `github.com/PepeLePew016/HexaApp`
+Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
+
+---
+
+## 2. Qué hay hecho
+
+| Sección | Qué hace |
+| --- | --- |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas, últimos giros. |
+| **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
+| **Level caps** | Nivel máximo por gimnasio; cada jugador marca cuándo lo supera. |
+| **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
+| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. |
+| **Puntos** | Clasificación con desempates, ajustes ±1, con motivo, masivos, e historial. |
+| **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
+| **Administración** | Alta de usuarios, roles y contraseñas. |
+| **Instalación** | Pantalla de primer arranque que crea el administrador. |
+
+Roles: **administrador global** (crea competiciones y usuarios),
+**administrador de competición** (participante con permisos en esa edición) y
+**jugador** (registra sus muertes, marca sus gimnasios, escribe sus notas).
+
+---
+
+## 3. Decisiones y por qué
+
+Esto es lo importante si hay que retomar el proyecto.
+
+**Next.js + Prisma + PostgreSQL.** Empezó en SQLite (un fichero local, cero
+configuración) y se migró a PostgreSQL cuando se quiso publicar en internet: los
+alojamientos gratuitos no conservan ficheros entre despliegues. Existen
+`scripts/export-sqlite.ts` e `import-json.ts` para no perder los datos de
+entonces.
+
+**Vercel + Neon, los dos gratis.** Vercel ejecuta la aplicación y Neon guarda los
+datos. Ninguno pide tarjeta. Guía completa en `DEPLOY.md`.
+
+**PWA en vez de app de tienda.** El usuario pidió app de móvil priorizándola
+sobre la web si había que elegir. No hizo falta elegir: una PWA se instala desde
+el navegador, queda con su icono, se abre a pantalla completa y **es la misma
+web** que se ve en PC. Estar en Google Play (25 € una vez) o App Store (99 €/año)
+costaba dinero y no aportaba nada para seis amigos.
+
+**Autenticación propia**, cookie firmada (JWT con `jose`) + bcrypt. No se metió
+un proveedor externo porque son seis usuarios creados a mano y no hacía falta.
+
+**Las notas privadas son privadas de verdad.** Todas las consultas filtran por
+`authorId`, y los borrados usan `deleteMany` con ese filtro, de modo que ni un
+administrador puede leer o tocar notas ajenas aunque manipule un id. Se eligió
+esta opción frente a "autor + admins" a petición del usuario.
+
+**La ruleta se sortea en el servidor.** El resultado se decide en
+`spinRouletteAction` y la animación del navegador solo aterriza donde ya se
+decidió; así nadie puede manipular el sorteo desde las herramientas del
+navegador. Los pesos hacen que unas opciones salgan más que otras.
+
+**Los puntos son un historial, no un contador.** Cada movimiento guarda motivo,
+autor y fecha, y el total se calcula sumando. Permite deshacer y auditar. Los
+puntos de victoria en jornada se enlazan al combate (`sourceMatchId`), así que
+corregir un resultado no duplica puntos.
+
+**Las imágenes se guardan dentro de la base de datos** como data URL, ya
+reducidas en el navegador. Ventaja: copiar la base de datos es copiar la
+aplicación entera con sus fotos, sin ficheros sueltos ni servicios de terceros.
+
+**Imágenes automáticas del cementerio.** Buscarlas a mano era lo más lento de
+registrar una baja. Ahora se escribe la especie en español y se rellenan solas:
+render de **Pokémon HOME** para la casilla e **ilustración oficial** para la
+ficha, con desplegable de formas alternas y casilla de shiny. Se usan las
+"variedades" de PokéAPI, que incluyen Alola, Galar, Hisui, Paldea, megas, Rotom o
+Deoxys, pero dejan fuera las formas decorativas con cientos de variantes (los
+patrones de Spinda, las letras de Unown, Vivillon), que solo ensuciarían el
+desplegable. Las imágenes se descargan una vez y se guardan como copia propia.
+
+**La ilustración grande se carga aparte.** Al ponerse imagen automáticamente en
+todo, el listado del cementerio habría engordado sin control. La caja solo manda
+los sprites pequeños; cada ficha pide su ilustración al abrirse.
+
+**Instalación sin terminal.** El despliegue exigía preparar la base de datos por
+línea de comandos, que es donde más se atascaba el usuario. Ahora el build
+ejecuta `prisma db push` (las tablas se crean solas) y, con la base de datos
+vacía, la aplicación lleva a una pantalla que crea la cuenta de administrador.
+
+---
+
+## 4. Reglas del locke que están implementadas
+
+- **Clasificación y desempates**: puntos → menos pokémon muertos → mejor
+  diferencia de pokémon en combates de jornada. Los dos primeros se marcan como
+  clasificados directos a la Final Four.
+- **Jornadas**: emparejamientos por pareja, 1 punto por victoria, configurable.
+- **Level caps**: cada jugador marca su gimnasio superado, para ver quién frena
+  al grupo (nadie sigue hasta que todos pasen).
+- **Puntos iniciales**: 5 por defecto, configurable por competición.
+
+---
+
+## 5. Mapa del código
+
+```
+src/
+  app/
+    (app)/          páginas con sesión iniciada, una carpeta por sección
+    actions/        server actions agrupadas por dominio
+    instalacion/    pantalla de primer arranque
+    login/          acceso
+  components/       UI compartida: ruleta, caja del cementerio, buscador de
+                    especie, navegación, formularios base
+  lib/              db, auth, sesión, permisos, clasificación, pokédex, imágenes
+prisma/
+  schema.prisma     modelo de datos
+  seed.ts           datos de ejemplo completos (6 jugadores y jornadas)
+scripts/
+  users.ts          listar usuarios y cambiar contraseñas
+  generate-pokedex.ts  regenera src/lib/pokedex.json desde PokéAPI
+  export-sqlite.ts / import-json.ts   migración desde la versión antigua
+public/
+  sw.js, icons/     piezas de la PWA
+```
+
+Piezas con truco:
+
+- `lib/competition.ts` — `getStandings()` calcula la clasificación con sus
+  desempates; `assertCanActForParticipant()` centraliza los permisos.
+- `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
+- `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
+  izquierda se voltean para que se lean del derecho.
+- `globals.css` — las clases propias son `@utility` (Tailwind 4 no deja
+  componerlas con `@apply` de otro modo), y hay una regla `.grid > * {
+  min-width: 0 }` que evita el scroll horizontal en móvil.
+
+---
+
+## 6. Estado y pendientes
+
+**Pendiente ahora mismo**: el usuario todavía no ha desplegado. El siguiente
+paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
+Hasta entonces la aplicación solo corre en su ordenador.
+
+Ideas comentadas y no hechas:
+
+- **Equipos vivos**: fichar los 6 pokémon en juego, no solo los muertos.
+- **Encuentros por ruta**: qué salió en cada zona y si se capturó.
+- **Final Four**: cuadro del torneo con los 4 clasificados.
+- **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
+- **Enlaces a las grabaciones** de cada combate de gimnasio.
+- **Exportar una edición archivada** a PDF o imagen como recuerdo.
+
+---
+
+## 7. Cómo trabajar con este proyecto
+
+El proyecto lo dirige el organizador del locke, que decide qué se hace y
+prueba cada cambio en el móvil; el código se escribe con un asistente de IA.
+Conviene:
+
+- Escribir en español, tanto la interfaz como los comentarios del código.
+- Explicar los pasos con detalle, sin jerga, diciendo qué verá en pantalla.
+- Evitar que dependa de la terminal cuando haya alternativa por navegador.
+
+Una vez montado Vercel, **cada push a la rama principal se publica solo**. Los
+datos viven en Neon y no se tocan al desplegar. Si un cambio necesita campos
+nuevos, el build los crea; si implicara borrar algo, el despliegue se detiene en
+lugar de destruir datos, y hay que avisar antes.
+
+---
+
+## 8. Cronología
+
+1. **Aplicación base** a partir del PDF: reglas, level caps, muertes, notas
+   privadas, ruleta, puntos, jornadas y competiciones independientes.
+2. **Cementerio como caja de pokémon**: formulario reducido, cuadrícula de
+   casillas, ficha con imagen grande, y foto de perfil para los jugadores.
+3. **A internet**: migración a PostgreSQL, PWA instalable, navegación móvil con
+   barra inferior, y guía de despliegue.
+4. **Instalación desde el navegador**: sin terminal, con pantalla de bienvenida.
+5. **Imágenes automáticas** del cementerio desde PokéAPI, con formas y shiny.

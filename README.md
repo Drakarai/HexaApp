@@ -4,6 +4,9 @@ Aplicación para gestionar competiciones tipo **Hexalocke**: un nuzlocke por
 puntos entre varios jugadores, con reglas propias, level caps, jornadas y
 clasificación.
 
+> ¿Retomando el proyecto? **[PROYECTO.md](PROYECTO.md)** guarda el contexto
+> completo: decisiones tomadas, por qué, y qué queda pendiente.
+
 Cada edición (Hexalocke 1, 2, 3…) es una **competición independiente**. Al crear
 una nueva, la anterior se archiva con todos sus datos intactos: reglas, muertes,
 puntos, jornadas y ruletas quedan guardados como recuerdo y se pueden consultar
