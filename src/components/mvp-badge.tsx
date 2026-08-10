@@ -19,6 +19,7 @@ export type MvpCandidateView = {
   nickname: string | null;
   boxImage: string | null;
   hasDetailImage: boolean;
+  position: number;
   ownerId: string;
   ownerName: string;
   ownerColor: string;
@@ -330,8 +331,28 @@ function Empate({ mvp }: { mvp: MvpView }) {
   );
 }
 
+type OwnerGroup = {
+  ownerId: string;
+  ownerName: string;
+  ownerColor: string;
+  ownerAvatar: string | null;
+  pokemon: MvpCandidateView[];
+  votes: number;
+};
+
+/**
+ * La votación va por entrenadores: se elige primero de quién, y ahí dentro
+ * salen sus pokémon de esa jornada. Con seis jugadores a seis pokémon, la lista
+ * de todos seguidos era un maremágnum.
+ */
 function Votacion({ mvp }: { mvp: MvpView }) {
-  const top = mvp.candidates[0]?.votes ?? 0;
+  const groups = agruparPorDueno(mvp.candidates);
+  const myGroup = mvp.candidates.find(
+    (candidate) => candidate.id === mvp.myVoteId,
+  )?.ownerId;
+
+  // Se abre solo el del voto propio, que es el que se querrá mirar o cambiar
+  const [open, setOpen] = useState<string | null>(myGroup ?? null);
 
   return (
     <div className="mt-5 border-t border-white/10 pt-4">
@@ -343,89 +364,72 @@ function Votacion({ mvp }: { mvp: MvpView }) {
       </div>
 
       <ul className="space-y-1.5">
-        {mvp.candidates.map((candidate) => {
-          const mine = mvp.myVoteId === candidate.id;
+        {groups.map((group) => {
+          const abierto = open === group.ownerId;
+          const tieneMiVoto = group.ownerId === myGroup;
+
           return (
             <li
-              key={candidate.id}
+              key={group.ownerId}
               className={cx(
-                "relative flex items-center gap-2 overflow-hidden rounded-lg border px-2 py-1.5",
-                mine
-                  ? "border-brand-500/40 bg-brand-500/10"
+                "overflow-hidden rounded-lg border",
+                tieneMiVoto
+                  ? "border-brand-500/40 bg-brand-500/[0.07]"
                   : "border-white/5 bg-white/[0.03]",
               )}
             >
-              {/* Barra de fondo con la proporción de votos */}
-              {candidate.votes > 0 && top > 0 ? (
+              <button
+                type="button"
+                onClick={() => setOpen(abierto ? null : group.ownerId)}
+                aria-expanded={abierto}
+                className="flex w-full items-center gap-2 px-2 py-2 text-left transition hover:bg-white/[0.04]"
+              >
                 <span
                   aria-hidden
-                  className="absolute inset-y-0 left-0 bg-amber-400/10"
-                  style={{ width: `${(candidate.votes / top) * 100}%` }}
+                  className={cx(
+                    "shrink-0 text-xs text-slate-500 transition",
+                    abierto && "rotate-90",
+                  )}
+                >
+                  ▸
+                </span>
+                <Avatar
+                  name={group.ownerName}
+                  color={group.ownerColor}
+                  image={group.ownerAvatar}
+                  size={24}
                 />
-              ) : null}
-
-              <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04]">
-                {candidate.boxImage ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    src={candidate.boxImage}
-                    alt=""
-                    loading="lazy"
-                    className="h-full w-full object-contain"
-                  />
-                ) : (
-                  <span className="text-[10px] text-slate-500" aria-hidden>
-                    ?
+                <span className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
+                  {group.ownerName}
+                </span>
+                {tieneMiVoto ? (
+                  <span className="shrink-0 text-[11px] text-brand-400">
+                    tu voto
                   </span>
-                )}
-              </span>
-
-              <span className="relative min-w-0 flex-1">
-                <span className="block truncate text-sm text-white">
-                  {candidate.nickname ?? candidate.species}
+                ) : null}
+                <span className="shrink-0 text-[11px] text-slate-500">
+                  {group.pokemon.length} pokémon
                 </span>
-                <span className="block truncate text-[11px] text-slate-500">
-                  {candidate.species} · {candidate.ownerName}
+                <span
+                  className={cx(
+                    "shrink-0 text-sm font-bold tabular-nums",
+                    group.votes > 0 ? "text-amber-300" : "text-slate-600",
+                  )}
+                >
+                  {group.votes}
                 </span>
-              </span>
+              </button>
 
-              <span className="relative shrink-0 text-sm font-bold tabular-nums text-amber-300">
-                {candidate.votes}
-              </span>
-
-              {mvp.canVote ? (
-                mine ? (
-                  <form action={clearMvpVoteAction} className="relative">
-                    <input
-                      type="hidden"
-                      name="matchdayId"
-                      value={mvp.matchdayId}
+              {abierto ? (
+                <ul className="space-y-1 border-t border-white/5 p-2">
+                  {group.pokemon.map((candidate) => (
+                    <FilaPokemon
+                      key={candidate.id}
+                      mvp={mvp}
+                      candidate={candidate}
                     />
-                    <button
-                      type="submit"
-                      className="btn-ghost btn-sm"
-                      title="Quitar mi voto"
-                    >
-                      ✓ Tu voto
-                    </button>
-                  </form>
-                ) : (
-                  <form action={castMvpVoteAction} className="relative">
-                    <input
-                      type="hidden"
-                      name="matchdayId"
-                      value={mvp.matchdayId}
-                    />
-                    <input
-                      type="hidden"
-                      name="matchPokemonId"
-                      value={candidate.id}
-                    />
-                    <button type="submit" className="btn-ghost btn-sm">
-                      Votar
-                    </button>
-                  </form>
-                )
+                  ))}
+                </ul>
               ) : null}
             </li>
           );
@@ -438,5 +442,116 @@ function Votacion({ mvp }: { mvp: MvpView }) {
         </p>
       ) : null}
     </div>
+  );
+}
+
+function FilaPokemon({
+  mvp,
+  candidate,
+}: {
+  mvp: MvpView;
+  candidate: MvpCandidateView;
+}) {
+  const mine = mvp.myVoteId === candidate.id;
+
+  return (
+    <li
+      className={cx(
+        "flex items-center gap-2 rounded-lg border px-2 py-1.5",
+        mine
+          ? "border-brand-500/40 bg-brand-500/10"
+          : "border-transparent bg-white/[0.03]",
+      )}
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04]">
+        {candidate.boxImage ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={candidate.boxImage}
+            alt=""
+            loading="lazy"
+            className="h-full w-full object-contain"
+          />
+        ) : (
+          <span className="text-[10px] text-slate-500" aria-hidden>
+            ?
+          </span>
+        )}
+      </span>
+
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-white">
+          {candidate.nickname ?? candidate.species}
+        </span>
+        <span className="block truncate text-[11px] text-slate-500">
+          {candidate.species}
+        </span>
+      </span>
+
+      <span
+        className={cx(
+          "shrink-0 text-sm font-bold tabular-nums",
+          candidate.votes > 0 ? "text-amber-300" : "text-slate-600",
+        )}
+      >
+        {candidate.votes}
+      </span>
+
+      {mvp.canVote ? (
+        mine ? (
+          <form action={clearMvpVoteAction}>
+            <input type="hidden" name="matchdayId" value={mvp.matchdayId} />
+            <button
+              type="submit"
+              className="btn-ghost btn-sm"
+              title="Quitar mi voto"
+            >
+              ✓ Tu voto
+            </button>
+          </form>
+        ) : (
+          <form action={castMvpVoteAction}>
+            <input type="hidden" name="matchdayId" value={mvp.matchdayId} />
+            <input type="hidden" name="matchPokemonId" value={candidate.id} />
+            <button type="submit" className="btn-ghost btn-sm">
+              Votar
+            </button>
+          </form>
+        )
+      ) : null}
+    </li>
+  );
+}
+
+/**
+ * Agrupa los candidatos por entrenador. El orden es alfabético a propósito: la
+ * lista no se recoloca cada vez que entra un voto, así el sitio de cada uno se
+ * aprende y no hay que buscarlo.
+ */
+function agruparPorDueno(candidates: MvpCandidateView[]): OwnerGroup[] {
+  const groups = new Map<string, OwnerGroup>();
+
+  for (const candidate of candidates) {
+    const group = groups.get(candidate.ownerId) ?? {
+      ownerId: candidate.ownerId,
+      ownerName: candidate.ownerName,
+      ownerColor: candidate.ownerColor,
+      ownerAvatar: candidate.ownerAvatar,
+      pokemon: [],
+      votes: 0,
+    };
+    group.pokemon.push(candidate);
+    group.votes += candidate.votes;
+    groups.set(candidate.ownerId, group);
+  }
+
+  for (const group of groups.values()) {
+    // Dentro de cada uno, el orden del equipo: el mismo que en el combate, y
+    // así tampoco baila cada vez que entra un voto.
+    group.pokemon.sort((a, b) => a.position - b.position);
+  }
+
+  return [...groups.values()].sort((a, b) =>
+    a.ownerName.localeCompare(b.ownerName, "es"),
   );
 }

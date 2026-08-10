@@ -7,6 +7,8 @@ export type MvpCandidate = {
   nickname: string | null;
   boxImage: string | null;
   hasDetailImage: boolean;
+  /** Sitio que ocupa en el equipo de su dueño */
+  position: number;
   ownerId: string;
   ownerName: string;
   ownerColor: string;
@@ -103,6 +105,7 @@ export async function getMvpStates(
       nickname: row.nickname,
       boxImage: row.boxImage,
       hasDetailImage: withArt.has(row.id),
+      position: row.position,
       ownerId: row.participantId,
       ownerName: row.participant.displayName,
       ownerColor: row.participant.color,

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (equipos por combate y MVP votado).
+Última actualización: 10 de agosto de 2026 (votación del MVP por entrenador).
 
 ---
 
@@ -163,6 +163,15 @@ desincronizado si alguien cambia su voto o se borra un pokémon. Si hay empate
 arriba no hay MVP: o alguien mueve su voto, o un administrador desempata, y ese
 desempate solo vale **mientras el empate siga** — si los votos lo deshacen,
 manda la votación. Lo único que sí escribe un administrador es el porqué.
+
+**La votación se navega por entrenador, no como una lista de todo.** Seis
+jugadores a seis pokémon son 36 filas seguidas, y encontrar el tuyo ahí era un
+lío. Ahora hay una fila por jugador, que se despliega con sus pokémon de esa
+jornada; se abre uno cada vez, y al entrar se abre solo el del voto propio. El
+orden **no depende de los votos**: los jugadores van alfabéticos y sus pokémon
+en el orden del equipo, el mismo que se ve en el combate, para que la lista no
+se recoloque bajo el dedo cada vez que alguien vota. Los votos sí se ven sin
+desplegar: cada jugador lleva al lado la suma de los suyos.
 
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
