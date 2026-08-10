@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (las imágenes dejan de viajar
-dentro del HTML).
+Última actualización: 10 de agosto de 2026 (apuntar pokémon deja de esperar a
+descargar imágenes).
 
 ---
 
@@ -120,6 +120,26 @@ reducir animaciones. Guardar la lista en una columna `String[]` de Postgres, en
 vez de en una tabla aparte, mantiene el orden sin joins; la columna antigua
 `image` se conserva como respaldo de lectura para no forzar una migración
 destructiva, y se vacía sola al guardar desde el formulario.
+
+**Los sprites los descarga el servidor, no el navegador.** Cada pokémon que se
+apunta necesita dos imágenes de GitHub: el render de Pokémon HOME y la
+ilustración oficial, **unos 110 KB cada una**. Antes se las bajaba el navegador,
+las redimensionaba con canvas y subía 57 KB de base64 al guardar; había que
+esperar a todo eso *antes* de poder pulsar el botón, y apuntar un equipo de
+jornada son seis seguidos. Ahora el navegador solo manda el número de la especie
+y las descarga el servidor con `sharp` (ver `lib/sprites-servidor.ts`): de
+centro de datos a centro de datos, unos 150 ms. Medido con un equipo de 6: de
+7,7 s a 1,8 s, y de 288 KB subidos a 5 KB.
+
+**El pokémon aparece antes de que el servidor conteste.** Aun con la descarga en
+el servidor quedaban unos 600 ms por bicho, casi todos de volver a generar la
+página de jornadas entera. Con `useOptimistic` la casilla sale al momento (con el
+sprite pixelado de 900 bytes de relleno) y el formulario se vacía al instante,
+así que se pueden encadenar los seis sin esperar; cuando el servidor contesta,
+la lista de verdad sustituye a la provisional, y si algo falla el pokémon
+desaparece solo y sale el aviso. El envío se hace a mano en vez de con
+`action={...}` para poder **leer el formulario antes de vaciarlo**: dejándoselo
+a React la limpieza caía a destiempo y se perdía el mote.
 
 **Imágenes automáticas del cementerio.** Buscarlas a mano era lo más lento de
 registrar una baja. Ahora se escribe la especie en español y se rellenan solas:
@@ -290,8 +310,10 @@ Piezas con truco:
 
 - `lib/competition.ts` — `getStandings()` calcula la clasificación con sus
   desempates; `assertCanActForParticipant()` centraliza los permisos.
-- `components/species-picker.tsx` — buscador de pokémon y descarga de imágenes.
-  Lo comparten el cementerio, el as, el hall de la fama y el MVP de jornada.
+- `components/species-picker.tsx` — buscador de pokémon. Solo manda **qué**
+  pokémon es; las imágenes las baja `lib/sprites-servidor.ts` al guardar. La
+  vista previa usa el sprite pixelado, que pesa 900 bytes en vez de 110 KB. Lo
+  comparten el cementerio, el as, el hall de la fama y los equipos de jornada.
 - `lib/imagenes.ts` y `lib/imagen-url.ts` — las direcciones de las imágenes y
   sus firmas. `app/api/imagen/[...partes]/route.ts` es quien las sirve.
 - `lib/mvp.ts` — el recuento de la votación al MVP: quién gana, si hay empate y
@@ -383,3 +405,5 @@ lugar de destruir datos, y hay que avisar antes.
     todos los pokémon que jugaron la jornada.
 14. **Las imágenes dejan de viajar dentro del HTML** y se sirven como archivos
     cacheables: era la razón de que todo fuera cada vez más lento.
+15. **Apuntar un pokémon deja de esperar**: los sprites los descarga el
+    servidor y la casilla aparece al momento.

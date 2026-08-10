@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
-import { sanitizeImageValue } from "@/lib/image";
+import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
 /** Tope de pokémon por jugador y combate, como el equipo de un juego. */
@@ -48,14 +48,17 @@ export async function addMatchPokemonAction(
     return { error: `Un equipo son ${MAX_TEAM} pokémon como mucho.` };
   }
 
+  // Las imágenes las baja el servidor: el navegador solo manda qué pokémon es
+  const sprites = await spritesDelFormulario(formData);
+
   await prisma.matchPokemon.create({
     data: {
       matchId,
       participantId,
       species,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
-      boxImage: sanitizeImageValue(formData.get("boxImage")),
-      detailImage: sanitizeImageValue(formData.get("detailImage")),
+      boxImage: sprites?.boxImage ?? null,
+      detailImage: sprites?.detailImage ?? null,
       position: count,
     },
   });

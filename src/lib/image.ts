@@ -87,11 +87,17 @@ export const IMAGEN_SIN_CAMBIOS = "__igual__";
 /**
  * Lo que hay que guardar según lo que mande un formulario de edición:
  * `undefined` es "no toques esa columna" en Prisma, y null es "bórrala".
+ *
+ * Ojo con la diferencia entre que el campo **no venga** (null, porque ese
+ * formulario ni siquiera lo tiene: el buscador de especie no manda imágenes) y
+ * que venga **vacío** (""), que es lo que manda el botón de quitar.
  */
 export function imagenEditada(
   raw: FormDataEntryValue | null,
 ): string | null | undefined {
-  const value = String(raw ?? "").trim();
+  if (raw === null) return undefined;
+
+  const value = String(raw).trim();
   if (value === IMAGEN_SIN_CAMBIOS) return undefined;
   if (!value) return null;
   // Una dirección de nuestra propia ruta no es una imagen: no se guarda

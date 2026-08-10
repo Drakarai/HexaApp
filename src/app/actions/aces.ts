@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { imagenEditada } from "@/lib/image";
+import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -25,6 +25,8 @@ export async function updateAceAction(
   const species = String(formData.get("species") ?? "").trim();
   if (!species) return { error: "Elige la especie de tu as." };
 
+  const sprites = await spritesDelFormulario(formData);
+
   await prisma.participant.update({
     where: { id: participantId },
     data: {
@@ -32,8 +34,9 @@ export async function updateAceAction(
       aceNickname: String(formData.get("nickname") ?? "").trim() || null,
       aceReason: String(formData.get("reason") ?? "").trim() || null,
       // Vacío = no se eligió especie nueva, así que se dejan las de antes
-      aceImage: imagenEditada(formData.get("boxImage")),
-      aceDetailImage: imagenEditada(formData.get("detailImage")),
+      // Sin especie nueva no se toca nada de lo que ya tuviera guardado
+      aceImage: sprites?.boxImage,
+      aceDetailImage: sprites?.detailImage,
     },
   });
 
@@ -44,6 +47,8 @@ export async function updateAceAction(
 export async function clearAceAction(formData: FormData) {
   const participantId = String(formData.get("participantId") ?? "");
   await assertCanActForParticipant(participantId);
+
+  const sprites = await spritesDelFormulario(formData);
 
   await prisma.participant.update({
     where: { id: participantId },

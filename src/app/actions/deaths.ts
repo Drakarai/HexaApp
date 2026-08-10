@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { imagenEditada, sanitizeImageValue } from "@/lib/image";
+import { imagenEditada } from "@/lib/image";
+import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -27,13 +28,17 @@ export async function createDeathAction(
   const nickname = String(formData.get("nickname") ?? "").trim();
   if (!species) return { error: "Dinos qué pokémon ha caído." };
 
+  // Las imágenes las baja el servidor: el navegador solo manda qué pokémon es
+  const sprites = await spritesDelFormulario(formData);
+
   await prisma.death.create({
     data: {
       participantId,
       species,
       nickname: nickname || null,
       cause: String(formData.get("cause") ?? "").trim() || null,
-      boxImage: sanitizeImageValue(formData.get("boxImage")),
+      boxImage: sprites?.boxImage ?? null,
+      detailImage: sprites?.detailImage ?? null,
     },
   });
 
@@ -64,6 +69,14 @@ export async function updateDeathAction(
   const level = levelRaw ? Number(levelRaw) : null;
   const diedAtRaw = String(formData.get("diedAt") ?? "").trim();
 
+  // Dos vías que conviven: el buscador manda qué pokémon es y las imágenes las
+  // baja el servidor; el modo manual las manda él. Si no llega ninguna de las
+  // dos cosas, se quedan las que ya tuviera.
+  const sprites = await spritesDelFormulario(formData);
+  const boxImage = sprites?.boxImage ?? imagenEditada(formData.get("boxImage"));
+  const detailImage =
+    sprites?.detailImage ?? imagenEditada(formData.get("detailImage"));
+
   await prisma.death.update({
     where: { id },
     data: {
@@ -73,9 +86,8 @@ export async function updateDeathAction(
       level: level !== null && Number.isFinite(level) ? Math.trunc(level) : null,
       location: String(formData.get("location") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
-      // Si el formulario no tocó las imágenes se quedan las de antes
-      boxImage: imagenEditada(formData.get("boxImage")),
-      detailImage: imagenEditada(formData.get("detailImage")),
+      boxImage,
+      detailImage,
       ...(diedAtRaw ? { diedAt: new Date(diedAtRaw) } : {}),
     },
   });

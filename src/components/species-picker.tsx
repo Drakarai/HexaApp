@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import {
   findSpecies,
   searchSpecies,
   spriteCandidates,
   type PokedexSpecies,
 } from "@/lib/pokedex";
-import { IMAGEN_SIN_CAMBIOS, IMAGE_SIZES, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 
 /**
- * Busca el pokémon por su nombre en español y, al elegirlo, descarga solo el
- * sprite de Pokémon HOME y la ilustración oficial, los reduce y los deja
- * listos en los campos ocultos. Las imágenes se guardan como copia propia:
- * una vez registrada la baja no dependen de ningún servidor de fuera.
+ * Busca el pokémon por su nombre en español y manda al servidor **qué** pokémon
+ * es, no sus imágenes.
+ *
+ * Antes el navegador se bajaba de GitHub el render de Pokémon HOME y la
+ * ilustración oficial (unos 110 KB cada uno), los redimensionaba con canvas y
+ * subía 57 KB de base64 al guardar. Había que esperar a todo eso antes de poder
+ * pulsar el botón, y apuntar un equipo son seis pokémon seguidos. Ahora las
+ * descarga el servidor al guardar (ver lib/sprites-servidor.ts) y aquí solo
+ * viajan el número de la especie y si es shiny.
  */
 export function SpeciesPicker({
   defaultSpecies = "",
@@ -24,8 +28,8 @@ export function SpeciesPicker({
   defaultSpecies?: string;
   /**
    * Imágenes que ya tiene guardadas, **solo para la vista previa**: son
-   * direcciones, no las imágenes. Los campos ocultos arrancan vacíos, y vacío
-   * significa "deja las que había"; solo se llenan si se elige otra especie.
+   * direcciones, no las imágenes. Mientras no se elija otra especie no se toca
+   * nada de lo guardado.
    */
   defaultBoxImage?: string | null;
   defaultDetailImage?: string | null;
@@ -36,60 +40,20 @@ export function SpeciesPicker({
   );
   const [formId, setFormId] = useState<number | null>(null);
   const [shiny, setShiny] = useState(false);
-  const [boxImage, setBoxImage] = useState("");
-  const [detailImage, setDetailImage] = useState("");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
 
   const suggestions = suggestionsOpen ? searchSpecies(query) : [];
-  // Evita que una descarga lenta pise el resultado de otra más reciente
-  const requestRef = useRef(0);
   // Puede haber dos buscadores en la misma página (el alta y una ficha)
   const fieldId = useId();
 
-  async function loadImages(pokemonId: number, isShiny: boolean) {
-    const request = ++requestRef.current;
-    setStatus("loading");
-
-    const download = async (kind: "box" | "detail", maxSize: number) => {
-      for (const url of spriteCandidates(pokemonId, isShiny, kind)) {
-        try {
-          const response = await fetch(url);
-          if (!response.ok) continue;
-          return await imageToDataUrl(await response.blob(), maxSize);
-        } catch {
-          // se prueba la siguiente dirección
-        }
-      }
-      return null;
-    };
-
-    try {
-      const [box, detail] = await Promise.all([
-        download("box", IMAGE_SIZES.box),
-        download("detail", IMAGE_SIZES.detail),
-      ]);
-      if (request !== requestRef.current) return;
-
-      if (!box && !detail) {
-        setStatus("error");
-        return;
-      }
-      setBoxImage(box ?? detail ?? "");
-      setDetailImage(detail ?? box ?? "");
-      setStatus("idle");
-    } catch {
-      if (request === requestRef.current) setStatus("error");
-    }
-  }
+  // Se ha elegido pokémon nuevo: es lo que hará que el servidor lo descargue
+  const elegido = formId !== null;
 
   function chooseSpecies(species: PokedexSpecies) {
     setQuery(species.name);
     setSelected(species);
     setSuggestionsOpen(false);
-    const firstForm = species.forms[0];
-    setFormId(firstForm.id);
-    void loadImages(firstForm.id, shiny);
+    setFormId(species.forms[0].id);
   }
 
   return (
@@ -116,6 +80,7 @@ export function SpeciesPicker({
                 setFormId(match.forms[0].id);
               } else {
                 setSelected(null);
+                setFormId(null);
               }
             }}
             onFocus={() => setSuggestionsOpen(true)}
@@ -168,11 +133,7 @@ export function SpeciesPicker({
                 id={`${fieldId}-forma`}
                 className="input"
                 value={formId ?? selected.forms[0].id}
-                onChange={(event) => {
-                  const id = Number(event.target.value);
-                  setFormId(id);
-                  void loadImages(id, shiny);
-                }}
+                onChange={(event) => setFormId(Number(event.target.value))}
               >
                 {selected.forms.map((form) => (
                   <option key={form.id} value={form.id}>
@@ -193,12 +154,10 @@ export function SpeciesPicker({
           >
             <input
               type="checkbox"
+              name="shiny"
               className="accent-amber-400"
               checked={shiny}
-              onChange={(event) => {
-                setShiny(event.target.checked);
-                if (formId) void loadImages(formId, event.target.checked);
-              }}
+              onChange={(event) => setShiny(event.target.checked)}
             />
             ✨ Shiny
           </label>
@@ -206,25 +165,21 @@ export function SpeciesPicker({
       </div>
 
       <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-        <Preview label="Caja" image={boxImage || (defaultBoxImage ?? "")} />
-        <Preview label="Ficha" image={detailImage || (defaultDetailImage ?? "")} />
+        <Preview
+          elegido={elegido}
+          pokemonId={formId}
+          shiny={shiny}
+          guardada={defaultBoxImage ?? ""}
+        />
         <div className="min-w-0 flex-1 text-xs">
-          {status === "loading" ? (
-            <p className="text-slate-400">Descargando imágenes…</p>
-          ) : status === "error" ? (
-            <p className="text-amber-300">
-              No he encontrado imágenes de esa forma. Puedes ponerlas a mano al
-              abrir la ficha.
-            </p>
-          ) : boxImage || detailImage ? (
+          {elegido ? (
             <p className="text-slate-400">
-              Sprite de Pokémon HOME e ilustración oficial, ya guardados. Podrás
-              cambiarlos desde la ficha.
+              Al guardar se descargan solas el sprite de Pokémon HOME y la
+              ilustración oficial. Podrás cambiarlas desde la ficha.
             </p>
           ) : defaultBoxImage || defaultDetailImage ? (
             <p className="text-slate-500">
-              Estas son las que tiene ahora. Si eliges otra especie se cambian
-              solas.
+              Esta es la que tiene ahora. Si eliges otra especie se cambia sola.
             </p>
           ) : (
             <p className="text-slate-500">
@@ -234,29 +189,48 @@ export function SpeciesPicker({
         </div>
       </div>
 
-      {/* Vacío hasta que se elige especie: mientras, la marca de "sin
-          cambios" para no pisar las imágenes que ya tuviera guardadas */}
-      <input
-        type="hidden"
-        name="boxImage"
-        value={boxImage || (defaultBoxImage ? IMAGEN_SIN_CAMBIOS : "")}
-      />
-      <input
-        type="hidden"
-        name="detailImage"
-        value={detailImage || (defaultDetailImage ? IMAGEN_SIN_CAMBIOS : "")}
-      />
+      {/* Lo único que viaja: qué pokémon es. Si no se ha elegido ninguno no se
+          manda nada y el servidor deja las imágenes que ya hubiera. */}
+      {elegido ? (
+        <input type="hidden" name="pokemonId" value={formId ?? ""} />
+      ) : null}
     </div>
   );
 }
 
-function Preview({ label, image }: { label: string; image: string }) {
+/**
+ * Vista previa. Con un pokémon recién elegido usa el sprite pequeño de toda la
+ * vida (unos 900 bytes) en vez del render grande: es solo para confirmar que
+ * has elegido el que querías, y así no se bajan 110 KB por cada uno que miras.
+ */
+function Preview({
+  elegido,
+  pokemonId,
+  shiny,
+  guardada,
+}: {
+  elegido: boolean;
+  pokemonId: number | null;
+  shiny: boolean;
+  guardada: string;
+}) {
+  const [fallo, setFallo] = useState(false);
+  const candidatas =
+    elegido && pokemonId ? spriteCandidates(pokemonId, shiny, "mini") : [];
+  const src = elegido ? (fallo ? candidatas[1] : candidatas[0]) : guardada;
+
   return (
     <div className="text-center">
       <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-ink-850">
-        {image ? (
+        {src ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={image} alt="" className="h-full w-full object-contain" />
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className="h-full w-full object-contain"
+            onError={() => setFallo(true)}
+          />
         ) : (
           <span className="text-lg opacity-30" aria-hidden>
             ？
@@ -264,7 +238,7 @@ function Preview({ label, image }: { label: string; image: string }) {
         )}
       </div>
       <p className="mt-1 text-[10px] uppercase tracking-wide text-slate-500">
-        {label}
+        {elegido ? "Elegido" : "Ahora"}
       </p>
     </div>
   );

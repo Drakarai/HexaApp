@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { isLockeFinished } from "@/lib/final-four";
-import { sanitizeImageValue } from "@/lib/image";
+import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
 const TEAM_SIZE = 6;
@@ -44,7 +44,7 @@ export async function addHallPokemonAction(
       participantId,
       species,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
-      image: sanitizeImageValue(formData.get("boxImage")),
+      image: (await spritesDelFormulario(formData))?.boxImage ?? null,
       position: count,
     },
   });

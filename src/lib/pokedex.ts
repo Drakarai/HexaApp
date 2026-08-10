@@ -68,16 +68,20 @@ const SPRITES =
  *
  * - "box": render de Pokémon HOME, que es el que va bien de sprite pequeño.
  * - "detail": ilustración oficial, para la ficha.
+ * - "mini": el sprite pixelado de siempre. Pesa unos 900 bytes en vez de 110
+ *   KB, así que es el que se usa para la vista previa del buscador, donde solo
+ *   hace falta reconocer al pokémon.
  */
 export function spriteCandidates(
   pokemonId: number,
   shiny: boolean,
-  kind: "box" | "detail",
+  kind: "box" | "detail" | "mini",
 ) {
   const variant = shiny ? "shiny/" : "";
   const home = `${SPRITES}/other/home/${variant}${pokemonId}.png`;
   const artwork = `${SPRITES}/other/official-artwork/${variant}${pokemonId}.png`;
   const basic = `${SPRITES}/${variant}${pokemonId}.png`;
 
+  if (kind === "mini") return [basic, home, artwork];
   return kind === "box" ? [home, artwork, basic] : [artwork, home, basic];
 }
