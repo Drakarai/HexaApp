@@ -216,8 +216,9 @@ function Ficha({
 
   return (
     <>
+      {/* 4:3 en vez de 16:9: con el panorámico el pokémon salía pequeño */}
       <div
-        className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5"
+        className="flex aspect-[4/3] w-full items-center justify-center overflow-hidden rounded-xl border border-white/5"
         style={{ background: `${winner.ownerColor}14` }}
       >
         {detailImage ?? winner.boxImage ? (

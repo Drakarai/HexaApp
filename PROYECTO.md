@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (escala en PC y nombres en móvil).
+Última actualización: 10 de agosto de 2026 (equipos como caja de 3x2 en PC).
 
 ---
 
@@ -269,10 +269,13 @@ Piezas con truco:
 - `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
   que la del as: la ilustración grande no viaja con la lista, se pide al abrir.
 - `components/match-team.tsx` — los equipos bajo cada combate y el editor del
-  administrador. Al guardar, el entrenador elegido se conserva (se apuntan seis
-  seguidos del mismo) y el buscador y el mote se vacían remontándolos con
-  `key`: los dos llevan estado propio y un `reset()` del formulario no los
-  limpiaría.
+  administrador. **Dos vistas del mismo dato**: en móvil una tira de sprites
+  por jugador, que es lo que cabe, y desde `lg` dos cajas de 3x2 una al lado
+  de la otra, con los seis huecos siempre puestos (los que faltan van de línea
+  discontinua) para que las dos midan igual. Al guardar, el entrenador elegido
+  se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
+  vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
+  del formulario no los limpiaría.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.

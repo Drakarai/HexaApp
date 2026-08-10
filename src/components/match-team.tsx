@@ -47,11 +47,21 @@ export function MatchTeams({
   return (
     <div className="mt-2 border-t border-white/5 pt-2">
       {hasTeams ? (
-        <div className="space-y-1.5">
-          {sides.map((side) => (
-            <TeamRow key={side.participantId} side={side} />
-          ))}
-        </div>
+        <>
+          {/* Móvil: una tira de sprites por jugador, que es lo que cabe */}
+          <div className="space-y-1.5 lg:hidden">
+            {sides.map((side) => (
+              <TeamRow key={side.participantId} side={side} />
+            ))}
+          </div>
+
+          {/* PC: los dos equipos como cajas de 3x2, una al lado de la otra */}
+          <div className="hidden gap-3 lg:grid lg:grid-cols-2">
+            {sides.map((side) => (
+              <TeamBox key={side.participantId} side={side} />
+            ))}
+          </div>
+        </>
       ) : null}
 
       {canManage ? (
@@ -88,6 +98,74 @@ function TeamRow({ side }: { side: TeamSide }) {
       {side.team.map((pokemon) => (
         <Sprite key={pokemon.id} pokemon={pokemon} owner={side.displayName} />
       ))}
+    </div>
+  );
+}
+
+/**
+ * El equipo como una caja de 3x2, al estilo del equipo de un juego. Los seis
+ * huecos están siempre, aunque falten pokémon, para que las dos cajas de un
+ * combate midan igual y se lean de un vistazo.
+ */
+function TeamBox({ side }: { side: TeamSide }) {
+  const huecos = Array.from({ length: 6 }, (_, index) => side.team[index] ?? null);
+
+  return (
+    <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-2">
+      <div className="mb-2 flex items-center gap-2 px-1">
+        <Avatar
+          name={side.displayName}
+          color={side.color}
+          image={side.avatarImage}
+          size={20}
+        />
+        <span className="min-w-0 truncate text-xs font-semibold text-slate-300">
+          {side.displayName}
+        </span>
+        <span className="ml-auto shrink-0 text-[11px] text-slate-600">
+          {side.team.length}/6
+        </span>
+      </div>
+
+      <div className="grid grid-cols-3 gap-1.5">
+        {huecos.map((pokemon, index) =>
+          pokemon ? (
+            <div
+              key={pokemon.id}
+              title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species})`}
+              className="min-w-0 rounded-lg border border-white/5 bg-white/[0.04] p-1"
+            >
+              <div className="flex h-16 items-center justify-center">
+                {pokemon.boxImage ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={pokemon.boxImage}
+                    alt={pokemon.nickname ?? pokemon.species}
+                    loading="lazy"
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <span className="text-lg text-slate-600" aria-hidden>
+                    ?
+                  </span>
+                )}
+              </div>
+              <p className="truncate text-center text-[11px] text-slate-400">
+                {pokemon.nickname ?? pokemon.species}
+              </p>
+            </div>
+          ) : (
+            <div
+              key={`hueco-${index}`}
+              aria-hidden
+              className="rounded-lg border border-dashed border-white/[0.07]"
+            >
+              <div className="h-16" />
+              <p className="text-[11px]">&nbsp;</p>
+            </div>
+          ),
+        )}
+      </div>
     </div>
   );
 }
