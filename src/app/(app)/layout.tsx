@@ -3,49 +3,75 @@ import { requireUser, isAdmin } from "@/lib/auth";
 import { getActiveCompetition, listCompetitions } from "@/lib/competition";
 import { logoutAction } from "@/app/actions/auth";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
-import { Nav, type NavEntry, type NavItem } from "@/components/nav";
+import { Nav, type NavEntry, type NavGroup, type NavItem } from "@/components/nav";
 import { MobileTabBar } from "@/components/mobile-nav";
 import { Avatar } from "@/components/ui";
+import { ROLES } from "@/lib/constants";
 
-/** Las 4 primeras salen en la barra inferior del móvil; el resto, en "Más". */
-const PRIMARY_ITEMS: NavItem[] = [
-  { href: "/", label: "Resumen", icon: "🏠" },
-  { href: "/muertes", label: "Caja", icon: "💀" },
-  { href: "/puntos", label: "Puntos", icon: "🏆" },
-  { href: "/ruleta", label: "Ruleta", icon: "🎡" },
+/**
+ * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
+ * las ordenan distinto —una es una lista larga y el otro va por grupos— pero
+ * son las mismas páginas, y así no se puede añadir una en un sitio y olvidarla
+ * en el otro.
+ */
+const S = {
+  resumen: { href: "/", label: "Resumen", icon: "🏠" },
+  caja: { href: "/muertes", label: "Caja", icon: "💀" },
+  puntos: { href: "/puntos", label: "Puntos", icon: "🏆" },
+  ruleta: { href: "/ruleta", label: "Ruleta", icon: "🎡" },
+  jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
+  retos: { href: "/retos", label: "Retos", icon: "🔥" },
+  finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
+  hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
+  actividad: { href: "/actividad", label: "Actividad", icon: "📰" },
+  reglas: { href: "/reglas", label: "Reglas", icon: "📜" },
+  levelCaps: { href: "/level-caps", label: "Level caps", icon: "🎯" },
+  notas: { href: "/notas", label: "Mis notas", icon: "🗒️" },
+  perfil: { href: "/perfil", label: "Mi perfil", icon: "👤" },
+  ediciones: { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
+  admin: { href: "/admin", label: "Administración", icon: "⚙️" },
+} satisfies Record<string, NavItem>;
+
+/** Las 4 de la barra inferior del móvil: lo que se abre todos los días. */
+const PRIMARY_ITEMS: NavItem[] = [S.resumen, S.caja, S.puntos, S.ruleta];
+
+/** En la barra lateral, "Combates" es lo único que se despliega. */
+const COMBATES: NavGroup = {
+  label: "Combates",
+  icon: "⚔️",
+  children: [S.jornadas, S.retos],
+};
+
+const SIDEBAR_SECONDARY: NavEntry[] = [
+  S.actividad,
+  S.reglas,
+  S.levelCaps,
+  COMBATES,
+  S.finalFour,
+  S.hall,
+  S.notas,
+  S.ediciones,
+  S.perfil,
 ];
 
 /**
- * En la barra lateral, "Combates" es un desplegable con las jornadas y los
- * retos dentro. En el móvil no hay desplegables: el panel de "Más" es una
- * rejilla de iconos, así que ahí los dos salen sueltos.
+ * El menú del móvil, por grupos. El orden es el de la pregunta que trae a cada
+ * uno: "qué se ha jugado", "cómo va la edición", "lo mío" y, al final, lo de
+ * gestionar, que se toca de uvas a peras.
  */
-const COMBATES: NavEntry = {
-  label: "Combates",
-  icon: "⚔️",
-  children: [
-    { href: "/jornadas", label: "Jornadas", icon: "📅" },
-    { href: "/retos", label: "Retos", icon: "🔥" },
-  ],
-};
-
-const SECONDARY_ITEMS: NavEntry[] = [
-  { href: "/actividad", label: "Actividad", icon: "📰" },
-  { href: "/reglas", label: "Reglas", icon: "📜" },
-  { href: "/level-caps", label: "Level caps", icon: "🎯" },
-  COMBATES,
-  { href: "/final-four", label: "Final Four", icon: "🏆" },
-  { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
-  { href: "/notas", label: "Mis notas", icon: "🗒️" },
-  { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
-  { href: "/perfil", label: "Mi perfil", icon: "👤" },
+const MOBILE_GROUPS: NavGroup[] = [
+  {
+    label: "Combates",
+    icon: "⚔️",
+    children: [S.jornadas, S.retos, S.finalFour, S.hall],
+  },
+  {
+    label: "La edición",
+    icon: "📚",
+    children: [S.reglas, S.levelCaps, S.actividad],
+  },
+  { label: "Lo mío", icon: "👤", children: [S.notas, S.perfil] },
 ];
-
-/** La versión plana, para la rejilla del móvil. */
-const paraMovil = (entradas: NavEntry[]): NavItem[] =>
-  entradas.flatMap((entrada) =>
-    "children" in entrada ? entrada.children : [entrada],
-  );
 
 export default async function AppLayout({
   children,
@@ -58,14 +84,21 @@ export default async function AppLayout({
     getActiveCompetition(),
   ]);
 
-  const adminItems: NavItem[] = [
-    { href: "/admin", label: "Administración", icon: "⚙️" },
-    { href: "/diagnostico", label: "Diagnóstico", icon: "🩺" },
+  // El diagnóstico no ocupa sitio en la navegación: vive dentro de Mi perfil,
+  // que es donde se busca cuando algo va raro y no todos los días.
+  const gestion: NavItem[] = isAdmin(user)
+    ? [S.ediciones, S.admin]
+    : [S.ediciones];
+
+  const sidebarItems: NavEntry[] = [
+    ...PRIMARY_ITEMS,
+    ...SIDEBAR_SECONDARY,
+    ...(isAdmin(user) ? [S.admin] : []),
   ];
-  const secondary: NavEntry[] = isAdmin(user)
-    ? [...SECONDARY_ITEMS, ...adminItems]
-    : SECONDARY_ITEMS;
-  const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...secondary];
+  const mobileGroups: NavGroup[] = [
+    ...MOBILE_GROUPS,
+    { label: "Gestión", icon: "🗂️", children: gestion },
+  ];
 
   const switcher = (
     <CompetitionSwitcher
@@ -144,7 +177,18 @@ export default async function AppLayout({
 
       <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
 
-      <MobileTabBar primary={PRIMARY_ITEMS} secondary={paraMovil(secondary)} />
+      <MobileTabBar
+        primary={PRIMARY_ITEMS}
+        groups={mobileGroups}
+        user={{
+          displayName: user.displayName,
+          avatarColor: user.avatarColor,
+          avatarImage: user.avatarImage,
+          subtitle: `@${user.username} · ${
+            user.role === ROLES.ADMIN ? "Administrador" : "Jugador"
+          }`,
+        }}
+      />
     </div>
   );
 }

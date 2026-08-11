@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de agosto de 2026 (combates de reto y cara a cara en
-los perfiles).
+Última actualización: 11 de agosto de 2026 (menú del móvil por grupos y el
+diagnóstico dentro de Mi perfil).
 
 ---
 
@@ -225,9 +225,30 @@ piezas.
 **"Jornadas" pasó a ser "Combates", un menú con dos.** Al aparecer los retos, la
 barra tenía dos entradas que eran lo mismo con otras reglas. Ahora hay un grupo
 **Combates** que se despliega en **Jornadas** y **Retos**, y arranca abierto si
-estás en una de las dos. En móvil los grupos no existen: la rejilla de "Más" los
-aplana y salen las dos páginas sueltas, porque ahí un desplegable dentro de otro
-desplegable no se maneja bien con el dedo.
+estás en una de las dos.
+
+**El menú del móvil va por grupos, no en una rejilla de iconos.** Antes las
+secciones que no caben abajo se amontonaban detrás de un botón "Más", en una
+cuadrícula de doce iconos todos iguales: para encontrar una había que leérselas
+todas, y con cada sección nueva iba a peor. Ahora ese botón se llama **Menú** y
+abre una hoja que sube desde abajo con cuatro apartados —**Combates**, **La
+edición**, **Lo mío** y **Gestión**—, cada uno con sus páginas en filas
+completas, con su icono, su nombre entero y la actual resaltada. Primero eliges
+de qué va lo que buscas y solo miras tres o cuatro cosas.
+
+Detalles que costaron su rato:
+
+- La hoja **deja hueco abajo** para la barra de pestañas, que se queda encima:
+  sin ese hueco, "Cerrar sesión" quedaba tapado por la barra.
+- La cabecera con tu foto **se queda fija** al desplazar, y lleva al perfil.
+- Los grupos del móvil y la lista de la barra lateral **salen de las mismas
+  constantes** (el objeto `S` de `layout.tsx`), así que no se puede añadir una
+  sección en un sitio y olvidarla en el otro.
+
+**El diagnóstico vive dentro de Mi perfil.** Ocupaba una entrada fija del menú
+para algo que se mira cuando algo va lento, no todos los días. Ahora es un
+botón en Mi perfil, solo visible para administradores; la página sigue siendo
+la misma y sigue comprobando el permiso por su cuenta.
 
 **El balance del perfil se abre y enseña el cara a cara.** En la página de cada
 jugador, la casilla de victorias-derrotas ya no es solo la cifra: debajo lleva
@@ -323,10 +344,11 @@ por página, y el servidor habla con la base de datos **treinta**. Si se cambia
 la región de Neon, hay que cambiar también esa línea.
 
 **Hay una pantalla de diagnóstico** en `/diagnostico`, solo para
-administradores: mide la ida y vuelta real a la base de datos desde donde esté
-desplegada la aplicación, y avisa si el servidor y la base de datos están en
-regiones distintas o si falta el *pooler*. Existe porque desde el código no se
-puede saber, y es la diferencia entre 5 ms y 120 ms por consulta.
+administradores y a la que se llega desde Mi perfil: mide la ida y vuelta real a
+la base de datos desde donde esté desplegada la aplicación, y avisa si el
+servidor y la base de datos están en regiones distintas o si falta el *pooler*.
+Existe porque desde el código no se puede saber, y es la diferencia entre 5 ms y
+120 ms por consulta.
 
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
@@ -444,6 +466,9 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
+- `components/mobile-nav.tsx` — la barra de pestañas de abajo y el menú por
+  grupos. `app/(app)/layout.tsx` decide qué va en cada sitio a partir del
+  objeto `S`, que es la lista única de secciones.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
@@ -529,3 +554,4 @@ lugar de destruir datos, y hay que avisar antes.
     distancia real a la base de datos.
 18. **Combates de reto**, con premio y castigo, y el **cara a cara** de cada
     jugador contra los demás en su perfil.
+19. **El menú del móvil por grupos**, en vez de una rejilla con todo dentro.

@@ -129,6 +129,38 @@ body {
   }
 }
 
+@utility pestana {
+  @apply flex flex-col items-center gap-0.5 py-1.5;
+}
+
+/* El menú del móvil sube desde abajo, como el de una app del teléfono */
+@keyframes sube-el-menu {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+@keyframes aparece-el-fondo {
+  from {
+    opacity: 0;
+  }
+}
+
+.menu-movil {
+  animation: sube-el-menu 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu-fondo {
+  animation: aparece-el-fondo 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-movil,
+  .menu-fondo {
+    animation: none;
+  }
+}
+
 /* La aguja de la ruleta gira con una transición larga y desacelerada */
 .roulette-wheel {
   transition-property: transform;

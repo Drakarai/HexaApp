@@ -144,6 +144,20 @@ export default async function ProfilePage() {
         <ThemePicker current={user.theme} />
       </section>
 
+      {user.role === ROLES.ADMIN ? (
+        <section className="card mt-4">
+          <h2 className="section-title mb-1">Diagnóstico</h2>
+          <p className="muted mb-4">
+            Mide lo que tarda la aplicación en hablar con la base de datos. Es
+            para mirarlo cuando algo va lento, no todos los días, así que vive
+            aquí en vez de ocupar sitio en el menú.
+          </p>
+          <Link href="/diagnostico" className="btn-ghost">
+            🩺 Ver el diagnóstico
+          </Link>
+        </section>
+      ) : null}
+
       <form action={logoutAction} className="mt-6">
         <button type="submit" className="btn-ghost">
           Cerrar sesión
