@@ -75,6 +75,7 @@ export default async function PointsPage() {
                     color={row.color}
                     image={row.avatarImage}
                     size={22}
+                    participantId={row.participantId}
                   />
                   <span className="mx-1 text-sm text-slate-200">
                     {row.displayName}

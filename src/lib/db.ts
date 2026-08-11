@@ -17,6 +17,7 @@ const SIN_IMAGENES = {
   death: { boxImage: true, detailImage: true },
   matchPokemon: { boxImage: true, detailImage: true },
   hallOfFameEntry: { image: true },
+  favoritePokemon: { image: true },
   levelCap: { images: true, image: true },
 } as const;
 

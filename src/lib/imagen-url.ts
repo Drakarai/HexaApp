@@ -21,6 +21,7 @@ export type TipoImagen =
   | "equipo"
   | "equipo-ficha"
   | "salon"
+  | "favorito"
   | "medalla";
 
 /**

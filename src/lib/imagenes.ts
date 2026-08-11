@@ -21,6 +21,7 @@ export const FUENTES = {
   equipo: { tabla: "MatchPokemon", columna: "boxImage" },
   "equipo-ficha": { tabla: "MatchPokemon", columna: "detailImage" },
   salon: { tabla: "HallOfFameEntry", columna: "image" },
+  favorito: { tabla: "FavoritePokemon", columna: "image" },
 } as const satisfies Record<
   Exclude<TipoImagen, "medalla">,
   { tabla: string; columna: string }

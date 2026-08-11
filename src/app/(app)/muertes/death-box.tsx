@@ -81,6 +81,7 @@ export function DeathBox({
                   color={group.participant.color}
                   image={group.participant.avatarImage}
                   size={28}
+                  participantId={group.participant.id}
                 />
                 <h2 className="font-semibold text-white">
                   {group.participant.displayName}
@@ -204,6 +205,7 @@ function DeathDetail({
               color={death.participant.color}
               image={death.participant.avatarImage}
               size={30}
+              participantId={death.participant.id}
             />
             <div>
               <p className="text-sm text-slate-400">

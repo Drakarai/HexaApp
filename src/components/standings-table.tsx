@@ -61,6 +61,7 @@ export function StandingsTable({
                     color={row.color}
                     image={row.avatarImage}
                     size={28}
+                    participantId={row.participantId}
                   />
                   <AceBadge
                     size={24}

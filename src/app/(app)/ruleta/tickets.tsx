@@ -58,6 +58,7 @@ export function TicketsPanel({
               color={row.color}
               image={row.avatarImage}
               size={26}
+              participantId={row.participantId}
             />
             <span className="min-w-0 flex-1 truncate text-sm text-white">
               {row.displayName}

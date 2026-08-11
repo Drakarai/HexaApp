@@ -188,6 +188,7 @@ function Side({
         color={player.color}
         image={player.avatarImage}
         size={22}
+        participantId={player.participantId}
       />
       <span className="min-w-0 flex-1 truncate">{player.displayName}</span>
       {winner ? <span aria-hidden>👑</span> : null}

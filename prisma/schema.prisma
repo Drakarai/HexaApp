@@ -111,6 +111,7 @@ model Participant {
   tickets      RouletteTicket[]
   matchTeams   MatchPokemon[]
   mvpVotes     MvpVote[]    @relation("MvpVoter")
+  favorites    FavoritePokemon[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -396,6 +397,25 @@ model FinalMatch {
 
 /** Un pokémon del equipo con el que cada jugador termina el locke. */
 model HallOfFameEntry {
+  id            String   @id @default(cuid())
+  participantId String
+  species       String
+  nickname      String?
+  image         String?
+  position      Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId])
+}
+
+/**
+ * Los pokémon favoritos de un jugador en esta edición: los que le han hecho el
+ * locke, estén vivos o muertos. Van en el participante y no en el usuario para
+ * que cada edición conserve los suyos al archivarse, igual que el as.
+ */
+model FavoritePokemon {
   id            String   @id @default(cuid())
   participantId String
   species       String

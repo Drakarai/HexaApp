@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { cx, initials, readableTextColor } from "@/lib/utils";
 
@@ -72,31 +73,34 @@ export function Avatar({
   color,
   size = 36,
   image,
+  participantId,
 }: {
   name: string;
   color: string;
   size?: number;
   /** Foto de perfil. Si falta, se pinta la inicial sobre el color del jugador. */
   image?: string | null;
+  /**
+   * Si se pasa, la foto lleva a la página de ese jugador. No se pone cuando el
+   * avatar ya va dentro de algo pinchable: un enlace dentro de un botón no es
+   * HTML válido y el navegador hace cosas raras.
+   */
+  participantId?: string;
 }) {
-  if (image) {
-    return (
-      <span
-        className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-white/15"
-        style={{ width: size, height: size, background: color }}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={image}
-          alt={name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
-      </span>
-    );
-  }
-
-  return (
+  const contenido = image ? (
+    <span
+      className="inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full ring-1 ring-white/15"
+      style={{ width: size, height: size, background: color }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={image}
+        alt={name}
+        className="h-full w-full object-cover"
+        loading="lazy"
+      />
+    </span>
+  ) : (
     <span
       className="inline-flex shrink-0 items-center justify-center rounded-full text-xs font-bold"
       style={{
@@ -109,6 +113,18 @@ export function Avatar({
     >
       {initials(name)}
     </span>
+  );
+
+  if (!participantId) return contenido;
+
+  return (
+    <Link
+      href={`/jugador/${participantId}`}
+      title={`Ver el perfil de ${name}`}
+      className="inline-flex shrink-0 rounded-full transition hover:brightness-125 hover:ring-2 hover:ring-white/30"
+    >
+      {contenido}
+    </Link>
   );
 }
 

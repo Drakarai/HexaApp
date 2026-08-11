@@ -170,6 +170,7 @@ export default async function MatchdaysPage() {
                               a dos líneas antes que recortarse */}
                           <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
                             <PlayerChip
+                              participantId={match.participantAId}
                               name={match.participantA.displayName}
                               color={match.participantA.color}
                               image={avatarByParticipant.get(match.participantAId) ?? null}
@@ -179,6 +180,7 @@ export default async function MatchdaysPage() {
                               vs
                             </span>
                             <PlayerChip
+                              participantId={match.participantBId}
                               name={match.participantB.displayName}
                               color={match.participantB.color}
                               image={avatarByParticipant.get(match.participantBId) ?? null}
@@ -311,11 +313,13 @@ function teamSide(
 }
 
 function PlayerChip({
+  participantId,
   name,
   color,
   image,
   winner,
 }: {
+  participantId: string;
   name: string;
   color: string;
   image: string | null;
@@ -330,7 +334,13 @@ function PlayerChip({
           : "text-slate-300",
       )}
     >
-      <Avatar name={name} color={color} image={image} size={20} />
+      <Avatar
+        name={name}
+        color={color}
+        image={image}
+        size={20}
+        participantId={participantId}
+      />
       <span className="truncate">{name}</span>
       {winner ? <span aria-hidden>👑</span> : null}
     </span>

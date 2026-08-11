@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (apuntar pokémon deja de esperar a
-descargar imágenes).
+Última actualización: 10 de agosto de 2026 (página propia de cada jugador y
+pokémon favoritos).
 
 ---
 
@@ -39,6 +39,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador. El MVP de la jornada se vota entre todos. |
 | **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
+| **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas. |
@@ -224,6 +225,27 @@ Tres piezas lo sostienen:
   cambiado nada; dejarlo vacío sigue significando borrarla. Sin esto, editar la
   causa de una baja le habría borrado la foto.
 
+**Cada jugador tiene su página, y se llega tocando su foto.** En
+`/jugador/[id]`: sus cifras (puntos, caídos, victorias-derrotas, gimnasios), su
+pokémon as, sus favoritos y las últimas bajas de su cementerio, en blanco y
+negro. La foto lleva al perfil desde la clasificación, los puntos, el
+cementerio, las jornadas, el cuadro de la Final Four y el reparto de tickets.
+**No** desde los sitios donde el avatar ya va dentro de un botón (los grupos de
+la votación del MVP, el editor de equipos): un enlace dentro de un botón no es
+HTML válido y el navegador hace cosas raras.
+
+**Pokémon favoritos: seis, en 3x2, iguales en móvil y en PC.** Los que le han
+hecho el locke a cada uno, vivos o muertos, con su sprite, su mote y su especie.
+Se editan desde Mi perfil o desde tu propia página, y los ve todo el mundo. Los
+seis huecos están siempre puestos, como en los equipos de jornada. Tres columnas
+también en móvil: a 320 px salen casillas de 77 px, que dan de sobra para el
+sprite y el mote.
+
+**El selector de temas va plegado, y por grupos.** Con casi treinta temas la
+rejilla entera se comía la pantalla del perfil. Ahora se ve solo el que llevas
+puesto; al abrirlo salen los grupos (generaciones y ases), y cada uno se abre
+por su cuenta. Arranca abierto el grupo del tema que tienes, para no perderte.
+
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 `position: fixed` se posicionen respecto a la tarjeta en vez de a la pantalla:
@@ -320,6 +342,8 @@ Piezas con truco:
   cuándo vale el desempate manual. Es la única fuente de verdad del MVP.
 - `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
   que la del as: la ilustración grande no viaja con la lista, se pide al abrir.
+- `components/favorites-grid.tsx` — la caja de favoritos, con la misma idea que
+  los equipos: aparece al momento y el servidor baja el sprite después.
 - `components/match-team.tsx` — los equipos bajo cada combate y el editor del
   administrador. **Dos vistas del mismo dato**: en móvil una tira de sprites
   por jugador, que es lo que cabe, y desde `lg` dos cajas de 3x2 una al lado
@@ -407,3 +431,5 @@ lugar de destruir datos, y hay que avisar antes.
     cacheables: era la razón de que todo fuera cada vez más lento.
 15. **Apuntar un pokémon deja de esperar**: los sprites los descarga el
     servidor y la casilla aparece al momento.
+16. **Página propia de cada jugador** (se llega tocando su foto), con sus
+    **pokémon favoritos**, y el selector de temas plegable.

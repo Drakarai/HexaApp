@@ -1,6 +1,10 @@
 import { requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { AceBadge } from "@/components/ace-badge";
+import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
+import { urlsDeImagen } from "@/lib/imagenes";
 import { firmaDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
@@ -34,6 +38,24 @@ export default async function ProfilePage() {
         ),
       }
     : { image: null, detailImage: null };
+
+  // Los favoritos de esta edición, con la dirección de cada sprite
+  const favoritos = myParticipant
+    ? await prisma.favoritePokemon.findMany({
+        where: { participantId: myParticipant.id },
+        orderBy: { position: "asc" },
+      })
+    : [];
+  const spritesFavoritos = await urlsDeImagen(
+    "favorito",
+    favoritos.map((favorito) => favorito.id),
+  );
+  const misFavoritos: Favorito[] = favoritos.map((favorito) => ({
+    id: favorito.id,
+    species: favorito.species,
+    nickname: favorito.nickname,
+    image: spritesFavoritos(favorito.id),
+  }));
 
   return (
     <>
@@ -88,6 +110,29 @@ export default async function ProfilePage() {
               ? `${myParticipant.aceNickname ?? myParticipant.aceSpecies} · pincha para cambiarlo`
               : "Pincha en el hueco para elegirlo"}
           </p>
+        </section>
+      ) : null}
+
+      {myParticipant ? (
+        <section className="card mt-4">
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="section-title">Pokémon favoritos</h2>
+            <Link
+              href={`/jugador/${myParticipant.id}`}
+              className="text-xs text-brand-400 hover:underline"
+            >
+              Ver mi perfil público →
+            </Link>
+          </div>
+          <p className="muted mb-4">
+            Los que te han hecho el locke, vivos o muertos. Caben seis y los ve
+            todo el mundo.
+          </p>
+          <FavoritesGrid
+            participantId={myParticipant.id}
+            favoritos={misFavoritos}
+            editable
+          />
         </section>
       ) : null}
 
