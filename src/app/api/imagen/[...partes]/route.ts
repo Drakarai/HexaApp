@@ -14,8 +14,32 @@ import { effectiveImages } from "@/lib/image";
  * cachear para siempre: si la imagen cambia, cambia la dirección.
  */
 
-/** Un año. Vale porque la dirección cambia si cambia la imagen. */
-const CACHE = "private, max-age=31536000, immutable";
+/**
+ * Un año, y **`public`**: además del navegador de cada uno, la guarda la red de
+ * Vercel, así que la segunda persona que abra el cementerio se baja las
+ * imágenes del servidor que tenga más cerca en vez de cruzar hasta Fráncfort.
+ * Vale porque la dirección cambia si cambia la imagen.
+ *
+ * El precio de `public`: quien tenga la dirección exacta puede abrirla sin
+ * sesión, porque la red contesta antes de llegar aquí. La dirección lleva un
+ * identificador aleatorio y no está enlazada en ningún sitio público, y lo que
+ * hay dentro son sprites de pokémon y las fotos de perfil del grupo.
+ */
+const CACHE = "public, max-age=31536000, s-maxage=31536000, immutable";
+
+/** Lo que no es una imagen no se guarda en ninguna caché, nunca. */
+const SIN_CACHE = "private, no-store";
+
+/**
+ * Respuestas que no llevan imagen. Van con `no-store` a propósito: si un 401 se
+ * quedara guardado en la red, se lo comería después alguien que sí tiene sesión.
+ */
+function sinCache(texto: string, status: number) {
+  return new NextResponse(texto, {
+    status,
+    headers: { "Cache-Control": SIN_CACHE },
+  });
+}
 
 function respuestaDeImagen(valor: string) {
   // Enlace a una imagen de fuera: no hay nada que servir, se redirige
@@ -24,7 +48,7 @@ function respuestaDeImagen(valor: string) {
   }
 
   const coincide = /^data:([^;,]+);base64,(.*)$/s.exec(valor);
-  if (!coincide) return new NextResponse("Imagen no válida", { status: 415 });
+  if (!coincide) return sinCache("Imagen no válida", 415);
 
   const [, tipoMime, base64] = coincide;
   const bytes = Buffer.from(base64, "base64");
@@ -75,14 +99,14 @@ export async function GET(
 ) {
   // Las imágenes son de una competición privada: hay que tener sesión
   const usuario = await getCurrentUser();
-  if (!usuario) return new NextResponse("No autorizado", { status: 401 });
+  if (!usuario) return sinCache("No autorizado", 401);
 
   const { partes } = await params;
   const [tipo, id, indice] = partes;
-  if (!tipo || !id) return new NextResponse("No encontrada", { status: 404 });
+  if (!tipo || !id) return sinCache("No encontrada", 404);
 
   const valor = await buscarValor(tipo, id, indice);
-  if (!valor) return new NextResponse("No encontrada", { status: 404 });
+  if (!valor) return sinCache("No encontrada", 404);
 
   return respuestaDeImagen(valor);
 }

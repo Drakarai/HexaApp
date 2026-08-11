@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminPage } from "@/lib/auth";
 import { getActiveCompetition } from "@/lib/competition";
 import { ChallengeDiffToggle } from "./challenge-diff-toggle";
 import { urlsDeImagen } from "@/lib/imagenes";
@@ -13,7 +13,7 @@ import { NewUserForm, ResetPasswordForm } from "./user-forms";
 export const metadata = { title: "Administración" };
 
 export default async function AdminPage() {
-  const me = await requireAdmin();
+  const me = await requireAdminPage();
 
   const users = await prisma.user.findMany({
     orderBy: [{ role: "asc" }, { displayName: "asc" }],

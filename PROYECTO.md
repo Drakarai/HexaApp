@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de agosto de 2026 (navegación por grupos en móvil y en
-PC, y el diagnóstico dentro de Mi perfil).
+Última actualización: 11 de agosto de 2026 (pantallas de error propias, imágenes
+cacheables por la red y cementerio por tandas).
 
 ---
 
@@ -282,7 +282,16 @@ Tres piezas lo sostienen:
 - **La firma en la dirección.** Cada dirección lleva `?v=` con un resumen del
   contenido, que calcula PostgreSQL con `md5()`: por el cable vuelven 10
   caracteres en vez de 44 KB. Como la dirección cambia si cambia la imagen, la
-  caché puede ser de un año sin riesgo de enseñar la vieja.
+  caché puede ser de un año sin riesgo de enseñar la vieja, y por eso las
+  imágenes se sirven como **`public`**: las guarda también la red de Vercel, así
+  que el segundo que abra el cementerio se las baja del servidor que tenga más
+  cerca en vez de cruzar hasta Fráncfort. El precio es que quien tenga la
+  dirección exacta puede abrirla sin sesión, porque la red contesta antes de
+  llegar al código; se asumió a sabiendas, porque la dirección lleva un
+  identificador aleatorio, no está enlazada en ningún sitio público y lo que hay
+  dentro son sprites de pokémon y las fotos del grupo. Lo que **no** es una
+  imagen (un 401, un 404) va con `no-store`: si un 401 se quedara guardado en la
+  red, se lo comería después alguien que sí tiene sesión.
 - **Nada de imágenes por defecto.** El cliente de Prisma descarta las columnas
   de imagen en todas las consultas (`omit` en `lib/db.ts`). Quien las necesita
   las pide a mano. Así un descuido futuro sale como una imagen que no aparece,
@@ -291,6 +300,39 @@ Tres piezas lo sostienen:
   dentro la imagen actual, así que mandan la marca `__igual__` cuando no se ha
   cambiado nada; dejarlo vacío sigue significando borrarla. Sin esto, editar la
   causa de una baja le habría borrado la foto.
+
+**Cuando algo falla, lo dice la aplicación, no Next.** No había pantallas
+propias de error, así que cualquier fallo sacaba la pantalla gris de Next: en
+inglés, sin la barra de navegación y sin forma de volver que no fuera darle a
+atrás. Ahora hay cuatro, por capas:
+
+- `(app)/error.tsx` — un fallo dentro de la aplicación. Sale **dentro de la
+  barra**, con "Reintentar" y "Volver al resumen". Enseña el `digest`, que es el
+  código con el que Next apunta el fallo: en producción el mensaje de verdad no
+  llega al navegador, así que ese código es lo único con lo que buscarlo luego.
+- `(app)/not-found.tsx` — los `notFound()` de dentro: el perfil de un jugador
+  borrado, una edición que ya no está. También con la barra puesta.
+- `not-found.tsx` — direcciones que no son de ninguna sección. Va suelta,
+  porque aquí se llega **sin haber iniciado sesión** y la barra necesita saber
+  quién eres.
+- `global-error.tsx` — si lo que falla es la propia plantilla, no hay ni hojas
+  de estilo: esa pantalla se pinta con los colores a mano.
+
+**A las páginas de solo administradores se entra o se sale, no se revienta.**
+`requireAdmin()` lanza un error, que en una acción está bien —el formulario
+enseña el mensaje— pero en una página se convertía en pantalla de fallo: un
+jugador que abriera `/admin` veía un error 500. Ahora las páginas usan
+`requireAdminPage()`, que devuelve al resumen. Son dos funciones y no una porque
+lo que hay que hacer es distinto según desde dónde se llame.
+
+**El cementerio se trae de 60 en 60.** Cada baja arrastra su ficha entera hasta
+el navegador (mote, causa, notas, nivel, dos direcciones de imagen), así que la
+página crecía sola con cada muerte y sin tope. Se piden **las últimas** 60, no
+las primeras —lo que acaba de pasar es lo que se quiere ver al entrar— y se les
+da la vuelta al pintarlas, para que la caja se siga leyendo de la más antigua a
+la más nueva. Se trae una de más para saber si queda alguna fuera y enseñar el
+botón solo cuando hace falta. El `?ver=` de la dirección tiene tope, para que
+nadie se cargue la página poniendo un número enorme a mano.
 
 **Cada jugador tiene su página, y se llega tocando su foto.** En
 `/jugador/[id]`: sus cifras (puntos, caídos, victorias-derrotas, gimnasios), su
@@ -564,3 +606,5 @@ lugar de destruir datos, y hay que avisar antes.
     jugador contra los demás en su perfil.
 19. **La navegación por grupos**, la misma en el móvil y en el PC, en vez de una
     rejilla con todo dentro y una columna de catorce enlaces.
+20. **Pantallas de error propias**, imágenes que guarda también la red de Vercel
+    y el cementerio por tandas.

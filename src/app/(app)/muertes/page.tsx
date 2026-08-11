@@ -16,16 +16,29 @@ import { DeathBox, type BoxDeath } from "./death-box";
 
 export const metadata = { title: "Cementerio" };
 
+/**
+ * Cuántas casillas se pintan de una tanda. La caja no se trae entera: cada baja
+ * arrastra su ficha (mote, causa, notas, dos direcciones de imagen…) hasta el
+ * navegador, y con la edición avanzada eso era una página que crecía sola sin
+ * tope. Se piden de 60 en 60.
+ */
+const POR_TANDA = 60;
+
 export default async function DeathsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ jugador?: string }>;
+  searchParams: Promise<{ jugador?: string; ver?: string }>;
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const { jugador } = await searchParams;
+  const { jugador, ver } = await searchParams;
+  // Con tope, para que nadie se cargue la página poniendo ?ver=999999 a mano
+  const cuantas = Math.min(
+    Math.max(Number(ver) || POR_TANDA, POR_TANDA),
+    POR_TANDA * 20,
+  );
   const [canManage, participants] = await Promise.all([
     canManageCompetition(competition.id, user),
     getParticipants(competition.id),
@@ -43,12 +56,16 @@ export default async function DeathsPage({
     },
   };
 
-  const [deaths, counts] = await Promise.all([
+  const [recientes, counts] = await Promise.all([
     // Sin `include` del participante: los 6 jugadores ya están cargados arriba
-    // y repetirlos en cada baja multiplicaba el peso de la página
+    // y repetirlos en cada baja multiplicaba el peso de la página.
+    //
+    // Se piden **las últimas**, no las primeras: lo que acaba de pasar es lo
+    // que se quiere ver al entrar. Una de más para saber si queda alguna fuera.
     prisma.death.findMany({
       where: deathsWhere,
-      orderBy: [{ diedAt: "asc" }, { createdAt: "asc" }],
+      orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
+      take: cuantas + 1,
     }),
     prisma.death.groupBy({
       by: ["participantId"],
@@ -56,6 +73,11 @@ export default async function DeathsPage({
       _count: { _all: true },
     }),
   ]);
+
+  const quedanMas = recientes.length > cuantas;
+  // Y se les da la vuelta: la caja se sigue leyendo de la más antigua a la más
+  // nueva, como siempre
+  const deaths = recientes.slice(0, cuantas).reverse();
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
   const ids = deaths.map((death) => death.id);
@@ -72,6 +94,8 @@ export default async function DeathsPage({
   const countFor = (participantId: string) =>
     counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
   const total = counts.reduce((sum, row) => sum + row._count._all, 0);
+  /** Las que hay de lo que se está mirando: la caja entera o la de un jugador */
+  const enTotal = selected ? countFor(selected.id) : total;
 
   const esMio = (participantId: string) =>
     canManage || porId.get(participantId)?.userId === user.id;
@@ -174,6 +198,24 @@ export default async function DeathsPage({
       ) : (
         <DeathBox deaths={boxDeaths} grouped={!selected} />
       )}
+
+      {quedanMas ? (
+        <div className="mt-5 text-center">
+          <Link
+            href={`/muertes?${new URLSearchParams({
+              ...(selected ? { jugador: selected.id } : {}),
+              ver: String(cuantas + POR_TANDA),
+            })}`}
+            className="btn-ghost"
+            // Al añadir casillas la página cambia de alto; sin esto el
+            // navegador salta al principio y hay que volver a bajar
+            scroll={false}
+          >
+            Ver {POR_TANDA} más antiguas
+            {enTotal > cuantas ? ` · quedan ${enTotal - cuantas}` : ""}
+          </Link>
+        </div>
+      ) : null}
     </>
   );
 }

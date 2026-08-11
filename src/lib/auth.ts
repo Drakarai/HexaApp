@@ -52,11 +52,28 @@ export async function requireUser(): Promise<CurrentUser> {
   return user;
 }
 
+/**
+ * Para las **acciones**: lanza, y quien la llama enseña el mensaje en su
+ * formulario. En una página no vale, porque un error a medio pintar sale como
+ * pantalla de fallo: para eso está `requireAdminPage`.
+ */
 export async function requireAdmin(): Promise<CurrentUser> {
   const user = await requireUser();
   if (user.role !== ROLES.ADMIN) {
     throw new Error("Necesitas permisos de administrador para hacer esto.");
   }
+  return user;
+}
+
+/**
+ * Para las **páginas** de solo administradores: al que no lo sea se le devuelve
+ * al resumen. Antes esto lanzaba un error y Next lo convertía en una pantalla
+ * de fallo, en inglés y sin la barra de navegación, en vez de llevarte a un
+ * sitio con sentido.
+ */
+export async function requireAdminPage(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (user.role !== ROLES.ADMIN) redirect("/");
   return user;
 }
 

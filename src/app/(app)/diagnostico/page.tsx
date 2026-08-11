@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireAdminPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
 
@@ -51,7 +51,7 @@ function leerConexion() {
 }
 
 export default async function DiagnosticoPage() {
-  await requireAdmin();
+  await requireAdminPage();
 
   const [ida, conexion] = await Promise.all([
     medirIdaYVuelta(),
