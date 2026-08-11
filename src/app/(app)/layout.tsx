@@ -10,9 +10,9 @@ import { ROLES } from "@/lib/constants";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
- * las ordenan distinto —una es una lista larga y el otro va por grupos— pero
- * son las mismas páginas, y así no se puede añadir una en un sitio y olvidarla
- * en el otro.
+ * enseñan exactamente lo mismo y en el mismo orden; lo único que cambia es la
+ * forma (una columna que se despliega frente a una hoja que sube). Así no se
+ * puede añadir una sección en un sitio y olvidarla en el otro.
  */
 const S = {
   resumen: { href: "/", label: "Resumen", icon: "🏠" },
@@ -32,34 +32,18 @@ const S = {
   admin: { href: "/admin", label: "Administración", icon: "⚙️" },
 } satisfies Record<string, NavItem>;
 
-/** Las 4 de la barra inferior del móvil: lo que se abre todos los días. */
+/**
+ * Lo que se abre todos los días, siempre a la vista: son las pestañas de abajo
+ * en el móvil y los primeros enlaces de la barra lateral en el PC.
+ */
 const PRIMARY_ITEMS: NavItem[] = [S.resumen, S.caja, S.puntos, S.ruleta];
 
-/** En la barra lateral, "Combates" es lo único que se despliega. */
-const COMBATES: NavGroup = {
-  label: "Combates",
-  icon: "⚔️",
-  children: [S.jornadas, S.retos],
-};
-
-const SIDEBAR_SECONDARY: NavEntry[] = [
-  S.actividad,
-  S.reglas,
-  S.levelCaps,
-  COMBATES,
-  S.finalFour,
-  S.hall,
-  S.notas,
-  S.ediciones,
-  S.perfil,
-];
-
 /**
- * El menú del móvil, por grupos. El orden es el de la pregunta que trae a cada
- * uno: "qué se ha jugado", "cómo va la edición", "lo mío" y, al final, lo de
+ * El resto, por grupos. El orden es el de la pregunta que trae a cada uno:
+ * "qué se ha jugado", "cómo va la edición", "lo mío" y, al final, lo de
  * gestionar, que se toca de uvas a peras.
  */
-const MOBILE_GROUPS: NavGroup[] = [
+const GRUPOS: NavGroup[] = [
   {
     label: "Combates",
     icon: "⚔️",
@@ -90,15 +74,11 @@ export default async function AppLayout({
     ? [S.ediciones, S.admin]
     : [S.ediciones];
 
-  const sidebarItems: NavEntry[] = [
-    ...PRIMARY_ITEMS,
-    ...SIDEBAR_SECONDARY,
-    ...(isAdmin(user) ? [S.admin] : []),
-  ];
-  const mobileGroups: NavGroup[] = [
-    ...MOBILE_GROUPS,
+  const grupos: NavGroup[] = [
+    ...GRUPOS,
     { label: "Gestión", icon: "🗂️", children: gestion },
   ];
+  const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
 
   const switcher = (
     <CompetitionSwitcher
@@ -179,7 +159,7 @@ export default async function AppLayout({
 
       <MobileTabBar
         primary={PRIMARY_ITEMS}
-        groups={mobileGroups}
+        groups={grupos}
         user={{
           displayName: user.displayName,
           avatarColor: user.avatarColor,

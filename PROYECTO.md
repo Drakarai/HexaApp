@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de agosto de 2026 (menú del móvil por grupos y el
-diagnóstico dentro de Mi perfil).
+Última actualización: 11 de agosto de 2026 (navegación por grupos en móvil y en
+PC, y el diagnóstico dentro de Mi perfil).
 
 ---
 
@@ -222,28 +222,35 @@ mismo dato y así el editor, la descarga de sprites y las direcciones de imagen
 se comparten tal cual; duplicar la tabla habría obligado a duplicar las cuatro
 piezas.
 
-**"Jornadas" pasó a ser "Combates", un menú con dos.** Al aparecer los retos, la
-barra tenía dos entradas que eran lo mismo con otras reglas. Ahora hay un grupo
-**Combates** que se despliega en **Jornadas** y **Retos**, y arranca abierto si
-estás en una de las dos.
-
-**El menú del móvil va por grupos, no en una rejilla de iconos.** Antes las
+**La navegación va por grupos, y es la misma en el móvil y en el PC.** Antes
+eran dos cosas distintas y las dos se estaban desbordando: en el móvil, las
 secciones que no caben abajo se amontonaban detrás de un botón "Más", en una
-cuadrícula de doce iconos todos iguales: para encontrar una había que leérselas
-todas, y con cada sección nueva iba a peor. Ahora ese botón se llama **Menú** y
-abre una hoja que sube desde abajo con cuatro apartados —**Combates**, **La
-edición**, **Lo mío** y **Gestión**—, cada uno con sus páginas en filas
-completas, con su icono, su nombre entero y la actual resaltada. Primero eliges
-de qué va lo que buscas y solo miras tres o cuatro cosas.
+cuadrícula de doce iconos todos iguales; en el PC, una columna de catorce
+enlaces seguidos. En los dos casos había que leérselos todos para encontrar uno,
+y con cada sección nueva iba a peor.
+
+Ahora hay **cuatro grupos** —**Combates**, **La edición**, **Lo mío** y
+**Gestión**— y las cuatro de todos los días (resumen, caja, puntos y ruleta)
+siempre a la vista. El reparto es el mismo en los dos sitios; lo único que
+cambia es la forma: en el móvil, una hoja que sube desde abajo con filas
+completas; en el PC, grupos desplegables en la barra lateral. Primero eliges de
+qué va lo que buscas y solo miras tres o cuatro cosas.
 
 Detalles que costaron su rato:
 
-- La hoja **deja hueco abajo** para la barra de pestañas, que se queda encima:
-  sin ese hueco, "Cerrar sesión" quedaba tapado por la barra.
-- La cabecera con tu foto **se queda fija** al desplazar, y lleva al perfil.
-- Los grupos del móvil y la lista de la barra lateral **salen de las mismas
-  constantes** (el objeto `S` de `layout.tsx`), así que no se puede añadir una
-  sección en un sitio y olvidarla en el otro.
+- **Todo sale de las mismas constantes** (el objeto `S` y `GRUPOS`, en
+  `layout.tsx`), así que no se puede añadir una sección en un sitio y olvidarla
+  en el otro.
+- **Los grupos del PC se abren solos donde estás**, aunque hayas llegado por un
+  enlace de dentro de la página y no por el menú. El estado es "como toque"
+  (`null`) hasta que lo tocas; al cambiar de página vuelve al automático. Con
+  solo recordar tu clic, llegar a una página desde fuera del menú te dejaba el
+  grupo cerrado y sin saber dónde estabas.
+- **Un punto en el grupo cerrado** cuando estás dentro de él: si lo cierras a
+  mano, es lo único que dice dónde estás sin volver a abrirlos.
+- En el móvil, la hoja **deja hueco abajo** para la barra de pestañas, que se
+  queda encima: sin ese hueco, "Cerrar sesión" quedaba tapado por la barra. Y la
+  cabecera con tu foto se queda fija al desplazar y lleva al perfil.
 
 **El diagnóstico vive dentro de Mi perfil.** Ocupaba una entrada fija del menú
 para algo que se mira cuando algo va lento, no todos los días. Ahora es un
@@ -466,9 +473,10 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
-- `components/mobile-nav.tsx` — la barra de pestañas de abajo y el menú por
-  grupos. `app/(app)/layout.tsx` decide qué va en cada sitio a partir del
-  objeto `S`, que es la lista única de secciones.
+- `components/mobile-nav.tsx` y `components/nav.tsx` — las dos formas de la
+  misma navegación: la hoja del móvil y la barra lateral del PC.
+  `app/(app)/layout.tsx` es quien reparte, a partir del objeto `S` (la lista
+  única de secciones) y de `GRUPOS`.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
@@ -554,4 +562,5 @@ lugar de destruir datos, y hay que avisar antes.
     distancia real a la base de datos.
 18. **Combates de reto**, con premio y castigo, y el **cara a cara** de cada
     jugador contra los demás en su perfil.
-19. **El menú del móvil por grupos**, en vez de una rejilla con todo dentro.
+19. **La navegación por grupos**, la misma en el móvil y en el PC, en vez de una
+    rejilla con todo dentro y una columna de catorce enlaces.

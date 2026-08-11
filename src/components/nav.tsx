@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { cx } from "@/lib/utils";
 
 export type NavItem = { href: string; label: string; icon: string };
@@ -15,6 +15,11 @@ export type NavEntry = NavItem | NavGroup;
 const esGrupo = (entrada: NavEntry): entrada is NavGroup =>
   "children" in entrada;
 
+/**
+ * La barra lateral del PC. Arriba, sueltas, las cuatro de todos los días; el
+ * resto repartidas en los mismos grupos que el menú del móvil, cada uno
+ * desplegable. Una lista de catorce enlaces seguidos ya no se leía.
+ */
 export function Nav({ items }: { items: NavEntry[] }) {
   const pathname = usePathname();
 
@@ -25,13 +30,7 @@ export function Nav({ items }: { items: NavEntry[] }) {
     <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
       {items.map((entrada) =>
         esGrupo(entrada) ? (
-          <Grupo
-            key={entrada.label}
-            grupo={entrada}
-            activo={activo}
-            // Arranca desplegado si estás en una de sus páginas
-            abiertoDeInicio={entrada.children.some((hijo) => activo(hijo.href))}
-          />
+          <Grupo key={entrada.label} grupo={entrada} activo={activo} />
         ) : (
           <Enlace
             key={entrada.href}
@@ -47,18 +46,16 @@ export function Nav({ items }: { items: NavEntry[] }) {
 function Enlace({
   item,
   activo,
-  sangrado = false,
 }: {
   item: NavItem;
   activo: boolean;
-  sangrado?: boolean;
 }) {
   return (
     <Link
       href={item.href}
+      aria-current={activo ? "page" : undefined}
       className={cx(
         "flex shrink-0 items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
-        sangrado && "lg:ml-3",
         activo
           ? "bg-brand-600/20 text-white ring-1 ring-brand-500/40"
           : "text-slate-400 hover:bg-white/5 hover:text-slate-100",
@@ -75,20 +72,28 @@ function Enlace({
 function Grupo({
   grupo,
   activo,
-  abiertoDeInicio,
 }: {
   grupo: NavGroup;
   activo: (href: string) => boolean;
-  abiertoDeInicio: boolean;
 }) {
-  const [abierto, setAbierto] = useState(abiertoDeInicio);
+  const pathname = usePathname();
   const alguienActivo = grupo.children.some((hijo) => activo(hijo.href));
+
+  /**
+   * `null` significa "como toque": abierto si estás dentro del grupo. En cuanto
+   * lo abres o lo cierras a mano manda tu decisión, pero al cambiar de página
+   * se vuelve al automático, para que el grupo donde estás salga abierto aunque
+   * hayas llegado por un enlace de dentro de la página.
+   */
+  const [aMano, setAMano] = useState<boolean | null>(null);
+  useEffect(() => setAMano(null), [pathname]);
+  const abierto = aMano ?? alguienActivo;
 
   return (
     <div className="shrink-0">
       <button
         type="button"
-        onClick={() => setAbierto((estaba) => !estaba)}
+        onClick={() => setAMano(!abierto)}
         aria-expanded={abierto}
         className={cx(
           "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition",
@@ -101,23 +106,27 @@ function Grupo({
           {grupo.icon}
         </span>
         <span className="flex-1 text-left">{grupo.label}</span>
+        {/* Un punto cuando está cerrado y estás dentro: si no, no se ve dónde
+            estás sin abrirlos todos */}
+        {!abierto && alguienActivo ? (
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-400" />
+        ) : null}
         <span
           aria-hidden
-          className={cx("text-xs text-slate-500 transition", abierto && "rotate-90")}
+          className={cx(
+            "text-xs text-slate-500 transition",
+            abierto && "rotate-90",
+          )}
         >
           ▸
         </span>
       </button>
 
       {abierto ? (
-        <div className="flex gap-1 lg:mt-0.5 lg:flex-col">
+        // El filete de la izquierda ata los hijos a su grupo
+        <div className="flex gap-1 lg:mt-0.5 lg:ml-4 lg:flex-col lg:border-l lg:border-white/5 lg:pl-2">
           {grupo.children.map((hijo) => (
-            <Enlace
-              key={hijo.href}
-              item={hijo}
-              activo={activo(hijo.href)}
-              sangrado
-            />
+            <Enlace key={hijo.href} item={hijo} activo={activo(hijo.href)} />
           ))}
         </div>
       ) : null}
