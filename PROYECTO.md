@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (página propia de cada jugador y
-pokémon favoritos).
+Última actualización: 10 de agosto de 2026 (menos consultas por página y
+pantalla de diagnóstico).
 
 ---
 
@@ -246,6 +246,35 @@ rejilla entera se comía la pantalla del perfil. Ahora se ve solo el que llevas
 puesto; al abrirlo salen los grupos (generaciones y ases), y cada uno se abre
 por su cuenta. Arranca abierto el grupo del tema que tienes, para no perderte.
 
+**Lo que hace lenta a la aplicación es el número de consultas, no su peso.**
+Cada consulta es un viaje de ida y vuelta a la base de datos, y en Neon esa
+base de datos está en internet. Medido con un proxy que añade retardo:
+
+| Ida y vuelta | Portada | Jornadas |
+| --- | --- | --- |
+| ~0 ms (local) | 30 ms | 25 ms |
+| 50 ms | 974 ms | 913 ms |
+| 120 ms | **2,2 s** | 1,8 s |
+
+Con 25-30 consultas por página, la distancia manda sobre todo lo demás. De ahí
+dos reglas:
+
+- **No usar `include` anidados para datos que ya se tienen.** Prisma resuelve
+  cada nivel de relación con **una consulta aparte**: el muro de actividad,
+  con seis fuentes que traían participante y usuario, hacía 18 consultas donde
+  bastan 6. Ahora los nombres y colores salen de `getParticipants`, que está
+  cacheada por petición.
+- **Juntar las consultas de firmas de imagen** cuando son de la misma tabla
+  (`firmasDeDosImagenes`).
+
+La portada bajó de 39 a 28 consultas y el muro de 24 a 18.
+
+**Hay una pantalla de diagnóstico** en `/diagnostico`, solo para
+administradores: mide la ida y vuelta real a la base de datos desde donde esté
+desplegada la aplicación, y avisa si el servidor y la base de datos están en
+regiones distintas o si falta el *pooler*. Existe porque desde el código no se
+puede saber, y es la diferencia entre 5 ms y 120 ms por consulta.
+
 **Los diálogos se pintan con `createPortal` sobre el `body`.** Las tarjetas
 llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 `position: fixed` se posicionen respecto a la tarjeta en vez de a la pantalla:
@@ -433,3 +462,5 @@ lugar de destruir datos, y hay que avisar antes.
     servidor y la casilla aparece al momento.
 16. **Página propia de cada jugador** (se llega tocando su foto), con sus
     **pokémon favoritos**, y el selector de temas plegable.
+17. **Menos consultas por página** y pantalla de **diagnóstico** para medir la
+    distancia real a la base de datos.

@@ -62,6 +62,46 @@ export async function firmaDeImagen(tipo: TipoConsultable, id: string) {
 }
 
 /**
+ * Firmas de **dos columnas de la misma tabla en una sola consulta**.
+ *
+ * Cada consulta es un viaje de ida y vuelta a la base de datos, y contra una
+ * base de datos en internet eso cuesta mucho más que la consulta en sí. Pedir
+ * el sprite y la ilustración por separado eran dos viajes para el mismo dato.
+ */
+export async function firmasDeDosImagenes(
+  tipoA: TipoConsultable,
+  tipoB: TipoConsultable,
+  ids: string[],
+): Promise<[Map<string, string>, Map<string, string>]> {
+  const a = new Map<string, string>();
+  const b = new Map<string, string>();
+  const unicos = [...new Set(ids)];
+  if (!unicos.length) return [a, b];
+
+  const fuenteA = FUENTES[tipoA];
+  const fuenteB = FUENTES[tipoB];
+  if (fuenteA.tabla !== fuenteB.tabla) {
+    throw new Error("Las dos columnas tienen que ser de la misma tabla.");
+  }
+
+  const filas = await prisma.$queryRaw<
+    { id: string; va: string | null; vb: string | null }[]
+  >`
+    select "id",
+           substr(md5(nullif(${Prisma.raw(`"${fuenteA.columna}"`)}, '')), 1, 10) as va,
+           substr(md5(nullif(${Prisma.raw(`"${fuenteB.columna}"`)}, '')), 1, 10) as vb
+    from ${Prisma.raw(`"${fuenteA.tabla}"`)}
+    where "id" in (${Prisma.join(unicos)})
+  `;
+
+  for (const fila of filas) {
+    if (fila.va) a.set(fila.id, fila.va);
+    if (fila.vb) b.set(fila.id, fila.vb);
+  }
+  return [a, b];
+}
+
+/**
  * Igual pero para las medallas de un level cap, que son una lista. Devuelve
  * una firma por imagen, ya resuelta la lista efectiva (la nueva `images` y, si
  * está vacía, la `image` suelta de las primeras versiones).

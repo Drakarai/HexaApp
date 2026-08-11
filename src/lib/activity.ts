@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { urlsDeImagen } from "@/lib/imagenes";
+import { getParticipants } from "@/lib/competition";
 
 export type ActivityEntry = {
   id: string;
@@ -28,26 +29,29 @@ const NEUTRAL = "#64748b";
 export async function getActivity(competitionId: string, limit = 60) {
   const take = Math.min(limit, 50);
 
+  /**
+   * Los jugadores se piden **una vez** y de aquí salen los nombres y colores.
+   *
+   * Antes cada fuente los traía con un `include` anidado, y Prisma resuelve
+   * cada nivel de relación con una consulta aparte: seis fuentes × (la tabla +
+   * el participante + el usuario) eran 18 viajes a la base de datos en vez de
+   * 6. Contra una base de datos en internet cada viaje cuesta su ida y vuelta,
+   * así que esto se notaba de verdad.
+   */
+  const jugadores = await getParticipants(competitionId);
+  const porId = new Map(jugadores.map((jugador) => [jugador.id, jugador]));
+  const quien = (participantId: string) => porId.get(participantId);
+
   const [deaths, points, clears, spins, tickets, matches] = await Promise.all([
     prisma.death.findMany({
       where: { participant: { competitionId } },
       orderBy: { diedAt: "desc" },
       take,
-      include: {
-        participant: {
-          include: { user: { select: { id: true } } },
-        },
-      },
     }),
     prisma.pointEntry.findMany({
       where: { competitionId },
       orderBy: { createdAt: "desc" },
       take,
-      include: {
-        participant: {
-          include: { user: { select: { id: true } } },
-        },
-      },
     }),
     prisma.gymClear.findMany({
       where: { participant: { competitionId } },
@@ -55,9 +59,6 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
       include: {
         levelCap: { select: { label: true, cap: true } },
-        participant: {
-          include: { user: { select: { id: true } } },
-        },
       },
     }),
     prisma.rouletteSpin.findMany({
@@ -74,11 +75,6 @@ export async function getActivity(competitionId: string, limit = 60) {
       where: { competitionId, delta: { gt: 0 } },
       orderBy: { createdAt: "desc" },
       take,
-      include: {
-        participant: {
-          include: { user: { select: { id: true } } },
-        },
-      },
     }),
     prisma.match.findMany({
       where: { matchday: { competitionId }, winnerId: { not: null } },
@@ -86,25 +82,13 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
       include: {
         matchday: { select: { label: true } },
-        participantA: true,
-        participantB: true,
-        winner: {
-          include: { user: { select: { id: true } } },
-        },
       },
     }),
   ]);
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts. Antes
   // el muro incrustaba el sprite de cada baja y la foto de cada jugador.
-  const usuarios = [
-    ...deaths.map((death) => death.participant.userId),
-    ...points.map((punto) => punto.participant.userId),
-    ...clears.map((clear) => clear.participant.userId),
-    ...spins.flatMap((spin) => (spin.spunById ? [spin.spunById] : [])),
-    ...tickets.map((ticket) => ticket.participant.userId),
-    ...matches.flatMap((match) => (match.winner ? [match.winner.userId] : [])),
-  ];
+  const usuarios = jugadores.map((jugador) => jugador.userId);
 
   const [avatares, sprites] = await Promise.all([
     urlsDeImagen("avatar", usuarios),
@@ -117,46 +101,52 @@ export async function getActivity(competitionId: string, limit = 60) {
   const entries: ActivityEntry[] = [];
 
   for (const death of deaths) {
+    const jugador = quien(death.participantId);
+    if (!jugador) continue;
     entries.push({
       id: `death-${death.id}`,
       at: death.diedAt,
       icon: "💀",
-      color: death.participant.color,
-      title: `${death.participant.displayName} ha perdido a ${death.nickname ?? death.species}`,
+      color: jugador.color,
+      title: `${jugador.displayName} ha perdido a ${death.nickname ?? death.species}`,
       detail: [death.nickname ? death.species : null, death.cause]
         .filter(Boolean)
         .join(" · "),
       image: sprites(death.id),
-      who: death.participant.displayName,
-      whoImage: avatares(death.participant.userId),
+      who: jugador.displayName,
+      whoImage: avatares(jugador.userId),
     });
   }
 
   for (const entry of points) {
     // Los puntos de una victoria ya se cuentan con el combate
     if (entry.sourceMatchId) continue;
+    const jugador = quien(entry.participantId);
+    if (!jugador) continue;
     entries.push({
       id: `point-${entry.id}`,
       at: entry.createdAt,
       icon: entry.delta > 0 ? "➕" : "➖",
-      color: entry.participant.color,
-      title: `${entry.participant.displayName} ${entry.delta > 0 ? "gana" : "pierde"} ${Math.abs(entry.delta)} ${Math.abs(entry.delta) === 1 ? "punto" : "puntos"}`,
+      color: jugador.color,
+      title: `${jugador.displayName} ${entry.delta > 0 ? "gana" : "pierde"} ${Math.abs(entry.delta)} ${Math.abs(entry.delta) === 1 ? "punto" : "puntos"}`,
       detail: entry.reason,
-      who: entry.participant.displayName,
-      whoImage: avatares(entry.participant.userId),
+      who: jugador.displayName,
+      whoImage: avatares(jugador.userId),
     });
   }
 
   for (const clear of clears) {
+    const jugador = quien(clear.participantId);
+    if (!jugador) continue;
     entries.push({
       id: `clear-${clear.id}`,
       at: clear.clearedAt,
       icon: "🎯",
-      color: clear.participant.color,
-      title: `${clear.participant.displayName} ha superado a ${clear.levelCap.label}`,
+      color: jugador.color,
+      title: `${jugador.displayName} ha superado a ${clear.levelCap.label}`,
       detail: `Level cap ${clear.levelCap.cap}`,
-      who: clear.participant.displayName,
-      whoImage: avatares(clear.participant.userId),
+      who: jugador.displayName,
+      whoImage: avatares(jugador.userId),
     });
   }
 
@@ -176,30 +166,34 @@ export async function getActivity(competitionId: string, limit = 60) {
   }
 
   for (const ticket of tickets) {
+    const jugador = quien(ticket.participantId);
+    if (!jugador) continue;
     entries.push({
       id: `ticket-${ticket.id}`,
       at: ticket.createdAt,
       icon: "🎟️",
-      color: ticket.participant.color,
-      title: `${ticket.participant.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
+      color: jugador.color,
+      title: `${jugador.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
       detail: ticket.reason ?? undefined,
-      who: ticket.participant.displayName,
-      whoImage: avatares(ticket.participant.userId),
+      who: jugador.displayName,
+      whoImage: avatares(jugador.userId),
     });
   }
 
   for (const match of matches) {
-    if (!match.winner) continue;
-    const loser =
+    const ganador = match.winnerId ? quien(match.winnerId) : undefined;
+    const perdedor = quien(
       match.winnerId === match.participantAId
-        ? match.participantB
-        : match.participantA;
+        ? match.participantBId
+        : match.participantAId,
+    );
+    if (!ganador || !perdedor) continue;
     entries.push({
       id: `match-${match.id}`,
       at: match.playedAt ?? new Date(0),
       icon: "⚔️",
-      color: match.winner.color,
-      title: `${match.winner.displayName} gana a ${loser.displayName}`,
+      color: ganador.color,
+      title: `${ganador.displayName} gana a ${perdedor.displayName}`,
       detail: [
         match.matchday.label,
         match.pokemonDiff !== null
@@ -208,8 +202,8 @@ export async function getActivity(competitionId: string, limit = 60) {
       ]
         .filter(Boolean)
         .join(" · "),
-      who: match.winner.displayName,
-      whoImage: avatares(match.winner.userId),
+      who: ganador.displayName,
+      whoImage: avatares(ganador.userId),
     });
   }
 

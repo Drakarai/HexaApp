@@ -3,7 +3,8 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmasDeDosImagenes, urlsDeImagen } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { COMPETITION_STATUS } from "@/lib/constants";
 
 export const COMPETITION_COOKIE = "hexaapp_competition";
@@ -78,20 +79,29 @@ export const getParticipants = cache(async (competitionId: string) => {
     },
   });
 
-  const [avatares, ases] = await Promise.all([
+  // Dos consultas en vez de tres: las dos imágenes del as salen juntas porque
+  // son de la misma tabla. Cada consulta es un viaje a la base de datos.
+  const [avatares, [firmasAs, firmasAsFicha]] = await Promise.all([
     urlsDeImagen(
       "avatar",
       participantes.map((p) => p.userId),
     ),
-    urlsDeImagen(
+    firmasDeDosImagenes(
       "as",
+      "as-ficha",
       participantes.map((p) => p.id),
     ),
   ]);
 
   return participantes.map((participante) => ({
     ...participante,
-    aceImage: ases(participante.id),
+    aceImage: urlDeImagen("as", participante.id, firmasAs.get(participante.id)),
+    /** La ilustración grande del as, para su ficha */
+    aceDetailImage: urlDeImagen(
+      "as-ficha",
+      participante.id,
+      firmasAsFicha.get(participante.id),
+    ),
     user: { ...participante.user, avatarImage: avatares(participante.userId) },
   }));
 });
@@ -216,12 +226,6 @@ export async function getStandings(
     }),
   ]);
 
-  // La ilustración grande del as: solo su dirección, se baja al abrir la ficha
-  const aceArt = await urlsDeImagen(
-    "as-ficha",
-    participants.map((participant) => participant.id),
-  );
-
   const deltaByParticipant = new Map(
     pointSums.map((row) => [row.participantId, row._sum.delta ?? 0]),
   );
@@ -275,7 +279,7 @@ export async function getStandings(
         nickname: participant.aceNickname,
         reason: participant.aceReason,
         image: participant.aceImage,
-        detailImage: aceArt(participant.id),
+        detailImage: participant.aceDetailImage,
       },
       points: startingPoints + (deltaByParticipant.get(participant.id) ?? 0),
       deaths: deathsByParticipant.get(participant.id) ?? 0,

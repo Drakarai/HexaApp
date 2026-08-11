@@ -38,13 +38,12 @@ export default async function AppLayout({
     getActiveCompetition(),
   ]);
 
-  const adminItem: NavItem = {
-    href: "/admin",
-    label: "Administración",
-    icon: "⚙️",
-  };
+  const adminItems: NavItem[] = [
+    { href: "/admin", label: "Administración", icon: "⚙️" },
+    { href: "/diagnostico", label: "Diagnóstico", icon: "🩺" },
+  ];
   const secondary = isAdmin(user)
-    ? [...SECONDARY_ITEMS, adminItem]
+    ? [...SECONDARY_ITEMS, ...adminItems]
     : SECONDARY_ITEMS;
   const sidebarItems = [...PRIMARY_ITEMS, ...secondary];
 
