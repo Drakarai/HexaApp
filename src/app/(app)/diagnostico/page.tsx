@@ -60,6 +60,8 @@ export default async function DiagnosticoPage() {
 
   const regionServidor =
     process.env.VERCEL_REGION ?? process.env.FLY_REGION ?? null;
+  // Con pooler hace falta la directa para poder crear las tablas al publicar
+  const directaConfigurada = Boolean(process.env.DIRECT_URL?.trim());
   const mismaZona =
     conexion.region && regionServidor
       ? conexion.region.slice(0, 2) === traducirRegion(regionServidor)
@@ -137,6 +139,17 @@ export default async function DiagnosticoPage() {
             etiqueta="Conexión agrupada (pooler)"
             valor={conexion.agrupada ? "sí" : "no — conviene activarla"}
             malo={!conexion.agrupada}
+          />
+          <Dato
+            etiqueta="Dirección directa (DIRECT_URL)"
+            valor={
+              directaConfigurada
+                ? "configurada"
+                : conexion.agrupada
+                  ? "FALTA — hace falta con pooler"
+                  : "no hace falta sin pooler"
+            }
+            malo={conexion.agrupada && !directaConfigurada}
           />
           <Dato etiqueta="Servidor de la base de datos" valor={conexion.servidor ?? "?"} />
         </dl>

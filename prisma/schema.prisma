@@ -8,7 +8,13 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // La que usa la aplicación para atender páginas. Con el pooler de Neon, es
+  // la que lleva "-pooler" en el nombre del servidor.
+  url       = env("DATABASE_URL")
+  // La directa, solo para crear tablas al publicar: eso no funciona a través
+  // del pooler. Si no se configura, scripts/preparar-build.mjs la iguala a la
+  // de arriba, que es lo correcto cuando no hay pooler.
+  directUrl = env("DIRECT_URL")
 }
 
 // ---------------------------------------------------------------------------

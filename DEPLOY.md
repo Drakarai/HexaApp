@@ -261,11 +261,39 @@ gratis de Neon admite pocas conexiones a la vez, y sin portero, si se piden
 muchas cosas de golpe (el cementerio pide muchas imágenes), se quedan haciendo
 cola.
 
-Si en Diagnóstico te sale que **no** la estás usando, entra en Neon → **Connect**
-y copia la que lleva `-pooler` en el nombre del servidor. Avísame antes de
-cambiarla: con el portero de por medio conviene declarar además una segunda
-dirección (`DIRECT_URL`) para que Prisma pueda crear las tablas al publicar. Es
-un cambio de dos líneas, pero hay que hacerlo a la vez.
+#### Cómo conseguir la cadena con pooler
+
+En el panel de Neon hay un botón **Connect**. En la ventana que sale, busca un
+interruptor o un desplegable que ponga **Connection pooling** / **Pooled
+connection** y márcalo: al hacerlo, al nombre del servidor le aparece `-pooler`.
+
+Si no encuentras la opción (según la versión del panel a veces no está a la
+vista), **la puedes escribir tú**, que es exactamente lo mismo. Coge tu cadena
+actual y añade `-pooler` justo al final del trozo que va después de la `@` y
+antes del primer punto:
+
+```
+antes:   ...@ep-cool-name-12345.eu-central-1.aws.neon.tech/neondb?sslmode=require
+después: ...@ep-cool-name-12345-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require
+                                ↑ solo se añade esto
+```
+
+#### Qué poner en Vercel
+
+En *Settings → Environment Variables* vas a tener **dos** variables de base de
+datos:
+
+| Variable | Valor |
+| --- | --- |
+| `DATABASE_URL` | la cadena **con** `-pooler` |
+| `DIRECT_URL` | la cadena **sin** `-pooler` (la que ya tenías) |
+
+La segunda solo se usa para crear las tablas al publicar, porque eso no funciona
+a través del portero. Deja `AUTH_SECRET` como está.
+
+Cuando las tengas puestas, pulsa **Redeploy**. Si te olvidas de `DIRECT_URL`, la
+aplicación se sigue publicando igual: usa la principal para las dos cosas, que
+es lo que hacía antes. Y en **Diagnóstico** te sale si falta.
 
 ---
 

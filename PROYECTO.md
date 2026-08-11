@@ -269,6 +269,14 @@ dos reglas:
 
 La portada bajó de 39 a 28 consultas y el muro de 24 a 18.
 
+**Dos direcciones de base de datos.** `DATABASE_URL` es la del *pooler* (el
+portero que reparte conexiones ya abiertas, para atender páginas) y
+`DIRECT_URL` la directa, que solo se usa al publicar porque **crear tablas no
+funciona a través del pooler**. Si `DIRECT_URL` no está configurada,
+`scripts/preparar-build.mjs` la iguala a la principal antes de compilar: así
+quien no use pooler no tiene que enterarse de nada y el despliegue no puede
+romperse por olvidarla.
+
 **El servidor se fija en Fráncfort** (`vercel.json`, región `fra1`), que es
 donde está la base de datos. Lo que hay que acercar es el servidor a la base de
 datos, no la base de datos al usuario: el móvil habla con el servidor **una vez**
