@@ -35,10 +35,13 @@ export function MatchTeams({
   matchId,
   sides,
   canManage,
+  esReto = false,
 }: {
   matchId: string;
   sides: [TeamSide, TeamSide];
   canManage: boolean;
+  /** Los retos usan el mismo editor, solo cambia dónde se guarda */
+  esReto?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
   const hasTeams = sides.some((side) => side.team.length > 0);
@@ -78,6 +81,7 @@ export function MatchTeams({
       {editing ? (
         <TeamEditor
           matchId={matchId}
+          esReto={esReto}
           sides={sides}
           onClose={() => setEditing(false)}
         />
@@ -205,10 +209,12 @@ export function Sprite({
 
 function TeamEditor({
   matchId,
+  esReto,
   sides,
   onClose,
 }: {
   matchId: string;
+  esReto: boolean;
   sides: [TeamSide, TeamSide];
   onClose: () => void;
 }) {
@@ -374,6 +380,7 @@ function TeamEditor({
           className="mt-4 space-y-3 border-t border-white/10 pt-4"
         >
           <input type="hidden" name="matchId" value={matchId} />
+          {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
           <SpeciesPicker key={limpiezas} />
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

@@ -17,23 +17,31 @@ export async function addMatchPokemonAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const matchId = String(formData.get("matchId") ?? "");
-  const match = await prisma.match.findUnique({
-    where: { id: matchId },
-    include: { matchday: { select: { competitionId: true } } },
-  });
-  if (!match) return { error: "Combate no encontrado." };
+  // El mismo editor sirve para los combates de jornada y para los retos
+  const esReto = formData.get("esReto") === "1";
+  const combateId = String(formData.get("matchId") ?? "");
+
+  const combate = esReto
+    ? await prisma.challengeMatch.findUnique({ where: { id: combateId } })
+    : await prisma.match.findUnique({
+        where: { id: combateId },
+        include: { matchday: { select: { competitionId: true } } },
+      });
+  if (!combate) return { error: "Combate no encontrado." };
+
+  const competitionId =
+    "matchday" in combate ? combate.matchday.competitionId : combate.competitionId;
 
   try {
-    await requireCompetitionManager(match.matchday.competitionId);
+    await requireCompetitionManager(competitionId);
   } catch (error) {
     return { error: (error as Error).message };
   }
 
   const participantId = String(formData.get("participantId") ?? "");
   if (
-    participantId !== match.participantAId &&
-    participantId !== match.participantBId
+    participantId !== combate.participantAId &&
+    participantId !== combate.participantBId
   ) {
     return { error: "Ese jugador no combate aquí." };
   }
@@ -41,8 +49,12 @@ export async function addMatchPokemonAction(
   const species = String(formData.get("species") ?? "").trim();
   if (!species) return { error: "Elige la especie del pokémon." };
 
+  const deQuien = esReto
+    ? { challengeMatchId: combateId }
+    : { matchId: combateId };
+
   const count = await prisma.matchPokemon.count({
-    where: { matchId, participantId },
+    where: { ...deQuien, participantId },
   });
   if (count >= MAX_TEAM) {
     return { error: `Un equipo son ${MAX_TEAM} pokémon como mucho.` };
@@ -53,7 +65,7 @@ export async function addMatchPokemonAction(
 
   await prisma.matchPokemon.create({
     data: {
-      matchId,
+      ...deQuien,
       participantId,
       species,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
@@ -63,7 +75,7 @@ export async function addMatchPokemonAction(
     },
   });
 
-  revalidatePath("/jornadas");
+  revalidatePath(esReto ? "/retos" : "/jornadas");
   return { success: "Pokémon añadido al equipo." };
 }
 
@@ -71,14 +83,23 @@ export async function removeMatchPokemonAction(formData: FormData) {
   const id = String(formData.get("matchPokemonId") ?? "");
   const pokemon = await prisma.matchPokemon.findUnique({
     where: { id },
-    include: { match: { include: { matchday: { select: { competitionId: true } } } } },
+    include: {
+      match: { include: { matchday: { select: { competitionId: true } } } },
+      challengeMatch: { select: { competitionId: true } },
+    },
   });
   if (!pokemon) return;
-  await requireCompetitionManager(pokemon.match.matchday.competitionId);
+
+  // El pokémon es de una jornada o de un reto, nunca de los dos
+  const competitionId =
+    pokemon.match?.matchday.competitionId ?? pokemon.challengeMatch?.competitionId;
+  if (!competitionId) return;
+  await requireCompetitionManager(competitionId);
 
   // Al borrarlo se van también sus votos (cascada) y el desempate que lo
   // señalara (SetNull), así que la votación no queda apuntando a un fantasma.
   await prisma.matchPokemon.delete({ where: { id } });
 
   revalidatePath("/jornadas");
+  revalidatePath("/retos");
 }

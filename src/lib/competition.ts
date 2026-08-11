@@ -199,32 +199,42 @@ export async function getStandings(
 ): Promise<StandingRow[]> {
   const competition = await prisma.competition.findUnique({
     where: { id: competitionId },
-    select: { startingPoints: true },
+    select: { startingPoints: true, challengeDiffCounts: true },
   });
   const startingPoints = competition?.startingPoints ?? 0;
 
-  const [participants, pointSums, deathCounts, matches] = await Promise.all([
-    getParticipants(competitionId),
-    prisma.pointEntry.groupBy({
-      by: ["participantId"],
-      where: { competitionId },
-      _sum: { delta: true },
-    }),
-    prisma.death.groupBy({
-      by: ["participantId"],
-      where: { participant: { competitionId } },
-      _count: { _all: true },
-    }),
-    prisma.match.findMany({
-      where: { matchday: { competitionId } },
-      select: {
-        participantAId: true,
-        participantBId: true,
-        winnerId: true,
-        pokemonDiff: true,
-      },
-    }),
-  ]);
+  const [participants, pointSums, deathCounts, matches, challenges] =
+    await Promise.all([
+      getParticipants(competitionId),
+      prisma.pointEntry.groupBy({
+        by: ["participantId"],
+        where: { competitionId },
+        _sum: { delta: true },
+      }),
+      prisma.death.groupBy({
+        by: ["participantId"],
+        where: { participant: { competitionId } },
+        _count: { _all: true },
+      }),
+      prisma.match.findMany({
+        where: { matchday: { competitionId } },
+        select: {
+          participantAId: true,
+          participantBId: true,
+          winnerId: true,
+          pokemonDiff: true,
+        },
+      }),
+      prisma.challengeMatch.findMany({
+        where: { competitionId, winnerId: { not: null } },
+        select: {
+          participantAId: true,
+          participantBId: true,
+          winnerId: true,
+          pokemonDiff: true,
+        },
+      }),
+    ]);
 
   const deltaByParticipant = new Map(
     pointSums.map((row) => [row.participantId, row._sum.delta ?? 0]),
@@ -242,21 +252,40 @@ export async function getStandings(
     return stats.get(id)!;
   };
 
-  for (const match of matches) {
-    if (!match.winnerId) continue;
-    const loserId =
-      match.winnerId === match.participantAId
-        ? match.participantBId
-        : match.participantAId;
-    const winner = bump(match.winnerId);
-    const loser = bump(loserId);
-    winner.wins += 1;
-    winner.played += 1;
-    loser.losses += 1;
-    loser.played += 1;
-    const diff = match.pokemonDiff ?? 0;
-    winner.diff += diff;
-    loser.diff -= diff;
+  /**
+   * Los retos suman victorias y derrotas igual que las jornadas, porque son
+   * combates de verdad, pero **nunca dan puntos**. Su diferencia de pokémon
+   * solo entra en el desempate si la edición lo tiene activado.
+   */
+  const apuntar = (
+    combate: {
+      participantAId: string;
+      participantBId: string;
+      winnerId: string | null;
+      pokemonDiff: number | null;
+    },
+    cuentaLaDiferencia: boolean,
+  ) => {
+    if (!combate.winnerId) return;
+    const perdedorId =
+      combate.winnerId === combate.participantAId
+        ? combate.participantBId
+        : combate.participantAId;
+    const ganador = bump(combate.winnerId);
+    const perdedor = bump(perdedorId);
+    ganador.wins += 1;
+    ganador.played += 1;
+    perdedor.losses += 1;
+    perdedor.played += 1;
+    if (!cuentaLaDiferencia) return;
+    const diff = combate.pokemonDiff ?? 0;
+    ganador.diff += diff;
+    perdedor.diff -= diff;
+  };
+
+  for (const match of matches) apuntar(match, true);
+  for (const reto of challenges) {
+    apuntar(reto, competition?.challengeDiffCounts ?? false);
   }
 
   const rows = participants.map((participant) => {

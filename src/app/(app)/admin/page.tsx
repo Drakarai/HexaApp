@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
+import { getActiveCompetition } from "@/lib/competition";
+import { ChallengeDiffToggle } from "./challenge-diff-toggle";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
@@ -18,6 +20,8 @@ export default async function AdminPage() {
     include: { _count: { select: { participations: true } } },
   });
 
+  const competition = await getActiveCompetition();
+
   // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
   const avatares = await urlsDeImagen(
     "avatar",
@@ -30,6 +34,20 @@ export default async function AdminPage() {
         title="Administración"
         subtitle="Usuarios de la aplicación. Cada jugador necesita una cuenta antes de poder apuntarse a una competición."
       />
+
+      {competition ? (
+        <section className="card mb-6">
+          <h2 className="section-title mb-1">Ajustes de la edición</h2>
+          <p className="muted mb-4">
+            Afectan solo a {competition.name}.
+          </p>
+          <ChallengeDiffToggle
+            competitionId={competition.id}
+            competitionName={competition.name}
+            activo={competition.challengeDiffCounts}
+          />
+        </section>
+      ) : null}
 
       <section className="card mb-6">
         <h2 className="section-title mb-4">Usuarios ({users.length})</h2>

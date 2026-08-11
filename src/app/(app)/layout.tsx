@@ -3,7 +3,7 @@ import { requireUser, isAdmin } from "@/lib/auth";
 import { getActiveCompetition, listCompetitions } from "@/lib/competition";
 import { logoutAction } from "@/app/actions/auth";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
-import { Nav, type NavItem } from "@/components/nav";
+import { Nav, type NavEntry, type NavItem } from "@/components/nav";
 import { MobileTabBar } from "@/components/mobile-nav";
 import { Avatar } from "@/components/ui";
 
@@ -15,17 +15,37 @@ const PRIMARY_ITEMS: NavItem[] = [
   { href: "/ruleta", label: "Ruleta", icon: "🎡" },
 ];
 
-const SECONDARY_ITEMS: NavItem[] = [
+/**
+ * En la barra lateral, "Combates" es un desplegable con las jornadas y los
+ * retos dentro. En el móvil no hay desplegables: el panel de "Más" es una
+ * rejilla de iconos, así que ahí los dos salen sueltos.
+ */
+const COMBATES: NavEntry = {
+  label: "Combates",
+  icon: "⚔️",
+  children: [
+    { href: "/jornadas", label: "Jornadas", icon: "📅" },
+    { href: "/retos", label: "Retos", icon: "🔥" },
+  ],
+};
+
+const SECONDARY_ITEMS: NavEntry[] = [
   { href: "/actividad", label: "Actividad", icon: "📰" },
   { href: "/reglas", label: "Reglas", icon: "📜" },
   { href: "/level-caps", label: "Level caps", icon: "🎯" },
-  { href: "/jornadas", label: "Jornadas", icon: "⚔️" },
+  COMBATES,
   { href: "/final-four", label: "Final Four", icon: "🏆" },
   { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
   { href: "/notas", label: "Mis notas", icon: "🗒️" },
   { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
   { href: "/perfil", label: "Mi perfil", icon: "👤" },
 ];
+
+/** La versión plana, para la rejilla del móvil. */
+const paraMovil = (entradas: NavEntry[]): NavItem[] =>
+  entradas.flatMap((entrada) =>
+    "children" in entrada ? entrada.children : [entrada],
+  );
 
 export default async function AppLayout({
   children,
@@ -42,10 +62,10 @@ export default async function AppLayout({
     { href: "/admin", label: "Administración", icon: "⚙️" },
     { href: "/diagnostico", label: "Diagnóstico", icon: "🩺" },
   ];
-  const secondary = isAdmin(user)
+  const secondary: NavEntry[] = isAdmin(user)
     ? [...SECONDARY_ITEMS, ...adminItems]
     : SECONDARY_ITEMS;
-  const sidebarItems = [...PRIMARY_ITEMS, ...secondary];
+  const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...secondary];
 
   const switcher = (
     <CompetitionSwitcher
@@ -124,7 +144,7 @@ export default async function AppLayout({
 
       <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
 
-      <MobileTabBar primary={PRIMARY_ITEMS} secondary={secondary} />
+      <MobileTabBar primary={PRIMARY_ITEMS} secondary={paraMovil(secondary)} />
     </div>
   );
 }

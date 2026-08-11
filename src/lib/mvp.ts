@@ -48,7 +48,8 @@ export async function getMvpStates(
 
   const [pokemon, votes, matchdays, voterCount] = await Promise.all([
     prisma.matchPokemon.findMany({
-      where: { match: { matchdayId: { in: matchdayIds } } },
+      // Solo los de jornada: los equipos de un reto no optan a MVP
+      where: { matchId: { not: null }, match: { matchdayId: { in: matchdayIds } } },
       orderBy: { position: "asc" },
       include: {
         match: { select: { matchdayId: true } },
@@ -92,6 +93,7 @@ export async function getMvpStates(
 
   const byMatchday = new Map<string, MvpCandidate[]>();
   for (const row of pokemon) {
+    if (!row.match) continue;
     const list = byMatchday.get(row.match.matchdayId) ?? [];
     list.push({
       id: row.id,

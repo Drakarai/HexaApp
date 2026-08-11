@@ -12,6 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
 import { AceBadge } from "@/components/ace-badge";
 import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
+import { HeadToHead } from "@/components/head-to-head";
+import { getResumenDeCombates } from "@/lib/cara-a-cara";
 import { cx, formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Jugador" };
@@ -51,6 +53,7 @@ export default async function PlayerPage({
     ]);
 
   const fila = standings.find((row) => row.participantId === id);
+  const combates = await getResumenDeCombates(competitionId, id);
   const esMio = participant.userId === user.id;
   const editable = esMio || canManage;
 
@@ -129,12 +132,15 @@ export default async function PlayerPage({
           ) : null}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
           <Cifra valor={fila?.points ?? 0} etiqueta="Puntos" />
           <Cifra valor={deaths.length} etiqueta="Caídos" />
-          <Cifra
-            valor={`${fila?.wins ?? 0}-${fila?.losses ?? 0}`}
-            etiqueta="Victorias-derrotas"
+          <HeadToHead
+            wins={combates.wins}
+            losses={combates.losses}
+            rivales={combates.rivales}
+            presa={combates.presa}
+            bestiaNegra={combates.bestiaNegra}
           />
           <Cifra
             valor={`${clears}/${capsTotales}`}

@@ -61,6 +61,12 @@ model Competition {
   // Puntos con los que arranca cada participante
   startingPoints Int       @default(5)
   maxPlayers     Int       @default(6)
+  /**
+   * Si la diferencia de pokémon de los combates de reto cuenta para el
+   * desempate de la clasificación. Los retos nunca dan puntos; esto solo
+   * decide si su diferencia entra en el tercer criterio.
+   */
+  challengeDiffCounts Boolean @default(false)
   startedAt      DateTime  @default(now())
   endedAt        DateTime?
   createdAt      DateTime  @default(now())
@@ -78,6 +84,7 @@ model Competition {
   pointEntries PointEntry[]
   finalFour    FinalFour?
   tickets      RouletteTicket[]
+  challenges   ChallengeMatch[]
 }
 
 model Participant {
@@ -118,6 +125,9 @@ model Participant {
   matchTeams   MatchPokemon[]
   mvpVotes     MvpVote[]    @relation("MvpVoter")
   favorites    FavoritePokemon[]
+  challengesA  ChallengeMatch[] @relation("ChallengePlayerA")
+  challengesB  ChallengeMatch[] @relation("ChallengePlayerB")
+  challengesWon ChallengeMatch[] @relation("ChallengeWinner")
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -322,7 +332,13 @@ model Match {
  */
 model MatchPokemon {
   id            String  @id @default(cuid())
-  matchId       String
+  /**
+   * De qué combate es el equipo. Va uno de los dos, nunca los dos: los de
+   * jornada apuntan a `matchId` y los de reto a `challengeMatchId`. Se comparte
+   * la tabla para poder reutilizar el mismo editor de equipos.
+   */
+  matchId          String?
+  challengeMatchId String?
   participantId String
   species       String
   nickname      String?
@@ -332,13 +348,45 @@ model MatchPokemon {
   detailImage   String?
   position      Int     @default(0)
 
-  match       Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
-  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  votes       MvpVote[]
-  tiebreakOf  Matchday[]  @relation("MatchdayTiebreak")
+  match          Match?          @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
+  participant    Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  votes          MvpVote[]
+  tiebreakOf     Matchday[]      @relation("MatchdayTiebreak")
 
   @@index([matchId])
+  @@index([challengeMatchId])
   @@index([participantId])
+}
+
+/**
+ * Combate de reto: un pique suelto entre dos jugadores, fuera de las jornadas.
+ * Lleva premio y castigo, cuenta para el historial de victorias y derrotas,
+ * pero **no da puntos**. Su diferencia de pokémon solo entra en el desempate de
+ * la clasificación si la competición lo tiene activado.
+ */
+model ChallengeMatch {
+  id            String    @id @default(cuid())
+  competitionId String
+  participantAId String
+  participantBId String
+  winnerId      String?
+  pokemonDiff   Int?
+  /** Qué se lleva el ganador */
+  prize         String?
+  /** Qué se traga el perdedor */
+  punishment    String?
+  playedAt      DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+
+  competition  Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participantA Participant  @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB Participant  @relation("ChallengePlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winner       Participant? @relation("ChallengeWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  team         MatchPokemon[]
+
+  @@index([competitionId])
 }
 
 /**

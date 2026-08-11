@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de agosto de 2026 (menos consultas por página y
-pantalla de diagnóstico).
+Última actualización: 11 de agosto de 2026 (combates de reto y cara a cara en
+los perfiles).
 
 ---
 
@@ -38,11 +38,12 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador. El MVP de la jornada se vota entre todos. |
+| **Retos** | Piques sueltos entre dos, con premio y castigo. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
-| **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos y su cementerio. Se llega tocando su foto en cualquier sitio. |
+| **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
-| **Administración** | Alta de usuarios, roles y contraseñas. |
+| **Administración** | Alta de usuarios, roles y contraseñas, y los ajustes de la edición. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -200,6 +201,44 @@ desplegar: cada jugador lleva al lado la suma de los suyos.
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
 
+**Los retos son combates que no puntúan.** Un pique suelto entre dos jugadores,
+fuera del calendario: se apunta el ganador, la diferencia de pokémon, lo que se
+lleva el que gana (**premio**) y lo que se traga el que pierde (**castigo**), y
+los dos equipos igual que en una jornada. **No dan puntos nunca**: la
+clasificación es de las jornadas, y si un reto sumara, dos amigos podrían
+subirse el uno al otro sin jugar la liga. Lo que sí hacen es contar como
+victoria o derrota en el historial de cada uno.
+
+Lo único negociable es la **diferencia de pokémon**, que es el tercer criterio
+de desempate. Hay una casilla en Administración (`challengeDiffCounts`, por
+edición) que decide si la de los retos entra en ese desempate o no; viene
+apagada. Se guarda en la competición y no en cada reto para que la regla sea la
+misma para todos y se pueda cambiar de opinión a mitad de edición sin repasar
+combate por combate.
+
+Los equipos de un reto se guardan en la **misma tabla** que los de jornada
+(`MatchPokemon`, con `matchId` **o** `challengeMatchId`, uno de los dos). Son el
+mismo dato y así el editor, la descarga de sprites y las direcciones de imagen
+se comparten tal cual; duplicar la tabla habría obligado a duplicar las cuatro
+piezas.
+
+**"Jornadas" pasó a ser "Combates", un menú con dos.** Al aparecer los retos, la
+barra tenía dos entradas que eran lo mismo con otras reglas. Ahora hay un grupo
+**Combates** que se despliega en **Jornadas** y **Retos**, y arranca abierto si
+estás en una de las dos. En móvil los grupos no existen: la rejilla de "Más" los
+aplana y salen las dos páginas sueltas, porque ahí un desplegable dentro de otro
+desplegable no se maneja bien con el dedo.
+
+**El balance del perfil se abre y enseña el cara a cara.** En la página de cada
+jugador, la casilla de victorias-derrotas ya no es solo la cifra: debajo lleva
+su **presa favorita** (a quien más veces ha ganado) y su **bestia negra** (quien
+más veces le ha ganado), y al pincharla se despliega la lista de todos los
+rivales con el marcador contra él y su foto al lado. Si hay empate arriba pone
+**Varios**, con el número de veces, en vez de elegir uno por orden alfabético.
+Cuentan jornadas y retos juntos, porque los dos son combates. La etiqueta va
+encima del nombre y no al lado: en una casilla de un cuarto de ancho, "Presa
+favorita: Fulanito" salía cortado a la mitad.
+
 **Las imágenes se guardan en la base de datos pero se sirven como archivos.**
 Esta fue la causa de que la aplicación se arrastrara según se iba llenando. Las
 fotos se guardan como data URL (base64) dentro de la base de datos, y al
@@ -339,9 +378,12 @@ pinta como degradado entre los dos.
 ## 4. Reglas del locke que están implementadas
 
 - **Clasificación y desempates**: puntos → menos pokémon muertos → mejor
-  diferencia de pokémon en combates de jornada. Los dos primeros se marcan como
-  clasificados directos a la Final Four.
+  diferencia de pokémon en combates de jornada (y en los retos, si el ajuste de
+  la edición lo permite). Los dos primeros se marcan como clasificados directos
+  a la Final Four.
 - **Jornadas**: emparejamientos por pareja, 1 punto por victoria, configurable.
+- **Retos**: combates sueltos con premio y castigo. Cuentan como victoria o
+  derrota, nunca como puntos.
 - **Level caps**: cada jugador marca su gimnasio superado, para ver quién frena
   al grupo (nadie sigue hasta que todos pasen).
 - **Puntos iniciales**: 5 por defecto, configurable por competición.
@@ -374,7 +416,13 @@ public/
 Piezas con truco:
 
 - `lib/competition.ts` — `getStandings()` calcula la clasificación con sus
-  desempates; `assertCanActForParticipant()` centraliza los permisos.
+  desempates; `assertCanActForParticipant()` centraliza los permisos. Jornadas y
+  retos se apuntan con la **misma función** (`apuntar`), que recibe si esa
+  diferencia de pokémon cuenta o no; los puntos van por otro lado y los retos no
+  los tocan.
+- `lib/cara-a-cara.ts` — el marcador de un jugador contra cada rival, juntando
+  jornadas y retos, y de ahí salen la presa favorita y la bestia negra.
+  `components/head-to-head.tsx` es la casilla desplegable del perfil.
 - `components/species-picker.tsx` — buscador de pokémon. Solo manda **qué**
   pokémon es; las imágenes las baja `lib/sprites-servidor.ts` al guardar. La
   vista previa usa el sprite pixelado, que pesa 900 bytes en vez de 110 KB. Lo
@@ -388,7 +436,8 @@ Piezas con truco:
 - `components/favorites-grid.tsx` — la caja de favoritos, con la misma idea que
   los equipos: aparece al momento y el servidor baja el sprite después.
 - `components/match-team.tsx` — los equipos bajo cada combate y el editor del
-  administrador. **Dos vistas del mismo dato**: en móvil una tira de sprites
+  administrador, tanto en jornadas como en retos (la marca `esReto` decide a qué
+  columna va el pokémon). **Dos vistas del mismo dato**: en móvil una tira de sprites
   por jugador, que es lo que cabe, y desde `lg` dos cajas de 3x2 una al lado
   de la otra, con los seis huecos siempre puestos (los que faltan van de línea
   discontinua) para que las dos midan igual. Al guardar, el entrenador elegido
@@ -478,3 +527,5 @@ lugar de destruir datos, y hay que avisar antes.
     **pokémon favoritos**, y el selector de temas plegable.
 17. **Menos consultas por página** y pantalla de **diagnóstico** para medir la
     distancia real a la base de datos.
+18. **Combates de reto**, con premio y castigo, y el **cara a cara** de cada
+    jugador contra los demás en su perfil.
