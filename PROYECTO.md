@@ -269,6 +269,12 @@ dos reglas:
 
 La portada bajó de 39 a 28 consultas y el muro de 24 a 18.
 
+**El servidor se fija en Fráncfort** (`vercel.json`, región `fra1`), que es
+donde está la base de datos. Lo que hay que acercar es el servidor a la base de
+datos, no la base de datos al usuario: el móvil habla con el servidor **una vez**
+por página, y el servidor habla con la base de datos **treinta**. Si se cambia
+la región de Neon, hay que cambiar también esa línea.
+
 **Hay una pantalla de diagnóstico** en `/diagnostico`, solo para
 administradores: mide la ida y vuelta real a la base de datos desde donde esté
 desplegada la aplicación, y avisa si el servidor y la base de datos están en

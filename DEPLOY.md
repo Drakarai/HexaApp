@@ -210,6 +210,65 @@ sitio distinto.
 
 ---
 
+## Que la aplicación vaya rápida
+
+Esto es lo que más se nota, mucho más que cualquier cosa del código.
+
+### 1. El servidor tiene que estar donde está la base de datos
+
+Al abrir una página, la aplicación le hace **entre 15 y 30 preguntas** a la base
+de datos. Cada pregunta es un viaje de ida y vuelta. Si el servidor de Vercel
+está en Estados Unidos y la base de datos en Fráncfort, cada viaje cruza el
+Atlántico: unos 100 ms. Treinta viajes son **tres segundos de espera** en una
+sola página.
+
+Lo importante y lo que menos gente espera: **da igual dónde vivas tú**. Tú
+hablas con el servidor una vez por página; el servidor habla con la base de
+datos treinta veces. Lo que hay que acercar es el servidor a la base de datos,
+no la base de datos a tu casa.
+
+En el repositorio hay un fichero `vercel.json` que fija el servidor en
+**Fráncfort** (`fra1`), que es donde suele estar la base de datos si creaste el
+proyecto de Neon desde España. Si la tuya está en otro sitio, cambia ese código
+por el que toque y sube el cambio:
+
+| Dónde está tu base de datos | Código para `vercel.json` |
+| --- | --- |
+| Europa (Fráncfort) | `fra1` |
+| Europa (París) | `cdg1` |
+| Europa (Irlanda) | `dub1` |
+| Estados Unidos (Virginia) | `iad1` |
+| Estados Unidos (San Francisco) | `sfo1` |
+
+**Cómo saber cuál te toca**: entra en la aplicación como administrador y abre
+**Diagnóstico** en el menú. Te dice en qué región está cada cosa y cuánto tarda
+una ida y vuelta de verdad. Por debajo de 15 ms es bueno; por encima de 40 ms
+es que están lejos.
+
+### 2. La conexión agrupada de Neon (el *pooler*)
+
+Esto ya deberías tenerlo: el paso 1.3 te decía que copiaras la cadena **pooled**.
+Compruébalo en **Diagnóstico**, que te lo dice.
+
+Para qué sirve: antes de poder preguntar nada hay que **abrir una conexión** con
+la base de datos —saludo, cifrado y contraseña, que son varios viajes más—. En
+Vercel la aplicación se ejecuta en procesos pequeños que aparecen y desaparecen,
+así que ese saludo se repetiría constantemente.
+
+El *pooler* es un portero que tiene un puñado de conexiones ya abiertas: tu
+aplicación le pide una hecha y se ahorra el saludo entero. Además, el plan
+gratis de Neon admite pocas conexiones a la vez, y sin portero, si se piden
+muchas cosas de golpe (el cementerio pide muchas imágenes), se quedan haciendo
+cola.
+
+Si en Diagnóstico te sale que **no** la estás usando, entra en Neon → **Connect**
+y copia la que lleva `-pooler` en el nombre del servidor. Avísame antes de
+cambiarla: con el portero de por medio conviene declarar además una segunda
+dirección (`DIRECT_URL`) para que Prisma pueda crear las tablas al publicar. Es
+un cambio de dos líneas, pero hay que hacerlo a la vez.
+
+---
+
 ## Si algo sale mal
 
 **El despliegue falla en Vercel (sale en rojo).**
