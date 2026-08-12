@@ -267,8 +267,17 @@ arrastre horizontal que hacía falta para ver las últimas columnas.
   (`line-clamp-3`), y con más de una la chapa pasa de óvalo a esquina
   redondeada: un óvalo de tres líneas parece una pastilla rota. Con el tope de
   **60 caracteres** por título, tres líneas llegan hasta a 320 px.
+- **Las cifras van en una rejilla de columnas iguales**, con su rótulo debajo
+  (Pts, 💀, V-D, Dif.). Todas las fichas usan la misma rejilla, así que **quedan
+  alineadas de una a otra** igual que en la tabla. El primer intento las puso
+  seguidas en una línea corrida —"12 💀 · 5-0 · +10"— y así se leían como una
+  nota al pie: perdían el rango que tienen, que es el motivo de que la
+  clasificación exista.
 - En la ficha **no va la versión del juego**: a 320 px salía cortada a "Hea…", y
   está en el perfil de cada uno.
+- El precio de las fichas es el alto: la clasificación del resumen pasa de unos
+  400 px a unos 1.000 en un móvil. Si algún día molesta, ahí se puede usar el
+  modo `compact` o enseñar solo el podio.
 - Los títulos de la clasificación se traen **en una sola consulta con `join`** en
   vez de con `include`, que serían dos: la portada cuenta cada viaje a la base
   de datos.

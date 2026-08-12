@@ -175,28 +175,9 @@ function Ficha({
           editableParticipantIds={editableParticipantIds}
           size={26}
         />
-
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-white">{row.displayName}</p>
-          {compact ? null : (
-            /* Sin la versión del juego: en 320 px salía cortada a "Hea…", y
-               está en su perfil. Estas tres cifras sí caben enteras */
-            <p className="truncate text-[11px] text-slate-500">
-              {row.deaths} 💀 · {row.wins}-{row.losses} ·{" "}
-              {row.pokemonDiff > 0 ? "+" : ""}
-              {row.pokemonDiff}
-            </p>
-          )}
-        </div>
-
-        <div className="shrink-0 text-right">
-          <p className="text-lg font-bold leading-none text-white tabular-nums">
-            {row.points}
-          </p>
-          <p className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-500">
-            pts
-          </p>
-        </div>
+        <p className="min-w-0 flex-1 truncate font-semibold text-white">
+          {row.displayName}
+        </p>
       </div>
 
       {/* El título, en su propia línea y a todo el ancho de la ficha: aquí sí
@@ -206,7 +187,60 @@ function Ficha({
           <TitleBadge titulo={row.title} size="sm" wrap />
         </div>
       ) : null}
+
+      {/*
+        Las cifras, en una rejilla de columnas iguales. Todas las fichas usan la
+        misma, así que **quedan alineadas de una a otra** como en la tabla, y
+        cada una lleva su rótulo debajo: sueltas en una línea corrida se leían
+        como una nota al pie y perdían el rango que tienen.
+      */}
+      <dl
+        className={cx(
+          "mt-2.5 grid divide-x divide-white/5 rounded-lg border border-white/5 bg-white/[0.03]",
+          compact ? "grid-cols-2" : "grid-cols-4",
+        )}
+      >
+        <Cifra valor={row.points} etiqueta="Pts" fuerte />
+        <Cifra valor={row.deaths} etiqueta="💀" />
+        {compact ? null : (
+          <>
+            <Cifra valor={`${row.wins}-${row.losses}`} etiqueta="V-D" />
+            <Cifra
+              valor={`${row.pokemonDiff > 0 ? "+" : ""}${row.pokemonDiff}`}
+              etiqueta="Dif."
+            />
+          </>
+        )}
+      </dl>
     </li>
+  );
+}
+
+/** Una cifra de la ficha, con su rótulo debajo. */
+function Cifra({
+  valor,
+  etiqueta,
+  fuerte = false,
+}: {
+  valor: string | number;
+  etiqueta: string;
+  /** Los puntos, que son lo que de verdad ordena la tabla */
+  fuerte?: boolean;
+}) {
+  return (
+    <div className="px-1 py-1.5 text-center">
+      <dd
+        className={cx(
+          "tabular-nums leading-tight",
+          fuerte ? "text-lg font-bold text-white" : "text-sm font-semibold text-slate-200",
+        )}
+      >
+        {valor}
+      </dd>
+      <dt className="mt-0.5 text-[9px] uppercase tracking-wide text-slate-500">
+        {etiqueta}
+      </dt>
+    </div>
   );
 }
 
