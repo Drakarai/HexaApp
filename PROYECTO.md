@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (enlace a la repetición de cada
-combate).
+Última actualización: 12 de agosto de 2026 (copias de seguridad automáticas,
+descargables y restaurables).
 
 ---
 
@@ -43,7 +43,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
-| **Administración** | Alta de usuarios, roles y contraseñas, y los ajustes de la edición. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -231,6 +231,52 @@ desplegar: cada jugador lleva al lado la suma de los suyos.
 
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
+
+**Las copias de seguridad se hacen solas, se bajan y se restauran.** Todo vive
+en la cuenta gratis de Neon, así que hacía falta una red debajo. Un volcado es
+**todas las tablas menos la de las propias copias** —meterlas dentro haría que
+cada copia contuviera a las anteriores y el tamaño se multiplicara sola—, en
+JSON, comprimido con gzip. Con las fotos dentro son unos 5,5 MB por copia; se
+guardan las 5 últimas.
+
+- **Se hace sola sin tareas programadas.** Al cargar el resumen se mira si la
+  última tiene más de un día y, si toca, se hace otra con `after()`, o sea
+  **después de mandar la página**: nadie espera por ello. Se descartó una tarea
+  programada de Vercel porque obliga a configurar a mano una variable de entorno
+  (`CRON_SECRET`) para que el enlace no quede abierto a cualquiera, y este
+  proyecto va de no depender de la terminal. Si nadie abre la aplicación en una
+  semana tampoco hay nada nuevo que copiar.
+- **Se pide turno antes de copiar.** Si dos personas entran a la vez y a las dos
+  les toca, las dos miraban "¿hace más de un día?" antes de que ninguna hubiera
+  guardado nada y salían dos copias idénticas. Ahora se reserva una fila vacía
+  dentro de una transacción con `pg_try_advisory_xact_lock` —que dura lo que
+  tarda un `insert`— y el volcado, que es lo lento, va ya fuera. Una fila con
+  `rawSize` 0 es una reserva a medias: no se lista, y se limpia sola pasada una
+  hora.
+- **El orden para restaurar sale de la propia base de datos**, no de una lista
+  escrita a mano que se quedaría vieja al añadir un modelo. Se leen las claves
+  foráneas de `information_schema` y se ordenan las tablas por las que son
+  obligatorias. El truco para las dependencias circulares —una jornada apunta al
+  pokémon MVP, que apunta a su combate, que apunta a la jornada— es meter
+  **todas las columnas que admiten nulo vacías** y rellenarlas en una segunda
+  pasada. Así solo hay que ordenar por las obligatorias, que nunca pueden formar
+  un círculo: si lo formaran, esos datos no habrían podido existir.
+- **`json_populate_recordset` hace la conversión.** Postgres pasa el JSON al
+  tipo exacto de cada tabla —fechas, listas de texto, nulos— sin escribir el
+  mapeo a mano ni tabla por tabla.
+- **Todo el restaurado va en una transacción**: o entra entero o no se toca
+  nada. Y antes de empezar se guarda una copia "previa" de cómo estaba, por si
+  la restaurada era la equivocada.
+- **Hay que escribir RESTAURAR** en una casilla. Un botón que borra la
+  aplicación entera no puede dispararse con un clic despistado.
+- **La tabla `Backup` no tiene ninguna relación con el resto, a propósito.** Al
+  restaurar se vacían todas las tablas; si colgara de `User`, el vaciado se
+  llevaría por delante las copias justo cuando hacen falta. Por eso el autor se
+  guarda como nombre suelto.
+- **Lo que de verdad salva es el fichero descargado.** Las copias de dentro
+  viven en la misma base de datos que la aplicación: si se cae Neon, se van con
+  ella. Por eso se puede bajar cada copia como `.json` y **volver a subirla**
+  sobre una base de datos nueva y vacía.
 
 **Cada combate puede llevar su repetición.** En las jornadas y en los retos, el
 administrador tiene un campo donde pegar el enlace —la repetición de Showdown,
@@ -567,6 +613,8 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
+- `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
+  es el disparador del resumen; `admin/backups.tsx`, la pantalla.
 - `components/replay-link.tsx` — el botón "Ver combate", compartido por las
   jornadas y los retos. Solo se pinta si hay enlace.
 - `components/mobile-nav.tsx` y `components/nav.tsx` — las dos formas de la
@@ -605,7 +653,8 @@ Ideas comentadas y no hechas:
 - **Encuentros por ruta**: qué salió en cada zona y si se capturó.
 - **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
 - **Exportar una edición archivada** a PDF o imagen como recuerdo, ahora que
-  el hall de la fama da un buen cierre.
+  el hall de la fama da un buen cierre. (Distinto de las copias de seguridad,
+  que son para restaurar y no para enseñar.)
 
 ---
 
@@ -664,3 +713,5 @@ lugar de destruir datos, y hay que avisar antes.
 21. **Gráfico de la clasificación** jornada a jornada, y la navegación repartida
     en tres pestañas por tema.
 22. **Enlace a la repetición** de cada combate, con su botón "Ver combate".
+23. **Copias de seguridad**: automáticas, descargables y restaurables, también
+    desde un fichero sobre una base de datos vacía.

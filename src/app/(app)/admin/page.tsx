@@ -9,8 +9,19 @@ import { ROLES } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { deleteUserAction, updateUserRoleAction } from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
+import { Backups, type CopiaView } from "./backups";
+import {
+  COPIAS_HECHAS,
+  COPIAS_QUE_SE_GUARDAN,
+  HORAS_ENTRE_COPIAS,
+} from "@/lib/copias";
 
 export const metadata = { title: "Administración" };
+/**
+ * Restaurar una copia son varios megas de JSON viajando a la base de datos: con
+ * los diez segundos de siempre no llega.
+ */
+export const maxDuration = 60;
 
 export default async function AdminPage() {
   const me = await requireAdminPage();
@@ -21,6 +32,24 @@ export default async function AdminPage() {
   });
 
   const competition = await getActiveCompetition();
+
+  // Sin el volcado: son varios megas por copia y aquí solo se listan
+  const copias = await prisma.backup.findMany({
+    where: COPIAS_HECHAS,
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      createdAt: true,
+      kind: true,
+      authorName: true,
+      summary: true,
+      rawSize: true,
+    },
+  });
+  const copiasView: CopiaView[] = copias.map((copia) => ({
+    ...copia,
+    createdAt: copia.createdAt.toISOString(),
+  }));
 
   // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
   const avatares = await urlsDeImagen(
@@ -108,6 +137,12 @@ export default async function AdminPage() {
       </section>
 
       <NewUserForm />
+
+      <Backups
+        copias={copiasView}
+        seGuardan={COPIAS_QUE_SE_GUARDAN}
+        cadaHoras={HORAS_ENTRE_COPIAS}
+      />
     </>
   );
 }

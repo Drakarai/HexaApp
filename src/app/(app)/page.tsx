@@ -12,10 +12,14 @@ import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
 import { urlsDeMedallas } from "@/lib/imagenes";
 import { formatDate, formatDateTime } from "@/lib/utils";
+import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 
 export default async function DashboardPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
+
+  // La copia del día, si toca. Va después de mandar la página: nadie espera.
+  copiarSiTocaDeFondo();
 
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 

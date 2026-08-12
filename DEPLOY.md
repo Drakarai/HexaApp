@@ -210,6 +210,46 @@ sitio distinto.
 
 ---
 
+## Las copias de seguridad
+
+En **Administración**, al final del todo, está el apartado *Copias de
+seguridad*. No hay que configurar nada: la aplicación hace una sola cada día,
+cuando alguien entra, y guarda las cinco últimas. Llevan todo dentro, fotos
+incluidas.
+
+**Lo único que tienes que hacer tú: bájate una de vez en cuando.** Las copias de
+la lista viven en la misma base de datos que la aplicación, así que si Neon se
+cae o se borra el proyecto, se van con ella. El fichero `.json` que te bajes al
+ordenador es la única copia que sobrevive a eso. Guárdalo donde guardes las
+cosas importantes.
+
+Tres botones por copia:
+
+- **Descargar** — te la baja como fichero. Esta es la buena.
+- **Restaurar** — deja la aplicación exactamente como estaba ese día. Lo
+  apuntado después se pierde. Hay que escribir `RESTAURAR` en una casilla para
+  confirmar, y antes de tocar nada se guarda otra copia de cómo estaba, por si
+  te equivocaste de copia.
+- **✕** — la tira.
+
+### Si se pierde la base de datos entera
+
+Es el caso malo, y para eso está el fichero descargado:
+
+1. Crea una base de datos nueva en Neon, igual que en la Parte 1.
+2. Cambia `DATABASE_URL` (y `DIRECT_URL`) en Vercel por las de la nueva y vuelve
+   a desplegar. Las tablas se crean solas, vacías.
+3. Entra en la aplicación: como no hay nada, te pedirá crear la cuenta de
+   administrador. Créala.
+4. Ve a **Administración → Copias de seguridad → Restaurar desde un fichero
+   descargado**, sube el `.json`, escribe `RESTAURAR` y dale.
+
+La aplicación vuelve a estar como el día que descargaste el fichero, usuarios y
+contraseñas incluidos — así que después de restaurar entrarás con tu usuario de
+siempre, no con el que acabas de crear.
+
+---
+
 ## Que la aplicación vaya rápida
 
 Esto es lo que más se nota, mucho más que cualquier cosa del código.

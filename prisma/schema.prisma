@@ -575,3 +575,29 @@ model RouletteSpin {
 
   @@index([rouletteId])
 }
+
+/**
+ * Una copia de seguridad completa: todas las tablas menos esta, en JSON,
+ * comprimido y guardado como texto.
+ *
+ * **No tiene ninguna relación con el resto del modelo, y es a propósito.** Al
+ * restaurar se vacían todas las tablas; si esta colgara de `User`, el vaciado
+ * se llevaría por delante las copias justo cuando hacen falta. Por eso el autor
+ * se guarda como nombre suelto y no como enlace.
+ */
+model Backup {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  /** "auto" (la del día), "manual" (a mano) o "previa" (antes de restaurar) */
+  kind      String   @default("auto")
+  /** Quién la pidió, por su nombre. Suelto: ver el comentario de arriba. */
+  authorName String?
+  /** Cuántas filas de cada tabla, para enseñarlo sin abrir el fichero */
+  summary   String
+  /** Lo que ocupa el JSON sin comprimir, en bytes */
+  rawSize   Int
+  /** El volcado entero: JSON comprimido con gzip y pasado a base64 */
+  payload   String
+
+  @@index([createdAt])
+}
