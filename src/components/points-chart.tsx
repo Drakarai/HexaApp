@@ -231,10 +231,13 @@ export function PointsChart({
                     >
                       {nodo.puntos}
                     </text>
+                    {/* Los caídos y la diferencia también salen: son los que
+                        deciden cuando dos empatan a puntos, y sin verlos no se
+                        entiende por qué uno va por encima del otro */}
                     <title>
                       {varios
-                        ? `Empatados a ${nodo.puntos} puntos`
-                        : `${jugador?.displayName}: ${nodo.puntos} puntos, ${nodo.puesto}º`}
+                        ? `${nodo.puesto}º · empatados a ${nodo.puntos} puntos, ${nodo.muertes} caídos y ${nodo.diff > 0 ? "+" : ""}${nodo.diff} de diferencia`
+                        : `${jugador?.displayName} · ${nodo.puesto}º · ${nodo.puntos} puntos · ${nodo.muertes} caídos · ${nodo.diff > 0 ? "+" : ""}${nodo.diff} de diferencia`}
                     </title>
                   </g>
                 );
@@ -290,8 +293,9 @@ export function PointsChart({
             <span className="font-semibold" style={{ color: elResaltado.color }}>
               {elResaltado.displayName}
             </span>{" "}
-            · {suPrimero.puntos} → {suUltimo.puntos} puntos · acaba{" "}
-            {suUltimo.puesto}º · toca otra vez para soltarlo
+            · {suPrimero.puntos} → {suUltimo.puntos} puntos · {suUltimo.muertes}{" "}
+            caídos · {suUltimo.diff > 0 ? "+" : ""}
+            {suUltimo.diff} de diferencia · acaba {suUltimo.puesto}º
           </>
         ) : (
           <>

@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (títulos, y la clasificación en
-fichas cuando se ve desde el móvil).
+Última actualización: 12 de agosto de 2026 (el gráfico vuelve a cuadrar con la
+clasificación).
 
 ---
 
@@ -115,11 +115,21 @@ perderla.
   mismo de la clasificación (puntos → menos muertos → mejor diferencia) pero
   **sin desempatar por nombre**: inventarse un orden alfabético para pintarlo
   sería mentir.
+- **Los puestos salen con los mismos desempates que la tabla**: puntos, luego
+  menos caídos, luego mejor diferencia de pokémon. Al tocar una bola se ven las
+  tres cifras, porque si no, dos con los mismos puntos aparecen uno encima del
+  otro sin que se entienda por qué.
 - **El eje horizontal son las jornadas, no las fechas**: seis marcas legibles en
   vez de cuarenta fechas irregulares. Lo que no está enlazado a un combate —las
   muertes y los ajustes de puntos a mano— se reparte por fecha, usando como
   corte de cada jornada la última de sus fechas conocidas, que nunca puede ir
   hacia atrás respecto a la anterior.
+- **El último corte es "ahora", no la fecha de la última jornada.** Esto fue un
+  fallo de verdad: todo lo que pasaba después de la última jornada —un ajuste de
+  puntos a mano, una baja apuntada más tarde— tenía fecha posterior al corte y
+  se quedaba fuera del gráfico **entero**, así que la última columna decía una
+  cosa y la tabla de al lado otra. La última foto es la de ahora mismo y tiene
+  que cuadrar con la clasificación; hay una prueba que compara las dos.
 - **Dibujado a mano en SVG, sin librerías.** Son seis polilíneas de seis puntos;
   una librería de gráficos serían cientos de kilobytes para esto. Hay precedente:
   la ruleta también es SVG a pelo.

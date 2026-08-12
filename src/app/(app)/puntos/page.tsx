@@ -59,7 +59,11 @@ export default async function PointsPage() {
           <h2 className="section-title mb-1">Cómo ha ido la cosa</h2>
           <p className="muted mb-4">
             El puesto de cada uno jornada a jornada. Dentro de cada bola, sus
-            puntos en ese momento; cuando varios van igualados, comparten bola.
+            puntos en ese momento. Los puestos salen con los mismos desempates
+            que la tabla —puntos, luego menos caídos, luego mejor diferencia—,
+            así que dos con los mismos puntos pueden ir uno encima del otro;
+            toca una bola para ver por qué. Cuando van igualados de verdad en
+            las tres cosas, comparten bola.
           </p>
           <PointsChart etapas={grafico.etapas} jugadores={grafico.jugadores} />
         </section>

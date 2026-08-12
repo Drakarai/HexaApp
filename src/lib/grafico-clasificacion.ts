@@ -14,6 +14,10 @@ export type NodoDelGrafico = {
    */
   carril: number;
   puntos: number;
+  /** Caídos hasta esa jornada. Es el primer desempate, y se enseña al tocar. */
+  muertes: number;
+  /** Diferencia de pokémon hasta esa jornada. El segundo desempate. */
+  diff: number;
 };
 
 export type EtapaDelGrafico = {
@@ -129,7 +133,7 @@ export async function getGraficoClasificacion(
   );
 
   let anterior = new Date(0);
-  const cortes = jugadas.map((jornada) => {
+  const cortes: Date[] = jugadas.map((jornada) => {
     const candidatas = [
       jornada.playedAt,
       ...jornada.matches.map((combate) => combate.playedAt),
@@ -143,6 +147,17 @@ export async function getGraficoClasificacion(
     anterior = corte;
     return corte;
   });
+
+  /**
+   * **El último corte es "ahora", no la fecha de la última jornada.**
+   *
+   * Todo lo que pasa después de la última jornada —los ajustes de puntos a
+   * mano, las bajas que se apuntan más tarde— tiene fecha posterior a ese
+   * corte, así que se quedaba fuera del gráfico entero: la última columna decía
+   * una cosa y la tabla de al lado, otra. La última foto es la de ahora mismo,
+   * y tiene que cuadrar con la clasificación.
+   */
+  cortes[cortes.length - 1] = new Date();
 
   /** Los combates de cada jornada, acumulados desde la primera. */
   const idsHasta = jugadas.map((_, indice) =>
@@ -211,7 +226,10 @@ export async function getGraficoClasificacion(
     }
     if (retosCuentan) {
       for (const reto of retos) {
-        if (reto.playedAt && reto.playedAt <= corte) sumarDiferencia(reto);
+        // Sin fecha cuenta igual: la clasificación tampoco mira la fecha de los
+        // retos, y si no cuadraran las dos cifras no se parecerían
+        if (reto.playedAt && reto.playedAt > corte) continue;
+        sumarDiferencia(reto);
       }
     }
 
@@ -251,6 +269,8 @@ export async function getGraficoClasificacion(
           puesto: inicio + 1,
           carril,
           puntos: ordenados[i].puntos,
+          muertes: ordenados[i].muertes,
+          diff: ordenados[i].diff,
         });
       }
       inicio = fin + 1;
