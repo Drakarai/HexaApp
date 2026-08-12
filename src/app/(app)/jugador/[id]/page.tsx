@@ -14,6 +14,9 @@ import { AceBadge } from "@/components/ace-badge";
 import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
 import { HeadToHead } from "@/components/head-to-head";
 import { getResumenDeCombates } from "@/lib/cara-a-cara";
+import { getTitulosDeUsuario } from "@/lib/titulos";
+import { TitleBadge } from "@/components/title-badge";
+import { TitlesSection } from "@/components/titles-section";
 import { cx, formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Jugador" };
@@ -56,6 +59,11 @@ export default async function PlayerPage({
   const combates = await getResumenDeCombates(competitionId, id);
   const esMio = participant.userId === user.id;
   const editable = esMio || canManage;
+
+  // Los títulos son de la persona, no del participante: la siguen de una
+  // edición a otra
+  const titulos = await getTitulosDeUsuario(participant.userId);
+  const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
   const [sprites, spritesFavoritos] = await Promise.all([
@@ -103,7 +111,12 @@ export default async function PlayerPage({
           />
           <div className="min-w-0 flex-1">
             <h2 className="section-title">{participant.displayName}</h2>
-            <p className="muted">
+            {tituloPuesto ? (
+              <p className="mt-0.5">
+                <TitleBadge titulo={tituloPuesto} />
+              </p>
+            ) : null}
+            <p className="muted mt-0.5">
               {fila
                 ? `${fila.position}º de la clasificación`
                 : "Fuera de la clasificación"}
@@ -162,6 +175,16 @@ export default async function PlayerPage({
           editable={editable}
         />
       </section>
+
+      <div className="mb-4">
+        <TitlesSection
+          userId={participant.userId}
+          titulos={titulos}
+          editable={editable}
+          propio={esMio}
+          nombre={participant.displayName}
+        />
+      </div>
 
       <section className="card">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">

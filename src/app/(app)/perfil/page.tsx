@@ -13,6 +13,9 @@ import { logoutAction } from "@/app/actions/auth";
 import { ROLES } from "@/lib/constants";
 import { ProfileForms } from "./profile-forms";
 import { ThemePicker } from "./theme-picker";
+import { getTitulosDeUsuario } from "@/lib/titulos";
+import { TitleBadge } from "@/components/title-badge";
+import { TitlesSection } from "@/components/titles-section";
 
 export const metadata = { title: "Mi perfil" };
 
@@ -50,6 +53,9 @@ export default async function ProfilePage() {
     "favorito",
     favoritos.map((favorito) => favorito.id),
   );
+  const titulos = await getTitulosDeUsuario(user.id);
+  const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
+
   const misFavoritos: Favorito[] = favoritos.map((favorito) => ({
     id: favorito.id,
     species: favorito.species,
@@ -68,9 +74,14 @@ export default async function ProfilePage() {
           image={user.avatarImage}
           size={56}
         />
-        <div>
+        <div className="min-w-0">
           <p className="text-lg font-semibold text-white">{user.displayName}</p>
-          <p className="muted">
+          {tituloPuesto ? (
+            <p className="mt-0.5">
+              <TitleBadge titulo={tituloPuesto} />
+            </p>
+          ) : null}
+          <p className="muted mt-0.5">
             @{user.username} ·{" "}
             {user.role === ROLES.ADMIN ? "Administrador" : "Jugador"}
           </p>
@@ -135,6 +146,10 @@ export default async function ProfilePage() {
           />
         </section>
       ) : null}
+
+      <div className="mt-4">
+        <TitlesSection userId={user.id} titulos={titulos} editable propio />
+      </div>
 
       <section className="card mt-4">
         <h2 className="section-title mb-1">Tema</h2>

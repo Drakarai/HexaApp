@@ -7,8 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (copias de seguridad automáticas,
-descargables y restaurables).
+Última actualización: 12 de agosto de 2026 (títulos para los jugadores).
 
 ---
 
@@ -40,10 +39,10 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
-| **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
+| **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición y las copias de seguridad. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -231,6 +230,27 @@ desplegar: cada jugador lleva al lado la suma de los suyos.
 
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
+
+**Los títulos son adorno, y solo adorno.** Un administrador se inventa
+distinciones —"Rey del cementerio", "El que nunca falla"— con su emoji, su color
+y una explicación, y se las reparte a quien quiera, cada una con el porqué
+escrito a mano. No dan puntos, ni ventajas, ni cuentan para nada de la
+clasificación: son una chapita debajo del nombre.
+
+- **Van en el usuario, no en el participante.** Un título es de la persona y la
+  sigue de una edición a la siguiente, como el mote con el que se la conoce. El
+  as, en cambio, va en el participante, porque ese sí es de una edición
+  concreta.
+- **Cuál se lleva puesto se guarda en la concesión** (`TitleAward.equipped`) y
+  no como una columna de `User`. Con la columna en `User` haría falta un
+  `@unique` sobre una clave foránea nueva, y `prisma db push` avisa de posible
+  pérdida de datos al añadirla: eso **para el despliegue en seco**, que es justo
+  la protección que se montó a propósito. Que solo haya uno encendido lo
+  garantiza la acción de equipar, que apaga los demás en la misma transacción.
+- **Lo elige el dueño o un administrador**, los dos. Cada uno se pone el que le
+  guste, y el admin también puede ponerle uno a alguien desde su perfil.
+- El mismo título no se da dos veces a la misma persona (`@@unique`), y quien ya
+  lo tiene desaparece de la lista de candidatos.
 
 **Las copias de seguridad se hacen solas, se bajan y se restauran.** Todo vive
 en la cuenta gratis de Neon, así que hacía falta una red debajo. Un volcado es
@@ -613,6 +633,9 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
+- `lib/titulos.ts` — los títulos de alguien y el que lleva puesto.
+  `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
+  lista del perfil, compartida por el perfil público y por Mi perfil.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
   es el disparador del resumen; `admin/backups.tsx`, la pantalla.
 - `components/replay-link.tsx` — el botón "Ver combate", compartido por las
@@ -715,3 +738,4 @@ lugar de destruir datos, y hay que avisar antes.
 22. **Enlace a la repetición** de cada combate, con su botón "Ver combate".
 23. **Copias de seguridad**: automáticas, descargables y restaurables, también
     desde un fichero sobre una base de datos vacía.
+24. **Títulos** para los jugadores, repartidos por la organización.

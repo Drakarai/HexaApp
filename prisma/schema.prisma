@@ -41,6 +41,57 @@ model User {
   spins          RouletteSpin[]
   competitions   Competition[] @relation("CompetitionCreator")
   ticketsGiven   RouletteTicket[] @relation("TicketAuthor")
+  titles         TitleAward[]  @relation("TitleOwner")
+  titlesGiven    TitleAward[]  @relation("TitleGiver")
+}
+
+// ---------------------------------------------------------------------------
+// Títulos
+// ---------------------------------------------------------------------------
+
+/**
+ * Un título que un administrador se inventa y reparte: "Rey del cementerio",
+ * "El que nunca falla". **Es puramente estético**, no da puntos ni ventajas.
+ * Van en el usuario y no en el participante para que sigan a la persona de una
+ * edición a otra.
+ */
+model Title {
+  id          String   @id @default(cuid())
+  name        String
+  /** Qué significa. Sale al pasar por encima de la chapa. */
+  description String?
+  /** Un emoji, para que la chapa se reconozca de un vistazo */
+  icon        String?
+  color       String   @default("#a78bfa")
+  createdAt   DateTime @default(now())
+
+  awards TitleAward[]
+}
+
+/** Que a alguien le hayan dado un título, con el porqué. */
+model TitleAward {
+  id        String   @id @default(cuid())
+  titleId   String
+  userId    String
+  /** Por qué se lo ha llevado. Lo escribe quien lo concede. */
+  note      String?
+  /**
+   * Si es el que lleva puesto ahora mismo, el que sale debajo de su nombre.
+   * Solo puede haber uno encendido por persona; de eso se encarga la acción de
+   * equipar, que apaga los demás en la misma transacción. Se guarda aquí y no
+   * en `User` para no meter una clave foránea circular entre las dos tablas.
+   */
+  equipped  Boolean  @default(false)
+  awardedAt DateTime @default(now())
+  awardedById String?
+
+  title     Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  user      User  @relation("TitleOwner", fields: [userId], references: [id], onDelete: Cascade)
+  awardedBy User? @relation("TitleGiver", fields: [awardedById], references: [id], onDelete: SetNull)
+
+  // El mismo título dos veces a la misma persona no aporta nada
+  @@unique([titleId, userId])
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------

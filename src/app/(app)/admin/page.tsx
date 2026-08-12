@@ -10,6 +10,7 @@ import { formatDate } from "@/lib/utils";
 import { deleteUserAction, updateUserRoleAction } from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
 import { Backups, type CopiaView } from "./backups";
+import { Titles, type TituloAdmin } from "./titles";
 import {
   COPIAS_HECHAS,
   COPIAS_QUE_SE_GUARDAN,
@@ -49,6 +50,31 @@ export default async function AdminPage() {
   const copiasView: CopiaView[] = copias.map((copia) => ({
     ...copia,
     createdAt: copia.createdAt.toISOString(),
+  }));
+
+  const titulos = await prisma.title.findMany({
+    orderBy: { createdAt: "asc" },
+    include: {
+      awards: {
+        orderBy: { awardedAt: "desc" },
+        include: { user: { select: { id: true, displayName: true } } },
+      },
+    },
+  });
+  const titulosView: TituloAdmin[] = titulos.map((titulo) => ({
+    id: titulo.id,
+    name: titulo.name,
+    description: titulo.description,
+    icon: titulo.icon,
+    color: titulo.color,
+    concedidos: titulo.awards.map((concesion) => ({
+      awardId: concesion.id,
+      userId: concesion.user.id,
+      displayName: concesion.user.displayName,
+      note: concesion.note,
+      awardedAt: concesion.awardedAt.toISOString(),
+      equipped: concesion.equipped,
+    })),
   }));
 
   // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
@@ -137,6 +163,14 @@ export default async function AdminPage() {
       </section>
 
       <NewUserForm />
+
+      <Titles
+        titulos={titulosView}
+        usuarios={users.map((usuario) => ({
+          id: usuario.id,
+          displayName: usuario.displayName,
+        }))}
+      />
 
       <Backups
         copias={copiasView}
