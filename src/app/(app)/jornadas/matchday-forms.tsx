@@ -108,6 +108,7 @@ export function MatchResultForm({
     id: string;
     winnerId: string | null;
     pokemonDiff: number | null;
+    replayUrl: string | null;
     notes: string | null;
     a: { id: string; name: string };
     b: { id: string; name: string };
@@ -166,6 +167,20 @@ export function MatchResultForm({
       <div>
         <label className="label">Notas</label>
         <input name="notes" className="input" defaultValue={match.notes ?? ""} />
+      </div>
+      <div className="sm:col-span-4">
+        <label className="label">Enlace del combate</label>
+        <input
+          name="replayUrl"
+          className="input"
+          inputMode="url"
+          defaultValue={match.replayUrl ?? ""}
+          placeholder="https://replay.pokemonshowdown.com/..."
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Pega aquí la repetición de Showdown o el vídeo. Si lo dejas vacío, no
+          sale el botón de &quot;Ver combate&quot;.
+        </p>
       </div>
       <div className="flex gap-2 sm:col-span-4">
         <SubmitButton>Guardar resultado</SubmitButton>

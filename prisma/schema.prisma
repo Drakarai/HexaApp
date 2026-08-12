@@ -313,6 +313,11 @@ model Match {
   winnerId       String?
   // Diferencia de pokémon del combate (desempate de la clasificación)
   pokemonDiff    Int?
+  /**
+   * Enlace a la repetición del combate (Showdown, un vídeo…). Lo pega un
+   * administrador; si no hay, no sale el botón de verlo.
+   */
+  replayUrl      String?
   playedAt       DateTime?
   notes          String?
   position       Int       @default(0)
@@ -372,6 +377,8 @@ model ChallengeMatch {
   participantBId String
   winnerId      String?
   pokemonDiff   Int?
+  /** Enlace a la repetición del combate, igual que en las jornadas. */
+  replayUrl     String?
   /** Qué se lleva el ganador */
   prize         String?
   /** Qué se traga el perdedor */

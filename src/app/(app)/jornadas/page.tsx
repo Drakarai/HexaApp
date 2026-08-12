@@ -19,6 +19,7 @@ import {
 import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
+import { ReplayLink } from "@/components/replay-link";
 
 export const metadata = { title: "Jornadas" };
 
@@ -187,7 +188,8 @@ export default async function MatchdaysPage() {
                               winner={match.winnerId === match.participantBId}
                             />
                           </div>
-                          <div className="flex w-full items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                          <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                            <ReplayLink url={match.replayUrl} />
                             {match.pokemonDiff !== null ? (
                               <span className="chip">
                                 dif. {match.pokemonDiff}
@@ -244,6 +246,7 @@ export default async function MatchdaysPage() {
                               id: match.id,
                               winnerId: match.winnerId,
                               pokemonDiff: match.pokemonDiff,
+                              replayUrl: match.replayUrl,
                               notes: match.notes,
                               a: {
                                 id: match.participantAId,

@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (gráfico de la clasificación y la
-navegación repartida en tres pestañas).
+Última actualización: 12 de agosto de 2026 (enlace a la repetición de cada
+combate).
 
 ---
 
@@ -37,8 +37,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
-| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador. El MVP de la jornada se vota entre todos. |
-| **Retos** | Piques sueltos entre dos, con premio y castigo. Cuentan para victorias y derrotas, pero no dan puntos. |
+| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
+| **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
@@ -231,6 +231,18 @@ desplegar: cada jugador lleva al lado la suma de los suyos.
 
 Que el equipo se vea en la jornada no choca con lo del pokémon as: los equipos
 se apuntan cuando el combate ya se ha jugado, así que no adelantan nada.
+
+**Cada combate puede llevar su repetición.** En las jornadas y en los retos, el
+administrador tiene un campo donde pegar el enlace —la repetición de Showdown,
+un vídeo, lo que sea— y entonces sale un botón **"Ver combate"** que lo ve todo
+el mundo. Sin enlace no hay botón: nada de un botón muerto que no lleva a
+ninguna parte.
+
+Ese enlace lo escribe una persona y acaba dentro de un `href` en la pantalla de
+los demás, así que pasa por `enlaceSeguro()` (en `lib/utils.ts`) antes de
+guardarse: **solo `http` y `https`**, porque un `javascript:...` ahí metido se
+ejecutaría en el navegador de todos. Y si viene sin `https://` delante —que es
+como se pega media internet— se le pone, en vez de darlo por malo.
 
 **Los retos son combates que no puntúan.** Un pique suelto entre dos jugadores,
 fuera del calendario: se apunta el ganador, la diferencia de pokémon, lo que se
@@ -555,6 +567,8 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
+- `components/replay-link.tsx` — el botón "Ver combate", compartido por las
+  jornadas y los retos. Solo se pinta si hay enlace.
 - `components/mobile-nav.tsx` y `components/nav.tsx` — las dos formas de la
   misma navegación: la hoja del móvil y la barra lateral del PC.
   `app/(app)/layout.tsx` es quien reparte, a partir del objeto `S` (la lista
@@ -590,7 +604,6 @@ Ideas comentadas y no hechas:
   sola y avisar de quién se pasa del level cap.
 - **Encuentros por ruta**: qué salió en cada zona y si se capturó.
 - **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
-- **Enlaces a las grabaciones** de cada combate de gimnasio.
 - **Exportar una edición archivada** a PDF o imagen como recuerdo, ahora que
   el hall de la fama da un buen cierre.
 
@@ -650,3 +663,4 @@ lugar de destruir datos, y hay que avisar antes.
     y el cementerio por tandas.
 21. **Gráfico de la clasificación** jornada a jornada, y la navegación repartida
     en tres pestañas por tema.
+22. **Enlace a la repetición** de cada combate, con su botón "Ver combate".

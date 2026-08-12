@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
+import { enlaceSeguro } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
 export async function createMatchdayAction(
@@ -130,6 +131,8 @@ export async function setMatchResultAction(formData: FormData) {
         diff !== null && Number.isFinite(diff) ? Math.abs(Math.trunc(diff)) : null,
       playedAt: playedAtRaw ? new Date(playedAtRaw) : winnerId ? new Date() : null,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      // Saneado antes de guardarlo: acaba en un href de la pantalla de todos
+      replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
     },
   });
 

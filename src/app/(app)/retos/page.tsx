@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
+import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
 import { deleteChallengeAction } from "@/app/actions/challenges";
 import { NewChallengeForm, ChallengeResultForm } from "./challenge-forms";
@@ -106,7 +107,8 @@ export default async function RetosPage() {
                       winner={reto.winnerId === reto.participantBId}
                     />
                   </div>
-                  <div className="flex w-full items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                  <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                    <ReplayLink url={reto.replayUrl} />
                     {reto.pokemonDiff !== null ? (
                       <span className="chip">dif. {reto.pokemonDiff}</span>
                     ) : null}
@@ -167,6 +169,7 @@ export default async function RetosPage() {
                       id: reto.id,
                       winnerId: reto.winnerId,
                       pokemonDiff: reto.pokemonDiff,
+                      replayUrl: reto.replayUrl,
                       prize: reto.prize,
                       punishment: reto.punishment,
                       notes: reto.notes,

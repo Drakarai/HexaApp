@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
+import { enlaceSeguro } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -75,6 +76,8 @@ export async function setChallengeResultAction(formData: FormData) {
       prize: String(formData.get("prize") ?? "").trim() || null,
       punishment: String(formData.get("punishment") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      // Saneado antes de guardarlo: acaba en un href de la pantalla de todos
+      replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
       playedAt: fechaBruta ? new Date(fechaBruta) : winnerId ? new Date() : null,
     },
   });

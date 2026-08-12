@@ -83,3 +83,27 @@ export function readableTextColor(hex: string) {
 export function pluralize(count: number, singular: string, plural: string) {
   return `${count} ${count === 1 ? singular : plural}`;
 }
+
+/**
+ * Un enlace escrito a mano por un administrador, listo para meter en un `href`.
+ *
+ * Solo se admiten `http` y `https`: ese enlace acaba pinchable en la pantalla
+ * de los demás, y un `javascript:...` ahí dentro se ejecutaría en su navegador.
+ * Si viene sin `https://` delante —que es como se pega media internet— se le
+ * pone, en vez de darlo por malo.
+ *
+ * Devuelve `null` si no hay nada aprovechable; quien lo llama decide qué hacer
+ * con eso (en los combates, no enseñar el botón).
+ */
+export function enlaceSeguro(bruto: string): string | null {
+  const texto = bruto.trim();
+  if (!texto) return null;
+  const conEsquema = /^[a-z][a-z0-9+.-]*:/i.test(texto) ? texto : `https://${texto}`;
+  try {
+    const url = new URL(conEsquema);
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
