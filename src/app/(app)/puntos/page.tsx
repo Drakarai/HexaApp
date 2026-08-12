@@ -15,6 +15,8 @@ import {
   quickAdjustPointsAction,
 } from "@/app/actions/points";
 import { PointsForms } from "./points-forms";
+import { getGraficoClasificacion } from "@/lib/grafico-clasificacion";
+import { PointsChart } from "@/components/points-chart";
 
 export const metadata = { title: "Puntos" };
 
@@ -23,9 +25,10 @@ export default async function PointsPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, standings, history] = await Promise.all([
+  const [canManage, standings, grafico, history] = await Promise.all([
     canManageCompetition(competition.id, user),
     getStandings(competition.id),
+    getGraficoClasificacion(competition.id),
     prisma.pointEntry.findMany({
       where: { competitionId: competition.id },
       orderBy: { createdAt: "desc" },
@@ -50,6 +53,17 @@ export default async function PointsPage() {
         title="Puntos y clasificación"
         subtitle={`Todo el mundo empieza con ${competition.startingPoints} puntos. Los dos primeros se clasifican directos para la Final Four.`}
       />
+
+      {grafico ? (
+        <section className="card mb-4">
+          <h2 className="section-title mb-1">Cómo ha ido la cosa</h2>
+          <p className="muted mb-4">
+            El puesto de cada uno jornada a jornada. Dentro de cada bola, sus
+            puntos en ese momento; cuando varios van igualados, comparten bola.
+          </p>
+          <PointsChart etapas={grafico.etapas} jugadores={grafico.jugadores} />
+        </section>
+      ) : null}
 
       <section className="card">
         <h2 className="section-title mb-4">Clasificación global</h2>

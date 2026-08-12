@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de agosto de 2026 (pantallas de error propias, imágenes
-cacheables por la red y cementerio por tandas).
+Última actualización: 12 de agosto de 2026 (gráfico de la clasificación y la
+navegación repartida en tres pestañas).
 
 ---
 
@@ -39,7 +39,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio y castigo. Cuentan para victorias y derrotas, pero no dan puntos. |
-| **Puntos** | Clasificación con desempates, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
+| **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
@@ -100,6 +100,37 @@ negativo. El saldo también se comprueba antes, para dar un mensaje claro sin
 llegar a la transacción. En la base de datos `rouletteId` quedó opcional para
 no romper las filas de la primera versión, en la que los tickets valían para
 cualquier ruleta; el código lo exige siempre y esas filas antiguas no cuentan.
+
+**El gráfico de la clasificación dibuja puestos, no puntos.** Con seis
+jugadores y un punto por victoria, todo el mundo va siempre metido en un margen
+de dos o tres puntos: pintando los puntos en el eje vertical, las seis líneas
+salen amontonadas en un dedo de alto y no se distingue nada. Por **puestos**,
+cada uno tiene su carril y lo que se ve son los adelantamientos, que es lo que
+apetece mirar. La cifra de puntos va escrita dentro de cada bola para no
+perderla.
+
+- **Los empatados comparten bola, y esa bola va en el centro de los puestos
+  que ocupan.** Por eso en "Inicio", con los seis a cinco puntos, sale una sola
+  bola a media altura y las líneas se abren en abanico desde ahí. El orden es el
+  mismo de la clasificación (puntos → menos muertos → mejor diferencia) pero
+  **sin desempatar por nombre**: inventarse un orden alfabético para pintarlo
+  sería mentir.
+- **El eje horizontal son las jornadas, no las fechas**: seis marcas legibles en
+  vez de cuarenta fechas irregulares. Lo que no está enlazado a un combate —las
+  muertes y los ajustes de puntos a mano— se reparte por fecha, usando como
+  corte de cada jornada la última de sus fechas conocidas, que nunca puede ir
+  hacia atrás respecto a la anterior.
+- **Dibujado a mano en SVG, sin librerías.** Son seis polilíneas de seis puntos;
+  una librería de gráficos serían cientos de kilobytes para esto. Hay precedente:
+  la ruleta también es SVG a pelo.
+- **Las fotos van al final de cada línea**, haciendo de leyenda: no hay que
+  mirar arriba y abajo para saber cuál es la tuya, y de paso resuelve que
+  alguien no distinga bien dos colores. Al tocar una línea (o una foto) se
+  resalta y las demás se apagan.
+- En el móvil **se desliza en horizontal** dentro de su tarjeta en vez de
+  encogerse, porque con las letras a la mitad no se leería. El aviso de que hay
+  más a la derecha solo sale si de verdad se sale, medido con un
+  `ResizeObserver`, no supuesto por el ancho de la pantalla.
 
 **Los puntos son un historial, no un contador.** Cada movimiento guarda motivo,
 autor y fecha, y el total se calcula sumando. Permite deshacer y auditar. Los
@@ -229,12 +260,16 @@ cuadrícula de doce iconos todos iguales; en el PC, una columna de catorce
 enlaces seguidos. En los dos casos había que leérselos todos para encontrar uno,
 y con cada sección nueva iba a peor.
 
-Ahora hay **cuatro grupos** —**Combates**, **La edición**, **Lo mío** y
-**Gestión**— y las cuatro de todos los días (resumen, caja, puntos y ruleta)
-siempre a la vista. El reparto es el mismo en los dos sitios; lo único que
-cambia es la forma: en el móvil, una hoja que sube desde abajo con filas
-completas; en el PC, grupos desplegables en la barra lateral. Primero eliges de
-qué va lo que buscas y solo miras tres o cuatro cosas.
+Ahora hay **tres grupos** —**Combates**, **La edición** y **Lo mío**— y **cada
+grupo es una pestaña**, no un cajón detrás de un botón "Más". El reparto es el
+mismo en los dos sitios; lo único que cambia es la forma: en el móvil, cada
+pestaña abre su hoja con filas completas; en el PC, son grupos desplegables en
+la barra lateral. Primero eliges de qué va lo que buscas y solo miras tres o
+cinco cosas.
+
+Suelto queda solo el **Resumen**. Lo de gestionar —Ediciones y Administración—
+va al final de "La edición": se toca de uvas a peras y no merecía pestaña
+propia. Y la Ruleta vive dentro de Combates, que es donde el usuario la quiso.
 
 Detalles que costaron su rato:
 
@@ -249,8 +284,10 @@ Detalles que costaron su rato:
 - **Un punto en el grupo cerrado** cuando estás dentro de él: si lo cierras a
   mano, es lo único que dice dónde estás sin volver a abrirlos.
 - En el móvil, la hoja **deja hueco abajo** para la barra de pestañas, que se
-  queda encima: sin ese hueco, "Cerrar sesión" quedaba tapado por la barra. Y la
-  cabecera con tu foto se queda fija al desplazar y lleva al perfil.
+  queda encima: sin ese hueco, "Cerrar sesión" quedaba tapado por la barra.
+- La hoja de **"Lo mío" es la única que lleva tu foto y el "cerrar sesión"**
+  (marca `personal` del grupo); las otras llevan su nombre en la cabecera, para
+  saber cuál has abierto.
 
 **El diagnóstico vive dentro de Mi perfil.** Ocupaba una entrada fija del menú
 para algo que se mira cuando algo va lento, no todos los días. Ahora es un
@@ -491,6 +528,9 @@ Piezas con truco:
   retos se apuntan con la **misma función** (`apuntar`), que recibe si esa
   diferencia de pokémon cuenta o no; los puntos van por otro lado y los retos no
   los tocan.
+- `lib/grafico-clasificacion.ts` — rehace la clasificación al final de cada
+  jornada y la convierte en carriles, con los empates compartiendo carril.
+  `components/points-chart.tsx` es el dibujo.
 - `lib/cara-a-cara.ts` — el marcador de un jugador contra cada rival, juntando
   jornadas y retos, y de ahí salen la presa favorita y la bestia negra.
   `components/head-to-head.tsx` es la casilla desplegable del perfil.
@@ -608,3 +648,5 @@ lugar de destruir datos, y hay que avisar antes.
     rejilla con todo dentro y una columna de catorce enlaces.
 20. **Pantallas de error propias**, imágenes que guarda también la red de Vercel
     y el cementerio por tandas.
+21. **Gráfico de la clasificación** jornada a jornada, y la navegación repartida
+    en tres pestañas por tema.

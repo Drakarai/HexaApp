@@ -8,7 +8,13 @@ import { cx } from "@/lib/utils";
 export type NavItem = { href: string; label: string; icon: string };
 
 /** Una entrada que agrupa a otras y se despliega, como "Combates". */
-export type NavGroup = { label: string; icon: string; children: NavItem[] };
+export type NavGroup = {
+  label: string;
+  icon: string;
+  children: NavItem[];
+  /** El grupo del propio usuario: su hoja del móvil lleva su foto y el salir. */
+  personal?: boolean;
+};
 
 export type NavEntry = NavItem | NavGroup;
 

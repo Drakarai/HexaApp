@@ -17,7 +17,9 @@ import { ROLES } from "@/lib/constants";
 const S = {
   resumen: { href: "/", label: "Resumen", icon: "🏠" },
   caja: { href: "/muertes", label: "Caja", icon: "💀" },
-  puntos: { href: "/puntos", label: "Puntos", icon: "🏆" },
+  // 📊 y no 🏆 desde que la clasificación lleva su gráfico: el trofeo se lo
+  // queda la Final Four, que es la que reparte de verdad
+  puntos: { href: "/puntos", label: "Puntos", icon: "📊" },
   ruleta: { href: "/ruleta", label: "Ruleta", icon: "🎡" },
   jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
   retos: { href: "/retos", label: "Retos", icon: "🔥" },
@@ -33,28 +35,33 @@ const S = {
 } satisfies Record<string, NavItem>;
 
 /**
- * Lo que se abre todos los días, siempre a la vista: son las pestañas de abajo
- * en el móvil y los primeros enlaces de la barra lateral en el PC.
+ * Lo único suelto: el resumen. Es la pestaña de la izquierda en el móvil y el
+ * primer enlace de la barra lateral en el PC.
  */
-const PRIMARY_ITEMS: NavItem[] = [S.resumen, S.caja, S.puntos, S.ruleta];
+const PRIMARY_ITEMS: NavItem[] = [S.resumen];
 
 /**
- * El resto, por grupos. El orden es el de la pregunta que trae a cada uno:
- * "qué se ha jugado", "cómo va la edición", "lo mío" y, al final, lo de
- * gestionar, que se toca de uvas a peras.
+ * Todo lo demás, en tres grupos, y **cada grupo es una pestaña**: ya no hay un
+ * cajón de "Más" con lo que sobra. Dentro de cada uno, primero lo que más se
+ * abre.
  */
 const GRUPOS: NavGroup[] = [
   {
     label: "Combates",
     icon: "⚔️",
-    children: [S.jornadas, S.retos, S.finalFour, S.hall],
+    children: [S.jornadas, S.retos, S.ruleta, S.finalFour, S.hall],
   },
   {
     label: "La edición",
     icon: "📚",
-    children: [S.reglas, S.levelCaps, S.actividad],
+    children: [S.puntos, S.caja, S.actividad, S.levelCaps, S.reglas],
   },
-  { label: "Lo mío", icon: "👤", children: [S.notas, S.perfil] },
+  {
+    label: "Lo mío",
+    icon: "👤",
+    personal: true,
+    children: [S.notas, S.perfil],
+  },
 ];
 
 export default async function AppLayout({
@@ -68,16 +75,23 @@ export default async function AppLayout({
     getActiveCompetition(),
   ]);
 
-  // El diagnóstico no ocupa sitio en la navegación: vive dentro de Mi perfil,
-  // que es donde se busca cuando algo va raro y no todos los días.
-  const gestion: NavItem[] = isAdmin(user)
-    ? [S.ediciones, S.admin]
-    : [S.ediciones];
-
-  const grupos: NavGroup[] = [
-    ...GRUPOS,
-    { label: "Gestión", icon: "🗂️", children: gestion },
-  ];
+  /**
+   * Ediciones y Administración van al final de "La edición": son de gestionar,
+   * se tocan de uvas a peras y no merecen una pestaña propia. El diagnóstico no
+   * está en ninguna: vive dentro de Mi perfil.
+   */
+  const grupos: NavGroup[] = GRUPOS.map((grupo) =>
+    grupo.label === "La edición"
+      ? {
+          ...grupo,
+          children: [
+            ...grupo.children,
+            S.ediciones,
+            ...(isAdmin(user) ? [S.admin] : []),
+          ],
+        }
+      : grupo,
+  );
   const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
 
   const switcher = (
