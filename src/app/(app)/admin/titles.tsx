@@ -114,8 +114,12 @@ function NuevoTitulo() {
               placeholder="Rey del cementerio"
               value={nombre}
               onChange={(evento) => setNombre(evento.target.value)}
+              maxLength={60}
               required
             />
+            <p className="mt-1 text-xs text-slate-500">
+              Hasta 60 caracteres: más largo no se lee bien en la clasificación.
+            </p>
           </div>
         </div>
 
@@ -237,7 +241,13 @@ function Titulo({
           </div>
           <div className="sm:col-span-2">
             <label className="label">Nombre</label>
-            <input name="name" className="input" defaultValue={titulo.name} required />
+            <input
+              name="name"
+              className="input"
+              defaultValue={titulo.name}
+              maxLength={60}
+              required
+            />
           </div>
           <div>
             <label className="label">Color</label>
