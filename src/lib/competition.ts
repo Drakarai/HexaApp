@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
+import { getTitulosEquipados, type TituloPuesto } from "@/lib/titulos";
 import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
 import { firmasDeDosImagenes, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
@@ -32,6 +33,8 @@ export type StandingRow = {
   played: number;
   pokemonDiff: number;
   position: number;
+  /** El que lleva puesto, si lleva alguno. Es solo adorno. */
+  title: TituloPuesto | null;
 };
 
 /**
@@ -288,6 +291,10 @@ export async function getStandings(
     apuntar(reto, competition?.challengeDiffCounts ?? false);
   }
 
+  const titulos = await getTitulosEquipados(
+    participants.map((participante) => participante.userId),
+  );
+
   const rows = participants.map((participant) => {
     const stat = stats.get(participant.id) ?? {
       wins: 0,
@@ -317,6 +324,7 @@ export async function getStandings(
       played: stat.played,
       pokemonDiff: stat.diff,
       position: 0,
+      title: titulos.get(participant.userId) ?? null,
     };
   });
 

@@ -7,7 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (títulos para los jugadores).
+Última actualización: 12 de agosto de 2026 (títulos, también en la
+clasificación).
 
 ---
 
@@ -251,6 +252,23 @@ clasificación: son una chapita debajo del nombre.
   guste, y el admin también puede ponerle uno a alguien desde su perfil.
 - El mismo título no se da dos veces a la misma persona (`@@unique`), y quien ya
   lo tiene desaparece de la lista de candidatos.
+
+**En la clasificación, el título no pelea por el ancho con el nombre.** Los
+títulos pueden ser largos y la tabla es lo más apretado que hay, así que va en
+dos piezas:
+
+- **El emoji, encima de la foto**, en una chapita pegada a la esquina. No le
+  quita ni un píxel al nombre, que es lo que no puede recortarse. Si el título
+  no tiene emoji sale una estrella: en el móvil esa chapita es lo único que
+  avisa de que lleva título.
+- **El nombre escrito entero, solo desde `sm`.** En un móvil estrecho saldría
+  cortado a la mitad, y un título a medias queda peor que no ponerlo. Ahí queda
+  el emoji, y el nombre completo está a un toque, en su perfil. En el PC va
+  donde estaba la versión del juego, con un tope de 16 rem: un título kilométrico
+  se corta con puntos suspensivos en vez de estirar la columna.
+- Los títulos de la tabla se traen **en una sola consulta con `join`** en vez de
+  con `include`, que serían dos: la portada cuenta cada viaje a la base de
+  datos.
 
 **Las copias de seguridad se hacen solas, se bajan y se restauran.** Todo vive
 en la cuenta gratis de Neon, así que hacía falta una red debajo. Un volcado es

@@ -1,5 +1,11 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
+// Solo el tipo: la chapa es la que decide qué necesita para pintarse, y así
+// este fichero (que es server-only) no se cuela en el paquete del navegador
+import type { TituloPuesto } from "@/components/title-badge";
+
+export type { TituloPuesto };
 
 export type TituloView = {
   /** El id de la concesión, no el del título: es lo que se equipa y se quita */
@@ -59,4 +65,32 @@ export async function getTituloEquipado(userId: string) {
     icon: puesto.title.icon,
     color: puesto.title.color,
   };
+}
+
+/**
+ * Los títulos que llevan puestos varias personas de una vez, para la
+ * clasificación.
+ *
+ * Va en SQL directo y con un `join` a propósito: con `include` de Prisma serían
+ * dos consultas, y la portada ya cuenta cada viaje a la base de datos (ver el
+ * apartado de por qué la aplicación iba lenta).
+ */
+export async function getTitulosEquipados(
+  userIds: string[],
+): Promise<Map<string, TituloPuesto>> {
+  if (!userIds.length) return new Map();
+
+  const filas = await prisma.$queryRaw<
+    ({ userId: string } & TituloPuesto)[]
+  >`
+    select a."userId", t."name", t."description", t."icon", t."color"
+    from "TitleAward" a
+    join "Title" t on t."id" = a."titleId"
+    where a."equipped" = true
+      and a."userId" in (${Prisma.join(userIds)})
+  `;
+
+  return new Map(
+    filas.map(({ userId, ...titulo }) => [userId, titulo]),
+  );
 }

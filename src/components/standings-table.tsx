@@ -1,6 +1,7 @@
 import type { StandingRow } from "@/lib/competition";
 import { AceBadge } from "@/components/ace-badge";
 import { Avatar } from "@/components/ui";
+import { TitleBadge } from "@/components/title-badge";
 import { cx } from "@/lib/utils";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -56,13 +57,34 @@ export function StandingsTable({
               </td>
               <td>
                 <div className="flex items-center gap-2.5">
-                  <Avatar
-                    name={row.displayName}
-                    color={row.color}
-                    image={row.avatarImage}
-                    size={28}
-                    participantId={row.participantId}
-                  />
+                  {/* El emoji del título va encima de la foto, no al lado: así
+                      no le quita ni un píxel de ancho al nombre, que es lo que
+                      no puede recortarse */}
+                  <span className="relative shrink-0">
+                    <Avatar
+                      name={row.displayName}
+                      color={row.color}
+                      image={row.avatarImage}
+                      size={28}
+                      participantId={row.participantId}
+                    />
+                    {row.title ? (
+                      <span
+                        aria-hidden
+                        title={row.title.name}
+                        className="pointer-events-none absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border text-[9px] leading-none"
+                        style={{
+                          borderColor: `${row.title.color}88`,
+                          background: "var(--color-ink-900, #0b1020)",
+                          color: row.title.color,
+                        }}
+                      >
+                        {/* Sin emoji, una estrella: en el móvil esta chapita es
+                            lo único que dice que lleva título */}
+                        {row.title.icon ?? "★"}
+                      </span>
+                    ) : null}
+                  </span>
                   <AceBadge
                     size={24}
                     ace={{
@@ -83,7 +105,15 @@ export function StandingsTable({
                     <p className="truncate font-medium text-white">
                       {row.displayName}
                     </p>
-                    {row.gameVersion && !compact ? (
+                    {compact ? null : row.title ? (
+                      /* El nombre entero del título solo desde `sm`: en un
+                         móvil estrecho saldría cortado a la mitad, y un título
+                         a medias queda peor que no ponerlo. Ahí queda el emoji
+                         de la foto, y el nombre completo está en su perfil. */
+                      <span className="hidden max-w-[16rem] sm:inline-flex">
+                        <TitleBadge titulo={row.title} size="sm" />
+                      </span>
+                    ) : row.gameVersion ? (
                       <p className="truncate text-xs text-slate-500">
                         {row.gameVersion}
                       </p>
