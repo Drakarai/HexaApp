@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { urlDeYouTube, videoDeYouTube } from "@/lib/youtube";
 import { prisma } from "@/lib/db";
 import { requireUser, isAdmin } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
@@ -120,18 +121,15 @@ export async function deleteLevelCapAction(formData: FormData) {
 }
 
 /**
- * Marca/desmarca un gimnasio como superado. Cada jugador gestiona el suyo;
- * los administradores pueden tocar el de cualquiera.
+ * Comprueba que quien mira puede tocar lo de ese participante: o es suyo, o es
+ * administrador. Lo usan la casilla de "superado" y el vídeo del gimnasio.
  */
-export async function toggleGymClearAction(formData: FormData) {
+async function puedoTocarLoDe(participantId: string) {
   const me = await requireUser();
-  const levelCapId = String(formData.get("levelCapId") ?? "");
-  const participantId = String(formData.get("participantId") ?? "");
-
   const participant = await prisma.participant.findUnique({
     where: { id: participantId },
   });
-  if (!participant) return;
+  if (!participant) return null;
 
   if (participant.userId !== me.id && !isAdmin(me)) {
     const myParticipant = await prisma.participant.findUnique({
@@ -142,10 +140,21 @@ export async function toggleGymClearAction(formData: FormData) {
         },
       },
     });
-    if (!myParticipant?.isAdmin) {
-      throw new Error("Solo puedes marcar tus propios gimnasios.");
-    }
+    if (!myParticipant?.isAdmin) return null;
   }
+  return participant;
+}
+
+/**
+ * Marca/desmarca un gimnasio como superado. Cada jugador gestiona el suyo;
+ * los administradores pueden tocar el de cualquiera.
+ */
+export async function toggleGymClearAction(formData: FormData) {
+  const levelCapId = String(formData.get("levelCapId") ?? "");
+  const participantId = String(formData.get("participantId") ?? "");
+
+  const participant = await puedoTocarLoDe(participantId);
+  if (!participant) return;
 
   const existing = await prisma.gymClear.findUnique({
     where: { participantId_levelCapId: { participantId, levelCapId } },
@@ -159,4 +168,49 @@ export async function toggleGymClearAction(formData: FormData) {
 
   revalidatePath("/level-caps");
   revalidatePath("/");
+}
+
+
+/**
+ * Guarda (o quita) el enlace del vídeo de cómo alguien se pasó un gimnasio.
+ *
+ * Solo se admite YouTube: es lo que se puede incrustar y reproducir dentro de
+ * la aplicación, y de paso deja fuera cualquier `javascript:` disfrazado. Se
+ * guarda la dirección ya limpia —sin listas de reproducción ni parámetros de
+ * seguimiento— pero conservando el minuto de inicio si lo traía.
+ */
+export async function setGymVideoAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const levelCapId = String(formData.get("levelCapId") ?? "");
+  const participantId = String(formData.get("participantId") ?? "");
+
+  const participant = await puedoTocarLoDe(participantId);
+  if (!participant) {
+    return { error: "Solo puedes poner el vídeo de tus propios gimnasios." };
+  }
+
+  const bruto = String(formData.get("url") ?? "").trim();
+
+  if (!bruto) {
+    await prisma.gymVideo.deleteMany({ where: { participantId, levelCapId } });
+    revalidatePath("/level-caps");
+    return { success: "Vídeo quitado." };
+  }
+
+  const video = videoDeYouTube(bruto);
+  if (!video) {
+    return { error: "Eso no parece un enlace de YouTube. Pega el de compartir." };
+  }
+
+  const url = urlDeYouTube(video);
+  await prisma.gymVideo.upsert({
+    where: { participantId_levelCapId: { participantId, levelCapId } },
+    create: { participantId, levelCapId, url },
+    update: { url },
+  });
+
+  revalidatePath("/level-caps");
+  return { success: "Vídeo guardado." };
 }

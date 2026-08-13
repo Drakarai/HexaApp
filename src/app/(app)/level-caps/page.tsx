@@ -17,6 +17,7 @@ import {
   toggleGymClearAction,
 } from "@/app/actions/level-caps";
 import { NewLevelCapForm, EditLevelCapForm } from "./level-cap-forms";
+import { GymVideos, type VideoDeGimnasio } from "./gym-videos";
 
 export const metadata = { title: "Level caps" };
 
@@ -31,7 +32,7 @@ export default async function LevelCapsPage() {
     prisma.levelCap.findMany({
       where: { competitionId: competition.id },
       orderBy: { position: "asc" },
-      include: { clears: true },
+      include: { clears: true, videos: true },
     }),
   ]);
 
@@ -43,6 +44,28 @@ export default async function LevelCapsPage() {
 
   // Direcciones de las medallas: ver lib/imagen-url.ts
   const medallas = await urlsDeMedallas(levelCaps.map((cap) => cap.id));
+
+  /**
+   * Los vídeos de un gimnasio: solo de quien se lo ha pasado, porque el vídeo
+   * es justamente el de pasárselo. Se listan también los que aún no lo han
+   * puesto pero podrían, para que les salga el hueco de añadirlo.
+   */
+  const videosDe = (levelCap: (typeof levelCaps)[number]): VideoDeGimnasio[] => {
+    const puestos = new Map(
+      levelCap.videos.map((video) => [video.participantId, video.url]),
+    );
+    return participants
+      .filter((participante) =>
+        clearedSet.has(`${levelCap.id}:${participante.id}`),
+      )
+      .map((participante) => ({
+        participantId: participante.id,
+        displayName: participante.displayName,
+        color: participante.color,
+        url: puestos.get(participante.id) ?? null,
+        editable: canManage || participante.userId === user.id,
+      }));
+  };
 
   return (
     <>
@@ -173,6 +196,12 @@ export default async function LevelCapsPage() {
                     })}
                   </div>
                 ) : null}
+
+                <GymVideos
+                  levelCapId={levelCap.id}
+                  label={levelCap.label}
+                  jugadores={videosDe(levelCap)}
+                />
 
                 {canManage ? (
                   <EditLevelCapForm

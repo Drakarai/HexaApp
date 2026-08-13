@@ -166,6 +166,7 @@ model Participant {
   deaths       Death[]
   pointEntries PointEntry[]
   gymClears    GymClear[]
+  gymVideos    GymVideo[]
   notesAbout   Note[]       @relation("NoteSubject")
   matchesAsA   Match[]      @relation("MatchPlayerA")
   matchesAsB   Match[]      @relation("MatchPlayerB")
@@ -226,6 +227,7 @@ model LevelCap {
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   clears      GymClear[]
+  videos      GymVideo[]
 
   @@index([competitionId, position])
 }
@@ -241,6 +243,31 @@ model GymClear {
   levelCap    LevelCap    @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
 
   @@unique([participantId, levelCapId])
+}
+
+/**
+ * El vídeo de cómo alguien se pasó un gimnasio. **Solo el enlace de YouTube**:
+ * un combate son unos 115 MB y la base de datos gratis entera son 500 MB, así
+ * que los vídeos viven fuera y aquí queda la dirección.
+ *
+ * Va en su propia tabla y no dentro de `GymClear` a propósito: si colgara de
+ * ahí, desmarcar la casilla de "superado" por un descuido se llevaría por
+ * delante el enlace. Así el vídeo sobrevive a que alguien toque la casilla.
+ */
+model GymVideo {
+  id            String   @id @default(cuid())
+  participantId String
+  levelCapId    String
+  url           String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  levelCap    LevelCap    @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
+
+  // Uno por persona y gimnasio
+  @@unique([participantId, levelCapId])
+  @@index([levelCapId])
 }
 
 // ---------------------------------------------------------------------------

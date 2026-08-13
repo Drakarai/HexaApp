@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (el gráfico vuelve a cuadrar con la
-clasificación).
+Última actualización: 12 de agosto de 2026 (vídeos de los gimnasios, en
+YouTube).
 
 ---
 
@@ -35,7 +35,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
@@ -337,6 +337,30 @@ guardan las 5 últimas.
   viven en la misma base de datos que la aplicación: si se cae Neon, se van con
   ella. Por eso se puede bajar cada copia como `.json` y **volver a subirla**
   sobre una base de datos nueva y vacía.
+
+**Los vídeos de los gimnasios viven en YouTube, no aquí.** Cada jugador puede
+enlazar el vídeo de cómo se pasó cada gimnasio, y se reproduce dentro de la
+aplicación. Se guarda **solo la dirección**, y no había alternativa: un combate
+son unos 115 MB, seis jugadores por once gimnasios son **7,6 GB por edición**, y
+la base de datos gratis entera son 0,5 GB. Aunque cupieran, Vercel corta
+cualquier subida a la aplicación en 4,5 MB, así que el fichero nunca podría
+pasar por aquí. Con enlaces, además, las copias de seguridad siguen pesando
+cinco megas en vez de gigas.
+
+- **Solo se admite YouTube.** Es lo único que se puede incrustar y reproducir
+  dentro, y de paso deja fuera cualquier `javascript:` disfrazado.
+  `lib/youtube.ts` entiende las siete formas en que se pega un enlace —el de la
+  barra, el de compartir con su `?si=`, el de la aplicación del móvil, `youtu.be`,
+  `/shorts/`, `/live/`, con o sin `https://`— y **guarda la dirección ya
+  limpia**, sin listas de reproducción ni parámetros de seguimiento, pero
+  conservando el minuto de inicio si lo traía. Hay 26 casos de prueba.
+- **El reproductor usa `youtube-nocookie.com`**, el modo de privacidad mejorada:
+  no deja cookies de seguimiento hasta que se le da al play. Cuesta lo mismo.
+- **El enlace va en su propia tabla (`GymVideo`), no dentro de `GymClear`.** Si
+  colgara de la marca de "superado", desmarcar la casilla por un descuido se
+  llevaría por delante el enlace. Así el vídeo sobrevive a que alguien la toque.
+- Lo pone **su dueño o un administrador**, la misma regla que la casilla de
+  superado, comprobada en el servidor.
 
 **Cada combate puede llevar su repetición.** En las jornadas y en los retos, el
 administrador tiene un campo donde pegar el enlace —la repetición de Showdown,
@@ -678,6 +702,9 @@ Piezas con truco:
   lista del perfil, compartida por el perfil público y por Mi perfil.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
   es el disparador del resumen; `admin/backups.tsx`, la pantalla.
+- `lib/youtube.ts` — reconoce enlaces de YouTube y saca el identificador para
+  incrustar el reproductor. `level-caps/gym-videos.tsx` es la tira de botones y
+  el reproductor de los vídeos de gimnasio.
 - `components/replay-link.tsx` — el botón "Ver combate", compartido por las
   jornadas y los retos. Solo se pinta si hay enlace.
 - `components/mobile-nav.tsx` y `components/nav.tsx` — las dos formas de la
@@ -779,3 +806,4 @@ lugar de destruir datos, y hay que avisar antes.
 23. **Copias de seguridad**: automáticas, descargables y restaurables, también
     desde un fichero sobre una base de datos vacía.
 24. **Títulos** para los jugadores, repartidos por la organización.
+25. **Vídeos de los gimnasios**, enlazados desde YouTube y vistos dentro.
