@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de agosto de 2026 (vídeos de los gimnasios, en
-YouTube).
+Última actualización: 23 de agosto de 2026 (la bolsa: el inventario de cada
+jugador).
 
 ---
 
@@ -41,13 +41,14 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
+| **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y puede gastar objetos con un botón. Los que llevan opciones dentro preguntan con cuál te quedas. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
-| **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta y resultados de jornada. |
+| **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
 
 Roles: **administrador global** (crea competiciones y usuarios),
@@ -605,6 +606,40 @@ Así no hay una tabla de eventos que pueda desincronizarse de los datos reales,
 y borrar algo lo quita también del muro. Los puntos que vienen de ganar un
 combate se omiten para no contar la misma cosa dos veces.
 
+**La bolsa es privada, pero gastar algo se anuncia.** Lo que llevas encima solo
+lo ves tú y los administradores; en cuanto lo usas sale en el muro, porque en
+una competición el resto tiene que enterarse de que alguien ha tirado de su
+captura extra. Por eso hay una tabla `BagUse` aparte de `BagEntry`: una es el
+saldo y la otra el historial.
+
+**Añadir es de administradores; gastar, del dueño.** Son dos permisos distintos
+y en el código van por separado: `darObjetoAction` y `quitarObjetoAction` exigen
+administrador, y `usarObjetoAction` acepta al dueño (o a un administrador que lo
+gasta por alguien que no está delante del móvil). Quitar un objeto desde el
+panel **no** cuenta como usarlo: es corregir un apunte, no anunciar nada.
+
+**El catálogo de objetos es global, como los títulos.** "Captura extra"
+significa lo mismo en el Hexalocke 3 que en el 2, así que no cuelga de la
+competición y no hay que volver a crearlo cada edición. Las bolsas sí son de
+cada participante, porque son de la partida.
+
+**Los objetos de los juegos salen de los CSV de PokéAPI, igual que la pokédex.**
+`scripts/generate-items.ts` los baja, se queda con los que tienen nombre en
+español **y dibujo propio** (comprueba uno a uno que el sprite exista: PokéAPI
+lista un montón de objetos de las últimas generaciones y de Pokémon GO que no
+tienen ninguno), deja un solo objeto por nombre (los cristales Z están dos veces
+y "Bici" tres, una por color) y escribe `src/lib/objetos.json`: 795 objetos y 53
+KB, que se suben al repositorio. Buscar un objeto no depende de que nadie de
+fuera conteste. El dibujo sí se baja de internet, pero **una sola vez**, cuando
+un administrador crea el objeto, y se guarda como copia propia: unos 750 bytes
+en webp.
+
+**El menú de "¿con cuál te quedas?" se ata al formulario con `form=`.** Como el
+resto de diálogos va en un portal sobre el `body`, y eso saca sus botones de
+dentro del `<form>`: sin el atributo el menú se ve pero no envía nada (pasó, y
+así se descubrió). Con él, cada opción es un botón de enviar de verdad con su
+propio `optionId` y no hace falta guardar en ningún sitio cuál se ha pulsado.
+
 **Temas: uno por juego principal de Pokémon.** El criterio es un tema por cada
 juego con nombre propio; quedan fuera las variantes del mismo nombre (Rubí
 Omega, Ultrasol, Blanco 2, HeartGold) porque compartirían color, y sí entran las
@@ -658,6 +693,7 @@ prisma/
 scripts/
   users.ts          listar usuarios y cambiar contraseñas
   generate-pokedex.ts  regenera src/lib/pokedex.json desde PokéAPI
+  generate-items.ts    regenera src/lib/objetos.json (los objetos de la bolsa)
   export-sqlite.ts / import-json.ts   migración desde la versión antigua
 public/
   sw.js, icons/     piezas de la PWA
@@ -700,6 +736,14 @@ Piezas con truco:
 - `lib/titulos.ts` — los títulos de alguien y el que lleva puesto.
   `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
   lista del perfil, compartida por el perfil público y por Mi perfil.
+- `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
+  vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
+  repiten por cada jugador las consultas de las firmas de las imágenes.
+  `components/objeto-picker.tsx` es el buscador de objetos (de los juegos o
+  inventado), `bolsa/bolsa-client.tsx` la bolsa con el botón de gastar y el
+  menú de opciones, y `bolsa/todas/` el panel del administrador.
+- `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
+  `lib/pokedex.ts`.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
   es el disparador del resumen; `admin/backups.tsx`, la pantalla.
 - `lib/youtube.ts` — reconoce enlaces de YouTube y saca el identificador para
@@ -713,7 +757,7 @@ Piezas con truco:
   única de secciones) y de `GRUPOS`.
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
-- `lib/activity.ts` — junta las cinco fuentes del muro en una cronología.
+- `lib/activity.ts` — junta las siete fuentes del muro en una cronología.
 - `lib/themes.ts` — genera la paleta de cada tema a partir de un acento.
 - `components/image-carousel.tsx` — el fundido entre imágenes, tanto en primer
   plano como de fondo. `level-caps/level-cap-art.tsx` mete los dos en el mismo
@@ -807,3 +851,5 @@ lugar de destruir datos, y hay que avisar antes.
     desde un fichero sobre una base de datos vacía.
 24. **Títulos** para los jugadores, repartidos por la organización.
 25. **Vídeos de los gimnasios**, enlazados desde YouTube y vistos dentro.
+26. **La bolsa**: el inventario de cada jugador, con objetos de los juegos o
+    inventados, y objetos que al gastarlos te hacen elegir con qué te quedas.

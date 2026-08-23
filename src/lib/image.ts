@@ -8,6 +8,8 @@ export const IMAGE_SIZES = {
   avatar: 256,
   /** Medalla o líder de un level cap */
   badge: 320,
+  /** Objeto de la bolsa. Los del juego son de 30×30, así que sobra de largo. */
+  objeto: 128,
 } as const;
 
 /** Límite de lo que aceptamos guardar, para no inflar la base de datos. */

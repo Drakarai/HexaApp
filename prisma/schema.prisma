@@ -95,6 +95,104 @@ model TitleAward {
 }
 
 // ---------------------------------------------------------------------------
+// Bolsa
+// ---------------------------------------------------------------------------
+
+/**
+ * Un objeto que puede acabar en la bolsa de alguien. Hay de dos clases y se
+ * guardan igual:
+ *
+ * - Los del juego, elegidos de la lista de PokéAPI: llegan con su `apiSlug` y
+ *   el servidor se baja el dibujo al crearlos, así que después la aplicación no
+ *   depende de que GitHub siga en pie.
+ * - Los inventados ("Captura extra", "Objeto competitivo"), con la imagen que
+ *   suba el administrador.
+ *
+ * El catálogo es **global y no de cada edición**, como los títulos: "Captura
+ * extra" significa lo mismo en el Hexalocke 3 que en el 2 y no tiene sentido
+ * volver a crearlo cada vez. Las bolsas sí son de cada participante.
+ */
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  /** Para qué sirve. Sale debajo del nombre en la bolsa. */
+  description String?
+  /** El objeto en PokéAPI. Único para no tener dos veces la misma Poké Ball. */
+  apiSlug     String?  @unique
+  /** La imagen ya reducida (data URL), venga de la lista o subida a mano */
+  image       String?
+  createdAt   DateTime @default(now())
+
+  options ItemOption[]
+  entries BagEntry[]
+  uses    BagUse[]
+}
+
+/**
+ * Una de las cosas entre las que se elige al gastar un objeto: "Captura extra"
+ * lleva dentro las tres rutas que puedes repetir, y al usarlo eliges una.
+ * Un objeto sin opciones se gasta directamente, sin preguntar nada.
+ */
+model ItemOption {
+  id       String  @id @default(cuid())
+  itemId   String
+  name     String
+  apiSlug  String?
+  image    String?
+  position Int     @default(0)
+
+  item Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  uses BagUse[] @relation("UsoElegido")
+
+  @@index([itemId, position])
+}
+
+/**
+ * Lo que alguien tiene en la bolsa. Solo lo ve su dueño y los administradores,
+ * que son los únicos que pueden añadir y quitar.
+ */
+model BagEntry {
+  id            String   @id @default(cuid())
+  participantId String
+  itemId        String
+  quantity      Int      @default(1)
+  /** Apunte del administrador: de dónde salió, hasta cuándo vale… */
+  note          String?
+  updatedAt     DateTime @updatedAt
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  item        Item        @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  // Un objeto ocupa una fila con su cantidad, no una fila por unidad
+  @@unique([participantId, itemId])
+  @@index([participantId])
+}
+
+/**
+ * Que alguien haya gastado un objeto. Es lo que sale en el muro de actividad:
+ * la bolsa es privada, pero **usar** algo se anuncia, que para eso cuenta.
+ *
+ * Guarda copiado el nombre de lo usado porque los enlaces se ponen a null si el
+ * objeto desaparece del catálogo: el historial tiene que aguantar eso.
+ */
+model BagUse {
+  id            String   @id @default(cuid())
+  participantId String
+  itemId        String?
+  itemName      String
+  optionId      String?
+  optionName    String?
+  usedAt        DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  item        Item?       @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  option      ItemOption? @relation("UsoElegido", fields: [optionId], references: [id], onDelete: SetNull)
+
+  @@index([participantId])
+  @@index([usedAt])
+}
+
+// ---------------------------------------------------------------------------
 // Competiciones
 // ---------------------------------------------------------------------------
 
@@ -180,6 +278,8 @@ model Participant {
   challengesA  ChallengeMatch[] @relation("ChallengePlayerA")
   challengesB  ChallengeMatch[] @relation("ChallengePlayerB")
   challengesWon ChallengeMatch[] @relation("ChallengeWinner")
+  bag          BagEntry[]
+  bagUses      BagUse[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])

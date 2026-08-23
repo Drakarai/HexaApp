@@ -1,6 +1,7 @@
 import "server-only";
 import sharp from "sharp";
 import { spriteCandidates } from "@/lib/pokedex";
+import { spriteDeObjeto } from "@/lib/objetos";
 import { IMAGE_SIZES } from "@/lib/image";
 
 /**
@@ -69,6 +70,19 @@ export async function descargarSprites(
   ]);
 
   return { boxImage, detailImage };
+}
+
+/**
+ * El dibujo de un objeto de la bolsa, ya reducido y listo para guardar.
+ *
+ * Se baja aquí y se guarda como copia propia por lo mismo que los pokémon: son
+ * un kilobyte cada uno y así la bolsa se pinta aunque GitHub esté caído. Si no
+ * se puede bajar se guarda sin dibujo, que es mejor que no dejar crear el
+ * objeto.
+ */
+export async function descargarSpriteDeObjeto(slug: string) {
+  const original = await bajarPrimeraQueExista([spriteDeObjeto(slug)]);
+  return original ? aWebp(original, IMAGE_SIZES.objeto) : null;
 }
 
 /**

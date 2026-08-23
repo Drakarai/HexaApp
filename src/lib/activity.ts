@@ -42,7 +42,8 @@ export async function getActivity(competitionId: string, limit = 60) {
   const porId = new Map(jugadores.map((jugador) => [jugador.id, jugador]));
   const quien = (participantId: string) => porId.get(participantId);
 
-  const [deaths, points, clears, spins, tickets, matches] = await Promise.all([
+  // prettier-ignore
+  const [deaths, points, clears, spins, tickets, matches, usos] = await Promise.all([
     prisma.death.findMany({
       where: { participant: { competitionId } },
       orderBy: { diedAt: "desc" },
@@ -84,17 +85,34 @@ export async function getActivity(competitionId: string, limit = 60) {
         matchday: { select: { label: true } },
       },
     }),
+    /**
+     * Gastar un objeto sí se cuenta, aunque la bolsa sea privada: el resto
+     * tiene que enterarse de que alguien ha tirado de su captura extra.
+     */
+    prisma.bagUse.findMany({
+      where: { participant: { competitionId } },
+      orderBy: { usedAt: "desc" },
+      take,
+    }),
   ]);
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts. Antes
   // el muro incrustaba el sprite de cada baja y la foto de cada jugador.
   const usuarios = jugadores.map((jugador) => jugador.userId);
 
-  const [avatares, sprites] = await Promise.all([
+  const [avatares, sprites, objetos, opciones] = await Promise.all([
     urlsDeImagen("avatar", usuarios),
     urlsDeImagen(
       "baja",
       deaths.map((death) => death.id),
+    ),
+    urlsDeImagen(
+      "objeto",
+      usos.map((uso) => uso.itemId).filter((id): id is string => Boolean(id)),
+    ),
+    urlsDeImagen(
+      "objeto-opcion",
+      usos.map((uso) => uso.optionId).filter((id): id is string => Boolean(id)),
     ),
   ]);
 
@@ -204,6 +222,25 @@ export async function getActivity(competitionId: string, limit = 60) {
         .join(" · "),
       who: ganador.displayName,
       whoImage: avatares(ganador.userId),
+    });
+  }
+
+  for (const uso of usos) {
+    const jugador = quien(uso.participantId);
+    if (!jugador) continue;
+    entries.push({
+      id: `uso-${uso.id}`,
+      at: uso.usedAt,
+      icon: "🎒",
+      color: jugador.color,
+      title: `${jugador.displayName} ha usado ${uso.itemName}`,
+      detail: uso.optionName ? `Se queda con ${uso.optionName}` : undefined,
+      // La de lo elegido manda: es lo que de verdad se ha llevado
+      image:
+        (uso.optionId ? opciones(uso.optionId) : null) ??
+        (uso.itemId ? objetos(uso.itemId) : null),
+      who: jugador.displayName,
+      whoImage: avatares(jugador.userId),
     });
   }
 
