@@ -148,14 +148,16 @@ export default async function BolsasPage() {
       <section className="mt-8">
         <h2 className="mb-1 text-lg font-bold text-white">Catálogo</h2>
         <p className="mb-4 max-w-2xl text-sm text-slate-400">
-          Los objetos que existen. Un objeto con opciones dentro hace que, al
-          usarlo, su dueño tenga que elegir con qué se queda; sin opciones se
-          gasta directamente.
+          Lo que existe. Un <strong className="text-slate-300">objeto</strong>{" "}
+          se gasta directamente, como &quot;Captura extra&quot;. Un{" "}
+          <strong className="text-brand-300">grupo</strong> lleva varios dentro,
+          como &quot;Objeto competitivo&quot; con Globo Helio y Casco Dentado: al
+          usarlo, su dueño elige con cuál se queda.
         </p>
 
         <div className="card mb-4">
           <h3 className="mb-3 text-sm font-semibold text-slate-200">
-            Objeto nuevo
+            Objeto o grupo nuevo
           </h3>
           <NuevoObjeto
             yaPuestos={catalogo
@@ -167,7 +169,61 @@ export default async function BolsasPage() {
         {catalogo.length ? (
           <ul className="space-y-2">
             {catalogo.map((objeto) => (
-              <FichaDeCatalogo key={objeto.id} objeto={objeto}>
+              <FichaDeCatalogo
+                key={objeto.id}
+                objeto={objeto}
+                dentro={
+                  objeto.isGroup ? (
+                    <div className="rounded-xl border border-white/10 bg-ink-900/50 p-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-300/80">
+                        Se elige entre
+                      </p>
+                      {objeto.options.length ? (
+                        <ul className="mb-2 grid gap-1.5 sm:grid-cols-2">
+                          {objeto.options.map((opcion) => (
+                            <li
+                              key={opcion.id}
+                              className="flex items-center gap-2.5 rounded-lg border border-white/5 bg-white/[0.03] p-2"
+                            >
+                              <Dibujo
+                                src={opcion.image}
+                                nombre={opcion.name}
+                                pequeno
+                              />
+                              <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
+                                {opcion.name}
+                              </span>
+                              <form action={borrarOpcionAction}>
+                                <input
+                                  type="hidden"
+                                  name="optionId"
+                                  value={opcion.id}
+                                />
+                                <ConfirmSubmit
+                                  className="btn-ghost btn-sm text-red-300"
+                                  message={`¿Sacar "${opcion.name}" de ${objeto.name}?`}
+                                >
+                                  ✕
+                                </ConfirmSubmit>
+                              </form>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        <p className="mb-2 text-xs text-amber-300/90">
+                          Este grupo todavía está vacío, así que nadie puede
+                          usarlo. Ponle lo que se puede elegir:
+                        </p>
+                      )}
+                      <NuevaOpcion
+                        itemId={objeto.id}
+                        vacio={objeto.options.length === 0}
+                      />
+                    </div>
+                  ) : null
+                }
+                edicion={
+                  <>
                 <form
                   action={editarObjetoAction}
                   className="space-y-3 border-t border-white/5 pt-3"
@@ -202,48 +258,23 @@ export default async function BolsasPage() {
                   </button>
                 </form>
 
-                <div className="border-t border-white/5 pt-3">
-                  <p className="mb-2 text-sm font-semibold text-slate-200">
-                    Qué se puede elegir al usarlo
-                  </p>
-                  {objeto.options.length ? (
-                    <ul className="mb-2 space-y-1.5">
-                      {objeto.options.map((opcion) => (
-                        <li
-                          key={opcion.id}
-                          className="flex items-center gap-2.5 rounded-lg border border-white/5 bg-white/[0.02] p-2"
-                        >
-                          <Dibujo
-                            src={opcion.image}
-                            nombre={opcion.name}
-                            pequeno
-                          />
-                          <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
-                            {opcion.name}
-                          </span>
-                          <form action={borrarOpcionAction}>
-                            <input
-                              type="hidden"
-                              name="optionId"
-                              value={opcion.id}
-                            />
-                            <ConfirmSubmit
-                              className="btn-ghost btn-sm text-red-300"
-                              message={`¿Quitar "${opcion.name}" de las opciones?`}
-                            >
-                              ✕
-                            </ConfirmSubmit>
-                          </form>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="mb-2 text-xs text-slate-500">
-                      Sin opciones: al usarlo se gasta sin preguntar nada.
+                {/* Un objeto suelto se puede convertir en grupo poniéndole
+                    algo dentro; al primero que se le añade cambia de clase */}
+                {objeto.isGroup ? null : (
+                  <div className="border-t border-white/5 pt-3">
+                    <p className="mb-2 text-sm font-semibold text-slate-200">
+                      ¿Que se pueda elegir entre varios?
                     </p>
-                  )}
-                  <NuevaOpcion itemId={objeto.id} />
-                </div>
+                    <p className="mb-2 text-xs text-slate-500">
+                      Si le metes objetos dentro, &quot;{objeto.name}&quot; pasa
+                      a ser un grupo: al usarlo habrá que elegir uno.
+                    </p>
+                    <NuevaOpcion
+                      itemId={objeto.id}
+                      etiqueta="＋ Convertirlo en grupo"
+                    />
+                  </div>
+                )}
 
                 <form
                   action={borrarObjetoAction}
@@ -260,7 +291,9 @@ export default async function BolsasPage() {
                     Borrar del catálogo
                   </ConfirmSubmit>
                 </form>
-              </FichaDeCatalogo>
+                  </>
+                }
+              />
             ))}
           </ul>
         ) : (

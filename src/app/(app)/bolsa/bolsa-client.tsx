@@ -48,7 +48,10 @@ function FichaDeObjeto({
     null,
   );
   const [eligiendo, setEligiendo] = useState(false);
-  const conOpciones = objeto.item.options.length > 0;
+  const esGrupo = objeto.item.isGroup;
+  const dentro = objeto.item.options;
+  /** Un grupo al que todavía no le han puesto nada: no hay qué elegir */
+  const grupoVacio = esGrupo && dentro.length === 0;
   // El menú se saca a document.body con un portal, así que sus botones acaban
   // fuera del <form>: se atan a él por su id, que para eso existe el atributo
   const formulario = `usar-${objeto.entryId}`;
@@ -82,9 +85,11 @@ function FichaDeObjeto({
           {objeto.note ? (
             <p className="mt-1 text-xs text-slate-500">📝 {objeto.note}</p>
           ) : null}
-          {conOpciones ? (
-            <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
-              {objeto.item.options.length} cosas para elegir
+          {esGrupo ? (
+            <p className="mt-1 text-[11px] uppercase tracking-wide text-brand-300/80">
+              {grupoVacio
+                ? "📦 Grupo · todavía vacío"
+                : `📦 Grupo · eliges 1 de ${dentro.length}`}
             </p>
           ) : null}
         </div>
@@ -93,13 +98,17 @@ function FichaDeObjeto({
       {puedoUsar ? (
         <form id={formulario} action={usar} className="mt-auto">
           <input type="hidden" name="entryId" value={objeto.entryId} />
-          {conOpciones ? (
+          {grupoVacio ? (
+            <p className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-center text-xs text-slate-500">
+              Nadie le ha puesto todavía qué se puede elegir
+            </p>
+          ) : esGrupo ? (
             <button
               type="button"
               className="btn-primary btn-sm w-full"
               onClick={() => setEligiendo(true)}
             >
-              Usar…
+              Elegir…
             </button>
           ) : (
             <SubmitButton
@@ -118,7 +127,7 @@ function FichaDeObjeto({
           {eligiendo ? (
             <Eleccion
               nombre={objeto.item.name}
-              opciones={objeto.item.options}
+              opciones={dentro}
               formulario={formulario}
               onClose={() => setEligiendo(false)}
             />

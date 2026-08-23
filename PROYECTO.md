@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 23 de agosto de 2026 (la bolsa: el inventario de cada
-jugador).
+Última actualización: 23 de agosto de 2026 (la bolsa, con objetos sueltos y
+grupos de objetos).
 
 ---
 
@@ -41,7 +41,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y puede gastar objetos con un botón. Los que llevan opciones dentro preguntan con cuál te quedas. |
+| **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos y las copias de seguridad. |
@@ -618,6 +618,19 @@ administrador, y `usarObjetoAction` acepta al dueño (o a un administrador que l
 gasta por alguien que no está delante del móvil). Quitar un objeto desde el
 panel **no** cuenta como usarlo: es corregir un apunte, no anunciar nada.
 
+**Un grupo lo es aunque esté vacío.** `Item.isGroup` se guarda aparte de tener
+o no `options`, y no sobra: un grupo recién creado todavía no tiene nada dentro,
+y si "es grupo" se dedujera de tener opciones, ese grupo se gastaría sin
+preguntar y su dueño lo perdería por la cara. Con la marca, la bolsa enseña
+"todavía vacío" y no deja usarlo, y el catálogo avisa al administrador de que le
+falta llenarlo. Al revés también vale: meterle algo dentro a un objeto suelto lo
+convierte en grupo, que es lo que uno espera al ponerle cosas.
+
+**El contenido de un grupo no se esconde detrás de "Editar".** Es lo que le da
+sentido, así que va siempre a la vista en su ficha del catálogo; detrás del
+botón queda solo cambiar el nombre, la imagen y borrarlo. Y un grupo vacío trae
+el buscador **ya abierto**: no sirve de nada hasta que se llene.
+
 **El catálogo de objetos es global, como los títulos.** "Captura extra"
 significa lo mismo en el Hexalocke 3 que en el 2, así que no cuelga de la
 competición y no hay que volver a crearlo cada edición. Las bolsas sí son de
@@ -739,9 +752,9 @@ Piezas con truco:
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
-  `components/objeto-picker.tsx` es el buscador de objetos (de los juegos o
-  inventado), `bolsa/bolsa-client.tsx` la bolsa con el botón de gastar y el
-  menú de opciones, y `bolsa/todas/` el panel del administrador.
+  `components/objeto-picker.tsx` es de dónde sale cada objeto —de los juegos,
+  propio o un grupo—, `bolsa/bolsa-client.tsx` la bolsa con el botón de gastar
+  y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
@@ -852,4 +865,4 @@ lugar de destruir datos, y hay que avisar antes.
 24. **Títulos** para los jugadores, repartidos por la organización.
 25. **Vídeos de los gimnasios**, enlazados desde YouTube y vistos dentro.
 26. **La bolsa**: el inventario de cada jugador, con objetos de los juegos o
-    inventados, y objetos que al gastarlos te hacen elegir con qué te quedas.
+    propios, y **grupos de objetos** que al gastarlos te hacen elegir uno.

@@ -32,8 +32,13 @@ async function imagenDelFormulario(formData: FormData, apiSlug: string | null) {
   return sanitizeImageValue(formData.get("image"));
 }
 
-/** Lo que venga en "apiSlug", pero solo si de verdad está en la lista. */
+/**
+ * Lo que venga en "apiSlug", pero solo si de verdad está en la lista y el
+ * formulario venía en la pestaña de los juegos: si no, un grupo llamado igual
+ * que una Poké Ball se quedaría con su dibujo.
+ */
 function slugDelFormulario(formData: FormData) {
+  if (formData.get("tipo") && formData.get("tipo") !== "juegos") return null;
   const bruto = String(formData.get("apiSlug") ?? "").trim();
   return bruto && objetoPorSlug(bruto) ? bruto : null;
 }
@@ -49,11 +54,14 @@ export async function crearObjetoAction(
   await requireAdmin();
 
   const apiSlug = slugDelFormulario(formData);
+  const esGrupo = formData.get("tipo") === "grupo";
   const name =
     String(formData.get("name") ?? "").trim() ||
     (apiSlug ? (objetoPorSlug(apiSlug)?.nombre ?? "") : "");
 
-  if (!name) return { error: "El objeto necesita un nombre." };
+  if (!name) {
+    return { error: esGrupo ? "El grupo necesita un nombre." : "El objeto necesita un nombre." };
+  }
   if (name.length > 60) return { error: "Ese nombre es demasiado largo." };
 
   if (apiSlug) {
@@ -65,13 +73,18 @@ export async function crearObjetoAction(
     data: {
       name,
       apiSlug,
+      isGroup: esGrupo,
       description: String(formData.get("description") ?? "").trim() || null,
       image: await imagenDelFormulario(formData, apiSlug),
     },
   });
 
   refrescar();
-  return { success: `"${name}" añadido al catálogo.` };
+  return {
+    success: esGrupo
+      ? `Grupo "${name}" creado. Ahora añádele los objetos que se pueden elegir.`
+      : `"${name}" añadido al catálogo.`,
+  };
 }
 
 export async function editarObjetoAction(formData: FormData) {
@@ -110,19 +123,22 @@ export async function anadirOpcionAction(
   await requireAdmin();
 
   const itemId = String(formData.get("itemId") ?? "");
-  if (!itemId) return { error: "No sé a qué objeto añadirla." };
+  if (!itemId) return { error: "No sé a qué grupo añadirlo." };
 
   const apiSlug = slugDelFormulario(formData);
   const name =
     String(formData.get("name") ?? "").trim() ||
     (apiSlug ? (objetoPorSlug(apiSlug)?.nombre ?? "") : "");
-  if (!name) return { error: "La opción necesita un nombre." };
+  if (!name) return { error: "El objeto necesita un nombre." };
 
+  // Añadirle algo a un objeto suelto lo convierte en grupo: es lo que uno
+  // espera al ponerle cosas dentro, y si no, se gastaría sin preguntar
   const ultima = await prisma.itemOption.findFirst({
     where: { itemId },
     orderBy: { position: "desc" },
     select: { position: true },
   });
+  await prisma.item.update({ where: { id: itemId }, data: { isGroup: true } });
 
   await prisma.itemOption.create({
     data: {
@@ -135,7 +151,7 @@ export async function anadirOpcionAction(
   });
 
   refrescar();
-  return { success: `"${name}" añadida.` };
+  return { success: `"${name}" añadido al grupo.` };
 }
 
 export async function borrarOpcionAction(formData: FormData) {
@@ -234,7 +250,14 @@ export async function usarObjetoAction(
     where: { id: entryId },
     include: {
       participant: { select: { userId: true, displayName: true } },
-      item: { select: { id: true, name: true, options: { select: { id: true, name: true } } } },
+      item: {
+        select: {
+          id: true,
+          name: true,
+          isGroup: true,
+          options: { select: { id: true, name: true } },
+        },
+      },
     },
   });
   if (!entrada) return { error: "Ese objeto ya no está en la bolsa." };
@@ -248,6 +271,13 @@ export async function usarObjetoAction(
   const opcionId = String(formData.get("optionId") ?? "").trim() || null;
   const opciones = entrada.item.options;
 
+  // Un grupo sin nada dentro no se puede gastar: no habría qué elegir, y
+  // gastarlo en silencio sería perderlo por la cara
+  if (entrada.item.isGroup && !opciones.length) {
+    return {
+      error: `"${entrada.item.name}" es un grupo y todavía no tiene objetos dentro. Que un administrador se los ponga.`,
+    };
+  }
   if (opciones.length && !opcionId) {
     return { error: "Elige qué te quedas antes de gastarlo." };
   }

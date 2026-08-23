@@ -121,6 +121,16 @@ model Item {
   apiSlug     String?  @unique
   /** La imagen ya reducida (data URL), venga de la lista o subida a mano */
   image       String?
+  /**
+   * Si es un **grupo**: al usarlo no se gasta y ya, sino que sale la lista de
+   * lo que lleva dentro para elegir con qué te quedas ("Objeto competitivo" →
+   * Globo Helio, Casco Dentado…).
+   *
+   * Se guarda aparte de tener o no `options` porque un grupo recién creado
+   * todavía no tiene ninguno, y aun así hay que saber que es un grupo: si no,
+   * se gastaría sin preguntar nada.
+   */
+  isGroup     Boolean  @default(false)
   createdAt   DateTime @default(now())
 
   options ItemOption[]

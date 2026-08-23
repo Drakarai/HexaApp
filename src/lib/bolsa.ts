@@ -24,7 +24,12 @@ export type ObjetoDelCatalogo = {
   description: string | null;
   apiSlug: string | null;
   image: string | null;
-  /** Entre qué se elige al usarlo. Vacío = se gasta directamente. */
+  /**
+   * Si es un grupo ("Objeto competitivo"): al usarlo se elige uno de los suyos
+   * en vez de gastarlo directamente.
+   */
+  isGroup: boolean;
+  /** Lo que lleva dentro un grupo, y entre lo que se elige al usarlo. */
   options: OpcionDeObjeto[];
   /** En cuántas bolsas está, para avisar antes de borrarlo */
   enBolsas: number;
@@ -67,6 +72,8 @@ export async function getCatalogo(): Promise<ObjetoDelCatalogo[]> {
     description: objeto.description,
     apiSlug: objeto.apiSlug,
     image: urlDeImagen("objeto", objeto.id, firmasObjeto.get(objeto.id)),
+    // Los de antes de que existiera la marca: si lleva cosas dentro, es grupo
+    isGroup: objeto.isGroup || objeto.options.length > 0,
     options: objeto.options.map((opcion) => ({
       id: opcion.id,
       name: opcion.name,

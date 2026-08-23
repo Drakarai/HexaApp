@@ -10,34 +10,60 @@ import {
 } from "@/lib/objetos";
 import { cx } from "@/lib/utils";
 
+type Tipo = "juegos" | "inventado" | "grupo";
+
 /**
- * Elegir un objeto: o uno de los juegos, buscándolo por su nombre en español, o
- * uno inventado con la imagen que quieras.
+ * Elegir qué se crea. Tres formas, y la tercera es la que hace falta para lo
+ * de "Objeto competitivo":
  *
- * Funciona como el buscador de especies: lo único que viaja al servidor es
- * **cuál** es el objeto (`apiSlug`), y el dibujo se lo baja el servidor al
- * guardar. Los inventados sí mandan su imagen, ya reducida en el navegador.
+ * - **De los juegos**: se busca por su nombre en español y el servidor se baja
+ *   el dibujo al guardar, igual que el buscador de especies. Lo único que viaja
+ *   es cuál es (`apiSlug`).
+ * - **Objeto propio**: uno inventado ("Captura extra"), con la imagen que
+ *   subas. Se gasta directamente.
+ * - **Grupo**: uno que por dentro lleva varios ("Objeto competitivo" → Globo
+ *   Helio, Casco Dentado…). Al usarlo sale la lista para quedarse con uno. Los
+ *   de dentro se le añaden después, desde su ficha del catálogo.
  */
 export function ObjetoPicker({
   /** Los que ya están en el catálogo, para avisar antes de repetir */
   yaPuestos = [],
+  /** Un grupo dentro de otro grupo no tiene sentido, así que se puede quitar */
+  permitirGrupo = false,
 }: {
   yaPuestos?: string[];
+  permitirGrupo?: boolean;
 }) {
-  const [inventado, setInventado] = useState(false);
+  const [tipo, setTipo] = useState<Tipo>("juegos");
 
   return (
     <div className="space-y-3">
+      {/* Qué clase de objeto es. Va en el formulario para que el servidor no
+          tenga que adivinarlo por lo que venga relleno. */}
+      <input type="hidden" name="tipo" value={tipo} />
+
       <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
-        <Pestana activa={!inventado} onClick={() => setInventado(false)}>
+        <Pestana activa={tipo === "juegos"} onClick={() => setTipo("juegos")}>
           🎒 De los juegos
         </Pestana>
-        <Pestana activa={inventado} onClick={() => setInventado(true)}>
-          ✨ Inventado
+        <Pestana
+          activa={tipo === "inventado"}
+          onClick={() => setTipo("inventado")}
+        >
+          ✨ Propio
         </Pestana>
+        {permitirGrupo ? (
+          <Pestana activa={tipo === "grupo"} onClick={() => setTipo("grupo")}>
+            📦 Grupo
+          </Pestana>
+        ) : null}
       </div>
 
-      {inventado ? <Inventado /> : <DeLosJuegos yaPuestos={yaPuestos} />}
+      {tipo === "juegos" ? (
+        <DeLosJuegos yaPuestos={yaPuestos} />
+      ) : (
+        <Propio grupo={tipo === "grupo"} />
+      )}
     </div>
   );
 }
@@ -182,20 +208,20 @@ function DeLosJuegos({ yaPuestos }: { yaPuestos: string[] }) {
   );
 }
 
-function Inventado() {
+function Propio({ grupo }: { grupo: boolean }) {
   const campo = useId();
   return (
     <div className="space-y-3">
       <div>
         <label className="label" htmlFor={campo}>
-          Nombre
+          {grupo ? "Nombre del grupo" : "Nombre"}
         </label>
         <input
           id={campo}
           name="name"
           className="input"
           maxLength={60}
-          placeholder="Captura extra"
+          placeholder={grupo ? "Objeto competitivo" : "Captura extra"}
         />
       </div>
       <ImageInput
@@ -204,6 +230,13 @@ function Inventado() {
         maxSize={IMAGE_SIZES.objeto}
         hint="Cuadrada y con fondo transparente queda mejor."
       />
+      {grupo ? (
+        <p className="rounded-lg border border-brand-500/25 bg-brand-600/10 px-3 py-2 text-xs text-slate-300">
+          Un grupo no se gasta sin más: al usarlo sale la lista de lo que lleva
+          dentro para quedarse con uno. Los objetos del grupo se le añaden
+          justo después, en su ficha del catálogo.
+        </p>
+      ) : null}
     </div>
   );
 }

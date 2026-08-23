@@ -10,9 +10,10 @@ import type { FormState } from "@/app/actions/auth";
 import { ObjetoPicker } from "@/components/objeto-picker";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import type { ObjetoDelCatalogo } from "@/lib/bolsa";
+import { cx } from "@/lib/utils";
 import { Dibujo } from "../bolsa-client";
 
-/** Crear un objeto del catálogo: de la lista de los juegos o inventado. */
+/** Crear algo del catálogo: un objeto de los juegos, uno propio o un grupo. */
 export function NuevoObjeto({ yaPuestos }: { yaPuestos: string[] }) {
   const [estado, crear] = useActionState<FormState, FormData>(
     crearObjetoAction,
@@ -30,7 +31,7 @@ export function NuevoObjeto({ yaPuestos }: { yaPuestos: string[] }) {
       }}
       className="space-y-3"
     >
-      <ObjetoPicker key={vuelta} yaPuestos={yaPuestos} />
+      <ObjetoPicker key={vuelta} yaPuestos={yaPuestos} permitirGrupo />
       <div>
         <label className="label">Para qué sirve (opcional)</label>
         <input
@@ -80,7 +81,7 @@ export function DarObjeto({
           {catalogo.map((objeto) => (
             <option key={objeto.id} value={objeto.id}>
               {objeto.name}
-              {objeto.options.length ? " (con opciones)" : ""}
+              {objeto.isGroup ? ` (grupo de ${objeto.options.length})` : ""}
             </option>
           ))}
         </select>
@@ -107,17 +108,29 @@ export function DarObjeto({
 }
 
 /**
- * Las opciones de un objeto: lo que sale a elegir cuando alguien lo usa.
- * Se añaden con el mismo buscador que los objetos, porque casi siempre son
- * cosas del juego.
+ * Meter un objeto dentro de un grupo: es lo que saldrá a elegir cuando alguien
+ * lo use. Se buscan con el mismo buscador que los del catálogo, porque casi
+ * siempre son cosas del juego (Globo Helio, Casco Dentado…).
+ *
+ * Un grupo recién creado está vacío y no sirve de nada, así que ahí el
+ * formulario sale ya abierto en vez de detrás de un botón.
  */
-export function NuevaOpcion({ itemId }: { itemId: string }) {
+export function NuevaOpcion({
+  itemId,
+  vacio = false,
+  etiqueta = "＋ Añadir un objeto al grupo",
+}: {
+  itemId: string;
+  /** El grupo no tiene nada dentro: se abre solo */
+  vacio?: boolean;
+  etiqueta?: string;
+}) {
   const [estado, anadir] = useActionState<FormState, FormData>(
     anadirOpcionAction,
     null,
   );
   const [vuelta, setVuelta] = useState(0);
-  const [abierto, setAbierto] = useState(false);
+  const [abierto, setAbierto] = useState(vacio);
 
   if (!abierto) {
     return (
@@ -126,7 +139,7 @@ export function NuevaOpcion({ itemId }: { itemId: string }) {
         className="btn-ghost btn-sm"
         onClick={() => setAbierto(true)}
       >
-        ＋ Añadir una opción
+        {etiqueta}
       </button>
     );
   }
@@ -144,45 +157,67 @@ export function NuevaOpcion({ itemId }: { itemId: string }) {
       <FormMessage state={estado} />
       <div className="flex gap-2">
         <SubmitButton className="btn-primary btn-sm">Añadir</SubmitButton>
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => setAbierto(false)}
-        >
-          Cerrar
-        </button>
+        {vacio ? null : (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setAbierto(false)}
+          >
+            Cerrar
+          </button>
+        )}
       </div>
     </form>
   );
 }
 
-/** Una fila del catálogo con lo que se puede hacerle. */
+/**
+ * Una fila del catálogo.
+ *
+ * Lo de dentro de un grupo **no se esconde detrás de "Editar"**: es lo que le
+ * da sentido y hay que verlo de un vistazo. Detrás del botón queda solo lo de
+ * cambiar el nombre, la imagen y borrarlo.
+ */
 export function FichaDeCatalogo({
   objeto,
-  children,
+  dentro,
+  edicion,
 }: {
   objeto: ObjetoDelCatalogo;
-  /** Los formularios de servidor (editar, borrar, borrar opciones) */
-  children: React.ReactNode;
+  /** Los objetos del grupo y el formulario para meterle más */
+  dentro?: React.ReactNode;
+  /** Cambiar nombre e imagen y borrarlo, detrás del botón */
+  edicion: React.ReactNode;
 }) {
   const [abierto, setAbierto] = useState(false);
 
+  const clase = objeto.isGroup
+    ? `grupo de ${objeto.options.length} ${objeto.options.length === 1 ? "objeto" : "objetos"}`
+    : objeto.apiSlug
+      ? "de los juegos"
+      : "propio";
+
   return (
-    <li className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+    <li
+      className={cx(
+        "rounded-xl border p-3",
+        objeto.isGroup
+          ? "border-brand-500/25 bg-brand-600/[0.06]"
+          : "border-white/10 bg-white/[0.02]",
+      )}
+    >
       <div className="flex items-start gap-3">
         <Dibujo src={objeto.image} nombre={objeto.name} pequeno />
         <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-slate-100">{objeto.name}</p>
+          <p className="truncate font-medium text-slate-100">
+            {objeto.isGroup ? "📦 " : ""}
+            {objeto.name}
+          </p>
           <p className="text-xs text-slate-500">
-            {[
-              objeto.apiSlug ? "de los juegos" : "inventado",
-              objeto.options.length
-                ? `${objeto.options.length} opciones`
-                : "sin opciones",
-              objeto.enBolsas
-                ? `en ${objeto.enBolsas} ${objeto.enBolsas === 1 ? "bolsa" : "bolsas"}`
-                : "en ninguna bolsa",
-            ].join(" · ")}
+            {clase} ·{" "}
+            {objeto.enBolsas
+              ? `en ${objeto.enBolsas} ${objeto.enBolsas === 1 ? "bolsa" : "bolsas"}`
+              : "en ninguna bolsa"}
           </p>
           {objeto.description ? (
             <p className="mt-0.5 text-xs text-slate-400">
@@ -200,7 +235,8 @@ export function FichaDeCatalogo({
         </button>
       </div>
 
-      {abierto ? <div className="mt-3 space-y-3">{children}</div> : null}
+      {dentro ? <div className="mt-3">{dentro}</div> : null}
+      {abierto ? <div className="mt-3 space-y-3">{edicion}</div> : null}
     </li>
   );
 }
