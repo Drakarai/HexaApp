@@ -29,24 +29,60 @@ export function MapaDeCapturas({
   capturas: CapturaApuntada[];
 }) {
   const [abierta, setAbierta] = useState<ZonaDelMapa | null>(null);
+  /** Grupo cuyo contenido se está enseñando para elegir */
+  const [grupo, setGrupo] = useState<ZonaDelMapa | null>(null);
+  /**
+   * La zona que se ha tocado una vez. Las formas del mapa van sin nombre
+   * escrito, así que **el primer toque dice cuál es y el segundo la abre**: sin
+   * eso, en el móvil (donde no hay ratón que pasar por encima) estarías
+   * apuntando capturas a ciegas.
+   */
+  const [avisada, setAvisada] = useState<ZonaDelMapa | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [vista, setVista] = useState<"mapa" | "lista">("lista");
 
+  /** Cuántas capturas hay en cada zona **contando las de sus hijas**. */
   const porZona = useMemo(() => {
-    const cuenta: Record<string, number> = {};
+    const sueltas: Record<string, number> = {};
     for (const captura of capturas) {
-      if (captura.zoneId) cuenta[captura.zoneId] = (cuenta[captura.zoneId] ?? 0) + 1;
+      if (captura.zoneId) sueltas[captura.zoneId] = (sueltas[captura.zoneId] ?? 0) + 1;
+    }
+    const cuenta = { ...sueltas };
+    for (const zona of mapa.zones) {
+      if (!zona.children.length) continue;
+      cuenta[zona.id] =
+        (sueltas[zona.id] ?? 0) +
+        zona.children.reduce((suma, hija) => suma + (sueltas[hija.id] ?? 0), 0);
     }
     return cuenta;
-  }, [capturas]);
+  }, [capturas, mapa.zones]);
+
+  /** Todas las zonas capturables, padres e hijas, para la lista y el buscador */
+  const todas = useMemo(
+    () => mapa.zones.flatMap((zona) => [zona, ...zona.children]),
+    [mapa.zones],
+  );
 
   const filtradas = useMemo(() => {
     const aguja = busqueda.trim().toLowerCase();
-    if (!aguja) return mapa.zones;
-    return mapa.zones.filter((zona) => zona.name.toLowerCase().includes(aguja));
-  }, [busqueda, mapa.zones]);
+    // Un grupo no se captura él mismo: en la lista salen sus hijas, no él
+    const capturables = todas.filter((zona) => !zona.children.length);
+    if (!aguja) return capturables;
+    return capturables.filter((zona) => zona.name.toLowerCase().includes(aguja));
+  }, [busqueda, todas]);
 
-  const hechas = Object.keys(porZona).length;
+  /** Al tocar una zona del mapa: la primera vez dice cuál es, la segunda abre */
+  function tocar(zona: ZonaDelMapa) {
+    if (avisada?.id !== zona.id) {
+      setAvisada(zona);
+      return;
+    }
+    setAvisada(null);
+    if (zona.children.length) setGrupo(zona);
+    else setAbierta(zona);
+  }
+
+  const hechas = filtradas.filter((zona) => porZona[zona.id]).length;
 
   return (
     <>
@@ -78,18 +114,39 @@ export function MapaDeCapturas({
           </button>
         </div>
         <p className="text-xs text-slate-500">
-          {hechas} de {mapa.zones.length} zonas con algo apuntado ·{" "}
+          {hechas} de {filtradas.length} zonas con algo apuntado ·{" "}
           {capturas.length} {capturas.length === 1 ? "captura" : "capturas"}
         </p>
       </div>
 
       {vista === "mapa" ? (
-        <Mapa
-          mapa={mapa}
-          cuentas={porZona}
-          onZona={setAbierta}
-          seleccionada={abierta?.id ?? null}
-        />
+        <>
+          <Mapa
+            mapa={mapa}
+            cuentas={porZona}
+            onZona={tocar}
+            seleccionada={avisada?.id ?? abierta?.id ?? null}
+          />
+          <p className="mt-2 min-h-9 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-sm">
+            {avisada ? (
+              <>
+                <span className="font-semibold text-slate-100">
+                  {avisada.name}
+                </span>
+                <span className="text-slate-400">
+                  {" · "}
+                  {avisada.children.length
+                    ? "vuelve a tocarla para ver lo que tiene dentro"
+                    : "vuelve a tocarla para apuntar lo que capturaste"}
+                </span>
+              </>
+            ) : (
+              <span className="text-slate-500">
+                Toca una zona para saber cuál es.
+              </span>
+            )}
+          </p>
+        </>
       ) : (
         <>
           <input
@@ -117,6 +174,18 @@ export function MapaDeCapturas({
           )}
         </>
       )}
+
+      {grupo ? (
+        <ListaDelGrupo
+          grupo={grupo}
+          cuentas={porZona}
+          onElegir={(hija) => {
+            setGrupo(null);
+            setAbierta(hija);
+          }}
+          onClose={() => setGrupo(null)}
+        />
+      ) : null}
 
       {abierta ? (
         <FichaDeZona
@@ -178,6 +247,93 @@ function FilaDeZona({
         <span className="shrink-0 text-xs text-slate-600">vacía</span>
       )}
     </button>
+  );
+}
+
+/**
+ * Lo que lleva dentro un grupo: una ciudad con su cueva, su torre y lo que sea.
+ * Elegir una es exactamente igual que tocar una zona suelta del mapa.
+ */
+function ListaDelGrupo({
+  grupo,
+  cuentas,
+  onElegir,
+  onClose,
+}: {
+  grupo: ZonaDelMapa;
+  cuentas: Record<string, number>;
+  onElegir: (hija: ZonaDelMapa) => void;
+  onClose: () => void;
+}) {
+  useEffect(() => {
+    const alPulsar = (evento: KeyboardEvent) => {
+      if (evento.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", alPulsar);
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", alPulsar);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"
+      onClick={(evento) => {
+        if (evento.target === evento.currentTarget) onClose();
+      }}
+    >
+      <div className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-ink-900 p-4 shadow-2xl sm:p-5">
+        <div className="mb-1 flex items-start justify-between gap-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+            {grupo.name}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="btn-ghost btn-sm shrink-0"
+            aria-label="Cerrar"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="mb-3 text-sm text-slate-300">
+          Aquí se puede capturar en varios sitios. Elige en cuál.
+        </p>
+
+        <ul className="space-y-2">
+          {grupo.children.map((hija) => {
+            const cuantas = cuentas[hija.id] ?? 0;
+            return (
+              <li key={hija.id}>
+                <button
+                  type="button"
+                  onClick={() => onElegir(hija)}
+                  className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition hover:border-brand-500/40 hover:bg-brand-600/15"
+                >
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ background: hija.color ?? colorDeZona(hija.kind) }}
+                    aria-hidden
+                  />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
+                    {hija.name}
+                  </span>
+                  <span className="shrink-0 text-xs text-slate-500">
+                    {cuantas ? `${cuantas} apuntado${cuantas === 1 ? "" : "s"}` : "vacía"}
+                  </span>
+                  <span aria-hidden className="shrink-0 text-slate-500">
+                    ▸
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>,
+    document.body,
   );
 }
 

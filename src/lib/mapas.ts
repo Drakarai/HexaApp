@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { REGIONES, type Region } from "@/lib/juegos";
+import { verticesDeZona } from "@/lib/zonas";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 
 /**
@@ -19,8 +20,22 @@ export type ZonaDelMapa = {
   id: string;
   name: string;
   kind: string;
+  /** "rect" | "circle" | "poly" | "none" */
+  shape: string;
   x: number;
   y: number;
+  w: number;
+  h: number;
+  /** Los vértices, ya leídos, cuando la forma es "poly" */
+  points: [number, number][] | null;
+  /** Su color propio, si le han puesto uno */
+  color: string | null;
+  parentId: string | null;
+  /**
+   * Las zonas que lleva dentro. Si tiene alguna, la forma **no se captura**:
+   * al tocarla salen estas para elegir.
+   */
+  children: ZonaDelMapa[];
 };
 
 export type MapaDeRegion = {
@@ -69,6 +84,41 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     include: { zones: { orderBy: [{ y: "asc" }, { x: "asc" }] } },
   });
 
+  /**
+   * Las hijas se cuelgan de su padre y salen de la lista de arriba: en el mapa
+   * solo se dibuja lo que no cuelga de nadie.
+   */
+  const aZona = (zona: (typeof fila.zones)[number]): ZonaDelMapa => ({
+    id: zona.id,
+    name: zona.name,
+    kind: zona.kind,
+    shape: zona.shape,
+    x: zona.x,
+    y: zona.y,
+    w: zona.w,
+    h: zona.h,
+    points: verticesDeZona(zona.points),
+    color: zona.color,
+    parentId: zona.parentId,
+    children: fila.zones
+      .filter((hija) => hija.parentId === zona.id)
+      .map((hija) => ({
+        id: hija.id,
+        name: hija.name,
+        kind: hija.kind,
+        shape: hija.shape,
+        x: hija.x,
+        y: hija.y,
+        w: hija.w,
+        h: hija.h,
+        points: verticesDeZona(hija.points),
+        color: hija.color,
+        parentId: hija.parentId,
+        // Solo un nivel: una zona dentro de otra dentro de otra no aporta nada
+        children: [],
+      })),
+  });
+
   const firma = (await firmasDeImagen("mapa", [fila.id])).get(fila.id);
 
   return {
@@ -78,13 +128,7 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     image: urlDeImagen("mapa", fila.id, firma),
     width: fila.width,
     height: fila.height,
-    zones: fila.zones.map((zona) => ({
-      id: zona.id,
-      name: zona.name,
-      kind: zona.kind,
-      x: zona.x,
-      y: zona.y,
-    })),
+    zones: fila.zones.filter((zona) => !zona.parentId).map(aZona),
   };
 }
 

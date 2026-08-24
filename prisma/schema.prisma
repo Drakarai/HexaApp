@@ -125,21 +125,49 @@ model MapRegion {
   zones MapZone[]
 }
 
-/** Un sitio del mapa donde se puede capturar algo: una ruta, una cueva… */
+/**
+ * Un sitio del mapa donde se puede capturar algo: una ruta, una cueva…
+ *
+ * Cada zona es una **forma dibujada sobre el mapa**, y se pinta transparente
+ * hasta que apuntas algo dentro; entonces se rellena de su color. Por eso no
+ * lleva el nombre escrito encima: el mapa se vería lleno de etiquetas y ya no
+ * se vería el mapa. El nombre sale al tocarla.
+ *
+ * Una zona puede **llevar otras dentro** (`parentId`): una ciudad que además
+ * tiene su propia zona capturable aparte. Entonces la forma del padre no se
+ * captura directamente; al tocarla salen las hijas para elegir.
+ */
 model MapZone {
   id       String @id @default(cuid())
   regionId String
   name     String
   /** "ruta" | "ciudad" | "cueva" | "bosque" | "agua" | "otro". Solo es color. */
   kind     String @default("ruta")
+  /**
+   * Qué forma tiene sobre el mapa: "rect", "circle", "poly" o "none".
+   * Las de "none" no salen dibujadas, solo en la lista de zonas.
+   */
+  shape    String @default("rect")
+  /** Esquina superior izquierda del recuadro que la contiene */
   x        Int
   y        Int
+  w        Int    @default(150)
+  h        Int    @default(44)
+  /** Solo para "poly": los vértices, en JSON `[[x,y], …]` del lienzo */
+  points   String?
+  /** Color propio. Si no lo tiene, se usa el de su tipo (ver lib/zonas.ts) */
+  color    String?
+  /** Si cuelga de otra zona, cuál. Las hijas no se dibujan: viven en su padre. */
+  parentId String?
   position Int    @default(0)
 
   region   MapRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  parent   MapZone?  @relation("ZonaPadre", fields: [parentId], references: [id], onDelete: SetNull)
+  children MapZone[] @relation("ZonaPadre")
   captures Capture[]
 
   @@index([regionId, position])
+  @@index([parentId])
 }
 
 /**

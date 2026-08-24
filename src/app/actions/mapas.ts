@@ -7,6 +7,8 @@ import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
 import { REGIONES, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
+import { detectarZonas } from "@/lib/detectar-zonas";
+import { FORMAS } from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
@@ -106,9 +108,10 @@ export async function anadirZonaAction(
       regionId: region.id,
       name,
       kind: String(formData.get("kind") ?? "ruta"),
-      // En el centro del lienzo: se arrastra a donde toque
-      x: Math.round(region.width / 2),
-      y: Math.round(region.height / 2),
+      shape: String(formData.get("shape") ?? "rect"),
+      // En el centro del lienzo: se arrastra y se estira a donde toque
+      x: Math.round(region.width / 2) - 75,
+      y: Math.round(region.height / 2) - 22,
       position: cuantas,
     },
   });
@@ -124,11 +127,97 @@ export async function editarZonaAction(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;
 
+  const forma = String(formData.get("shape") ?? "");
+  const color = String(formData.get("color") ?? "").trim();
+
   await prisma.mapZone.update({
     where: { id },
-    data: { name, kind: String(formData.get("kind") ?? "ruta") },
+    data: {
+      name,
+      kind: String(formData.get("kind") ?? "ruta"),
+      ...(FORMAS.some((f) => f.id === forma) ? { shape: forma } : {}),
+      // Un color vacío significa "el de su tipo", no "negro"
+      color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
+    },
   });
   refrescarMapa();
+}
+
+/**
+ * Mete una zona dentro de otra, o la saca. Una zona con hijas deja de poder
+ * capturarse ella misma: al tocarla salen las de dentro.
+ */
+export async function anidarZonaAction(formData: FormData) {
+  await requireAdmin();
+
+  const id = String(formData.get("zoneId") ?? "");
+  const parentIdBruto = String(formData.get("parentId") ?? "").trim();
+  if (!id) return;
+
+  // Ni dentro de sí misma ni dentro de una que ya cuelga de otra: un solo nivel
+  let parentId: string | null = null;
+  if (parentIdBruto && parentIdBruto !== id) {
+    const padre = await prisma.mapZone.findUnique({
+      where: { id: parentIdBruto },
+      select: { id: true, parentId: true },
+    });
+    if (padre && !padre.parentId) parentId = padre.id;
+  }
+
+  await prisma.mapZone.update({ where: { id }, data: { parentId } });
+  refrescarMapa();
+}
+
+/**
+ * Saca las zonas de la imagen de fondo mirando sus colores, y las crea con
+ * nombre provisional para que solo haya que renombrarlas.
+ *
+ * **Solo añade**: lo que ya hubiera se queda como está. Si sale mal, se borran
+ * las nuevas y a otra cosa.
+ */
+export async function detectarZonasAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const slug = String(formData.get("slug") ?? "");
+  const region = await prisma.mapRegion.findUnique({ where: { slug } });
+  if (!region) return { error: "Esa región no existe." };
+  if (!region.image) {
+    return { error: "Primero ponle al mapa la imagen de fondo." };
+  }
+
+  const encontradas = await detectarZonas(region.image, {
+    width: region.width,
+    height: region.height,
+  });
+  if (!encontradas.length) {
+    return {
+      error:
+        "No he reconocido ninguna casilla. Esto funciona con los mapas de tracker que llevan las ciudades en rojo y las rutas en blanco; si el tuyo no es así, dibuja las zonas a mano.",
+    };
+  }
+
+  const cuantas = await prisma.mapZone.count({ where: { regionId: region.id } });
+  await prisma.mapZone.createMany({
+    data: encontradas.map((zona, indice) => ({
+      regionId: region.id,
+      name: `Zona ${cuantas + indice + 1}`,
+      kind: zona.kind,
+      shape: "rect",
+      x: zona.x,
+      y: zona.y,
+      w: zona.w,
+      h: zona.h,
+      position: cuantas + indice,
+    })),
+  });
+
+  refrescarMapa();
+  return {
+    success: `${encontradas.length} zonas sacadas de la imagen. Ahora ponles el nombre.`,
+  };
 }
 
 export async function borrarZonaAction(formData: FormData) {
@@ -151,7 +240,14 @@ export async function moverZonasAction(
 ): Promise<FormState> {
   await requireAdmin();
 
-  let sitios: { id: string; x: number; y: number }[];
+  let sitios: {
+    id: string;
+    x: number;
+    y: number;
+    w?: number;
+    h?: number;
+    points?: [number, number][];
+  }[];
   try {
     sitios = JSON.parse(String(formData.get("sitios") ?? "[]"));
   } catch {
@@ -163,11 +259,21 @@ export async function moverZonasAction(
 
   await prisma.$transaction(
     sitios
-      .filter((sitio) => sitio?.id && Number.isFinite(sitio.x) && Number.isFinite(sitio.y))
+      .filter(
+        (sitio) =>
+          sitio?.id && Number.isFinite(sitio.x) && Number.isFinite(sitio.y),
+      )
       .map((sitio) =>
         prisma.mapZone.update({
           where: { id: sitio.id },
-          data: { x: Math.round(sitio.x), y: Math.round(sitio.y) },
+          data: {
+            x: Math.round(sitio.x),
+            y: Math.round(sitio.y),
+            // El tamaño y los vértices solo si vienen: mover no es redimensionar
+            ...(Number.isFinite(sitio.w) ? { w: Math.max(8, Math.round(sitio.w!)) } : {}),
+            ...(Number.isFinite(sitio.h) ? { h: Math.max(8, Math.round(sitio.h!)) } : {}),
+            ...(sitio.points ? { points: JSON.stringify(sitio.points) } : {}),
+          },
         }),
       ),
   );

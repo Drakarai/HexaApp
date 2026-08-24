@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 24 de agosto de 2026 (mapa de capturas privado, con los
-mapas de las regiones editables).
+Última actualización: 24 de agosto de 2026 (el mapa de capturas pasa a zonas
+dibujadas sobre el mapa, con editor de formas en Administración).
 
 ---
 
@@ -41,11 +41,11 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Mapa de capturas** | El mapa de la región del juego que se esté jugando, con sus rutas y sitios. Cada uno apunta lo que capturó en cada zona, con el buscador de especie de siempre, y tiene aparte las capturas extra. **Privado como las notas**: no lo ven ni los administradores. |
+| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, los mapas de las regiones y las copias de seguridad. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -625,18 +625,45 @@ español (Hoenn 85 %, Kalos 98 %, Alola 88 %). Las rutas se traducen solas
 ("Route 29" → "Ruta 29") y los sitios con nombre propio los escribí yo. Como el
 mapa es editable, un fallo se corrige sin tocar código.
 
-**El mapa se dibuja a mano, no es la imagen oficial.** El arte de las regiones
-es de Nintendo y no está en PokéAPI como los sprites, así que la aplicación no
-lo trae. Lo que sí puede es **ponerlo de fondo**: si un administrador sube la
-imagen, las chinchetas se pintan encima y se recolocan arrastrando. Sin imagen,
-el esquema funciona igual.
+**Las zonas son formas sobre el mapa, y van sin el nombre escrito.** La primera
+versión ponía una etiqueta con el nombre de cada zona colocada en una rejilla, y
+quedaba mal: cincuenta etiquetas tapan el mapa entero. Ahora cada zona es un
+rectángulo, un círculo o un polígono **dibujado encima de la imagen** y
+transparente, y se rellena de su color cuando apuntas algo dentro. De un vistazo
+se ve por dónde has pasado, que es de lo que va la pantalla.
 
-**En el mapa, las posiciones escalan con el acercamiento pero los nombres no.**
-Si escalara todo junto, en un móvil las letras quedarían de tres píxeles. Así se
-puede alejar para ver la región entera con los nombres legibles, y por debajo
-del 50 % se convierten en puntos y el nombre sale al tocarlos. Cada etiqueta
-tiene además un ancho máximo por debajo de la separación entre columnas: un
-nombre larguísimo se corta con puntos suspensivos en vez de pisar al vecino.
+**Y por eso el primer toque dice qué zona es y el segundo la abre.** Sin el
+nombre escrito hace falta una manera de saber qué estás tocando, y en un móvil
+no hay ratón que pasar por encima. El nombre sale en el cartel de debajo del
+mapa; tocar otra vez la misma zona la abre.
+
+**El mapa va en SVG con `viewBox`, no con divs colocados.** Las zonas son formas
+de verdad y las coordenadas se guardan en unidades del lienzo: el navegador
+escala todo solo, así que el mismo mapa vale en un móvil de 390 píxeles y en un
+monitor sin botones de acercar ni scroll horizontal. Y cambiar la imagen de
+fondo por una mejor no mueve ninguna zona, porque las zonas no están en
+coordenadas de la imagen.
+
+**Una zona puede llevar otras dentro.** Una ciudad que además tiene su cueva o
+su torre no cabe en una sola casilla: `MapZone.parentId` la cuelga de otra, la
+hija deja de dibujarse, y al tocar a la de fuera sale la lista para elegir en
+cuál capturaste. El recuento del padre suma el de sus hijas, así que se rellena
+igual. Solo hay **un nivel** a propósito: una zona dentro de otra dentro de otra
+no aporta nada y complica el editor.
+
+**Las zonas se pueden sacar de la imagen automáticamente.** Los mapas de tracker
+que circulan por internet ya llevan las casillas pintadas —las ciudades en rojo
+y las rutas en blanco—, así que `lib/detectar-zonas.ts` busca las manchas de
+esos colores y crea una zona por cada una, en su sitio. Con el mapa de Johto
+saca 36 de una vez. Colocar cincuenta zonas a mano se convierte en ponerles el
+nombre, y funciona con cualquier región que use un mapa parecido.
+
+**El editor se usa sobre el mapa, no sobre una lista.** Eliges una zona
+tocándola, y ahí mismo la mueves, la estiras por su esquina y le cambias
+nombre, tipo, forma y color. Las que no se dibujan —las que están dentro de un
+grupo y las de forma "Sin dibujar"— tienen su propia fila de botones debajo:
+sin eso quedaban **inalcanzables**, porque metías una zona en un grupo y ya no
+había forma de volver a abrirla para sacarla (pasó).
 
 **El mapa de capturas es privado de verdad, y se nota en el código.** Todas las
 consultas de `lib/mapas.ts` piden el participante y filtran por él, y **no
@@ -796,13 +823,17 @@ Piezas con truco:
 - `lib/titulos.ts` — los títulos de alguien y el que lleva puesto.
   `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
   lista del perfil, compartida por el perfil público y por Mi perfil.
-- `lib/mapas.ts` — los mapas y las capturas. `lib/mapas-de-fabrica.ts` es la
-  semilla (las 51 zonas de Johto con su sitio), `lib/juegos.ts` la lista de
-  juegos y su región, y `lib/zonas.ts` los tipos de zona y sus colores —**este
+- `lib/mapas.ts` — los mapas y las capturas. `lib/detectar-zonas.ts` saca las
+  zonas de los colores de la imagen de fondo, `lib/mapas-de-fabrica.ts` es la
+  semilla de nombres de Johto, `lib/juegos.ts` la lista de juegos y su región, y
+  `lib/zonas.ts` los tipos, las formas y sus colores —**este
   último existe porque un módulo con `"use client"` no puede exportar datos a un
   componente de servidor**: Next devuelve una referencia al cliente en vez del
-  array y revienta la página entera (pasó). `components/mapa.tsx` es el mapa,
-  `mapa/mapa-client.tsx` la vista del jugador y `admin/mapas/` el editor.
+  array y revienta la página entera (pasó). `components/mapa.tsx` es el mapa en
+  SVG, `mapa/mapa-client.tsx` la vista del jugador y `admin/mapas/editor.tsx` el
+  editor. Ojo con este último: **el panel de la zona elegida se pinta en el
+  cliente**, no en la página, porque un componente de servidor no puede pasarle
+  una función a uno de cliente y la página se quedaba en blanco.
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
@@ -923,3 +954,6 @@ lugar de destruir datos, y hay que avisar antes.
 27. **Mapa de capturas**: el juego se elige de una lista, cada región tiene su
     mapa editable desde Administración, y cada uno apunta en el suyo —privado—
     lo que va pillando.
+28. **Zonas dibujadas sobre el mapa**, transparentes hasta que capturas ahí, con
+    grupos, editor de formas y colores, y detección automática de las casillas a
+    partir de la imagen de fondo.

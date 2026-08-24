@@ -38,3 +38,34 @@ export const TIPOS_DE_ZONA: { id: TipoDeZona; nombre: string }[] = [
 export function colorDeZona(tipo: string) {
   return COLOR_DE_ZONA[tipo] ?? COLOR_DE_ZONA.otro;
 }
+
+/** Las formas que puede tener una zona sobre el mapa. */
+export type FormaDeZona = "rect" | "circle" | "poly" | "none";
+
+export const FORMAS: { id: FormaDeZona; nombre: string }[] = [
+  { id: "rect", nombre: "Rectángulo" },
+  { id: "circle", nombre: "Círculo" },
+  { id: "poly", nombre: "A medida" },
+  { id: "none", nombre: "Sin dibujar" },
+];
+
+/** Los vértices de un polígono, o null si no los tiene o vienen rotos. */
+export function verticesDeZona(points: string | null): [number, number][] | null {
+  if (!points) return null;
+  try {
+    const lista = JSON.parse(points);
+    if (!Array.isArray(lista) || lista.length < 3) return null;
+    const limpios = lista
+      .filter(
+        (p: unknown): p is [number, number] =>
+          Array.isArray(p) &&
+          p.length === 2 &&
+          Number.isFinite(p[0]) &&
+          Number.isFinite(p[1]),
+      )
+      .map(([x, y]) => [Math.round(x), Math.round(y)] as [number, number]);
+    return limpios.length >= 3 ? limpios : null;
+  } catch {
+    return null;
+  }
+}
