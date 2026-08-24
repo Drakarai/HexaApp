@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { juegoPorId } from "@/lib/juegos";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import {
   COMPETITION_COOKIE,
@@ -49,6 +50,9 @@ export async function createCompetitionAction(
   if (!name) return { error: "Ponle un nombre a la competición." };
 
   const game = String(formData.get("game") ?? "").trim() || null;
+  // Solo se guarda si de verdad está en la lista: de ahí sale la región
+  const gameIdBruto = String(formData.get("gameId") ?? "").trim();
+  const gameId = juegoPorId(gameIdBruto) ? gameIdBruto : null;
   const modality = String(formData.get("modality") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
   const startingPoints = Number(formData.get("startingPoints") ?? 5);
@@ -69,6 +73,7 @@ export async function createCompetitionAction(
       name,
       slug: await uniqueSlug(name),
       game,
+      gameId,
       modality,
       description,
       startingPoints: Math.trunc(startingPoints),
@@ -192,6 +197,7 @@ export async function updateCompetitionAction(
     data: {
       name,
       game: String(formData.get("game") ?? "").trim() || null,
+      gameId: juegoPorId(String(formData.get("gameId") ?? "").trim())?.id ?? null,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       ...(Number.isFinite(startingPoints)

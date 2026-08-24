@@ -24,6 +24,8 @@ export const FUENTES = {
   favorito: { tabla: "FavoritePokemon", columna: "image" },
   objeto: { tabla: "Item", columna: "image" },
   "objeto-opcion": { tabla: "ItemOption", columna: "image" },
+  mapa: { tabla: "MapRegion", columna: "image" },
+  captura: { tabla: "Capture", columna: "image" },
 } as const satisfies Record<
   Exclude<TipoImagen, "medalla">,
   { tabla: string; columna: string }

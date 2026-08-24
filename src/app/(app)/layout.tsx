@@ -29,6 +29,7 @@ const S = {
   reglas: { href: "/reglas", label: "Reglas", icon: "📜" },
   levelCaps: { href: "/level-caps", label: "Level caps", icon: "🎯" },
   bolsa: { href: "/bolsa", label: "Bolsa", icon: "🎒" },
+  mapa: { href: "/mapa", label: "Mapa de capturas", icon: "🗺️" },
   notas: { href: "/notas", label: "Mis notas", icon: "🗒️" },
   perfil: { href: "/perfil", label: "Mi perfil", icon: "👤" },
   ediciones: { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
@@ -61,7 +62,7 @@ const GRUPOS: NavGroup[] = [
     label: "Lo mío",
     icon: "👤",
     personal: true,
-    children: [S.bolsa, S.notas, S.perfil],
+    children: [S.mapa, S.bolsa, S.notas, S.perfil],
   },
 ];
 

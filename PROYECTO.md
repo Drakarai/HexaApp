@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 23 de agosto de 2026 (la bolsa, con objetos sueltos y
-grupos de objetos).
+Última actualización: 24 de agosto de 2026 (mapa de capturas privado, con los
+mapas de las regiones editables).
 
 ---
 
@@ -41,10 +41,11 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
+| **Mapa de capturas** | El mapa de la región del juego que se esté jugando, con sus rutas y sitios. Cada uno apunta lo que capturó en cada zona, con el buscador de especie de siempre, y tiene aparte las capturas extra. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos y las copias de seguridad. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, los mapas de las regiones y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -606,6 +607,52 @@ Así no hay una tabla de eventos que pueda desincronizarse de los datos reales,
 y borrar algo lo quita también del muro. Los puntos que vienen de ganar un
 combate se omiten para no contar la misma cosa dos veces.
 
+**Los mapas de las regiones son datos, no código.** Viven en la base de datos y
+se editan desde Administración: renombrar una zona, moverla arrastrando,
+añadirla o quitarla. De `lib/mapas-de-fabrica.ts` solo se **copian la primera
+vez**, con un botón, y nunca vuelven a tocar nada; si borras una zona a
+conciencia no reaparece sola. Es lo que hace que un nombre mal traducido se
+arregle en cinco segundos en vez de esperar a que alguien toque el programa.
+
+**Y son globales, no de cada edición.** El mapa de Johto vale igual para un
+locke en Oro que en HeartGold, así que se prepara una vez y sirve siempre; por
+eso se pueden editar los siete desde cualquier locke, y preparar Kanto mientras
+se juega en Johto.
+
+**Los nombres de las zonas están escritos a mano porque PokéAPI no los tiene.**
+Se comprobó: de Johto, Kanto, Sinnoh y Teselia no hay **ni un solo** nombre en
+español (Hoenn 85 %, Kalos 98 %, Alola 88 %). Las rutas se traducen solas
+("Route 29" → "Ruta 29") y los sitios con nombre propio los escribí yo. Como el
+mapa es editable, un fallo se corrige sin tocar código.
+
+**El mapa se dibuja a mano, no es la imagen oficial.** El arte de las regiones
+es de Nintendo y no está en PokéAPI como los sprites, así que la aplicación no
+lo trae. Lo que sí puede es **ponerlo de fondo**: si un administrador sube la
+imagen, las chinchetas se pintan encima y se recolocan arrastrando. Sin imagen,
+el esquema funciona igual.
+
+**En el mapa, las posiciones escalan con el acercamiento pero los nombres no.**
+Si escalara todo junto, en un móvil las letras quedarían de tres píxeles. Así se
+puede alejar para ver la región entera con los nombres legibles, y por debajo
+del 50 % se convierten en puntos y el nombre sale al tocarlos. Cada etiqueta
+tiene además un ancho máximo por debajo de la separación entre columnas: un
+nombre larguísimo se corta con puntos suspensivos en vez de pisar al vecino.
+
+**El mapa de capturas es privado de verdad, y se nota en el código.** Todas las
+consultas de `lib/mapas.ts` piden el participante y filtran por él, y **no
+existe** una función que devuelva las capturas de varios: si la consulta no
+existe, no hay pantalla que pueda equivocarse. Las acciones sacan el
+participante de la sesión y nunca del formulario, así que tampoco se puede
+escribir en el mapa de otro. La contrapartida es la de siempre: una copia de
+seguridad lleva la base de datos entera, notas y capturas incluidas.
+
+**El juego de la edición se elige de una lista, pero el texto libre se queda.**
+`Competition.gameId` guarda cuál es de `lib/juegos.ts` y de ahí sale la región;
+`game` sigue siendo el texto de siempre y no se ha tocado, porque el Hexalocke 1
+y el 2 ya tenían el suyo escrito a mano. Los remakes van en su propio grupo del
+desplegable pero apuntan a la región del original: HeartGold usa el mapa de
+Johto.
+
 **La bolsa es privada, pero gastar algo se anuncia.** Lo que llevas encima solo
 lo ves tú y los administradores; en cuanto lo usas sale en el muro, porque en
 una competición el resto tiene que enterarse de que alguien ha tirado de su
@@ -749,6 +796,13 @@ Piezas con truco:
 - `lib/titulos.ts` — los títulos de alguien y el que lleva puesto.
   `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
   lista del perfil, compartida por el perfil público y por Mi perfil.
+- `lib/mapas.ts` — los mapas y las capturas. `lib/mapas-de-fabrica.ts` es la
+  semilla (las 51 zonas de Johto con su sitio), `lib/juegos.ts` la lista de
+  juegos y su región, y `lib/zonas.ts` los tipos de zona y sus colores —**este
+  último existe porque un módulo con `"use client"` no puede exportar datos a un
+  componente de servidor**: Next devuelve una referencia al cliente en vez del
+  array y revienta la página entera (pasó). `components/mapa.tsx` es el mapa,
+  `mapa/mapa-client.tsx` la vista del jugador y `admin/mapas/` el editor.
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
@@ -866,3 +920,6 @@ lugar de destruir datos, y hay que avisar antes.
 25. **Vídeos de los gimnasios**, enlazados desde YouTube y vistos dentro.
 26. **La bolsa**: el inventario de cada jugador, con objetos de los juegos o
     propios, y **grupos de objetos** que al gastarlos te hacen elegir uno.
+27. **Mapa de capturas**: el juego se elige de una lista, cada región tiene su
+    mapa editable desde Administración, y cada uno apunta en el suyo —privado—
+    lo que va pillando.

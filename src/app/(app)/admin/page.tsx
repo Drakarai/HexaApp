@@ -3,6 +3,7 @@ import { requireAdminPage } from "@/lib/auth";
 import { getActiveCompetition } from "@/lib/competition";
 import { ChallengeDiffToggle } from "./challenge-diff-toggle";
 import { urlsDeImagen } from "@/lib/imagenes";
+import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
@@ -89,6 +90,18 @@ export default async function AdminPage() {
         title="Administración"
         subtitle="Usuarios de la aplicación. Cada jugador necesita una cuenta antes de poder apuntarse a una competición."
       />
+
+      <section className="card mb-6">
+        <h2 className="section-title mb-1">Mapas de las regiones</h2>
+        <p className="muted mb-4">
+          Las zonas de cada región, de donde sale el Mapa de capturas de cada
+          jugador. Son globales: se puede preparar cualquiera desde cualquier
+          locke.
+        </p>
+        <Link href="/admin/mapas" className="btn-ghost btn-sm">
+          🗺️ Editar los mapas
+        </Link>
+      </section>
 
       {competition ? (
         <section className="card mb-6">

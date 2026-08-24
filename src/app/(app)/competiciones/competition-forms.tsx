@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/competitions";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { JuegoPicker } from "@/components/juego-picker";
 
 export function NewCompetitionForm({
   competitions,
@@ -32,13 +33,8 @@ export function NewCompetitionForm({
             <label className="label">Nombre</label>
             <input name="name" className="input" placeholder="Hexalocke 3" required />
           </div>
-          <div>
-            <label className="label">Juego</label>
-            <input
-              name="game"
-              className="input"
-              placeholder="Pokémon HeartGold / SoulSilver"
-            />
+          <div className="sm:col-span-2">
+            <JuegoPicker />
           </div>
           <div>
             <label className="label">Modalidad</label>
@@ -141,6 +137,7 @@ export function EditCompetitionForm({
     id: string;
     name: string;
     game: string | null;
+    gameId: string | null;
     modality: string | null;
     description: string | null;
     startingPoints: number;
@@ -164,12 +161,10 @@ export function EditCompetitionForm({
             <label className="label">Nombre</label>
             <input name="name" className="input" defaultValue={competition.name} />
           </div>
-          <div>
-            <label className="label">Juego</label>
-            <input
-              name="game"
-              className="input"
-              defaultValue={competition.game ?? ""}
+          <div className="sm:col-span-2">
+            <JuegoPicker
+              defaultGameId={competition.gameId}
+              defaultGame={competition.game}
             />
           </div>
           <div>

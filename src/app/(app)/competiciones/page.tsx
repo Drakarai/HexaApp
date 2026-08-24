@@ -8,6 +8,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { COMPETITION_STATUS } from "@/lib/constants";
+import { nombreDelJuego } from "@/lib/juegos";
 import { cx, formatDate } from "@/lib/utils";
 import {
   deleteCompetitionAction,
@@ -71,8 +72,12 @@ export default async function CompetitionsPage() {
             <div>
               <h2 className="section-title">{active.name}</h2>
               <p className="muted mt-1">
-                {[active.game, active.modality].filter(Boolean).join(" · ") ||
-                  "Sin detalles"}
+                {[
+                  nombreDelJuego(active.gameId, active.game),
+                  active.modality,
+                ]
+                  .filter(Boolean)
+                  .join(" · ") || "Sin detalles"}
               </p>
             </div>
             <span className="chip">
@@ -179,6 +184,7 @@ export default async function CompetitionsPage() {
                   id: active.id,
                   name: active.name,
                   game: active.game,
+                  gameId: active.gameId,
                   modality: active.modality,
                   description: active.description,
                   startingPoints: active.startingPoints,

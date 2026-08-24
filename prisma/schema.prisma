@@ -95,6 +95,83 @@ model TitleAward {
 }
 
 // ---------------------------------------------------------------------------
+// Mapas de las regiones
+// ---------------------------------------------------------------------------
+
+/**
+ * El mapa de una región (Johto, Kanto…). **Es global, no de cada edición**: el
+ * mapa de Johto vale igual para un locke en Oro que para uno en HeartGold, y
+ * así se edita una vez y sirve para siempre.
+ *
+ * Los mapas viven en la base de datos y no en el código a propósito: se editan
+ * desde Administración, y un nombre mal traducido o una zona que falte se
+ * arregla ahí en vez de esperar a que alguien toque el programa. De
+ * `lib/mapas-de-fabrica.ts` solo se copian la primera vez.
+ */
+model MapRegion {
+  id      String @id @default(cuid())
+  /** "johto", "kanto"… El identificador de lib/juegos.ts */
+  slug    String @unique
+  name    String
+  /**
+   * La imagen del mapa, si alguien la sube: las chinchetas se pintan encima.
+   * Es opcional y el esquema funciona igual sin ella.
+   */
+  image   String?
+  /** Tamaño del lienzo sobre el que se colocan las zonas */
+  width   Int    @default(1490)
+  height  Int    @default(890)
+
+  zones MapZone[]
+}
+
+/** Un sitio del mapa donde se puede capturar algo: una ruta, una cueva… */
+model MapZone {
+  id       String @id @default(cuid())
+  regionId String
+  name     String
+  /** "ruta" | "ciudad" | "cueva" | "bosque" | "agua" | "otro". Solo es color. */
+  kind     String @default("ruta")
+  x        Int
+  y        Int
+  position Int    @default(0)
+
+  region   MapRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  captures Capture[]
+
+  @@index([regionId, position])
+}
+
+/**
+ * Una captura apuntada por un jugador en su mapa.
+ *
+ * **Es privada como las notas**: se consulta y se borra siempre filtrando por
+ * el participante de quien mira, y no hay ninguna pantalla que enseñe las de
+ * otro, tampoco a los administradores.
+ *
+ * `zoneId` va vacío en las capturas extra, que son las que no salen de una zona
+ * del mapa (un regalo, un intercambio, una captura de premio).
+ */
+model Capture {
+  id            String   @id @default(cuid())
+  participantId String
+  zoneId        String?
+  species       String
+  nickname      String?
+  /** Sprite de caja, descargado al guardar como en el resto de la aplicación */
+  image         String?
+  /** Si se escapó, se murió al capturarlo o lo que sea que pasara */
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+
+  @@index([participantId])
+  @@index([zoneId])
+}
+
+// ---------------------------------------------------------------------------
 // Bolsa
 // ---------------------------------------------------------------------------
 
@@ -212,6 +289,14 @@ model Competition {
   slug           String    @unique
   // Juego / edición sobre la que se juega ("Pokémon HeartGold y SoulSilver")
   game           String?
+  /**
+   * El juego elegido de la lista de `lib/juegos.ts` ("heartgold"). De aquí sale
+   * la región, y de la región el mapa de capturas.
+   *
+   * Convive con `game`, que es texto libre, y no lo sustituye: las ediciones de
+   * antes de que existiera la lista siguen enseñando lo que se escribió a mano.
+   */
+  gameId         String?
   // Modalidad ("Random", "Nuzlocke clásico", ...)
   modality       String?
   description    String?
@@ -290,6 +375,7 @@ model Participant {
   challengesWon ChallengeMatch[] @relation("ChallengeWinner")
   bag          BagEntry[]
   bagUses      BagUse[]
+  captures     Capture[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])

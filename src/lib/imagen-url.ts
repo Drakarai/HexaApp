@@ -24,6 +24,8 @@ export type TipoImagen =
   | "favorito"
   | "objeto"
   | "objeto-opcion"
+  | "mapa"
+  | "captura"
   | "medalla";
 
 /**

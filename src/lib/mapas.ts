@@ -1,0 +1,137 @@
+import "server-only";
+import { prisma } from "@/lib/db";
+import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
+import { REGIONES, type Region } from "@/lib/juegos";
+import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
+
+/**
+ * Los mapas de las regiones y las capturas que cada uno apunta encima.
+ *
+ * Las capturas son **privadas de verdad**: todas las consultas de aquí piden el
+ * participante y filtran por él, igual que las notas filtran por su autor. No
+ * hay ninguna función que devuelva las capturas de otro, tampoco para un
+ * administrador, y eso es a propósito: si no existe la consulta, no hay pantalla
+ * que se pueda equivocar.
+ */
+
+export type ZonaDelMapa = {
+  id: string;
+  name: string;
+  kind: string;
+  x: number;
+  y: number;
+};
+
+export type MapaDeRegion = {
+  id: string;
+  slug: string;
+  name: string;
+  /** Dirección de la imagen de fondo, si alguien la subió */
+  image: string | null;
+  width: number;
+  height: number;
+  zones: ZonaDelMapa[];
+};
+
+export type CapturaApuntada = {
+  id: string;
+  zoneId: string | null;
+  species: string;
+  nickname: string | null;
+  notes: string | null;
+  image: string | null;
+  createdAt: Date;
+};
+
+/**
+ * El mapa de una región, creándolo si es la primera vez que se pide.
+ *
+ * La fila se crea vacía y **las zonas de fábrica no se copian solas**: eso lo
+ * pide un administrador con un botón. Así, si alguien borra una zona a
+ * conciencia, no vuelve a aparecer sola en la siguiente visita.
+ */
+export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
+  const region = REGIONES.find((candidata) => candidata.slug === slug);
+  if (!region) return null;
+
+  const fila = await prisma.mapRegion.upsert({
+    where: { slug },
+    create: {
+      slug,
+      name: region.nombre,
+      width: LIENZO.ancho,
+      height: LIENZO.alto,
+    },
+    update: {},
+    // La imagen puede ser de varios cientos de KB: solo se quiere su firma
+    omit: { image: true },
+    include: { zones: { orderBy: [{ y: "asc" }, { x: "asc" }] } },
+  });
+
+  const firma = (await firmasDeImagen("mapa", [fila.id])).get(fila.id);
+
+  return {
+    id: fila.id,
+    slug: fila.slug,
+    name: fila.name,
+    image: urlDeImagen("mapa", fila.id, firma),
+    width: fila.width,
+    height: fila.height,
+    zones: fila.zones.map((zona) => ({
+      id: zona.id,
+      name: zona.name,
+      kind: zona.kind,
+      x: zona.x,
+      y: zona.y,
+    })),
+  };
+}
+
+/** Las siete regiones con cuántas zonas tiene cada una, para Administración. */
+export async function getResumenDeMapas() {
+  const filas = await prisma.mapRegion.findMany({
+    omit: { image: true },
+    include: { _count: { select: { zones: true } } },
+  });
+  const porSlug = new Map(filas.map((fila) => [fila.slug, fila]));
+
+  return REGIONES.map((region) => ({
+    slug: region.slug,
+    nombre: region.nombre,
+    generacion: region.generacion,
+    zonas: porSlug.get(region.slug)?._count.zones ?? 0,
+    conImagen: Boolean(porSlug.get(region.slug)),
+    /** Si tengo sus zonas escritas y se puede rellenar de una vez */
+    hayDeFabrica: Boolean(MAPAS_DE_FABRICA[region.slug as Region]),
+  }));
+}
+
+/**
+ * Las capturas de **una sola persona**. El participante no es opcional y no hay
+ * versión que acepte varios: ver el comentario de arriba.
+ */
+export async function getMisCapturas(
+  participantId: string,
+): Promise<CapturaApuntada[]> {
+  const filas = await prisma.capture.findMany({
+    where: { participantId },
+    orderBy: { createdAt: "desc" },
+    omit: { image: true },
+  });
+
+  const imagenes = await urlsDeImagen(
+    "captura",
+    filas.map((fila) => fila.id),
+  );
+
+  return filas.map((fila) => ({
+    id: fila.id,
+    zoneId: fila.zoneId,
+    species: fila.species,
+    nickname: fila.nickname,
+    notes: fila.notes,
+    image: imagenes(fila.id),
+    createdAt: fila.createdAt,
+  }));
+}
