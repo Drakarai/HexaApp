@@ -353,7 +353,13 @@ export async function apuntarCapturaAction(
     zoneId = zona?.id ?? null;
   }
 
-  const sprites = await spritesDelFormulario(formData);
+  /**
+   * Si no se pudo capturar **no se baja el sprite**: no hace falta, en su sitio
+   * va una ✕, y así apuntar un encuentro fallido es instantáneo en vez de
+   * esperar a que el servidor se traiga una imagen que no se va a ver.
+   */
+  const fallado = formData.get("failed") === "on";
+  const sprites = fallado ? null : await spritesDelFormulario(formData);
 
   await prisma.capture.create({
     data: {
@@ -363,11 +369,16 @@ export async function apuntarCapturaAction(
       nickname: String(formData.get("nickname") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
       image: sprites?.boxImage ?? null,
+      failed: fallado,
     },
   });
 
   revalidatePath("/mapa");
-  return { success: `${species} apuntado.` };
+  return {
+    success: fallado
+      ? `${species} apuntado como fallado.`
+      : `${species} apuntado.`,
+  };
 }
 
 /** Borrar solo lo tuyo: el `where` lleva el participante, no solo el id. */

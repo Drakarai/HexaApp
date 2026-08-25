@@ -56,6 +56,8 @@ export type CapturaApuntada = {
   nickname: string | null;
   notes: string | null;
   image: string | null;
+  /** Que no se pudo capturar: se escapó, se murió… */
+  failed: boolean;
   createdAt: Date;
 };
 
@@ -176,6 +178,7 @@ export async function getMisCapturas(
     nickname: fila.nickname,
     notes: fila.notes,
     image: imagenes(fila.id),
+    failed: fila.failed,
     createdAt: fila.createdAt,
   }));
 }

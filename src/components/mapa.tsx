@@ -18,12 +18,22 @@ import { cx } from "@/lib/utils";
  * resto, así que el mismo mapa vale en un móvil y en un monitor.
  */
 
-/** Qué tan opaca queda una zona ya visitada */
+/** Qué tan opaca queda una zona con alguna captura buena */
 const RELLENO_HECHO = 0.62;
+/**
+ * Y una en la que solo hubo encuentros fallados: la ruta está hecha, pero sin
+ * premio. Se rellena a medias para distinguirla de un vistazo tanto de las que
+ * tienen algo como de las que están sin tocar.
+ */
+const RELLENO_FALLADO = 0.3;
 /** Y una en la que todavía no has apuntado nada */
 const RELLENO_VACIO = 0.06;
 
-export type ZonaConCuenta = ZonaDelMapa & { hechas: number; total: number };
+/** El color de las zonas que solo tienen fallos, sea cual sea su tipo */
+const COLOR_FALLADO = "#ef4444";
+
+/** Lo apuntado en una zona: capturas buenas y encuentros fallados */
+export type CuentaDeZona = { hechas: number; fallos: number };
 
 export function Mapa({
   mapa,
@@ -35,8 +45,8 @@ export function Mapa({
   onDibujar,
 }: {
   mapa: MapaDeRegion;
-  /** Cuántas capturas hay apuntadas en cada zona (contando las hijas) */
-  cuentas?: Record<string, number>;
+  /** Lo apuntado en cada zona, contando lo de sus hijas */
+  cuentas?: Record<string, CuentaDeZona>;
   onZona?: (zona: ZonaDelMapa) => void;
   seleccionada?: string | null;
   /** Modo administrador: las zonas se mueven y se estiran */
@@ -161,13 +171,25 @@ export function Mapa({
           .filter((zona) => zona.shape !== "none")
           .map((zona) => {
             const caja = cajaDe(zona);
-            const color = zona.color ?? colorDeZona(zona.kind);
-            const hechas = cuentas?.[zona.id] ?? 0;
+            const suyo = zona.color ?? colorDeZona(zona.kind);
+            const { hechas = 0, fallos = 0 } = cuentas?.[zona.id] ?? {};
             const activa = seleccionada === zona.id;
+
+            /**
+             * Manda la captura buena: si la hay, la zona va de su color con el
+             * número, aunque antes se hubiera fallado ahí. Solo cuando **no**
+             * hay ninguna buena sale la ✕ en rojo.
+             */
+            const soloFallos = !hechas && fallos > 0;
+            const color = soloFallos ? COLOR_FALLADO : suyo;
 
             const comun = {
               fill: color,
-              fillOpacity: hechas ? RELLENO_HECHO : RELLENO_VACIO,
+              fillOpacity: hechas
+                ? RELLENO_HECHO
+                : soloFallos
+                  ? RELLENO_FALLADO
+                  : RELLENO_VACIO,
               stroke: activa ? "#ffffff" : color,
               strokeWidth: activa ? 5 : 2.5,
               strokeOpacity: activa ? 1 : 0.85,
@@ -224,8 +246,8 @@ export function Mapa({
 
                 <title>{zona.name}</title>
 
-                {/* La chapita del recuento, solo si hay algo apuntado */}
-                {hechas ? (
+                {/* Cuántas llevas ahí, o una ✕ si solo hubo fallos */}
+                {hechas || soloFallos ? (
                   <text
                     x={caja.x + caja.w / 2}
                     y={caja.y + caja.h / 2}
@@ -233,10 +255,10 @@ export function Mapa({
                     dominantBaseline="central"
                     fontSize={Math.min(26, caja.h * 0.7)}
                     fontWeight="700"
-                    fill="#0b1020"
+                    fill={soloFallos ? "#ffffff" : "#0b1020"}
                     pointerEvents="none"
                   >
-                    {hechas}
+                    {hechas || "✕"}
                   </text>
                 ) : null}
 

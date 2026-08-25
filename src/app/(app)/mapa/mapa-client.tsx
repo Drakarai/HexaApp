@@ -7,7 +7,7 @@ import {
   borrarCapturaAction,
 } from "@/app/actions/mapas";
 import type { FormState } from "@/app/actions/auth";
-import { Mapa } from "@/components/mapa";
+import { Mapa, type CuentaDeZona } from "@/components/mapa";
 import { colorDeZona } from "@/lib/zonas";
 import { SpeciesPicker } from "@/components/species-picker";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
@@ -41,18 +41,30 @@ export function MapaDeCapturas({
   const [busqueda, setBusqueda] = useState("");
   const [vista, setVista] = useState<"mapa" | "lista">("lista");
 
-  /** Cuántas capturas hay en cada zona **contando las de sus hijas**. */
+  /**
+   * Lo apuntado en cada zona **contando lo de sus hijas**: capturas buenas por
+   * un lado y encuentros fallados por otro, porque el mapa los pinta distinto.
+   */
   const porZona = useMemo(() => {
-    const sueltas: Record<string, number> = {};
+    const sueltas: Record<string, CuentaDeZona> = {};
     for (const captura of capturas) {
-      if (captura.zoneId) sueltas[captura.zoneId] = (sueltas[captura.zoneId] ?? 0) + 1;
+      if (!captura.zoneId) continue;
+      const antes = sueltas[captura.zoneId] ?? { hechas: 0, fallos: 0 };
+      if (captura.failed) antes.fallos += 1;
+      else antes.hechas += 1;
+      sueltas[captura.zoneId] = antes;
     }
-    const cuenta = { ...sueltas };
+
+    const cuenta: Record<string, CuentaDeZona> = { ...sueltas };
     for (const zona of mapa.zones) {
       if (!zona.children.length) continue;
-      cuenta[zona.id] =
-        (sueltas[zona.id] ?? 0) +
-        zona.children.reduce((suma, hija) => suma + (sueltas[hija.id] ?? 0), 0);
+      cuenta[zona.id] = zona.children.reduce(
+        (suma, hija) => ({
+          hechas: suma.hechas + (sueltas[hija.id]?.hechas ?? 0),
+          fallos: suma.fallos + (sueltas[hija.id]?.fallos ?? 0),
+        }),
+        sueltas[zona.id] ?? { hechas: 0, fallos: 0 },
+      );
     }
     return cuenta;
   }, [capturas, mapa.zones]);
@@ -82,7 +94,10 @@ export function MapaDeCapturas({
     else setAbierta(zona);
   }
 
-  const hechas = filtradas.filter((zona) => porZona[zona.id]).length;
+  const hechas = filtradas.filter((zona) => porZona[zona.id]?.hechas).length;
+  const falladas = filtradas.filter(
+    (zona) => !porZona[zona.id]?.hechas && porZona[zona.id]?.fallos,
+  ).length;
 
   return (
     <>
@@ -114,8 +129,12 @@ export function MapaDeCapturas({
           </button>
         </div>
         <p className="text-xs text-slate-500">
-          {hechas} de {filtradas.length} zonas con algo apuntado ·{" "}
-          {capturas.length} {capturas.length === 1 ? "captura" : "capturas"}
+          {hechas} de {filtradas.length} zonas capturadas
+          {falladas ? ` · ${falladas} sin premio` : ""} ·{" "}
+          {capturas.filter((captura) => !captura.failed).length}{" "}
+          {capturas.filter((captura) => !captura.failed).length === 1
+            ? "captura"
+            : "capturas"}
         </p>
       </div>
 
@@ -225,7 +244,16 @@ function FilaDeZona({
       {capturas.length ? (
         <span className="flex shrink-0 -space-x-2">
           {capturas.slice(0, 3).map((captura) =>
-            captura.image ? (
+            // Los fallados no tienen sprite: van con su ✕, igual que en el mapa
+            captura.failed ? (
+              <span
+                key={captura.id}
+                title={`${captura.species}: no se pudo capturar`}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-ink-850 text-xs font-bold text-red-400 ring-1 ring-red-500/30"
+              >
+                ✕
+              </span>
+            ) : captura.image ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 key={captura.id}
@@ -261,7 +289,7 @@ function ListaDelGrupo({
   onClose,
 }: {
   grupo: ZonaDelMapa;
-  cuentas: Record<string, number>;
+  cuentas: Record<string, CuentaDeZona>;
   onElegir: (hija: ZonaDelMapa) => void;
   onClose: () => void;
 }) {
@@ -304,7 +332,7 @@ function ListaDelGrupo({
 
         <ul className="space-y-2">
           {grupo.children.map((hija) => {
-            const cuantas = cuentas[hija.id] ?? 0;
+            const cuantas = cuentas[hija.id] ?? { hechas: 0, fallos: 0 };
             return (
               <li key={hija.id}>
                 <button
@@ -321,7 +349,11 @@ function ListaDelGrupo({
                     {hija.name}
                   </span>
                   <span className="shrink-0 text-xs text-slate-500">
-                    {cuantas ? `${cuantas} apuntado${cuantas === 1 ? "" : "s"}` : "vacía"}
+                    {cuantas.hechas
+                      ? `${cuantas.hechas} apuntado${cuantas.hechas === 1 ? "" : "s"}`
+                      : cuantas.fallos
+                        ? "✕ sin premio"
+                        : "vacía"}
                   </span>
                   <span aria-hidden className="shrink-0 text-slate-500">
                     ▸
@@ -432,6 +464,10 @@ function FichaDeZona({
               />
             </div>
           </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-sm text-slate-300">
+            <input type="checkbox" name="failed" className="accent-red-400" />
+            ✕ No lo pude capturar (se escapó, se murió…)
+          </label>
           <FormMessage state={estado} />
           <SubmitButton className="btn-primary btn-sm">Apuntar</SubmitButton>
         </form>
@@ -443,9 +479,26 @@ function FichaDeZona({
 
 function Capturado({ captura }: { captura: CapturaApuntada }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-2.5">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-ink-850">
-        {captura.image ? (
+    <li
+      className={cx(
+        "flex items-center gap-3 rounded-xl border p-2.5",
+        captura.failed
+          ? "border-red-500/25 bg-red-500/[0.06]"
+          : "border-white/10 bg-white/[0.02]",
+      )}
+    >
+      <span
+        className={cx(
+          "flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-ink-850",
+          captura.failed ? "border-red-500/30" : "border-white/10",
+        )}
+      >
+        {captura.failed ? (
+          // No se baja sprite de los fallados: en su sitio va la ✕
+          <span className="text-xl font-bold text-red-400" aria-label="No capturado">
+            ✕
+          </span>
+        ) : captura.image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
             src={captura.image}
@@ -457,7 +510,12 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
         )}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-100">
+        <p
+          className={cx(
+            "truncate text-sm font-medium",
+            captura.failed ? "text-slate-400 line-through" : "text-slate-100",
+          )}
+        >
           {captura.nickname ? (
             <>
               {captura.nickname}{" "}
@@ -468,7 +526,14 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
           )}
         </p>
         <p className="truncate text-xs text-slate-500">
-          {captura.notes ?? formatDateTime(captura.createdAt)}
+          {captura.failed ? (
+            <span className="text-red-300/80">
+              No se pudo capturar
+              {captura.notes ? ` · ${captura.notes}` : ""}
+            </span>
+          ) : (
+            (captura.notes ?? formatDateTime(captura.createdAt))
+          )}
         </p>
       </div>
       <form action={borrarCapturaAction} className="shrink-0">
@@ -540,6 +605,10 @@ export function CapturasExtra({ capturas }: { capturas: CapturaApuntada[] }) {
               />
             </div>
           </div>
+          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-sm text-slate-300">
+            <input type="checkbox" name="failed" className="accent-red-400" />
+            ✕ No lo pude capturar (se escapó, se murió…)
+          </label>
           <FormMessage state={estado} />
           <SubmitButton className="btn-primary btn-sm">Apuntar</SubmitButton>
         </form>

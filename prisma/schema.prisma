@@ -190,6 +190,13 @@ model Capture {
   image         String?
   /** Si se escapó, se murió al capturarlo o lo que sea que pasara */
   notes         String?
+  /**
+   * Que **no** se pudo capturar: se escapó, se murió, o el encuentro se falló.
+   * La ruta cuenta como hecha pero sin premio, y en el mapa sale una ✕ en vez
+   * del número. No impide apuntar después una captura buena en la misma zona:
+   * en cuanto la hay, manda ella y la ✕ pasa a ser un número.
+   */
+  failed        Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

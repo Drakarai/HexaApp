@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 24 de agosto de 2026 (el mapa de capturas pasa a zonas
-dibujadas sobre el mapa, con editor de formas en Administración).
+Última actualización: 24 de agosto de 2026 (encuentros fallados en el mapa de
+capturas, con su ✕).
 
 ---
 
@@ -41,7 +41,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
+| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, y salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
@@ -632,6 +632,15 @@ rectángulo, un círculo o un polígono **dibujado encima de la imagen** y
 transparente, y se rellena de su color cuando apuntas algo dentro. De un vistazo
 se ve por dónde has pasado, que es de lo que va la pantalla.
 
+**Un encuentro fallado también se apunta, y manda la captura buena.** Una ruta
+donde se te escapó el pokémon está hecha, pero sin premio: se guarda con
+`Capture.failed`, sale en rojo con una ✕ en vez del número, y en la ficha lleva
+la ✕ en el hueco del sprite con el nombre tachado. **De los fallados no se baja
+el sprite**: no se va a ver, y así apuntarlos es instantáneo. Si luego capturas
+algo en esa misma zona, la ✕ pasa a ser el número de capturas buenas y la zona
+recupera su color; el fallo se queda apuntado en la ficha, que para eso está.
+El recuento de un grupo suma los de sus hijas con la misma regla.
+
 **Y por eso el primer toque dice qué zona es y el segundo la abre.** Sin el
 nombre escrito hace falta una manera de saber qué estás tocando, y en un móvil
 no hay ratón que pasar por encima. El nombre sale en el cartel de debajo del
@@ -957,3 +966,5 @@ lugar de destruir datos, y hay que avisar antes.
 28. **Zonas dibujadas sobre el mapa**, transparentes hasta que capturas ahí, con
     grupos, editor de formas y colores, y detección automática de las casillas a
     partir de la imagen de fondo.
+29. **Encuentros fallados**: lo que se te escapó también se apunta, con su ✕ en
+    el mapa y en la ficha, y deja de serlo en cuanto capturas algo ahí.
