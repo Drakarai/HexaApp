@@ -609,6 +609,12 @@ model TypeTeam {
    * se buscan sus tipos.
    */
   members       String   @default("[]")
+  /**
+   * Con qué tabla se cuenta: `"juego"` la de la generación del locke, `"ahora"`
+   * la de hoy, con tipo Hada. Muchos grupos juegan los combates en simuladores
+   * modernos aunque el locke sea de Johto, así que la elección es de cada uno.
+   */
+  tabla         String   @default("juego")
   updatedAt     DateTime @updatedAt
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

@@ -44,7 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
-| **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**. El equipo se guarda y es igual de privado. |
+| **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
@@ -791,6 +791,19 @@ un Durant ×4. El resumen de cada fila no es una nota media sino cuántos son
 débiles y cuántos resisten, que es lo que se mira al preparar un combate, y las
 filas salen ordenadas por peligro para que lo que te mata esté arriba.
 
+**Pero se puede pedir la tabla de ahora, y esa es la gracia.** Muchos grupos
+juegan los combates en un simulador moderno aunque el locke sea de Johto, así
+que hay una casilla —"Contar con la tabla de ahora"— que cambia a la
+efectividad y a los tipos de hoy: sale el Hada, Clefairy y compañía pasan a
+Hada, y el Acero deja de resistir Fantasma y Siniestro. La elección se guarda
+en `TypeTeam.tabla` y es **de cada uno**, no de la edición: la casilla solo
+aparece si el locke es de 5ª generación o anterior, porque de la 6ª en adelante
+no cambiaría nada.
+
+Medido sobre los datos generados, entre la 2ª y hoy solo cambian **dos
+casillas** de la tabla (Fantasma y Siniestro contra Acero, de ×½ a ×1) y 22
+pokémon de tipo, todos los que se volvieron Hada.
+
 Vive en la pantalla de las notas porque se usa **mirando las notas**, y es igual
 de privada: el equipo se guarda por participante y no hay ninguna consulta que
 devuelva el de otro. Se guarda solo, 800 ms después de dejar de tocar, para no
@@ -1114,4 +1127,4 @@ lugar de destruir datos, y hay que avisar antes.
     las dos.
 33. **Cobertura de tipos**: dentro de Mis notas, un equipo de seis y la tabla de
     lo que le entra a cada uno, con la tabla de tipos de la generación que se
-    esté jugando.
+    esté jugando y una casilla para usar la de ahora, con tipo Hada.

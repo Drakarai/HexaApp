@@ -4,11 +4,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   guardarEquipoDeTiposAction,
   type MiembroDelEquipo,
+  type QueTabla,
 } from "@/app/actions/tipos";
 import { searchSpecies, spriteCandidates } from "@/lib/pokedex";
 import {
   colorDeTipo,
   comoSeLee,
+  GENERACION_POR_DEFECTO,
   multiplicador,
   tiposDeGeneracion,
   tiposDePokemon,
@@ -43,23 +45,37 @@ const ESPERA_PARA_GUARDAR = 800;
 type Sitio = MiembroDelEquipo | null;
 
 export function CoberturaDeTipos({
-  generacion,
+  generacionDelLocke,
   juego,
   inicial,
+  tablaInicial,
 }: {
-  /** La generación del juego de esta edición: manda sobre la tabla y los tipos */
-  generacion: number;
+  /** La generación del juego de esta edición */
+  generacionDelLocke: number;
   /** Cómo se llama, para poder decir de qué tabla se está hablando */
   juego: string | null;
   inicial: MiembroDelEquipo[];
+  tablaInicial: QueTabla;
 }) {
   const [equipo, setEquipo] = useState<Sitio[]>(() =>
     Array.from({ length: HUECOS }, (_, i) => inicial[i] ?? null),
   );
   const [orden, setOrden] = useState<"peligro" | "tipo">("peligro");
+  const [tabla, setTabla] = useState<QueTabla>(tablaInicial);
   const [guardado, setGuardado] = useState(false);
   /** La primera pintada no guarda: si no, entrar ya escribiría en la base */
   const primera = useRef(true);
+
+  /**
+   * La generación con la que se cuenta de verdad. Muchos grupos juegan los
+   * combates en simuladores modernos aunque el locke sea de Johto, así que se
+   * puede pedir la tabla de hoy: con tipo Hada, con Clefairy siendo Hada y sin
+   * el Acero resistiendo Fantasma y Siniestro.
+   */
+  const generacion =
+    tabla === "ahora" ? GENERACION_POR_DEFECTO : generacionDelLocke;
+  /** Si el locke ya es moderno, el botón no cambiaría nada y no se enseña */
+  const hayDiferencia = generacionDelLocke < GENERACION_POR_DEFECTO;
 
   useEffect(() => {
     if (primera.current) {
@@ -70,10 +86,11 @@ export function CoberturaDeTipos({
     const reloj = setTimeout(() => {
       void guardarEquipoDeTiposAction(
         equipo.filter((sitio): sitio is MiembroDelEquipo => sitio !== null),
+        tabla,
       ).then(() => setGuardado(true));
     }, ESPERA_PARA_GUARDAR);
     return () => clearTimeout(reloj);
-  }, [equipo]);
+  }, [equipo, tabla]);
 
   const puestos = equipo.filter(
     (sitio): sitio is MiembroDelEquipo => sitio !== null,
@@ -131,6 +148,29 @@ export function CoberturaDeTipos({
           />
         ))}
       </div>
+
+      {hayDiferencia ? (
+        <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-sm">
+          <input
+            type="checkbox"
+            className="mt-0.5 accent-brand-500"
+            checked={tabla === "ahora"}
+            onChange={(evento) =>
+              setTabla(evento.target.checked ? "ahora" : "juego")
+            }
+          />
+          <span className="min-w-0">
+            <span className="block font-medium text-slate-200">
+              Contar con la tabla de ahora
+            </span>
+            <span className="block text-xs leading-snug text-slate-500">
+              {tabla === "ahora"
+                ? "Con tipo Hada. Clefairy, Togepi, Marill y compañía pasan a Hada, y el Acero ya no resiste Fantasma ni Siniestro."
+                : `Ahora mismo cuenta con la de ${juego ?? `la ${generacionDelLocke}ª generación`}. Márcalo si jugáis los combates con las reglas de hoy.`}
+            </span>
+          </span>
+        </label>
+      ) : null}
 
       {puestos.length ? (
         <>
@@ -241,13 +281,25 @@ export function CoberturaDeTipos({
           </div>
 
           <p className="text-xs text-slate-500">
-            Cuánto le entra a cada uno un ataque de ese tipo. Tabla de la{" "}
-            <strong className="text-slate-400">{generacion}ª generación</strong>
-            {juego ? ` (${juego})` : ""}
-            {generacion < 6
-              ? ", sin tipo Hada y con el Acero resistiendo Fantasma y Siniestro"
-              : ""}
-            .
+            Cuánto le entra a cada uno un ataque de ese tipo.{" "}
+            {tabla === "ahora" ? (
+              <>
+                Tabla <strong className="text-slate-400">de ahora</strong>, con
+                tipo Hada.
+              </>
+            ) : (
+              <>
+                Tabla de la{" "}
+                <strong className="text-slate-400">
+                  {generacion}ª generación
+                </strong>
+                {juego ? ` (${juego})` : ""}
+                {generacion < 6
+                  ? ", sin tipo Hada y con el Acero resistiendo Fantasma y Siniestro"
+                  : ""}
+                .
+              </>
+            )}
           </p>
         </>
       ) : (

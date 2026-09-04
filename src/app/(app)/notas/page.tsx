@@ -89,11 +89,12 @@ export default async function NotesPage({
           </summary>
           <div className="mt-4">
             <CoberturaDeTipos
-              generacion={
+              generacionDelLocke={
                 generacionDelJuego(competition.gameId) ?? GENERACION_POR_DEFECTO
               }
               juego={nombreDelJuego(competition.gameId, competition.game)}
               inicial={miEquipo}
+              tablaInicial={equipo?.tabla === "ahora" ? "ahora" : "juego"}
             />
           </div>
         </details>
