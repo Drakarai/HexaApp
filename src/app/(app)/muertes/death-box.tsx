@@ -11,7 +11,9 @@ import { Avatar, ConfirmSubmit, FormMessage, SubmitButton } from "@/components/u
 import { AceBadge } from "@/components/ace-badge";
 import { ImageInput } from "@/components/image-input";
 import { SpeciesPicker } from "@/components/species-picker";
+import { SitioPicker } from "@/components/sitio-picker";
 import { IMAGE_SIZES } from "@/lib/image";
+import type { ZonaParaElegir } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
 
 export type AceSummary = {
@@ -29,6 +31,10 @@ export type BoxDeath = {
   nickname: string | null;
   cause: string | null;
   level: number | null;
+  /** La zona del mapa donde cayó, si se eligió una */
+  zoneId: string | null;
+  /** Cómo se lee ese sitio: el nombre de la zona o lo escrito a mano */
+  sitio: string | null;
   location: string | null;
   notes: string | null;
   boxImage: string | null;
@@ -50,10 +56,13 @@ export type BoxDeath = {
 export function DeathBox({
   deaths,
   grouped,
+  zonas,
 }: {
   deaths: BoxDeath[];
   /** Si es true, se separan las casillas por jugador. */
   grouped: boolean;
+  /** Las zonas del mapa de esta región, para editar dónde cayó */
+  zonas: ZonaParaElegir[];
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = deaths.find((death) => death.id === selectedId) ?? null;
@@ -144,7 +153,11 @@ export function DeathBox({
       </div>
 
       {selected ? (
-        <DeathDetail death={selected} onClose={() => setSelectedId(null)} />
+        <DeathDetail
+          death={selected}
+          zonas={zonas}
+          onClose={() => setSelectedId(null)}
+        />
       ) : null}
     </>
   );
@@ -162,9 +175,11 @@ function PokeballGlyph() {
 
 function DeathDetail({
   death,
+  zonas,
   onClose,
 }: {
   death: BoxDeath;
+  zonas: ZonaParaElegir[];
   onClose: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -251,7 +266,7 @@ function DeathDetail({
             {death.cause ? (
               <Row label="Causa" value={death.cause} />
             ) : null}
-            {death.location ? <Row label="Dónde" value={death.location} /> : null}
+            {death.sitio ? <Row label="Dónde" value={death.sitio} /> : null}
             {death.notes ? <Row label="Notas" value={death.notes} /> : null}
           </dl>
         </div>
@@ -321,6 +336,16 @@ function DeathDetail({
                 />
               </div>
 
+              {/* El sitio va a la vista y no dentro de "más detalles": es lo que
+                  alimenta las calaveras del mapa y el ranking de rutas, así que
+                  escondido no lo pondría nadie. */}
+              <SitioPicker
+                zonas={zonas}
+                defaultZoneId={death.zoneId}
+                defaultLocation={death.location}
+                label="Dónde cayó"
+              />
+
               <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-3">
                 <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-slate-400">
                   <span className="mr-2 inline-block transition group-open:rotate-90">
@@ -328,7 +353,7 @@ function DeathDetail({
                   </span>
                   Más detalles (opcional)
                 </summary>
-                <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   <div>
                     <label className="label">Nivel</label>
                     <input
@@ -341,14 +366,6 @@ function DeathDetail({
                     />
                   </div>
                   <div>
-                    <label className="label">Dónde</label>
-                    <input
-                      name="location"
-                      className="input"
-                      defaultValue={death.location ?? ""}
-                    />
-                  </div>
-                  <div>
                     <label className="label">Fecha</label>
                     <input
                       name="diedAt"
@@ -357,7 +374,7 @@ function DeathDetail({
                       defaultValue={death.diedAtInput}
                     />
                   </div>
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className="label">Notas</label>
                     <input
                       name="notes"

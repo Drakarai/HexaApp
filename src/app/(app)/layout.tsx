@@ -1,12 +1,21 @@
 import Link from "next/link";
 import { requireUser, isAdmin } from "@/lib/auth";
-import { getActiveCompetition, listCompetitions } from "@/lib/competition";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getMyParticipant,
+  listCompetitions,
+} from "@/lib/competition";
 import { logoutAction } from "@/app/actions/auth";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
 import { Nav, type NavEntry, type NavGroup, type NavItem } from "@/components/nav";
 import { MobileTabBar } from "@/components/mobile-nav";
+import { BotonApuntar, type AtajoDeApunte } from "@/components/boton-apuntar";
+import { MarcarVisto } from "@/components/marcar-visto";
 import { Avatar } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
+import { regionDelJuego } from "@/lib/juegos";
+import { getAvisos } from "@/lib/novedades";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -78,6 +87,54 @@ export default async function AppLayout({
   ]);
 
   /**
+   * Lo que hace falta para el botón de apuntar y el punto de novedades: quién
+   * es uno en esta edición y si puede tocar cosas de los demás. Sin edición
+   * activa no hay ni una cosa ni la otra.
+   */
+  const yo = active ? await getMyParticipant(active.id, user.id) : null;
+  const [puedeGestionar, avisos] = active
+    ? await Promise.all([
+        canManageCompetition(active.id, user),
+        getAvisos({
+          userId: user.id,
+          competitionId: active.id,
+          participantId: yo?.id ?? null,
+        }),
+      ])
+    : [false, {} as Record<string, boolean>];
+
+  /**
+   * Los atajos de apuntar: solo los que esa persona puede usar de verdad. Un
+   * administrador que no juega registra bajas de otros, pero no tiene mapa ni
+   * gimnasios propios que marcar.
+   */
+  const atajos: AtajoDeApunte[] = [];
+  if (active && (yo || puedeGestionar)) {
+    atajos.push({
+      href: "/muertes?apuntar=1",
+      icon: "💀",
+      label: "Registrar una baja",
+      hint: "Se abre el formulario de la Caja",
+    });
+  }
+  if (yo && regionDelJuego(active?.gameId)) {
+    atajos.push({
+      href: "/mapa?apuntar=1",
+      icon: "🗺️",
+      label: "Apuntar una captura",
+      hint: "Busca la ruta y apunta lo que salió",
+    });
+  }
+  if (yo) {
+    atajos.push({
+      href: "/level-caps?apuntar=1",
+      icon: "🎯",
+      label: "Marcar un gimnasio",
+      hint: "Te lleva al que te toca",
+    });
+  }
+
+  /**
    * Ediciones y Administración van al final de "La edición": son de gestionar,
    * se tocan de uvas a peras y no merecen una pestaña propia. El diagnóstico no
    * está en ninguna: vive dentro de Mi perfil.
@@ -95,6 +152,16 @@ export default async function AppLayout({
       : grupo,
   );
   const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
+
+  /**
+   * De qué grupo es cada dirección. Se saca del propio menú para que una
+   * sección nueva entre sola en el aviso de novedades con solo aparecer ahí.
+   */
+  const rutasDeGrupo = Object.fromEntries(
+    grupos.flatMap((grupo) =>
+      grupo.children.map((item) => [item.href, grupo.label]),
+    ),
+  );
 
   const switcher = (
     <CompetitionSwitcher
@@ -162,7 +229,7 @@ export default async function AppLayout({
         <div className="mt-5">{switcher}</div>
 
         <div className="mt-5 lg:sticky lg:top-6">
-          <Nav items={sidebarItems} />
+          <Nav items={sidebarItems} avisos={avisos} />
           <form action={logoutAction} className="mt-4">
             <button type="submit" className="btn-ghost btn-sm w-full">
               Cerrar sesión
@@ -173,9 +240,12 @@ export default async function AppLayout({
 
       <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
 
+      <BotonApuntar atajos={atajos} />
+
       <MobileTabBar
         primary={PRIMARY_ITEMS}
         groups={grupos}
+        avisos={avisos}
         user={{
           displayName: user.displayName,
           avatarColor: user.avatarColor,
@@ -185,6 +255,8 @@ export default async function AppLayout({
           }`,
         }}
       />
+
+      <MarcarVisto rutas={rutasDeGrupo} avisos={avisos} />
     </div>
   );
 }

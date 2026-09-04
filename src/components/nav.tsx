@@ -26,7 +26,14 @@ const esGrupo = (entrada: NavEntry): entrada is NavGroup =>
  * resto repartidas en los mismos grupos que el menú del móvil, cada uno
  * desplegable. Una lista de catorce enlaces seguidos ya no se leía.
  */
-export function Nav({ items }: { items: NavEntry[] }) {
+export function Nav({
+  items,
+  avisos = {},
+}: {
+  items: NavEntry[];
+  /** Qué grupos tienen algo nuevo desde tu última visita */
+  avisos?: Record<string, boolean>;
+}) {
   const pathname = usePathname();
 
   const activo = (href: string) =>
@@ -36,7 +43,12 @@ export function Nav({ items }: { items: NavEntry[] }) {
     <nav className="flex gap-1 overflow-x-auto lg:flex-col lg:overflow-visible">
       {items.map((entrada) =>
         esGrupo(entrada) ? (
-          <Grupo key={entrada.label} grupo={entrada} activo={activo} />
+          <Grupo
+            key={entrada.label}
+            grupo={entrada}
+            activo={activo}
+            aviso={Boolean(avisos[entrada.label])}
+          />
         ) : (
           <Enlace
             key={entrada.href}
@@ -78,12 +90,20 @@ function Enlace({
 function Grupo({
   grupo,
   activo,
+  aviso,
 }: {
   grupo: NavGroup;
   activo: (href: string) => boolean;
+  /** Hay algo nuevo dentro desde la última vez que se miró */
+  aviso: boolean;
 }) {
   const pathname = usePathname();
   const alguienActivo = grupo.children.some((hijo) => activo(hijo.href));
+  /**
+   * Estando dentro no se avisa: lo estás viendo. Además así el punto se apaga
+   * en cuanto entras, sin esperar a que el servidor guarde la visita.
+   */
+  const avisar = aviso && !alguienActivo;
 
   /**
    * `null` significa "como toque": abierto si estás dentro del grupo. En cuanto
@@ -112,9 +132,17 @@ function Grupo({
           {grupo.icon}
         </span>
         <span className="flex-1 text-left">{grupo.label}</span>
-        {/* Un punto cuando está cerrado y estás dentro: si no, no se ve dónde
-            estás sin abrirlos todos */}
-        {!abierto && alguienActivo ? (
+        {/* El punto de novedades, que manda sobre el otro: si hay algo nuevo
+            importa más que dónde estás */}
+        {avisar ? (
+          <span
+            aria-label="Hay algo nuevo"
+            title="Hay algo nuevo"
+            className="h-2 w-2 rounded-full bg-amber-400 ring-2 ring-amber-400/25"
+          />
+        ) : !abierto && alguienActivo ? (
+          // Un punto cuando está cerrado y estás dentro: si no, no se ve dónde
+          // estás sin abrirlos todos
           <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-brand-400" />
         ) : null}
         <span

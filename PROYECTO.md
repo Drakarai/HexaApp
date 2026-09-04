@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 24 de agosto de 2026 (encuentros fallados en el mapa de
-capturas, con su ✕).
+Última actualización: 4 de septiembre de 2026 (el sitio de la baja se elige del
+mapa, botón flotante para apuntar y aviso de novedades en las pestañas).
 
 ---
 
@@ -36,12 +36,12 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
-| **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. |
+| **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, y salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
+| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
@@ -51,6 +51,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
+| **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
+| **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
 
 Roles: **administrador global** (crea competiciones y usuarios),
 **administrador de competición** (participante con permisos en esa edición) y
@@ -754,6 +756,54 @@ enlaces, rótulos de sección, la pestaña activa y el segundo halo del fondo. P
 eso `ThemeSeed` tiene un campo `detail` opcional, y la muestra del selector se
 pinta como degradado entre los dos.
 
+**El sitio de una baja se elige del mapa, pero el texto libre no se tira.**
+Antes `Death.location` era un campo de escribir y cada uno ponía lo que le
+salía —"Ruta 32", "ruta 32", "la del pescador"—, así que no había forma de
+contar nada. Ahora hay `Death.zoneId` apuntando a la zona del mapa de esa
+región, y de ahí salen dos cosas que antes eran imposibles: la chapa roja de
+"aquí has perdido N" en tu mapa privado y el ranking de dónde cae más gente.
+`location` **sigue existiendo** por dos motivos: hay bajas que no pasan en
+ninguna zona (un combate de jornada, un intercambio), y las de antes de esto
+tienen ahí lo que se escribió en su día. El desplegable ofrece las zonas
+agrupadas por tipo y una opción de "Otro sitio" que abre el campo de siempre.
+Al guardar, la zona manda: si viene una válida, el texto se descarta. Y se
+comprueba en el servidor que la zona sea de la región de esa edición, porque el
+desplegable solo ofrece las que tocan pero el formulario se puede mandar a mano.
+
+**Las bajas se pintan en el mapa con una chapa, no con una calavera.** Se probó
+con el emoji y no se lee: un mapa de región entero cabe en la pantalla de un
+móvil, así que cada zona mide cuatro píxeles y el dibujo se convierte en una
+mancha. Un círculo rojo liso con la cifra sí se distingue, y en las zonas
+estrechas se queda el círculo solo —que ya dice "aquí has perdido algo"— y el
+número se lee en la lista o abriendo la zona.
+
+**El botón de apuntar navega, no abre formularios.** Los tres atajos llevan a
+su página con `?apuntar=1` y esa página se encarga: la Caja despliega su
+formulario y baja hasta él, el mapa enfoca el buscador de rutas y los level caps
+resaltan el primer gimnasio que te queda. Meter aquí una copia del formulario de
+bajas —que arrastra el buscador de especies y sus imágenes— era la forma segura
+de que una de las dos copias se quedase vieja.
+
+**El aviso de novedades es una fecha por pestaña, no una lista de cosas sin
+leer.** `TabSeen` guarda cuándo miraste cada grupo del menú, y lo nuevo se
+deduce comparando esa fecha con la de lo que ha pasado. Así no hay nada que
+marcar pieza a pieza ni que limpiar, y no se puede desincronizar de los datos
+de verdad. Tres detalles pensados:
+
+- **Todo se resuelve en una consulta** (`$queryRaw` con `EXISTS`), porque esto
+  corre en el layout, o sea en cada página que se abre, y contra una base de
+  datos en internet cada viaje se nota. No interesa cuánto hay nuevo, solo si
+  hay algo, y `EXISTS` para en la primera fila.
+- **De lo tuyo no se avisa**: tus propias bajas, puntos y gimnasios se
+  descuentan, que ya te has enterado tú de hacerlos.
+- **Estando dentro del grupo no se pinta el punto**, así que se apaga en cuanto
+  entras sin esperar a que el servidor guarde la visita. Por eso la acción que
+  guarda la visita **no revalida nada**: si lo hiciera, volvería a montar el
+  componente que la llama y entraría en bucle.
+
+La excepción es el MVP por votar: ese no se va por mirar la pestaña, porque no
+es algo que ver sino algo que hacer. Se apaga al votar.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -861,7 +911,18 @@ Piezas con truco:
 - `components/mobile-nav.tsx` y `components/nav.tsx` — las dos formas de la
   misma navegación: la hoja del móvil y la barra lateral del PC.
   `app/(app)/layout.tsx` es quien reparte, a partir del objeto `S` (la lista
-  única de secciones) y de `GRUPOS`.
+  única de secciones) y de `GRUPOS`. Las dos pintan el punto de novedades y las
+  dos lo esconden cuando estás dentro del grupo.
+- `lib/novedades.ts` — el punto de "hay algo nuevo": una consulta con `EXISTS`
+  y el modelo `TabSeen` (una fecha por persona, edición y pestaña).
+  `components/marcar-visto.tsx` es quien apunta la visita, y va **en el layout**
+  para que una sección nueva entre sola con solo aparecer en el menú.
+- `components/boton-apuntar.tsx` — el "＋" flotante. Los atajos los arma el
+  layout según lo que esa persona pueda hacer de verdad, y cada página se ocupa
+  de su `?apuntar=1` (`muertes/death-form.tsx`, `mapa/mapa-client.tsx` y
+  `level-caps/resaltar.tsx`).
+- `components/sitio-picker.tsx` — el desplegable de dónde cayó un pokémon, con
+  las zonas del mapa agrupadas por tipo y la salida de "Otro sitio".
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
 - `lib/activity.ts` — junta las siete fuentes del muro en una cronología.
@@ -886,16 +947,33 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
+**Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
+píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
+Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
+píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
+
 Ideas comentadas y no hechas:
 
-- **Equipos vivos**: fichar los 6 pokémon en juego, no solo los muertos. Sería
-  la siguiente en valor: permitiría el botón "ha caído" que rellena la ficha
-  sola y avisar de quién se pasa del level cap.
-- **Encuentros por ruta**: qué salió en cada zona y si se capturó.
+- **Equipos vivos**: fichar los 6 pokémon en juego, no solo los muertos. Sigue
+  siendo la siguiente en valor: permitiría el botón "ha caído" que rellena la
+  ficha sola, avisar de quién se pasa del level cap y rellenar el hall de la
+  fama con el equipo con el que terminaste.
+- **Estadísticas del locke**: la causa de muerte más repetida, el pokémon que
+  más veces ha caído entre todos, la racha más larga. Ahora sale barato: el
+  ranking de rutas ya está y las bajas llevan zona.
 - **Apuestas entre jornadas**: proponer y votar, como dicen las reglas.
+- **Enlace público de solo lectura** para que gente de fuera vea la
+  clasificación sin cuenta. Hoy no hay nada visible sin sesión.
+- **Resumen de jornada como imagen** para pegarlo en el grupo de WhatsApp.
 - **Exportar una edición archivada** a PDF o imagen como recuerdo, ahora que
   el hall de la fama da un buen cierre. (Distinto de las copias de seguridad,
   que son para restaurar y no para enseñar.)
+- **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
+  sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
+
+Hay una **guía de uso en PDF** hecha con capturas de la app (15 páginas,
+escrita para el móvil). No está en el repositorio: se generó a partir de un
+HTML y las capturas se sacan con Playwright.
 
 ---
 
@@ -968,3 +1046,8 @@ lugar de destruir datos, y hay que avisar antes.
     partir de la imagen de fondo.
 29. **Encuentros fallados**: lo que se te escapó también se apunta, con su ✕ en
     el mapa y en la ficha, y deja de serlo en cuanto capturas algo ahí.
+30. **Las bajas se atan al mapa**: dónde cayó cada uno se elige de las zonas de
+    la región, tu mapa privado marca con una chapa roja dónde has perdido
+    pokémon, y el cementerio enseña las rutas donde más gente cae.
+31. **Botón flotante para apuntar** —baja, captura o gimnasio, desde cualquier
+    pantalla— y **aviso de novedades** en las pestañas.

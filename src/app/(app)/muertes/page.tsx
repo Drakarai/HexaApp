@@ -11,6 +11,9 @@ import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx, formatDate, toDateInputValue } from "@/lib/utils";
 import { urlsDeImagen } from "@/lib/imagenes";
+import { getZonasMasMortiferas, getZonasParaElegir } from "@/lib/mapas";
+import { regionDelJuego } from "@/lib/juegos";
+import { colorDeZona } from "@/lib/zonas";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
 
@@ -27,22 +30,26 @@ const POR_TANDA = 60;
 export default async function DeathsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ jugador?: string; ver?: string }>;
+  searchParams: Promise<{ jugador?: string; ver?: string; apuntar?: string }>;
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const { jugador, ver } = await searchParams;
+  const { jugador, ver, apuntar } = await searchParams;
   // Con tope, para que nadie se cargue la página poniendo ?ver=999999 a mano
   const cuantas = Math.min(
     Math.max(Number(ver) || POR_TANDA, POR_TANDA),
     POR_TANDA * 20,
   );
-  const [canManage, participants] = await Promise.all([
+  const region = regionDelJuego(competition.gameId);
+  const [canManage, participants, zonas, mortiferas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getParticipants(competition.id),
+    region ? getZonasParaElegir(region) : [],
+    getZonasMasMortiferas(competition.id),
   ]);
+  const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));
 
   const selected = participants.find((participant) => participant.id === jugador);
   const myParticipant = participants.find(
@@ -124,6 +131,9 @@ export default async function DeathsPage({
     nickname: death.nickname,
     cause: death.cause,
     level: death.level,
+    zoneId: death.zoneId,
+    // Manda la zona; lo escrito a mano solo se usa cuando no hay ninguna
+    sitio: (death.zoneId ? nombreDeZona.get(death.zoneId) : null) ?? death.location,
     location: death.location,
     notes: death.notes,
     boxImage: cajas(death.id),
@@ -171,6 +181,8 @@ export default async function DeathsPage({
         ))}
       </div>
 
+      {mortiferas.length ? <RutasMortiferas zonas={mortiferas} /> : null}
+
       {participants.length && (myParticipant || canManage) ? (
         <div className="mb-6">
           <NewDeathForm
@@ -182,6 +194,8 @@ export default async function DeathsPage({
               selected?.id ?? myParticipant?.id ?? participants[0].id
             }
             lockedToParticipantId={canManage ? null : (myParticipant?.id ?? null)}
+            zonas={zonas}
+            abiertoDeEntrada={apuntar === "1"}
           />
         </div>
       ) : null}
@@ -196,7 +210,7 @@ export default async function DeathsPage({
           hint="De momento todo bien."
         />
       ) : (
-        <DeathBox deaths={boxDeaths} grouped={!selected} />
+        <DeathBox deaths={boxDeaths} grouped={!selected} zonas={zonas} />
       )}
 
       {quedanMas ? (
@@ -217,5 +231,39 @@ export default async function DeathsPage({
         </div>
       ) : null}
     </>
+  );
+}
+
+/**
+ * Dónde se está cebando el locke, sumando las bajas de todos.
+ *
+ * Sale de que el sitio de la baja se elige del mapa: con el texto libre de
+ * antes no había forma de contar esto, porque cada uno escribía la misma ruta
+ * de una manera. Solo aparece cuando alguien ha puesto zona a alguna baja.
+ */
+function RutasMortiferas({
+  zonas,
+}: {
+  zonas: { id: string; name: string; kind: string; bajas: number }[];
+}) {
+  return (
+    <section className="mb-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
+      <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+        Dónde cae más gente
+      </h2>
+      <ul className="mt-2 flex flex-wrap gap-2">
+        {zonas.map((zona) => (
+          <li key={zona.id} className="chip">
+            <span
+              className="h-2 w-2 rounded-full"
+              style={{ background: colorDeZona(zona.kind) }}
+              aria-hidden
+            />
+            {zona.name}
+            <span className="ml-1 font-bold text-slate-300">{zona.bajas}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

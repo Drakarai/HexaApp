@@ -43,6 +43,29 @@ model User {
   ticketsGiven   RouletteTicket[] @relation("TicketAuthor")
   titles         TitleAward[]  @relation("TitleOwner")
   titlesGiven    TitleAward[]  @relation("TitleGiver")
+  visitas        TabSeen[]
+}
+
+/**
+ * Cuándo miró alguien por última vez una pestaña.
+ *
+ * Es lo único que hace falta para el punto de "hay algo nuevo aquí": lo nuevo
+ * se calcula comparando esta fecha con la de lo que ha pasado, así que no hay
+ * que guardar una lista de novedades por persona ni marcar nada como leído
+ * pieza a pieza. Va por edición porque cada Hexalocke se sigue por su cuenta.
+ */
+model TabSeen {
+  id            String   @id @default(cuid())
+  userId        String
+  competitionId String
+  /** El rótulo del grupo del menú: "Combates", "La edición" o "Lo mío". */
+  tab           String
+  seenAt        DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, competitionId, tab])
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +188,7 @@ model MapZone {
   parent   MapZone?  @relation("ZonaPadre", fields: [parentId], references: [id], onDelete: SetNull)
   children MapZone[] @relation("ZonaPadre")
   captures Capture[]
+  deaths   Death[]
 
   @@index([regionId, position])
   @@index([parentId])
@@ -364,6 +388,7 @@ model Competition {
   finalFour    FinalFour?
   tickets      RouletteTicket[]
   challenges   ChallengeMatch[]
+  visitas      TabSeen[]
 }
 
 model Participant {
@@ -513,7 +538,16 @@ model Death {
   // Mote obligatorio en el locke
   nickname      String?
   level         Int?
-  // Dónde murió (ruta, gimnasio, combate de jornada...)
+  /**
+   * Dónde murió, elegido de las zonas del mapa de la región. Es opcional
+   * porque hay bajas que no pasan en ninguna zona —un combate de jornada, un
+   * intercambio— y porque las de antes de esto no tienen ninguna puesta.
+   */
+  zoneId        String?
+  /**
+   * El sitio escrito a mano. Se sigue guardando para lo que no está en el mapa
+   * y para no perder lo que ya había escrito antes de que hubiera zonas.
+   */
   location      String?
   // Qué lo mató
   cause         String?
@@ -526,8 +560,12 @@ model Death {
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  // Si se borra la zona del mapa la baja se queda, sin sitio: perder el
+  // cementerio por retocar un mapa sería absurdo.
+  zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
 
   @@index([participantId])
+  @@index([zoneId])
 }
 
 // ---------------------------------------------------------------------------
@@ -605,6 +643,11 @@ model Matchday {
    * deshacen el empate, se ignora.
    */
   mvpTiebreakId String?
+  /**
+   * Cuándo se creó. No se enseña en ninguna parte: sirve para el punto de
+   * "jornada nueva" del menú, que compara con la última visita de cada uno.
+   */
+  createdAt     DateTime  @default(now())
 
   competition Competition   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   matches     Match[]

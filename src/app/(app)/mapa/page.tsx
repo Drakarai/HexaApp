@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser, isAdmin } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
-import { getMapa, getMisCapturas } from "@/lib/mapas";
+import { getMapa, getMisBajasPorZona, getMisCapturas } from "@/lib/mapas";
 import { nombreDeRegion, regionDelJuego } from "@/lib/juegos";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -17,11 +17,16 @@ export const metadata = { title: "Mapa de capturas" };
  * sesión y `getMisCapturas` no acepta más de uno. Es privado igual que las
  * notas, también para los administradores.
  */
-export default async function MapaPage() {
+export default async function MapaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ apuntar?: string }>;
+}) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
+  const { apuntar } = await searchParams;
   const participant = await getMyParticipant(competition.id, user.id);
   const region = regionDelJuego(competition.gameId);
 
@@ -53,9 +58,10 @@ export default async function MapaPage() {
     );
   }
 
-  const [mapa, capturas] = await Promise.all([
+  const [mapa, capturas, bajas] = await Promise.all([
     getMapa(region),
     getMisCapturas(participant.id),
+    getMisBajasPorZona(participant.id),
   ]);
 
   if (!mapa?.zones.length) {
@@ -81,6 +87,8 @@ export default async function MapaPage() {
       <MapaDeCapturas
         mapa={mapa}
         capturas={capturas.filter((captura) => captura.zoneId)}
+        bajas={bajas}
+        buscarDeEntrada={apuntar === "1"}
       />
       <CapturasExtra capturas={capturas.filter((captura) => !captura.zoneId)} />
     </>

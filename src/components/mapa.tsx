@@ -38,6 +38,7 @@ export type CuentaDeZona = { hechas: number; fallos: number };
 export function Mapa({
   mapa,
   cuentas,
+  bajas,
   onZona,
   seleccionada,
   editable = false,
@@ -47,6 +48,12 @@ export function Mapa({
   mapa: MapaDeRegion;
   /** Lo apuntado en cada zona, contando lo de sus hijas */
   cuentas?: Record<string, CuentaDeZona>;
+  /**
+   * Cuántos pokémon **tuyos** han caído en cada zona. Sale de las bajas del
+   * cementerio, no del mapa, pero se pinta aquí porque es donde se entiende:
+   * de un vistazo se ve dónde te está costando la vida.
+   */
+  bajas?: Record<string, number>;
   onZona?: (zona: ZonaDelMapa) => void;
   seleccionada?: string | null;
   /** Modo administrador: las zonas se mueven y se estiran */
@@ -173,6 +180,7 @@ export function Mapa({
             const caja = cajaDe(zona);
             const suyo = zona.color ?? colorDeZona(zona.kind);
             const { hechas = 0, fallos = 0 } = cuentas?.[zona.id] ?? {};
+            const caidos = bajas?.[zona.id] ?? 0;
             const activa = seleccionada === zona.id;
 
             /**
@@ -262,6 +270,15 @@ export function Mapa({
                   </text>
                 ) : null}
 
+                {/* Lo que has perdido ahí: una chapa roja en la esquina, que no
+                    pisa al número de capturas del medio.
+
+                    Es un círculo con la cifra y no una calavera: un mapa de
+                    región entero cabe en un móvil, así que cada zona mide
+                    cuatro píxeles y el dibujo de un emoji ahí no se distingue.
+                    Una forma plana de un solo color sí. */}
+                {caidos ? <Chapa caja={caja} cuantos={caidos} /> : null}
+
                 {/* El tirador de estirar, solo en el editor y en la elegida */}
                 {editable && activa && zona.shape !== "poly" ? (
                   <rect
@@ -294,5 +311,43 @@ export function Mapa({
           })}
       </svg>
     </div>
+  );
+}
+
+/**
+ * La chapa de las bajas: un círculo rojo con la cifra en la esquina de la zona.
+ *
+ * La cifra solo se escribe si el círculo da de sí; en las zonas pequeñas se
+ * queda el punto pelado, que ya dice "aquí has perdido algo", y el número
+ * exacto se lee en la lista o abriendo la zona.
+ */
+function Chapa({
+  caja,
+  cuantos,
+}: {
+  caja: { x: number; y: number; w: number; h: number };
+  cuantos: number;
+}) {
+  const radio = Math.max(6, Math.min(12, caja.h * 0.32, caja.w * 0.32));
+  const cx = caja.x + caja.w - radio * 0.7;
+  const cy = caja.y + radio * 0.7;
+
+  return (
+    <g pointerEvents="none">
+      <circle cx={cx} cy={cy} r={radio} fill="#dc2626" stroke="#fee2e2" strokeWidth={1.5} />
+      {radio >= 9 ? (
+        <text
+          x={cx}
+          y={cy}
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={radio * 1.35}
+          fontWeight="700"
+          fill="#ffffff"
+        >
+          {cuantos}
+        </text>
+      ) : null}
+    </g>
   );
 }

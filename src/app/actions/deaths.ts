@@ -5,8 +5,36 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
+import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
+
+/**
+ * El sitio del formulario: o una zona del mapa, o texto libre, nunca las dos.
+ *
+ * La zona se comprueba contra la región de esa edición: el desplegable solo
+ * ofrece las que tocan, pero el formulario se puede mandar a mano.
+ */
+async function sitioDelFormulario(
+  formData: FormData,
+  participantId: string,
+): Promise<{ zoneId: string | null; location: string | null }> {
+  const zoneId = String(formData.get("zoneId") ?? "").trim();
+  const location = String(formData.get("location") ?? "").trim() || null;
+  if (!zoneId) return { zoneId: null, location };
+
+  const participante = await prisma.participant.findUnique({
+    where: { id: participantId },
+    select: { competition: { select: { gameId: true } } },
+  });
+  const vale = await zonaValidaParaCompeticion(
+    zoneId,
+    participante?.competition.gameId ?? null,
+  );
+  // Si la zona no es de esta región se descarta, pero no se tira la baja: lo
+  // que importa es el pokémon, no dónde cayó.
+  return vale ? { zoneId, location: null } : { zoneId: null, location };
+}
 
 /**
  * Alta de una baja. El formulario del cementerio pide lo mínimo: jugador,
@@ -29,7 +57,10 @@ export async function createDeathAction(
   if (!species) return { error: "Dinos qué pokémon ha caído." };
 
   // Las imágenes las baja el servidor: el navegador solo manda qué pokémon es
-  const sprites = await spritesDelFormulario(formData);
+  const [sprites, sitio] = await Promise.all([
+    spritesDelFormulario(formData),
+    sitioDelFormulario(formData, participantId),
+  ]);
 
   await prisma.death.create({
     data: {
@@ -37,12 +68,15 @@ export async function createDeathAction(
       species,
       nickname: nickname || null,
       cause: String(formData.get("cause") ?? "").trim() || null,
+      zoneId: sitio.zoneId,
+      location: sitio.location,
       boxImage: sprites?.boxImage ?? null,
       detailImage: sprites?.detailImage ?? null,
     },
   });
 
   revalidatePath("/muertes");
+  revalidatePath("/mapa");
   revalidatePath("/");
   return { success: `F por ${nickname || species}.` };
 }
@@ -76,6 +110,7 @@ export async function updateDeathAction(
   const boxImage = sprites?.boxImage ?? imagenEditada(formData.get("boxImage"));
   const detailImage =
     sprites?.detailImage ?? imagenEditada(formData.get("detailImage"));
+  const sitio = await sitioDelFormulario(formData, death.participantId);
 
   await prisma.death.update({
     where: { id },
@@ -84,7 +119,8 @@ export async function updateDeathAction(
       nickname: String(formData.get("nickname") ?? "").trim() || null,
       cause: String(formData.get("cause") ?? "").trim() || null,
       level: level !== null && Number.isFinite(level) ? Math.trunc(level) : null,
-      location: String(formData.get("location") ?? "").trim() || null,
+      zoneId: sitio.zoneId,
+      location: sitio.location,
       notes: String(formData.get("notes") ?? "").trim() || null,
       boxImage,
       detailImage,
@@ -93,6 +129,7 @@ export async function updateDeathAction(
   });
 
   revalidatePath("/muertes");
+  revalidatePath("/mapa");
   revalidatePath("/");
   return { success: "Ficha actualizada." };
 }
@@ -106,5 +143,6 @@ export async function deleteDeathAction(formData: FormData) {
 
   await prisma.death.delete({ where: { id } });
   revalidatePath("/muertes");
+  revalidatePath("/mapa");
   revalidatePath("/");
 }

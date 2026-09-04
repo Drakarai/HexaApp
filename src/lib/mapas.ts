@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
-import { REGIONES, type Region } from "@/lib/juegos";
+import { REGIONES, regionDelJuego, type Region } from "@/lib/juegos";
 import { verticesDeZona } from "@/lib/zonas";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 
@@ -151,6 +151,122 @@ export async function getResumenDeMapas() {
     /** Si tengo sus zonas escritas y se puede rellenar de una vez */
     hayDeFabrica: Boolean(MAPAS_DE_FABRICA[region.slug as Region]),
   }));
+}
+
+/** Una zona tal y como se ofrece en un desplegable para decir dónde pasó algo. */
+export type ZonaParaElegir = {
+  id: string;
+  /** Cómo se lee en la lista: "Ciudad Trigal › Torre Bellsprout" si cuelga. */
+  label: string;
+  /** Su tipo, que es por lo que se agrupan en el desplegable */
+  kind: string;
+};
+
+/**
+ * Todas las zonas de una región, padres e hijas, para elegir una.
+ *
+ * A diferencia del mapa de capturas, aquí **sí entran las que tienen hijas**:
+ * capturar en "Ciudad Trigal" no significa nada, pero morirse ahí sí.
+ *
+ * No crea la región si no existe —para eso está `getMapa`—: si no hay fila,
+ * tampoco hay zonas que ofrecer.
+ */
+export async function getZonasParaElegir(
+  slug: string,
+): Promise<ZonaParaElegir[]> {
+  const region = await prisma.mapRegion.findUnique({
+    where: { slug },
+    omit: { image: true },
+    include: { zones: { select: { id: true, name: true, kind: true, parentId: true } } },
+  });
+  if (!region) return [];
+
+  const nombres = new Map(region.zones.map((zona) => [zona.id, zona.name]));
+
+  return region.zones
+    .map((zona) => {
+      const padre = zona.parentId ? nombres.get(zona.parentId) : null;
+      return {
+        id: zona.id,
+        label: padre ? `${padre} › ${zona.name}` : zona.name,
+        kind: zona.kind,
+      };
+    })
+    // Con número: sin esto la "Ruta 10" se colaba entre la 1 y la 2
+    .sort((a, b) => a.label.localeCompare(b.label, "es", { numeric: true }));
+}
+
+/**
+ * Comprueba que una zona es del mapa que le toca a esa edición. Sin esto,
+ * cualquiera podría colgar su baja de una zona de otra región mandando el
+ * formulario a mano.
+ */
+export async function zonaValidaParaCompeticion(
+  zoneId: string,
+  gameId: string | null,
+): Promise<boolean> {
+  const slug = regionDelJuego(gameId);
+  if (!slug) return false;
+  const zona = await prisma.mapZone.findUnique({
+    where: { id: zoneId },
+    select: { region: { select: { slug: true } } },
+  });
+  return zona?.region.slug === slug;
+}
+
+/**
+ * Cuántas bajas ha tenido **una sola persona** en cada zona, para pintar las
+ * calaveras de su mapa. Las bajas son públicas, pero el mapa donde salen no lo
+ * es, así que se piden igual que las capturas: filtrando por el participante.
+ */
+export async function getMisBajasPorZona(
+  participantId: string,
+): Promise<Record<string, number>> {
+  const filas = await prisma.death.groupBy({
+    by: ["zoneId"],
+    where: { participantId, zoneId: { not: null } },
+    _count: { _all: true },
+  });
+
+  const cuenta: Record<string, number> = {};
+  for (const fila of filas) {
+    if (fila.zoneId) cuenta[fila.zoneId] = fila._count._all;
+  }
+  return cuenta;
+}
+
+/**
+ * Los sitios donde más gente ha caído en toda la edición.
+ *
+ * Esto sí es de todos: las bajas siempre han sido públicas —el cementerio las
+ * enseña— y aquí solo se cuentan. Lo privado es el mapa de capturas, que no
+ * entra en esta consulta.
+ */
+export async function getZonasMasMortiferas(
+  competitionId: string,
+  cuantas = 4,
+): Promise<{ id: string; name: string; kind: string; bajas: number }[]> {
+  const filas = await prisma.death.groupBy({
+    by: ["zoneId"],
+    where: { participant: { competitionId }, zoneId: { not: null } },
+    _count: { _all: true },
+    orderBy: { _count: { zoneId: "desc" } },
+    take: cuantas,
+  });
+  if (!filas.length) return [];
+
+  const zonas = await prisma.mapZone.findMany({
+    where: { id: { in: filas.map((fila) => fila.zoneId!) } },
+    select: { id: true, name: true, kind: true },
+  });
+  const porId = new Map(zonas.map((zona) => [zona.id, zona]));
+
+  return filas
+    .map((fila) => {
+      const zona = porId.get(fila.zoneId!);
+      return zona ? { ...zona, bajas: fila._count._all } : null;
+    })
+    .filter((fila) => fila !== null);
 }
 
 /**

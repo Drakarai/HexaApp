@@ -18,10 +18,16 @@ import {
 } from "@/app/actions/level-caps";
 import { NewLevelCapForm, EditLevelCapForm } from "./level-cap-forms";
 import { GymVideos, type VideoDeGimnasio } from "./gym-videos";
+import { Resaltar } from "./resaltar";
 
 export const metadata = { title: "Level caps" };
 
-export default async function LevelCapsPage() {
+export default async function LevelCapsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ apuntar?: string }>;
+}) {
+  const { apuntar } = await searchParams;
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
@@ -44,6 +50,15 @@ export default async function LevelCapsPage() {
 
   // Direcciones de las medallas: ver lib/imagen-url.ts
   const medallas = await urlsDeMedallas(levelCaps.map((cap) => cap.id));
+
+  /**
+   * El primero que me queda por marcar. Es a donde lleva el botón de apuntar:
+   * viniendo de ahí, lo que se acaba de hacer es pasarse ese gimnasio.
+   */
+  const yo = participants.find((participante) => participante.userId === user.id);
+  const miProximo = yo
+    ? levelCaps.find((cap) => !clearedSet.has(`${cap.id}:${yo.id}`))
+    : undefined;
 
   /**
    * Los vídeos de un gimnasio: solo de quien se lo ha pasado, porque el vídeo
@@ -74,6 +89,10 @@ export default async function LevelCapsPage() {
         subtitle="Nivel máximo permitido antes de cada gimnasio. Marca tu casilla cuando te pases el combate: nadie sigue hasta que estén todas."
       />
 
+      {apuntar === "1" && miProximo ? (
+        <Resaltar id={`cap-${miProximo.id}`} />
+      ) : null}
+
       {levelCaps.length === 0 ? (
         <EmptyState
           title="No hay level caps configurados"
@@ -90,8 +109,9 @@ export default async function LevelCapsPage() {
             return (
               <article
                 key={levelCap.id}
+                id={`cap-${levelCap.id}`}
                 className={cx(
-                  "card relative isolate overflow-hidden",
+                  "card relative isolate overflow-hidden transition",
                   allCleared && "border-emerald-500/30 bg-emerald-500/[0.04]",
                 )}
               >

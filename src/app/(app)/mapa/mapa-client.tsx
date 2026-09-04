@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   apuntarCapturaAction,
@@ -24,9 +24,15 @@ import { cx, formatDateTime } from "@/lib/utils";
 export function MapaDeCapturas({
   mapa,
   capturas,
+  bajas,
+  buscarDeEntrada = false,
 }: {
   mapa: MapaDeRegion;
   capturas: CapturaApuntada[];
+  /** Los pokémon tuyos que han caído en cada zona, para las calaveras */
+  bajas: Record<string, number>;
+  /** Llega con el buscador enfocado, desde el botón de apuntar */
+  buscarDeEntrada?: boolean;
 }) {
   const [abierta, setAbierta] = useState<ZonaDelMapa | null>(null);
   /** Grupo cuyo contenido se está enseñando para elegir */
@@ -40,6 +46,15 @@ export function MapaDeCapturas({
   const [avisada, setAvisada] = useState<ZonaDelMapa | null>(null);
   const [busqueda, setBusqueda] = useState("");
   const [vista, setVista] = useState<"mapa" | "lista">("lista");
+  const buscador = useRef<HTMLInputElement>(null);
+
+  /**
+   * Llegando desde el botón de apuntar, el cursor ya está en el buscador: lo
+   * que se viene a hacer es escribir la ruta donde acaba de salir algo.
+   */
+  useEffect(() => {
+    if (buscarDeEntrada) buscador.current?.focus();
+  }, [buscarDeEntrada]);
 
   /**
    * Lo apuntado en cada zona **contando lo de sus hijas**: capturas buenas por
@@ -68,6 +83,23 @@ export function MapaDeCapturas({
     }
     return cuenta;
   }, [capturas, mapa.zones]);
+
+  /**
+   * Las bajas, sumando también las de las hijas en el padre: si perdiste algo
+   * dentro de una ciudad, la calavera tiene que verse en la ciudad, que es lo
+   * único que se dibuja en el mapa.
+   */
+  const bajasPorZona = useMemo(() => {
+    const cuenta: Record<string, number> = { ...bajas };
+    for (const zona of mapa.zones) {
+      if (!zona.children.length) continue;
+      cuenta[zona.id] = zona.children.reduce(
+        (suma, hija) => suma + (bajas[hija.id] ?? 0),
+        bajas[zona.id] ?? 0,
+      );
+    }
+    return cuenta;
+  }, [bajas, mapa.zones]);
 
   /** Todas las zonas capturables, padres e hijas, para la lista y el buscador */
   const todas = useMemo(
@@ -143,6 +175,7 @@ export function MapaDeCapturas({
           <Mapa
             mapa={mapa}
             cuentas={porZona}
+            bajas={bajasPorZona}
             onZona={tocar}
             seleccionada={avisada?.id ?? abierta?.id ?? null}
           />
@@ -169,6 +202,7 @@ export function MapaDeCapturas({
       ) : (
         <>
           <input
+            ref={buscador}
             className="input mb-3"
             placeholder="Buscar una ruta o un sitio…"
             value={busqueda}
@@ -181,6 +215,7 @@ export function MapaDeCapturas({
                   <FilaDeZona
                     zona={zona}
                     capturas={capturas.filter((c) => c.zoneId === zona.id)}
+                    caidos={bajas[zona.id] ?? 0}
                     onAbrir={() => setAbierta(zona)}
                   />
                 </li>
@@ -198,6 +233,7 @@ export function MapaDeCapturas({
         <ListaDelGrupo
           grupo={grupo}
           cuentas={porZona}
+          bajas={bajas}
           onElegir={(hija) => {
             setGrupo(null);
             setAbierta(hija);
@@ -210,6 +246,7 @@ export function MapaDeCapturas({
         <FichaDeZona
           zona={abierta}
           capturas={capturas.filter((c) => c.zoneId === abierta.id)}
+          caidos={bajas[abierta.id] ?? 0}
           onClose={() => setAbierta(null)}
         />
       ) : null}
@@ -220,10 +257,13 @@ export function MapaDeCapturas({
 function FilaDeZona({
   zona,
   capturas,
+  caidos,
   onAbrir,
 }: {
   zona: ZonaDelMapa;
   capturas: CapturaApuntada[];
+  /** Pokémon tuyos que han caído ahí, según el cementerio */
+  caidos: number;
   onAbrir: () => void;
 }) {
   const color = colorDeZona(zona.kind);
@@ -241,6 +281,14 @@ function FilaDeZona({
       <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
         {zona.name}
       </span>
+      {caidos ? (
+        <span
+          title={`Aquí has perdido ${caidos} ${caidos === 1 ? "pokémon" : "pokémon"}`}
+          className="shrink-0 rounded-md bg-red-500/10 px-1.5 py-0.5 text-xs text-red-300"
+        >
+          💀{caidos > 1 ? ` ${caidos}` : ""}
+        </span>
+      ) : null}
       {capturas.length ? (
         <span className="flex shrink-0 -space-x-2">
           {capturas.slice(0, 3).map((captura) =>
@@ -285,11 +333,13 @@ function FilaDeZona({
 function ListaDelGrupo({
   grupo,
   cuentas,
+  bajas,
   onElegir,
   onClose,
 }: {
   grupo: ZonaDelMapa;
   cuentas: Record<string, CuentaDeZona>;
+  bajas: Record<string, number>;
   onElegir: (hija: ZonaDelMapa) => void;
   onClose: () => void;
 }) {
@@ -348,6 +398,11 @@ function ListaDelGrupo({
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
                     {hija.name}
                   </span>
+                  {bajas[hija.id] ? (
+                    <span className="shrink-0 text-xs text-red-300">
+                      💀{bajas[hija.id] > 1 ? ` ${bajas[hija.id]}` : ""}
+                    </span>
+                  ) : null}
                   <span className="shrink-0 text-xs text-slate-500">
                     {cuantas.hechas
                       ? `${cuantas.hechas} apuntado${cuantas.hechas === 1 ? "" : "s"}`
@@ -373,10 +428,13 @@ function ListaDelGrupo({
 function FichaDeZona({
   zona,
   capturas,
+  caidos,
   onClose,
 }: {
   zona: ZonaDelMapa;
   capturas: CapturaApuntada[];
+  /** Pokémon tuyos que han caído ahí, según el cementerio */
+  caidos: number;
   onClose: () => void;
 }) {
   const [estado, apuntar] = useActionState<FormState, FormData>(
@@ -427,6 +485,15 @@ function FichaDeZona({
             ✕
           </button>
         </div>
+
+        {/* Lo que has perdido ahí sale del cementerio, no de aquí: por eso solo
+            se cuenta y no se puede tocar desde esta ventana */}
+        {caidos ? (
+          <p className="mb-3 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-sm text-red-200">
+            💀 Aquí has perdido {caidos} {caidos === 1 ? "pokémon" : "pokémon"}.{" "}
+            <span className="text-red-300/70">Se apunta en la Caja.</span>
+          </p>
+        ) : null}
 
         {capturas.length ? (
           <ul className="mb-4 space-y-2">

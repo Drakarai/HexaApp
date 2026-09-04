@@ -29,10 +29,13 @@ export function MobileTabBar({
   primary,
   groups,
   user,
+  avisos = {},
 }: {
   primary: NavItem[];
   groups: NavGroup[];
   user: MobileUser;
+  /** Qué grupos tienen algo nuevo desde tu última visita */
+  avisos?: Record<string, boolean>;
 }) {
   const pathname = usePathname();
   /** El nombre del grupo abierto, o null si no hay hoja */
@@ -189,7 +192,12 @@ export function MobileTabBar({
                 aria-expanded={abierto === grupo.label}
                 className="pestana"
               >
-                <Pastilla icono={grupo.icon} encendida={encendida} />
+                <Pastilla
+                  icono={grupo.icon}
+                  encendida={encendida}
+                  // Estando dentro no se avisa: lo estás viendo
+                  aviso={Boolean(avisos[grupo.label]) && !dentroDe(grupo)}
+                />
                 <Rotulo encendido={encendida}>{grupo.label}</Rotulo>
               </button>
             );
@@ -204,16 +212,34 @@ export function MobileTabBar({
  * El icono dentro de una pastilla que se enciende: es lo que distingue la
  * pestaña activa de un vistazo, mucho antes de leer el rótulo.
  */
-function Pastilla({ icono, encendida }: { icono: string; encendida: boolean }) {
+function Pastilla({
+  icono,
+  encendida,
+  aviso = false,
+}: {
+  icono: string;
+  encendida: boolean;
+  aviso?: boolean;
+}) {
   return (
-    <span
-      aria-hidden
-      className={cx(
-        "flex h-7 w-full max-w-14 items-center justify-center rounded-full text-lg leading-none transition",
-        encendida && "bg-brand-600/25",
-      )}
-    >
-      {icono}
+    <span className="relative flex w-full justify-center">
+      <span
+        aria-hidden
+        className={cx(
+          "flex h-7 w-full max-w-14 items-center justify-center rounded-full text-lg leading-none transition",
+          encendida && "bg-brand-600/25",
+        )}
+      >
+        {icono}
+      </span>
+      {/* El punto va pegado al icono y no al rótulo: en una barra de cuatro
+          pestañas el rótulo se trunca, y el aviso se perdería con él */}
+      {aviso ? (
+        <span
+          aria-label="Hay algo nuevo"
+          className="absolute right-1/2 top-0 h-2.5 w-2.5 translate-x-[1.05rem] rounded-full border-2 border-ink-900 bg-amber-400"
+        />
+      ) : null}
     </span>
   );
 }
