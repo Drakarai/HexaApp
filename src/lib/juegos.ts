@@ -25,7 +25,13 @@ export type Juego = {
   name: string;
   /** Cómo se agrupan en el desplegable */
   grupo: string;
+  /** La región principal: donde empieza el juego y la que sale por defecto */
   region: Region;
+  /**
+   * Otras regiones jugables del mismo juego. De momento solo la 2ª generación
+   * y sus remakes, que traen **Kanto entero** después de la Liga de Johto.
+   */
+  extra?: Region[];
   /** El tema de `themes.ts` que le pega, para proponerlo al crear la edición */
   tema?: string;
 };
@@ -45,9 +51,9 @@ export const JUEGOS: Juego[] = [
   { id: "azul", name: "Azul", grupo: "1ª generación", region: "kanto", tema: "azul" },
   { id: "amarillo", name: "Amarillo", grupo: "1ª generación", region: "kanto", tema: "amarillo" },
 
-  { id: "oro", name: "Oro", grupo: "2ª generación", region: "johto", tema: "oro" },
-  { id: "plata", name: "Plata", grupo: "2ª generación", region: "johto", tema: "plata" },
-  { id: "cristal", name: "Cristal", grupo: "2ª generación", region: "johto", tema: "cristal" },
+  { id: "oro", name: "Oro", grupo: "2ª generación", region: "johto", extra: ["kanto"], tema: "oro" },
+  { id: "plata", name: "Plata", grupo: "2ª generación", region: "johto", extra: ["kanto"], tema: "plata" },
+  { id: "cristal", name: "Cristal", grupo: "2ª generación", region: "johto", extra: ["kanto"], tema: "cristal" },
 
   { id: "rubi", name: "Rubí", grupo: "3ª generación", region: "hoenn", tema: "rubi" },
   { id: "zafiro", name: "Zafiro", grupo: "3ª generación", region: "hoenn", tema: "zafiro" },
@@ -73,8 +79,8 @@ export const JUEGOS: Juego[] = [
   // Los remakes, aparte pero con la región del original
   { id: "rojo-fuego", name: "Rojo Fuego", grupo: "Remakes", region: "kanto", tema: "rojo" },
   { id: "verde-hoja", name: "Verde Hoja", grupo: "Remakes", region: "kanto", tema: "azul" },
-  { id: "heartgold", name: "HeartGold", grupo: "Remakes", region: "johto", tema: "oro" },
-  { id: "soulsilver", name: "SoulSilver", grupo: "Remakes", region: "johto", tema: "plata" },
+  { id: "heartgold", name: "HeartGold", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "oro" },
+  { id: "soulsilver", name: "SoulSilver", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "plata" },
   { id: "rubi-omega", name: "Rubí Omega", grupo: "Remakes", region: "hoenn", tema: "rubi" },
   { id: "zafiro-alfa", name: "Zafiro Alfa", grupo: "Remakes", region: "hoenn", tema: "zafiro" },
   { id: "lets-go-pikachu", name: "Let's Go, Pikachu!", grupo: "Remakes", region: "kanto", tema: "amarillo" },
@@ -87,9 +93,22 @@ export function juegoPorId(id: string | null | undefined) {
   return id ? POR_ID.get(id) : undefined;
 }
 
-/** La región en la que se juega una edición, si tiene juego elegido. */
+/** La región principal de una edición, si tiene juego elegido. */
 export function regionDelJuego(id: string | null | undefined) {
   return juegoPorId(id)?.region ?? null;
+}
+
+/**
+ * **Todas** las regiones que se juegan en esa edición, la principal primero.
+ *
+ * Casi siempre es una sola. La 2ª generación y sus remakes son la excepción:
+ * después de la Liga de Johto se abre Kanto entero, con sus dieciséis medallas
+ * y sus rutas, así que ahí hacen falta los dos mapas.
+ */
+export function regionesDelJuego(id: string | null | undefined): Region[] {
+  const juego = juegoPorId(id);
+  if (!juego) return [];
+  return [juego.region, ...(juego.extra ?? [])];
 }
 
 export function nombreDeRegion(slug: string) {

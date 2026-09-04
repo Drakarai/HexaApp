@@ -12,7 +12,7 @@ import { EmptyState } from "@/components/ui";
 import { cx, formatDate, toDateInputValue } from "@/lib/utils";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { getZonasMasMortiferas, getZonasParaElegir } from "@/lib/mapas";
-import { regionDelJuego } from "@/lib/juegos";
+import { regionesDelJuego } from "@/lib/juegos";
 import { colorDeZona } from "@/lib/zonas";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
@@ -42,11 +42,11 @@ export default async function DeathsPage({
     Math.max(Number(ver) || POR_TANDA, POR_TANDA),
     POR_TANDA * 20,
   );
-  const region = regionDelJuego(competition.gameId);
+  // Todas las regiones del juego: en la 2ª generación se muere igual en Kanto
   const [canManage, participants, zonas, mortiferas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getParticipants(competition.id),
-    region ? getZonasParaElegir(region) : [],
+    getZonasParaElegir(regionesDelJuego(competition.gameId)),
     getZonasMasMortiferas(competition.id),
   ]);
   const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));

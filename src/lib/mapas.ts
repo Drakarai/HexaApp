@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
-import { REGIONES, regionDelJuego, type Region } from "@/lib/juegos";
+import { REGIONES, regionesDelJuego, type Region } from "@/lib/juegos";
 import { verticesDeZona } from "@/lib/zonas";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 
@@ -160,58 +160,80 @@ export type ZonaParaElegir = {
   label: string;
   /** Su tipo, que es por lo que se agrupan en el desplegable */
   kind: string;
+  /** De qué región es. Solo se enseña cuando la edición tiene más de una. */
+  region: string;
 };
 
 /**
- * Todas las zonas de una región, padres e hijas, para elegir una.
+ * Todas las zonas de unas regiones, padres e hijas, para elegir una.
  *
  * A diferencia del mapa de capturas, aquí **sí entran las que tienen hijas**:
  * capturar en "Ciudad Trigal" no significa nada, pero morirse ahí sí.
  *
- * No crea la región si no existe —para eso está `getMapa`—: si no hay fila,
- * tampoco hay zonas que ofrecer.
+ * Acepta varias regiones porque un juego puede tener más de una —la 2ª
+ * generación trae Kanto además de Johto—, y en el cementerio hace falta poder
+ * decir que algo cayó en cualquiera de las dos.
+ *
+ * No crea las regiones que no existan —para eso está `getMapa`—: si no hay
+ * fila, tampoco hay zonas que ofrecer.
  */
 export async function getZonasParaElegir(
-  slug: string,
+  slugs: string[],
 ): Promise<ZonaParaElegir[]> {
-  const region = await prisma.mapRegion.findUnique({
-    where: { slug },
+  if (!slugs.length) return [];
+
+  const regiones = await prisma.mapRegion.findMany({
+    where: { slug: { in: slugs } },
     omit: { image: true },
     include: { zones: { select: { id: true, name: true, kind: true, parentId: true } } },
   });
-  if (!region) return [];
+  if (!regiones.length) return [];
 
-  const nombres = new Map(region.zones.map((zona) => [zona.id, zona.name]));
+  const todas = regiones.flatMap((region) =>
+    region.zones.map((zona) => ({
+      ...zona,
+      region: region.name,
+      // El sitio de su región en la lista que pidieron: la principal va antes
+      // que la que se abre a mitad de partida
+      orden: slugs.indexOf(region.slug),
+    })),
+  );
+  const nombres = new Map(todas.map((zona) => [zona.id, zona.name]));
 
-  return region.zones
+  return todas
+    .sort(
+      (a, b) =>
+        a.orden - b.orden ||
+        // Con número: sin esto la "Ruta 10" se colaba entre la 1 y la 2
+        a.name.localeCompare(b.name, "es", { numeric: true }),
+    )
     .map((zona) => {
       const padre = zona.parentId ? nombres.get(zona.parentId) : null;
       return {
         id: zona.id,
         label: padre ? `${padre} › ${zona.name}` : zona.name,
         kind: zona.kind,
+        region: zona.region,
       };
-    })
-    // Con número: sin esto la "Ruta 10" se colaba entre la 1 y la 2
-    .sort((a, b) => a.label.localeCompare(b.label, "es", { numeric: true }));
+    });
 }
 
 /**
- * Comprueba que una zona es del mapa que le toca a esa edición. Sin esto,
- * cualquiera podría colgar su baja de una zona de otra región mandando el
- * formulario a mano.
+ * Comprueba que una zona es de alguno de los mapas que le tocan a esa edición.
+ * Sin esto, cualquiera podría colgar su baja de una zona de otra región
+ * mandando el formulario a mano.
  */
 export async function zonaValidaParaCompeticion(
   zoneId: string,
   gameId: string | null,
 ): Promise<boolean> {
-  const slug = regionDelJuego(gameId);
-  if (!slug) return false;
+  const slugs = regionesDelJuego(gameId);
+  if (!slugs.length) return false;
   const zona = await prisma.mapZone.findUnique({
     where: { id: zoneId },
     select: { region: { select: { slug: true } } },
   });
-  return zona?.region.slug === slug;
+  return Boolean(zona && slugs.includes(zona.region.slug as Region));
 }
 
 /**

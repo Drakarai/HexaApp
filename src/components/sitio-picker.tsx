@@ -40,15 +40,34 @@ export function SitioPicker({
     defaultZoneId ?? (defaultLocation ? OTRO : ""),
   );
 
-  const grupos = TIPOS_DE_ZONA.map((tipo) => ({
-    nombre: tipo.nombre,
-    zonas: zonas.filter((zona) => zona.kind === tipo.id),
-  })).filter((grupo) => grupo.zonas.length);
+  /**
+   * Cómo se reparten las opciones del desplegable.
+   *
+   * Con una sola región manda el **tipo** de sitio (Rutas, Ciudades, Cuevas…),
+   * que es lo que ayuda a encontrar algo entre cincuenta. Cuando la edición
+   * tiene dos —Johto y Kanto en la 2ª generación— manda la **región**: saber
+   * en cuál estás importa más, y dentro de cada una las rutas ya salen
+   * ordenadas por número.
+   */
+  const regiones = [...new Set(zonas.map((zona) => zona.region))];
+  const porRegion = regiones.length > 1;
+
+  const grupos = porRegion
+    ? regiones.map((region) => ({
+        nombre: region,
+        zonas: zonas.filter((zona) => zona.region === region),
+      }))
+    : TIPOS_DE_ZONA.map((tipo) => ({
+        nombre: tipo.nombre,
+        zonas: zonas.filter((zona) => zona.kind === tipo.id),
+      })).filter((grupo) => grupo.zonas.length);
 
   // Las de un tipo que ya no existe no se pueden quedar fuera de la lista
-  const sueltas = zonas.filter(
-    (zona) => !TIPOS_DE_ZONA.some((tipo) => tipo.id === zona.kind),
-  );
+  const sueltas = porRegion
+    ? []
+    : zonas.filter(
+        (zona) => !TIPOS_DE_ZONA.some((tipo) => tipo.id === zona.kind),
+      );
 
   return (
     <div>

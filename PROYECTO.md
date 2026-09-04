@@ -8,7 +8,8 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 4 de septiembre de 2026 (el sitio de la baja se elige del
-mapa, botón flotante para apuntar y aviso de novedades en las pestañas).
+mapa, botón flotante para apuntar, aviso de novedades en las pestañas y Kanto
+como segunda región de la 2ª generación).
 
 ---
 
@@ -41,7 +42,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. **Privado como las notas**: no lo ven ni los administradores. |
+| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
@@ -770,6 +771,30 @@ Al guardar, la zona manda: si viene una válida, el texto se descarta. Y se
 comprueba en el servidor que la zona sea de la región de esa edición, porque el
 desplegable solo ofrece las que tocan pero el formulario se puede mandar a mano.
 
+**Un juego puede tener varias regiones, y la 2ª generación tiene dos.** En Oro,
+Plata, Cristal, HeartGold y SoulSilver, al ganar la Liga de Johto se abre
+**Kanto entero**, con sus ocho medallas y sus rutas, así que atarlos a un solo
+mapa dejaba fuera media partida. `Juego` tiene ahora `region` (la principal, la
+de empezar) y `extra`, y `regionesDelJuego()` las devuelve juntas. De ahí sale
+todo lo demás: el mapa de capturas saca una fila de pestañas, el desplegable de
+"dónde cayó" ofrece las zonas de las dos y la comprobación del servidor acepta
+cualquiera de ellas.
+
+Cuál se está viendo va en la dirección (`?region=kanto`) y no en un estado del
+navegador: así el enlace se puede guardar y no hay que traerse las dos regiones
+a la vez. Las capturas y las bajas se filtran a las zonas del mapa que se está
+viendo, para que el "4 de 36 zonas" hable de lo que hay delante y no de las dos
+mezcladas.
+
+El desplegable de "dónde cayó" cambia de criterio según el caso: con una sola
+región agrupa por **tipo** de sitio (Rutas, Ciudades, Cuevas…), que es lo que
+ayuda a encontrar algo entre cincuenta; con dos agrupa por **región**, porque
+entonces saber en cuál estás importa más.
+
+Kanto tiene sus 44 zonas escritas de fábrica en `lib/mapas-de-fabrica.ts`, pero
+**hay que pedirlas con el botón** de Administración → Mapas → Kanto, como Johto:
+no se rellena solo, para que borrar una zona a conciencia no la haga volver.
+
 **Las bajas se pintan en el mapa con una chapa, no con una calavera.** Se probó
 con el emoji y no se lee: un mapa de región entero cabe en la pantalla de un
 móvil, así que cada zona mide cuatro píxeles y el dibujo se convierte en una
@@ -884,7 +909,8 @@ Piezas con truco:
   lista del perfil, compartida por el perfil público y por Mi perfil.
 - `lib/mapas.ts` — los mapas y las capturas. `lib/detectar-zonas.ts` saca las
   zonas de los colores de la imagen de fondo, `lib/mapas-de-fabrica.ts` es la
-  semilla de nombres de Johto, `lib/juegos.ts` la lista de juegos y su región, y
+  semilla de nombres de Johto y de Kanto, `lib/juegos.ts` la lista de juegos y
+  sus regiones —`regionesDelJuego()`, porque la 2ª generación tiene dos—, y
   `lib/zonas.ts` los tipos, las formas y sus colores —**este
   último existe porque un módulo con `"use client"` no puede exportar datos a un
   componente de servidor**: Next devuelve una referencia al cliente en vez del
@@ -1051,3 +1077,6 @@ lugar de destruir datos, y hay que avisar antes.
     pokémon, y el cementerio enseña las rutas donde más gente cae.
 31. **Botón flotante para apuntar** —baja, captura o gimnasio, desde cualquier
     pantalla— y **aviso de novedades** en las pestañas.
+32. **Kanto como segunda región**: en la 2ª generación y sus remakes el mapa de
+    capturas tiene pestañas de Johto y Kanto, y se puede morir y capturar en
+    las dos.
