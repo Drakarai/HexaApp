@@ -8,8 +8,8 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 4 de septiembre de 2026 (el sitio de la baja se elige del
-mapa, botón flotante para apuntar, aviso de novedades en las pestañas y Kanto
-como segunda región de la 2ª generación).
+mapa, botón flotante para apuntar, aviso de novedades, Kanto como segunda
+región de la 2ª generación y la calculadora de cobertura de tipos).
 
 ---
 
@@ -44,7 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
-| **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. |
+| **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**. El equipo se guarda y es igual de privado. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
@@ -771,6 +771,33 @@ Al guardar, la zona manda: si viene una válida, el texto se descarta. Y se
 comprueba en el servidor que la zona sea de la región de esa edición, porque el
 desplegable solo ofrece las que tocan pero el formulario se puede mandar a mano.
 
+**La cobertura de tipos usa la tabla de la generación del locke, no la de hoy.**
+Es la diferencia entre una herramienta que sirve y una que engaña: en Johto el
+Acero resiste al Fantasma y al Siniestro, el tipo Hada no existe y Clefairy es
+Normal. `scripts/generate-tipos.ts` baja de PokéAPI también los ficheros de
+"cómo era antes" (`type_efficacy_past`, `pokemon_types_past`) y deja calculada
+**una tabla por generación**, más los tipos de cada pokémon en cada tramo. No
+hay ni un valor escrito a mano, y el propio script comprueba siete casos
+conocidos antes de escribir el fichero.
+
+De la generación se encarga `generacionDelJuego()`, que la saca de la región
+principal, así que HeartGold cuenta como 2ª aunque el juego sea de la 4ª. Da
+igual: está comprobado en los datos que **la tabla no cambió entre la 2ª y la
+5ª**, ni los tipos de ningún pokémon en ese tramo.
+
+Es una tabla **defensiva** a propósito: responde a "si me sacan un ataque de
+Fuego, ¿a quién le duele?". Por eso en la fila del Fuego un Charizard sale ×½ y
+un Durant ×4. El resumen de cada fila no es una nota media sino cuántos son
+débiles y cuántos resisten, que es lo que se mira al preparar un combate, y las
+filas salen ordenadas por peligro para que lo que te mata esté arriba.
+
+Vive en la pantalla de las notas porque se usa **mirando las notas**, y es igual
+de privada: el equipo se guarda por participante y no hay ninguna consulta que
+devuelva el de otro. Se guarda solo, 800 ms después de dejar de tocar, para no
+escribir en la base por cada letra. De momento solo la forma normal de cada
+pokémon: las de Alola y las megas cambian de tipo, pero en un locke de Johto no
+pintan nada y el desplegable de formas ensuciaba los seis huecos.
+
 **Un juego puede tener varias regiones, y la 2ª generación tiene dos.** En Oro,
 Plata, Cristal, HeartGold y SoulSilver, al ganar la Liga de Johto se abre
 **Kanto entero**, con sus ocho medallas y sus rutas, así que atarlos a un solo
@@ -927,6 +954,11 @@ Piezas con truco:
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
+- `lib/tipos.ts` — los tipos, la tabla de efectividad **de cada generación** y
+  qué es cada pokémon en cada una. Los datos salen de
+  `scripts/generate-tipos.ts` a `lib/tipos.json` (unos 30 KB); este módulo solo
+  consulta. `components/cobertura-de-tipos.tsx` es la calculadora, y vive dentro
+  de `notas/page.tsx`.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
   es el disparador del resumen; `admin/backups.tsx`, la pantalla.
 - `lib/youtube.ts` — reconoce enlaces de YouTube y saca el identificador para
@@ -1080,3 +1112,6 @@ lugar de destruir datos, y hay que avisar antes.
 32. **Kanto como segunda región**: en la 2ª generación y sus remakes el mapa de
     capturas tiene pestañas de Johto y Kanto, y se puede morir y capturar en
     las dos.
+33. **Cobertura de tipos**: dentro de Mis notas, un equipo de seis y la tabla de
+    lo que le entra a cada uno, con la tabla de tipos de la generación que se
+    esté jugando.

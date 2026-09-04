@@ -436,6 +436,7 @@ model Participant {
   bag          BagEntry[]
   bagUses      BagUse[]
   captures     Capture[]
+  equipoDeTipos TypeTeam?
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -589,6 +590,28 @@ model Note {
   subject     Participant? @relation("NoteSubject", fields: [subjectId], references: [id], onDelete: Cascade)
 
   @@index([competitionId, authorId])
+}
+
+/**
+ * El equipo de seis que alguien está probando en la calculadora de tipos.
+ *
+ * Vive en la pantalla de las notas y es **igual de privado**: se consulta y se
+ * guarda siempre por su participante, no hay ninguna pantalla que enseñe el de
+ * otro y los administradores tampoco lo ven. Uno por persona y edición: es un
+ * borrador de trabajo, no una colección.
+ */
+model TypeTeam {
+  id            String   @id @default(cuid())
+  participantId String   @unique
+  /**
+   * Los huecos, en JSON: `[{"id":6,"nombre":"Charizard"}, …]`. Puede haber
+   * menos de seis. El `id` es el de la forma en la pokédex, que es con lo que
+   * se buscan sus tipos.
+   */
+  members       String   @default("[]")
+  updatedAt     DateTime @updatedAt
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 }
 
 // ---------------------------------------------------------------------------

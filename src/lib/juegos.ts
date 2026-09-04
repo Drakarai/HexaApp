@@ -111,6 +111,20 @@ export function regionesDelJuego(id: string | null | undefined): Region[] {
   return [juego.region, ...(juego.extra ?? [])];
 }
 
+/**
+ * La generación de una edición, que es la que manda en la tabla de tipos.
+ *
+ * Sale de la región principal, así que los remakes cuentan como el original:
+ * HeartGold da 2ª. Da igual que el juego sea de la 4ª, porque **la tabla de
+ * tipos no cambió entre la 2ª y la 5ª** (está comprobado en los datos), ni los
+ * tipos de ningún pokémon en ese tramo.
+ */
+export function generacionDelJuego(id: string | null | undefined) {
+  const slug = regionDelJuego(id);
+  if (!slug) return null;
+  return REGIONES.find((region) => region.slug === slug)?.generacion ?? null;
+}
+
 export function nombreDeRegion(slug: string) {
   return REGIONES.find((region) => region.slug === slug)?.nombre ?? slug;
 }

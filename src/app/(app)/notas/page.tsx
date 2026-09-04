@@ -6,6 +6,11 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx, formatDateTime } from "@/lib/utils";
+import { CoberturaDeTipos } from "@/components/cobertura-de-tipos";
+import type { MiembroDelEquipo } from "@/app/actions/tipos";
+import { getMyParticipant } from "@/lib/competition";
+import { generacionDelJuego, nombreDelJuego } from "@/lib/juegos";
+import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
 import { NewNoteForm, NoteCard } from "./note-forms";
 
 export const metadata = { title: "Mis notas" };
@@ -21,6 +26,24 @@ export default async function NotesPage({
 
   const { sobre } = await searchParams;
   const participants = await getParticipants(competition.id);
+  const yo = await getMyParticipant(competition.id, user.id);
+
+  /**
+   * El equipo de la calculadora de tipos. Se pide por participante, igual que
+   * las notas: no hay forma de leer el de otro.
+   */
+  const equipo = yo
+    ? await prisma.typeTeam.findUnique({ where: { participantId: yo.id } })
+    : null;
+  let miEquipo: MiembroDelEquipo[] = [];
+  try {
+    // Es JSON escrito por nosotros, pero si alguna vez se corrompe es mejor
+    // salir con el equipo vacío que reventar la pantalla de las notas
+    const leido = equipo ? JSON.parse(equipo.members) : [];
+    if (Array.isArray(leido)) miEquipo = leido;
+  } catch {
+    miEquipo = [];
+  }
   const selected = participants.find((participant) => participant.id === sobre);
   const scope = sobre === "general" || !selected ? "general" : selected.id;
 
@@ -50,6 +73,31 @@ export default async function NotesPage({
         title="Mis notas"
         subtitle="Cuaderno privado para planear estrategias. Nadie más puede leer estas notas, ni siquiera los administradores."
       />
+
+      {/* Va antes que las notas y plegada: se abre cuando toca planear, y al
+          cerrarla el cuaderno vuelve a estar arriba del todo */}
+      {yo ? (
+        <details className="card group mb-5">
+          <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
+            <span className="mr-2 inline-block transition group-open:rotate-90">
+              ▸
+            </span>
+            🛡️ Cobertura de tipos
+            <span className="ml-2 font-normal text-slate-500">
+              — monta un equipo de 6 y mira qué le hace daño
+            </span>
+          </summary>
+          <div className="mt-4">
+            <CoberturaDeTipos
+              generacion={
+                generacionDelJuego(competition.gameId) ?? GENERACION_POR_DEFECTO
+              }
+              juego={nombreDelJuego(competition.gameId, competition.game)}
+              inicial={miEquipo}
+            />
+          </div>
+        </details>
+      ) : null}
 
       <div className="mb-5 flex flex-wrap gap-2">
         <Link
