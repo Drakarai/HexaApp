@@ -1,10 +1,15 @@
 import Link from "next/link";
 import { requireUser, isAdmin } from "@/lib/auth";
 import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
-import { getFinalFourState } from "@/lib/final-four";
+import {
+  getFinalFourState,
+  MINIMO_DE_JUGADORES,
+  NOMBRE_POR_DEFECTO,
+} from "@/lib/final-four";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
+import { cx } from "@/lib/utils";
 import { resetBracketAction } from "@/app/actions/final-four";
 import { BracketCard } from "./bracket";
 import { GenerateBracketForm } from "./generate-form";
@@ -21,17 +26,35 @@ export default async function FinalFourPage() {
     getFinalFourState(competition.id),
   ]);
 
+  /**
+   * El nombre y la explicación salen del formato, que depende de cuántos
+   * sigan jugando: "Final Four" de cuatro para arriba y "Jornada Final" de
+   * tres para abajo. Ver lib/formatos-finales.ts.
+   */
+  const formato = "formato" in state ? state.formato : null;
+  const nombre = formato?.nombre ?? NOMBRE_POR_DEFECTO;
+
   return (
     <>
       <PageHeader
-        title="Final Four"
-        subtitle="Los dos primeros esperan en semifinales. Del 3º al 6º se juegan las otras dos plazas. Quien gane la final es el campeón oficial del locke."
+        title={nombre}
+        subtitle={
+          formato?.explicacion ??
+          "El final del locke. Se decide entre los que mejor hayan quedado."
+        }
       />
+
+      {state.status === "POCA_GENTE" ? (
+        <EmptyState
+          title="No hay final que jugar"
+          hint={`Queda${state.activos === 1 ? "" : "n"} ${state.activos} jugador${state.activos === 1 ? "" : "es"} en el locke: hacen falta al menos ${MINIMO_DE_JUGADORES}.`}
+        />
+      ) : null}
 
       {state.status === "SIN_JORNADAS" ? (
         <EmptyState
           title="Todavía no hay jornadas"
-          hint="La Final Four se desbloquea cuando estén jugados todos los combates de todas las jornadas."
+          hint={`La ${nombre} se desbloquea cuando estén jugados todos los combates de todas las jornadas.`}
         />
       ) : null}
 
@@ -69,12 +92,17 @@ export default async function FinalFourPage() {
         <GenerateBracketForm
           competitionId={competition.id}
           canManage={canManage}
-          standings={state.standings.slice(0, 6).map((row) => ({
-            participantId: row.participantId,
-            displayName: row.displayName,
-            points: row.points,
-            deaths: row.deaths,
-          }))}
+          nombre={state.formato.nombre}
+          esperan={state.formato.esperan}
+          standings={state.standings
+            .filter((row) => !row.retirado)
+            .slice(0, state.formato.jugadores)
+            .map((row) => ({
+              participantId: row.participantId,
+              displayName: row.displayName,
+              points: row.points,
+              deaths: row.deaths,
+            }))}
         />
       ) : null}
 
@@ -110,8 +138,17 @@ export default async function FinalFourPage() {
             </section>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-3">
-            {(["Cruces", "Semifinales", "Final"] as const).map((round) => (
+          <div
+            className={cx(
+              "grid gap-4",
+              state.formato.rondas.length === 3
+                ? "lg:grid-cols-3"
+                : state.formato.rondas.length === 2
+                  ? "lg:grid-cols-2"
+                  : "lg:grid-cols-1",
+            )}
+          >
+            {state.formato.rondas.map((round) => (
               <section key={round}>
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
                   {round}
@@ -135,7 +172,7 @@ export default async function FinalFourPage() {
           {canManage ? (
             <form action={resetBracketAction} className="mt-6">
               <input type="hidden" name="competitionId" value={competition.id} />
-              <ConfirmSubmit message="¿Borrar el cuadro entero y volver a sembrarlo con la clasificación de ahora?">
+              <ConfirmSubmit message="¿Borrar el cuadro entero y volver a sembrarlo con la clasificación y los jugadores de ahora?">
                 Rehacer el cuadro
               </ConfirmSubmit>
             </form>

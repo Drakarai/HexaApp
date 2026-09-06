@@ -23,16 +23,26 @@ export function BracketCard({
     <article
       className={cx(
         "rounded-xl border p-3 transition",
-        decided
-          ? "border-emerald-500/25 bg-emerald-500/[0.04]"
-          : match.ready
-            ? "border-white/10 bg-white/[0.04]"
-            : "border-dashed border-white/10 bg-white/[0.02]",
+        // El tercero del mejor de tres, cuando la serie ya está decidida, se
+        // apaga del todo: no invita a jugar algo que ya no hace falta
+        match.sobra
+          ? "border-dashed border-white/5 bg-white/[0.01] opacity-50"
+          : decided
+            ? "border-emerald-500/25 bg-emerald-500/[0.04]"
+            : match.ready
+              ? "border-white/10 bg-white/[0.04]"
+              : "border-dashed border-white/10 bg-white/[0.02]",
       )}
     >
       <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
         {match.title}
       </p>
+
+      {match.sobra ? (
+        <p className="mb-2 text-[11px] text-slate-500">
+          No hace falta: la serie ya está decidida.
+        </p>
+      ) : null}
 
       <div className="space-y-1.5">
         <Side

@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 6 de septiembre de 2026 (retirar a un participante que
-se va a mitad del locke, y dar un combate suelto por retirada).
+Última actualización: 6 de septiembre de 2026 (el formato del final del locke
+depende de cuántos jugadores queden activos: de seis a dos).
 
 ---
 
@@ -46,8 +46,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
-| **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
-| **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
+| **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
+| **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -594,9 +594,49 @@ progreso: hasta entonces no se sabe cómo queda la tabla. Cuando están todos,
 un administrador genera el cuadro y ahí se **congela la clasificación** en
 `FinalFour.seeds`; si después se corrige un punto, el cuadro no se recoloca a
 mitad del torneo. Los emparejamientos no se guardan, se deducen de la siembra y
-de quién va ganando (3º-6º y 4º-5º en cruces, los ganadores contra 1º y 2º en
-semifinales, y la final entre esos dos), así que el cuadro no puede quedar
-incoherente. Cambiar un resultado limpia los de las rondas siguientes.
+de quién va ganando, así que el cuadro no puede quedar incoherente. Cambiar un
+resultado limpia los de las rondas siguientes.
+
+**El formato del final lo decide cuánta gente queda jugando.** El locke nació
+para seis, pero alguien se retiró y el cuadro de seis dejó de tener sentido. Hay
+cinco formatos, uno por cada número de jugadores **activos** —los retirados no
+cuentan—, en `lib/formatos-finales.ts`:
+
+| Quedan | Cómo se juega | Esperan |
+| --- | --- | --- |
+| 6 o más | Cruces 3º-6º y 4º-5º, semifinales contra 1º y 2º, y final. | 1º y 2º |
+| 5 | Cruces 2º-5º y 3º-4º, los ganadores se juegan la otra plaza, y la final contra el 1º. | 1º |
+| 4 | Torneo normal: 1º-4º, 2º-3º y final. | nadie |
+| 3 | El 1º pasa directo y se juegan el 2º y el 3º la otra plaza. | 1º |
+| 2 | Al mejor de tres. | nadie |
+
+Con uno solo no hay nada que jugar y la pantalla lo dice.
+
+- **De cuatro para arriba se llama "Final Four"; de tres para abajo, "Jornada
+  Final".** Con tres personas ya no hay cuatro finalistas y llamarlo Final Four
+  sería mentir. El nombre sale del formato y lo usan la pantalla, el menú de la
+  izquierda, la hoja del móvil y el hall de la fama: no está escrito a mano en
+  ningún sitio.
+- **El formato se congela al generar el cuadro** (`FinalFour.jugadores`), igual
+  que la siembra. Si alguien se retira con la final ya empezada, los combates
+  jugados tienen que seguir significando lo mismo; sin guardarlo, el cuadro
+  cambiaría de forma a mitad y los resultados apuntados quedarían colgando.
+- **Los formatos son datos, no código.** Cada uno es una lista de plantillas de
+  combate que dicen de dónde sale cada lado: un puesto de la siembra
+  (`{ puesto: 2 }`) o el ganador de otra llave (`{ ganadorDe: "SEMI_A" }`). De
+  ahí se deduce solo qué llaves hay que crear y **qué rondas hay que limpiar** al
+  corregir un resultado (`llavesPosteriores`), en vez de una lista de
+  dependencias escrita a mano que se quedaría vieja al añadir un formato.
+- **Cuántos se clasifican directos también sale del formato** (`esperan`), y es
+  lo que decide a quién le pone la medallita la clasificación: con seis son dos,
+  con cinco o tres es uno, y con cuatro o dos no es ninguno, porque juegan todos
+  desde el principio.
+- **El mejor de tres se cuenta por victorias, no por llaves.** El campeón es el
+  primero que gana dos, así que el tercer combate solo se juega si hay empate a
+  uno: si alguien gana los dos primeros, ese tercero se enseña apagado con un
+  "no hace falta" en vez de invitando a jugarlo.
+- Añadir mañana un formato distinto es escribir una entrada más en esa tabla:
+  ni la pantalla, ni las acciones, ni la clasificación hay que tocarlas.
 
 **El hall de la fama se abre al haber campeón.** Cada jugador registra el
 equipo de 6 con el que terminó, con el mismo buscador de especie, y se ordena
@@ -917,8 +957,9 @@ es algo que ver sino algo que hacer. Se apaga al votar.
 
 - **Clasificación y desempates**: puntos → menos pokémon muertos → mejor
   diferencia de pokémon en combates de jornada (y en los retos, si el ajuste de
-  la edición lo permite). Los dos primeros se marcan como clasificados directos
-  a la Final Four.
+  la edición lo permite). Los que se saltan la primera ronda del final se marcan
+  como clasificados directos: dos si quedan seis jugadores, uno con cinco o con
+  tres, y ninguno con cuatro o con dos.
 - **Jornadas**: emparejamientos por pareja, 1 punto por victoria, configurable.
 - **Retos**: combates sueltos con premio y castigo. Cuentan como victoria o
   derrota, nunca como puntos.
@@ -1009,6 +1050,13 @@ Piezas con truco:
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
+- `lib/formatos-finales.ts` — los cinco formatos del final del locke (de seis
+  jugadores a dos) escritos como datos: cómo se llama cada uno, sus rondas, sus
+  combates y cómo se decide el campeón. **No lleva `server-only` a propósito**:
+  lo leen tanto el servidor como los componentes de cliente que pintan el
+  cuadro. `lib/final-four.ts` lo rellena con quién va ganando
+  (`getFinalFourState`) y ofrece `getFormatoFinal()`, una consulta chica para el
+  menú y la clasificación, que corren en cada página.
 - `lib/retiradas.ts` — los combates que se ganan porque el otro se retiró.
   Decide **cuándo** darlos por ganados (al completarse su jornada, no al
   retirar a la persona) y sabe cuáles están esperando, para poder enseñarlos.
@@ -1069,11 +1117,14 @@ píxeles y se ve borroso. Basta con subir uno más grande desde Administración 
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
 píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
 
-**Pendiente hablado y no hecho**: la **Final Four está pensada para seis** y el
-grupo se ha quedado en cinco. Hay que poder elegir el formato del cuadro según
-cuántos jueguen (con cuatro o más), y en general que la aplicación deje de dar
-por hecho que un locke son seis personas: el usuario quiere funciones que
-dependan del número de jugadores. **No tocar sin hablarlo antes.**
+**Pendiente hablado y no hecho**: las **jornadas con cinco jugadores o menos**.
+El final del locke ya se adapta al número de jugadores, pero el calendario de
+jornadas sigue pensado para seis. El usuario dijo que explicaría cómo quiere que
+se emparejen para futuros lockes. **No tocar sin que lo cuente.**
+
+Y por debajo de eso, lo de siempre: que la aplicación deje de dar por hecho que
+un locke son seis personas. `lib/formatos-finales.ts` es el primer paso; el
+usuario quiere más funciones que dependan del número de jugadores.
 
 Ideas comentadas y no hechas:
 
@@ -1186,3 +1237,6 @@ lugar de destruir datos, y hay que avisar antes.
     las jornadas.
 35. **Combates por retirada**: si alguien no se presenta, el combate se da por
     retirada desde Jornadas y el otro gana con diferencia de 3.
+36. **El final del locke se adapta a cuántos queden**: cinco formatos de seis
+    jugadores a dos, elegidos por el número de activos, y con dos nombres
+    —Final Four de cuatro para arriba, Jornada Final de tres para abajo.

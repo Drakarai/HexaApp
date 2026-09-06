@@ -4,6 +4,7 @@ import { requireUser, isAdmin } from "@/lib/auth";
 import { getActiveCompetition, getStandings } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
+import { getFormatoFinal } from "@/lib/final-four";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, EmptyState } from "@/components/ui";
 import { ActivityFeed } from "@/components/activity-feed";
@@ -23,7 +24,7 @@ export default async function DashboardPage() {
 
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -53,6 +54,8 @@ export default async function DashboardPage() {
           competitionId_userId: { competitionId: competition.id, userId: user.id },
         },
       }),
+      // Cuántos llevan medalla de clasificado depende del formato de la final
+      getFormatoFinal(competition.id),
     ]);
 
   const totalPlayers = standings.length;
@@ -130,6 +133,7 @@ export default async function DashboardPage() {
             </Link>
           </div>
           <StandingsTable
+            qualifiedSlots={formatoFinal?.esperan ?? 2}
             rows={standings}
             highlightUserId={user.id}
             editableParticipantIds={

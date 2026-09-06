@@ -12,10 +12,16 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 export function GenerateBracketForm({
   competitionId,
   canManage,
+  nombre,
+  esperan,
   standings,
 }: {
   competitionId: string;
   canManage: boolean;
+  /** "Final Four" o "Jornada Final", según cuántos queden */
+  nombre: string;
+  /** Cuántos se saltan la primera ronda, para decir a dónde va cada uno */
+  esperan: number;
   standings: Array<{
     participantId: string;
     displayName: string;
@@ -38,7 +44,7 @@ export function GenerateBracketForm({
       </h2>
       <p className="mx-auto mt-1 max-w-md text-center text-sm text-slate-400">
         Así queda la clasificación. Al generar el cuadro, estos puestos se
-        congelan: si luego se corrige algún punto, la Final Four no se recoloca.
+        congelan: si luego se corrige algún punto, la {nombre} no se recoloca.
       </p>
 
       <ol className="mx-auto mt-5 max-w-md space-y-1.5">
@@ -54,8 +60,11 @@ export function GenerateBracketForm({
             <span className="text-xs text-slate-500">
               {row.points} pts · {row.deaths} 💀
             </span>
+            {/* A dónde entra cada uno depende del formato: con seis esperan
+                dos, con cinco o tres espera el primero, y con cuatro o dos
+                empiezan todos jugando */}
             <span className="chip">
-              {index < 2 ? "A semifinales" : "A cruces"}
+              {index < esperan ? "Espera turno" : "Juega la primera ronda"}
             </span>
           </li>
         ))}

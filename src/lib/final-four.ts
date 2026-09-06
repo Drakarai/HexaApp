@@ -1,16 +1,21 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { getStandings, type StandingRow } from "@/lib/competition";
+import {
+  formatoParaJugadores,
+  MINIMO_DE_JUGADORES,
+  type FormatoFinal,
+} from "@/lib/formatos-finales";
 
-/** Las cinco llaves del cuadro, en el orden en que se juegan. */
-export const BRACKET_KEYS = [
-  "CROSS_A",
-  "CROSS_B",
-  "SEMI_A",
-  "SEMI_B",
-  "FINAL",
-] as const;
-export type BracketKey = (typeof BRACKET_KEYS)[number];
+/**
+ * El final del locke: la Final Four de siempre cuando hay gente de sobra, y
+ * los formatos más cortos cuando quedan pocos.
+ *
+ * Qué cuadro toca lo decide `lib/formatos-finales.ts` a partir del número de
+ * jugadores **activos** —los retirados no cuentan—, y este módulo solo lo
+ * rellena con quién va ganando. Los emparejamientos no se guardan: se deducen
+ * de la siembra y de los resultados, así que no pueden quedar incoherentes.
+ */
 
 export type BracketPlayer = {
   participantId: string;
@@ -22,8 +27,8 @@ export type BracketPlayer = {
 };
 
 export type BracketMatch = {
-  key: BracketKey;
-  round: "Cruces" | "Semifinales" | "Final";
+  key: string;
+  round: string;
   title: string;
   a: BracketPlayer | null;
   b: BracketPlayer | null;
@@ -36,14 +41,18 @@ export type BracketMatch = {
   notes: string | null;
   /** Se puede anotar resultado: ya se conocen los dos contendientes */
   ready: boolean;
+  /** El tercero del mejor de tres cuando ya no hace falta jugarlo */
+  sobra?: boolean;
 };
 
 export type FinalFourState =
-  | { status: "SIN_JORNADAS" }
-  | { status: "BLOQUEADA"; jugados: number; total: number }
-  | { status: "SIN_CUADRO"; standings: StandingRow[] }
+  | { status: "SIN_JORNADAS"; formato: FormatoFinal | null }
+  | { status: "POCA_GENTE"; activos: number }
+  | { status: "BLOQUEADA"; jugados: number; total: number; formato: FormatoFinal }
+  | { status: "SIN_CUADRO"; standings: StandingRow[]; formato: FormatoFinal }
   | {
       status: "EN_JUEGO" | "TERMINADA";
+      formato: FormatoFinal;
       matches: BracketMatch[];
       seeds: BracketPlayer[];
       champion: BracketPlayer | null;
@@ -51,14 +60,14 @@ export type FinalFourState =
     };
 
 /**
- * Estado de la Final Four. Se desbloquea solo cuando todos los combates de
- * todas las jornadas tienen ganador: hasta entonces no se sabe cómo queda la
- * tabla, y sembrar el cuadro antes no tendría sentido.
+ * Estado de la final. Se desbloquea solo cuando todos los combates de todas
+ * las jornadas tienen ganador: hasta entonces no se sabe cómo queda la tabla,
+ * y sembrar el cuadro antes no tendría sentido.
  */
 export async function getFinalFourState(
   competitionId: string,
 ): Promise<FinalFourState> {
-  const [matches, finalFour] = await Promise.all([
+  const [matches, finalFour, activos] = await Promise.all([
     prisma.match.findMany({
       where: { matchday: { competitionId } },
       select: { winnerId: true },
@@ -67,17 +76,26 @@ export async function getFinalFourState(
       where: { competitionId },
       include: { matches: true },
     }),
+    prisma.participant.count({ where: { competitionId, retiredAt: null } }),
   ]);
 
-  if (!matches.length) return { status: "SIN_JORNADAS" };
+  /**
+   * Con el cuadro ya sembrado manda el formato con el que se sembró: si
+   * alguien se retira a mitad de la final, los combates jugados tienen que
+   * seguir significando lo mismo.
+   */
+  const formato = formatoParaJugadores(finalFour?.jugadores ?? activos);
+  if (!formato) return { status: "POCA_GENTE", activos };
+
+  if (!matches.length) return { status: "SIN_JORNADAS", formato };
 
   const jugados = matches.filter((match) => match.winnerId).length;
   if (jugados < matches.length && !finalFour) {
-    return { status: "BLOQUEADA", jugados, total: matches.length };
+    return { status: "BLOQUEADA", jugados, total: matches.length, formato };
   }
 
   const standings = await getStandings(competitionId);
-  if (!finalFour) return { status: "SIN_CUADRO", standings };
+  if (!finalFour) return { status: "SIN_CUADRO", standings, formato };
 
   const byId = new Map(standings.map((row) => [row.participantId, row]));
   const seeds: BracketPlayer[] = finalFour.seeds
@@ -94,81 +112,93 @@ export async function getFinalFourState(
     })
     .filter((player): player is BracketPlayer => player !== null);
 
-  const results = new Map(finalFour.matches.map((match) => [match.key, match]));
-  const seed = (index: number) => seeds[index] ?? null;
-  const winnerOf = (key: BracketKey) => {
-    const winnerId = results.get(key)?.winnerId;
-    return winnerId ? (seeds.find((s) => s.participantId === winnerId) ?? null) : null;
+  const guardados = new Map(finalFour.matches.map((match) => [match.key, match]));
+  const ganadorDe = (key: string) => {
+    const winnerId = guardados.get(key)?.winnerId;
+    return winnerId
+      ? (seeds.find((jugador) => jugador.participantId === winnerId) ?? null)
+      : null;
   };
 
-  const build = (
-    key: BracketKey,
-    round: BracketMatch["round"],
-    title: string,
-    a: BracketPlayer | null,
-    b: BracketPlayer | null,
-    aPending?: string,
-    bPending?: string,
-  ): BracketMatch => {
-    const stored = results.get(key);
+  // En una variable aparte para que TypeScript pueda distinguir los dos casos
+  const comoSeDecide = formato.campeon;
+
+  /** Cuántos combates de la serie lleva ganados cada uno, para el mejor de tres */
+  const victoriasEnSerie = new Map<string, number>();
+  if (comoSeDecide.tipo === "serie") {
+    for (const key of comoSeDecide.keys) {
+      const winnerId = guardados.get(key)?.winnerId;
+      if (winnerId) {
+        victoriasEnSerie.set(winnerId, (victoriasEnSerie.get(winnerId) ?? 0) + 1);
+      }
+    }
+  }
+  const serieDecidida =
+    comoSeDecide.tipo === "serie" &&
+    [...victoriasEnSerie.values()].some(
+      (ganados) => ganados >= comoSeDecide.hacenFalta,
+    );
+
+  const bracket: BracketMatch[] = formato.combates.map((plantilla) => {
+    const lado = (posicion: "a" | "b") => {
+      const desde = plantilla[posicion];
+      return "puesto" in desde ? (seeds[desde.puesto] ?? null) : ganadorDe(desde.ganadorDe);
+    };
+    const a = lado("a");
+    const b = lado("b");
+    const guardado = guardados.get(plantilla.key);
+
+    // El tercero del mejor de tres sobra en cuanto alguien gana los dos
+    // primeros: se enseña apagado en vez de invitando a jugarlo
+    const sobra = Boolean(plantilla.soloSiEmpate && serieDecidida);
+
     return {
-      key,
-      round,
-      title,
+      key: plantilla.key,
+      round: plantilla.ronda,
+      title: plantilla.titulo,
       a,
       b,
-      aPending: a ? undefined : aPending,
-      bPending: b ? undefined : bPending,
-      winnerId: stored?.winnerId ?? null,
-      pokemonDiff: stored?.pokemonDiff ?? null,
-      playedAt: stored?.playedAt ?? null,
-      notes: stored?.notes ?? null,
-      ready: Boolean(a && b),
+      aPending: a ? undefined : plantilla.aPendiente,
+      bPending: b ? undefined : plantilla.bPendiente,
+      winnerId: guardado?.winnerId ?? null,
+      pokemonDiff: guardado?.pokemonDiff ?? null,
+      playedAt: guardado?.playedAt ?? null,
+      notes: guardado?.notes ?? null,
+      ready: Boolean(a && b) && !sobra,
+      sobra: sobra || undefined,
     };
-  };
+  });
 
-  const bracket: BracketMatch[] = [
-    build("CROSS_A", "Cruces", "3º contra 6º", seed(2), seed(5)),
-    build("CROSS_B", "Cruces", "4º contra 5º", seed(3), seed(4)),
-    build(
-      "SEMI_A",
-      "Semifinales",
-      "El 1º espera",
-      seed(0),
-      winnerOf("CROSS_A"),
-      undefined,
-      "Ganador de 3º-6º",
-    ),
-    build(
-      "SEMI_B",
-      "Semifinales",
-      "El 2º espera",
-      seed(1),
-      winnerOf("CROSS_B"),
-      undefined,
-      "Ganador de 4º-5º",
-    ),
-    build(
-      "FINAL",
-      "Final",
-      "Por el Hexalocke",
-      winnerOf("SEMI_A"),
-      winnerOf("SEMI_B"),
-      "Ganador de la 1ª semifinal",
-      "Ganador de la 2ª semifinal",
-    ),
-  ];
+  let champion: BracketPlayer | null = null;
+  let runnerUp: BracketPlayer | null = null;
 
-  const champion = winnerOf("FINAL");
-  const finalMatch = bracket[4];
-  const runnerUp = champion
-    ? ([finalMatch.a, finalMatch.b].find(
-        (player) => player && player.participantId !== champion.participantId,
-      ) ?? null)
-    : null;
+  if (comoSeDecide.tipo === "llave") {
+    const laLlave = comoSeDecide.key;
+    champion = ganadorDe(laLlave);
+    const laFinal = bracket.find((combate) => combate.key === laLlave);
+    runnerUp = champion
+      ? ([laFinal?.a ?? null, laFinal?.b ?? null].find(
+          (jugador) => jugador && jugador.participantId !== champion!.participantId,
+        ) ?? null)
+      : null;
+  } else {
+    const [ganadorId] =
+      [...victoriasEnSerie.entries()].find(
+        ([, ganados]) => ganados >= comoSeDecide.hacenFalta,
+      ) ?? [];
+    champion = ganadorId
+      ? (seeds.find((jugador) => jugador.participantId === ganadorId) ?? null)
+      : null;
+    runnerUp = champion
+      ? (seeds.find(
+          (jugador) => jugador.participantId !== champion!.participantId,
+        ) ?? null)
+      : null;
+  }
 
   return {
     status: champion ? "TERMINADA" : "EN_JUEGO",
+    formato,
     matches: bracket,
     seeds,
     champion,
@@ -176,8 +206,29 @@ export async function getFinalFourState(
   };
 }
 
+/**
+ * Cómo se llama el final de este locke y cuántos esperan sin jugar la primera
+ * ronda, para la clasificación y el menú. Es una consulta chica a propósito:
+ * la usa el layout, que corre en cada página.
+ */
+export async function getFormatoFinal(competitionId: string) {
+  const [finalFour, activos] = await Promise.all([
+    prisma.finalFour.findUnique({
+      where: { competitionId },
+      select: { jugadores: true },
+    }),
+    prisma.participant.count({ where: { competitionId, retiredAt: null } }),
+  ]);
+  return formatoParaJugadores(finalFour?.jugadores ?? activos);
+}
+
+/** El nombre que le toca al final del locke, para rótulos y menús. */
+export const NOMBRE_POR_DEFECTO = "Final Four";
+
 /** ¿Se puede ya rellenar el hall de la fama? */
 export async function isLockeFinished(competitionId: string) {
   const state = await getFinalFourState(competitionId);
   return state.status === "TERMINADA" ? state : null;
 }
+
+export { MINIMO_DE_JUGADORES };

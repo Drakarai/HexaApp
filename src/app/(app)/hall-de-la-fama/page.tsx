@@ -6,7 +6,7 @@ import {
   getActiveCompetition,
   getStandings,
 } from "@/lib/competition";
-import { getFinalFourState } from "@/lib/final-four";
+import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -25,6 +25,9 @@ export default async function HallOfFamePage() {
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
   const state = await getFinalFourState(competition.id);
+  // El final del locke no siempre se llama igual: ver lib/formatos-finales.ts
+  const nombreFinal =
+    ("formato" in state ? state.formato?.nombre : null) ?? NOMBRE_POR_DEFECTO;
 
   if (state.status !== "TERMINADA") {
     return (
@@ -38,11 +41,11 @@ export default async function HallOfFamePage() {
             El locke todavía no ha terminado
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
-            Cuando la Final Four tenga campeón, aquí quedará el equipo con el
-            que cada uno acabó el locke: sus seis pokémon, con sus motes.
+            Cuando la {nombreFinal} tenga campeón, aquí quedará el equipo con
+            el que cada uno acabó el locke: sus seis pokémon, con sus motes.
           </p>
           <Link href="/final-four" className="btn-ghost mt-5">
-            Ver la Final Four
+            Ver la {nombreFinal}
           </Link>
         </section>
       </>

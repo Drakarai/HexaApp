@@ -826,8 +826,18 @@ model MvpVote {
 model FinalFour {
   id            String   @id @default(cuid())
   competitionId String   @unique
-  /** Los 6 participantes en orden de clasificación, del 1º al 6º */
+  /** Los clasificados en orden, del 1º al último, tantos como diga el formato */
   seeds         String[]
+  /**
+   * Con cuántos jugadores se sembró, que es lo que decide el formato del
+   * cuadro (ver `lib/formatos-finales.ts`).
+   *
+   * Se guarda en vez de mirar cuántos hay ahora **a propósito**: si alguien se
+   * retira con la final ya empezada, el cuadro no puede cambiar de forma a
+   * mitad y dejar los combates jugados sin sentido. Los seis de las ediciones
+   * de antes de que existieran los formatos se quedan con su 6.
+   */
+  jugadores     Int      @default(6)
   createdAt     DateTime @default(now())
 
   competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)

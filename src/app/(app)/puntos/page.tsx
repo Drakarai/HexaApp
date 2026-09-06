@@ -8,6 +8,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { StandingsTable } from "@/components/standings-table";
+import { getFormatoFinal } from "@/lib/final-four";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { cx, formatDateTime } from "@/lib/utils";
 import {
@@ -25,10 +26,12 @@ export default async function PointsPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, standings, grafico, history] = await Promise.all([
+  const [canManage, standings, grafico, formatoFinal, history] = await Promise.all([
     canManageCompetition(competition.id, user),
     getStandings(competition.id),
     getGraficoClasificacion(competition.id),
+    // Cuántos llevan medalla de clasificado depende del formato de la final
+    getFormatoFinal(competition.id),
     prisma.pointEntry.findMany({
       where: { competitionId: competition.id },
       orderBy: { createdAt: "desc" },
@@ -72,6 +75,7 @@ export default async function PointsPage() {
       <section className="card">
         <h2 className="section-title mb-4">Clasificación global</h2>
         <StandingsTable
+          qualifiedSlots={formatoFinal?.esperan ?? 2}
           rows={standings}
           highlightUserId={user.id}
           editableParticipantIds={editableAces}

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { getStandings, requireCompetitionManager } from "@/lib/competition";
-import { BRACKET_KEYS, type BracketKey } from "@/lib/final-four";
+import {
+  clavesDelFormato,
+  formatoParaJugadores,
+  llavesPosteriores,
+} from "@/lib/formatos-finales";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -41,37 +45,48 @@ export async function generateBracketAction(
     };
   }
 
+  /**
+   * El formato sale de cuántos siguen jugando, y se guarda con el cuadro: si
+   * alguien se retira con la final empezada, no puede cambiar de forma a mitad.
+   */
   const standings = await getStandings(competitionId);
-  if (standings.length < 6) {
+  const clasificables = standings.filter((row) => !row.retirado);
+  const formato = formatoParaJugadores(clasificables.length);
+  if (!formato) {
     return {
-      error: "Hacen falta 6 jugadores clasificados para montar el cuadro.",
+      error: `Con ${clasificables.length} jugador${clasificables.length === 1 ? "" : "es"} no hay final que jugar.`,
     };
   }
 
   await prisma.finalFour.create({
     data: {
       competitionId,
-      seeds: standings.slice(0, 6).map((row) => row.participantId),
-      matches: { create: BRACKET_KEYS.map((key) => ({ key })) },
+      jugadores: formato.jugadores,
+      seeds: clasificables
+        .slice(0, formato.jugadores)
+        .map((row) => row.participantId),
+      matches: { create: clavesDelFormato(formato).map((key) => ({ key })) },
     },
   });
 
-  revalidatePath("/final-four");
-  revalidatePath("/");
-  return { success: "Cuadro generado. ¡Que empiece la Final Four!" };
+  revalidatePath("/", "layout");
+  return { success: `Cuadro generado. ¡Que empiece la ${formato.nombre}!` };
 }
 
 export async function setFinalMatchResultAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");
   await requireCompetitionManager(competitionId);
 
-  const key = String(formData.get("key") ?? "") as BracketKey;
-  if (!BRACKET_KEYS.includes(key)) return;
-
   const finalFour = await prisma.finalFour.findUnique({
     where: { competitionId },
   });
   if (!finalFour) return;
+
+  const formato = formatoParaJugadores(finalFour.jugadores);
+  if (!formato) return;
+
+  const key = String(formData.get("key") ?? "");
+  if (!clavesDelFormato(formato).includes(key)) return;
 
   const winnerRaw = String(formData.get("winnerId") ?? "").trim();
   const winnerId = finalFour.seeds.includes(winnerRaw) ? winnerRaw : null;
@@ -91,15 +106,9 @@ export async function setFinalMatchResultAction(formData: FormData) {
     },
   });
 
-  // Si se cambia un resultado anterior, las rondas siguientes dejan de valer
-  const posteriores: Record<BracketKey, BracketKey[]> = {
-    CROSS_A: ["SEMI_A", "FINAL"],
-    CROSS_B: ["SEMI_B", "FINAL"],
-    SEMI_A: ["FINAL"],
-    SEMI_B: ["FINAL"],
-    FINAL: [],
-  };
-  const afectadas = posteriores[key];
+  // Si se cambia un resultado anterior, las rondas que dependían de él dejan
+  // de valer. Se sacan del propio formato, sin lista escrita a mano.
+  const afectadas = llavesPosteriores(formato, key);
   if (afectadas.length) {
     await prisma.finalMatch.updateMany({
       where: { finalFourId: finalFour.id, key: { in: afectadas } },

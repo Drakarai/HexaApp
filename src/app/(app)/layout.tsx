@@ -15,6 +15,7 @@ import { MarcarVisto } from "@/components/marcar-visto";
 import { Avatar } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
 import { regionDelJuego } from "@/lib/juegos";
+import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { getAvisos } from "@/lib/novedades";
 
 /**
@@ -92,6 +93,12 @@ export default async function AppLayout({
    * activa no hay ni una cosa ni la otra.
    */
   const yo = active ? await getMyParticipant(active.id, user.id) : null;
+  /**
+   * El final del locke no siempre se llama igual: "Final Four" de cuatro
+   * jugadores para arriba y "Jornada Final" de tres para abajo. El menú tiene
+   * que decir lo mismo que la pantalla.
+   */
+  const formatoFinal = active ? await getFormatoFinal(active.id) : null;
   const [puedeGestionar, avisos] = active
     ? await Promise.all([
         canManageCompetition(active.id, user),
@@ -139,8 +146,20 @@ export default async function AppLayout({
    * se tocan de uvas a peras y no merecen una pestaña propia. El diagnóstico no
    * está en ninguna: vive dentro de Mi perfil.
    */
+  const finalConSuNombre: NavItem = {
+    ...S.finalFour,
+    label: formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO,
+  };
+
   const grupos: NavGroup[] = GRUPOS.map((grupo) =>
-    grupo.label === "La edición"
+    grupo.label === "Combates"
+      ? {
+          ...grupo,
+          children: grupo.children.map((item) =>
+            item.href === S.finalFour.href ? finalConSuNombre : item,
+          ),
+        }
+      : grupo.label === "La edición"
       ? {
           ...grupo,
           children: [
