@@ -13,6 +13,7 @@ import { cx, formatDate } from "@/lib/utils";
 import {
   deleteCompetitionAction,
   removeParticipantAction,
+  retirarParticipanteAction,
   selectCompetitionAction,
   setCompetitionStatusAction,
 } from "@/app/actions/competitions";
@@ -112,11 +113,21 @@ export default async function CompetitionsPage() {
                       size={32}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-white">
+                      <p
+                        className={cx(
+                          "truncate font-medium text-white",
+                          participant.retiredAt && "text-slate-400 line-through",
+                        )}
+                      >
                         {participant.displayName}
                         {participant.isAdmin ? (
                           <span className="ml-2 text-xs text-amber-400">
                             admin
+                          </span>
+                        ) : null}
+                        {participant.retiredAt ? (
+                          <span className="ml-2 text-xs text-slate-500">
+                            retirado
                           </span>
                         ) : null}
                       </p>
@@ -128,6 +139,30 @@ export default async function CompetitionsPage() {
                         {` · ${participant._count.deaths} bajas`}
                       </p>
                     </div>
+                    {canManageActive ? (
+                      <form action={retirarParticipanteAction}>
+                        <input
+                          type="hidden"
+                          name="participantId"
+                          value={participant.id}
+                        />
+                        {participant.retiredAt ? (
+                          <ConfirmSubmit
+                            className="btn-ghost btn-sm"
+                            message={`¿${participant.displayName} vuelve al locke? Los combates que ya se dieron por retirada se quedan como están.`}
+                          >
+                            Readmitir
+                          </ConfirmSubmit>
+                        ) : (
+                          <ConfirmSubmit
+                            className="btn-ghost btn-sm text-amber-300"
+                            message={`¿Retirar a ${participant.displayName} del locke? No se borra nada suyo, pero deja de contar para los gimnasios y el MVP, y sus combates de jornada sin jugar los ganará el rival por retirada.`}
+                          >
+                            Retirar
+                          </ConfirmSubmit>
+                        )}
+                      </form>
+                    ) : null}
                     {canManageActive ? (
                       <form action={removeParticipantAction}>
                         <input

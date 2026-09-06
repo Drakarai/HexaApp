@@ -56,10 +56,13 @@ export default async function DashboardPage() {
     ]);
 
   const totalPlayers = standings.length;
+  /** Los que siguen: un retirado ni avanza gimnasios ni tiene que esperar */
+  const activos = standings.filter((row) => !row.retirado).length;
+  const retirados = totalPlayers - activos;
   const totalDeaths = standings.reduce((sum, row) => sum + row.deaths, 0);
   // Siguiente hito: el primero que no ha superado todo el mundo
   const currentCap =
-    levelCaps.find((cap) => cap._count.clears < Math.max(1, totalPlayers)) ??
+    levelCaps.find((cap) => cap._count.clears < Math.max(1, activos)) ??
     levelCaps[levelCaps.length - 1];
 
   // Direcciones de las medallas del level cap actual: ver lib/imagen-url.ts
@@ -94,8 +97,12 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Jugadores"
-          value={`${totalPlayers}/${competition.maxPlayers}`}
-          hint={`Empiezan con ${competition.startingPoints} puntos`}
+          value={`${activos}/${competition.maxPlayers}`}
+          hint={
+            retirados
+              ? `${retirados} retirado${retirados === 1 ? "" : "s"} · empiezan con ${competition.startingPoints} puntos`
+              : `Empiezan con ${competition.startingPoints} puntos`
+          }
           href="/competiciones"
         />
         <StatCard

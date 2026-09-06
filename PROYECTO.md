@@ -7,9 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 4 de septiembre de 2026 (el sitio de la baja se elige del
-mapa, botón flotante para apuntar, aviso de novedades, Kanto como segunda
-región de la 2ª generación y la calculadora de cobertura de tipos).
+Última actualización: 6 de septiembre de 2026 (retirar a un participante que
+se va a mitad del locke).
 
 ---
 
@@ -45,7 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
 | **Final Four** | Cuadro de 5 combates que se abre al terminar todas las jornadas, con campeón al final. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando la Final Four ya tiene campeón. |
@@ -771,6 +770,33 @@ Al guardar, la zona manda: si viene una válida, el texto se descarta. Y se
 comprueba en el servidor que la zona sea de la región de esa edición, porque el
 desplegable solo ofrece las que tocan pero el formulario se puede mandar a mano.
 
+**Retirarse no es lo mismo que salirse de la competición.** Sacar a alguien
+(`removeParticipantAction`) le borra el cementerio y los puntos, como si nunca
+hubiera jugado, y eso falsea lo que pasó. Cuando alguien se raja a mitad del
+locke lo que hace falta es **retirarlo** (`retirarParticipanteAction`): no se
+borra nada suyo, sigue saliendo en la clasificación tachado, y lo único que
+cambia es que deja de contar para lo que hace avanzar al grupo. En concreto:
+
+- **Los gimnasios** solo esperan a los que siguen (`soloActivos()`). Si no, el
+  grupo entero se quedaría bloqueado esperando a alguien que ya no juega.
+- **En la clasificación va al final y sin puesto** (`position: 0`, una raya).
+  Si se quedara en su sitio, alguien que ya no juega saldría segundo y
+  parecería clasificado para la Final Four.
+- **No cuenta como votante del MVP**, o la votación nunca estaría completa.
+- **No se ofrece para emparejar** combates nuevos.
+- Se puede **readmitir**: es solo quitarle la marca.
+
+**Los combates que gana el rival por retirada no se dan todos de golpe.** Cada
+uno espera a que el resto de su jornada esté jugada, como si se hubiera jugado
+el último (`lib/retiradas.ts`). Repartir de una vez los puntos de cinco
+jornadas dejaría la clasificación adelantada respecto a lo que ha pasado, y el
+gráfico de puestos jornada a jornada —que se dibuja con la fecha de cada
+punto— daría un salto que no se corresponde con ninguna jornada. Mientras
+esperan se enseñan como "por retirada, al acabar la jornada". La resolución se
+dispara al retirar a alguien y cada vez que se apunta o se borra un resultado,
+que son los momentos en que una jornada puede completarse. Un combate entre
+dos retirados no se resuelve nunca y **no bloquea** a los demás.
+
 **La cobertura de tipos usa la tabla de la generación del locke, no la de hoy.**
 Es la diferencia entre una herramienta que sirve y una que engaña: en Johto el
 Acero resiste al Fantasma y al Siniestro, el tipo Hada no existe y Clefairy es
@@ -967,6 +993,10 @@ Piezas con truco:
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
+- `lib/retiradas.ts` — los combates que se ganan porque el otro se retiró.
+  Decide **cuándo** darlos por ganados (al completarse su jornada, no al
+  retirar a la persona) y sabe cuáles están esperando, para poder enseñarlos.
+  `soloActivos()` en `lib/competition.ts` es el filtro de "los que siguen".
 - `lib/tipos.ts` — los tipos, la tabla de efectividad **de cada generación** y
   qué es cada pokémon en cada una. Los datos salen de
   `scripts/generate-tipos.ts` a `lib/tipos.json` (unos 30 KB); este módulo solo
@@ -1022,6 +1052,12 @@ Hasta entonces la aplicación solo corre en su ordenador.
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
 píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
+
+**Pendiente hablado y no hecho**: la **Final Four está pensada para seis** y el
+grupo se ha quedado en cinco. Hay que poder elegir el formato del cuadro según
+cuántos jueguen (con cuatro o más), y en general que la aplicación deje de dar
+por hecho que un locke son seis personas: el usuario quiere funciones que
+dependan del número de jugadores. **No tocar sin hablarlo antes.**
 
 Ideas comentadas y no hechas:
 
@@ -1128,3 +1164,7 @@ lugar de destruir datos, y hay que avisar antes.
 33. **Cobertura de tipos**: dentro de Mis notas, un equipo de seis y la tabla de
     lo que le entra a cada uno, con la tabla de tipos de la generación que se
     esté jugando y una casilla para usar la de ahora, con tipo Hada.
+34. **Retirar a quien se va**: sin borrarle nada, deja de contar para gimnasios,
+    MVP y emparejamientos, sale tachado y al final de la clasificación, y sus
+    combates pendientes los gana el rival por retirada según se van cerrando
+    las jornadas.

@@ -11,6 +11,7 @@ import {
   requireCompetitionManager,
 } from "@/lib/competition";
 import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
+import { resolverRetiradas } from "@/lib/retiradas";
 import { slugify } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
@@ -309,6 +310,54 @@ export async function updateParticipantAction(formData: FormData) {
       isAdmin: formData.get("isAdmin") === "on",
     },
   });
+
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Retirar a alguien del locke, o readmitirlo.
+ *
+ * Es lo que hay que hacer cuando alguien se raja a mitad de partida, y es
+ * **distinto de sacarlo de la competición**: sacarlo le borra el cementerio y
+ * los puntos, como si nunca hubiera jugado, y eso falsea lo que pasó. Aquí no
+ * se borra nada; solo deja de contar para lo que hace avanzar al grupo.
+ *
+ * Sus **combates de jornada sin resultado los gana el rival por retirada**,
+ * pero **no todos de golpe**: cada uno espera a que el resto de su jornada esté
+ * jugada. Ver `lib/retiradas.ts` para el porqué.
+ */
+export async function retirarParticipanteAction(formData: FormData) {
+  const participantId = String(formData.get("participantId") ?? "");
+  const participant = await prisma.participant.findUnique({
+    where: { id: participantId },
+    include: { competition: { select: { id: true } } },
+  });
+  if (!participant) return;
+  const manager = await requireCompetitionManager(participant.competitionId);
+
+  // Readmitir: solo se le quita la marca. Los combates ya dados por retirada
+  // no se deshacen solos, porque el punto ya se repartió y puede haber
+  // clasificación construida encima.
+  if (participant.retiredAt) {
+    await prisma.participant.update({
+      where: { id: participantId },
+      data: { retiredAt: null },
+    });
+    revalidatePath("/", "layout");
+    return;
+  }
+
+  await prisma.participant.update({
+    where: { id: participantId },
+    data: { retiredAt: new Date() },
+  });
+
+  /**
+   * Las jornadas que ya estén enteras jugadas se resuelven en el momento; las
+   * que no, esperan a su último combate. Así los puntos entran en el mismo
+   * orden en que pasaron las cosas.
+   */
+  await resolverRetiradas(participant.competitionId, manager.id);
 
   revalidatePath("/", "layout");
 }

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
+import { resolverRetiradas } from "@/lib/retiradas";
 import { enlaceSeguro } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
@@ -164,6 +165,12 @@ export async function setMatchResultAction(formData: FormData) {
     }
   }
 
+  /**
+   * Con este resultado puede haberse completado la jornada, y entonces toca
+   * dar por ganados los combates que estaban esperando por retirada.
+   */
+  await resolverRetiradas(match.matchday.competitionId, manager.id);
+
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/");
@@ -180,6 +187,9 @@ export async function deleteMatchAction(formData: FormData) {
 
   await prisma.pointEntry.deleteMany({ where: { sourceMatchId: matchId } });
   await prisma.match.delete({ where: { id: matchId } });
+
+  // Borrar el combate que faltaba también deja la jornada terminada
+  await resolverRetiradas(match.matchday.competitionId, null);
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");

@@ -4,6 +4,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getParticipants,
+  soloActivos,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -41,6 +42,9 @@ export default async function LevelCapsPage({
       include: { clears: true, videos: true },
     }),
   ]);
+
+  /** Los que siguen jugando: son los que tienen que superar cada gimnasio */
+  const activos = soloActivos(participants);
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>
@@ -101,9 +105,16 @@ export default async function LevelCapsPage({
       ) : (
         <div className="space-y-3">
           {levelCaps.map((levelCap) => {
-            const clearedCount = levelCap.clears.length;
+            /**
+             * Solo cuentan los que siguen jugando: si un retirado tuviera que
+             * marcar su casilla, el grupo entero se quedaría esperando a
+             * alguien que ya no va a jugar. Sus marcas de antes se respetan.
+             */
+            const clearedCount = levelCap.clears.filter((clear) =>
+              activos.some((jugador) => jugador.id === clear.participantId),
+            ).length;
             const allCleared =
-              participants.length > 0 && clearedCount === participants.length;
+              activos.length > 0 && clearedCount === activos.length;
             const images = medallas(levelCap.id);
 
             return (
@@ -136,7 +147,7 @@ export default async function LevelCapsPage({
                       <p className="text-xs text-slate-500">
                         {LEVEL_CAP_KIND_LABELS[levelCap.kind] ?? levelCap.kind}
                         {" · "}
-                        {clearedCount}/{participants.length} superado
+                        {clearedCount}/{activos.length} superado
                         {clearedCount === 1 ? "" : "s"}
                       </p>
                     </div>
@@ -168,8 +179,9 @@ export default async function LevelCapsPage({
                       const cleared = clearedSet.has(
                         `${levelCap.id}:${participant.id}`,
                       );
+                      const retirado = participant.retiredAt !== null;
                       const editable =
-                        canManage || participant.userId === user.id;
+                        !retirado && (canManage || participant.userId === user.id);
 
                       return (
                         <form key={participant.id} action={toggleGymClearAction}>
@@ -187,17 +199,21 @@ export default async function LevelCapsPage({
                             type="submit"
                             disabled={!editable}
                             title={
-                              editable
-                                ? cleared
-                                  ? "Marcar como no superado"
-                                  : "Marcar como superado"
-                                : "Solo puedes marcar tus propios gimnasios"
+                              retirado
+                                ? `${participant.displayName} se retiró del locke`
+                                : editable
+                                  ? cleared
+                                    ? "Marcar como no superado"
+                                    : "Marcar como superado"
+                                  : "Solo puedes marcar tus propios gimnasios"
                             }
                             className={cx(
                               "chip transition",
-                              cleared
-                                ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
-                                : "opacity-70",
+                              retirado
+                                ? "text-slate-500 line-through opacity-50"
+                                : cleared
+                                  ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
+                                  : "opacity-70",
                               editable
                                 ? "cursor-pointer hover:opacity-100"
                                 : "cursor-not-allowed",
@@ -209,7 +225,9 @@ export default async function LevelCapsPage({
                               aria-hidden
                             />
                             {participant.displayName}
-                            <span aria-hidden>{cleared ? "✓" : "○"}</span>
+                            <span aria-hidden>
+                              {retirado ? "—" : cleared ? "✓" : "○"}
+                            </span>
                           </button>
                         </form>
                       );

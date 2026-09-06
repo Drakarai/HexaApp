@@ -5,8 +5,10 @@ import {
   getActiveCompetition,
   getMyParticipant,
   getParticipants,
+  soloActivos,
 } from "@/lib/competition";
 import { getMvpStates } from "@/lib/mvp";
+import { combatesEsperandoRetirada } from "@/lib/retiradas";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -28,7 +30,7 @@ export default async function MatchdaysPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, myParticipant, participants, matchdays] = await Promise.all([
+  const [canManage, myParticipant, participants, matchdays, esperando] = await Promise.all([
     canManageCompetition(competition.id, user),
     getMyParticipant(competition.id, user.id),
     getParticipants(competition.id),
@@ -48,9 +50,15 @@ export default async function MatchdaysPage() {
         },
       },
     }),
+    combatesEsperandoRetirada(competition.id),
   ]);
 
-  const participantOptions = participants.map((participant) => ({
+  /**
+   * Para emparejar solo se ofrecen los que siguen jugando: montar un combate
+   * nuevo contra alguien que se retiró no tiene sentido. Los combates ya
+   * jugados contra él se siguen viendo, con su nombre y todo.
+   */
+  const participantOptions = soloActivos(participants).map((participant) => ({
     id: participant.id,
     displayName: participant.displayName,
   }));
@@ -190,6 +198,25 @@ export default async function MatchdaysPage() {
                           </div>
                           <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
                             <ReplayLink url={match.replayUrl} />
+                            {/* Que no parezca una victoria como las demás */}
+                            {match.porRetirada ? (
+                              <span
+                                className="chip text-amber-300/90"
+                                title="No se jugó: el otro se retiró del locke"
+                              >
+                                por retirada
+                              </span>
+                            ) : null}
+                            {/* Esperando a que acabe el resto de la jornada
+                                para darse por ganado: ver lib/retiradas.ts */}
+                            {esperando.has(match.id) ? (
+                              <span
+                                className="chip text-amber-300/90"
+                                title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
+                              >
+                                por retirada, al acabar la jornada
+                              </span>
+                            ) : null}
                             {match.pokemonDiff !== null ? (
                               <span className="chip">
                                 dif. {match.pokemonDiff}
@@ -197,7 +224,7 @@ export default async function MatchdaysPage() {
                             ) : null}
                             {match.playedAt ? (
                               <span>{formatDate(match.playedAt)}</span>
-                            ) : (
+                            ) : esperando.has(match.id) ? null : (
                               <span className="text-amber-400/80">Pendiente</span>
                             )}
                             {canManage ? (

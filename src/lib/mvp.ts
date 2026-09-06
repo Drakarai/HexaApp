@@ -65,7 +65,9 @@ export async function getMvpStates(
       where: { id: { in: matchdayIds } },
       select: { id: true, mvpTiebreakId: true },
     }),
-    prisma.participant.count({ where: { competitionId } }),
+    // Solo los que siguen jugando: si un retirado contara como votante, la
+    // votación nunca llegaría a estar completa
+    prisma.participant.count({ where: { competitionId, retiredAt: null } }),
   ]);
 
   const ids = pokemon.map((row) => row.id);

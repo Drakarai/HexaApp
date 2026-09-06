@@ -403,6 +403,19 @@ model Participant {
   // Admin de esta competición concreta (puede editar reglas, ruletas y puntos)
   isAdmin       Boolean  @default(false)
   joinedAt      DateTime @default(now())
+  /**
+   * Cuándo se retiró del locke, si es que se retiró.
+   *
+   * **No se le borra nada**: su cementerio, sus puntos y sus combates jugados
+   * siguen ahí, y la clasificación lo sigue enseñando, tachado y al final. Lo
+   * único que cambia es que deja de contar para lo que hace avanzar al grupo
+   * —los gimnasios, el MVP, los emparejamientos nuevos— y que sus combates
+   * pendientes se dan por perdidos.
+   *
+   * Es reversible: si vuelve, se le quita la marca. Los combates que ya se
+   * hayan dado por retirada no se deshacen solos.
+   */
+  retiredAt     DateTime?
 
   // Pokémon as: el representante del jugador en esta edición. Va aquí y no en
   // User para que cada competición conserve el suyo cuando se archiva.
@@ -702,6 +715,11 @@ model Match {
   playedAt       DateTime?
   notes          String?
   position       Int       @default(0)
+  /**
+   * El combate no se jugó: se ganó porque el otro se retiró del locke. Se
+   * guarda para poder enseñarlo distinto, que no parezca una victoria normal.
+   */
+  porRetirada    Boolean   @default(false)
 
   matchday     Matchday    @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
   participantA Participant @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)

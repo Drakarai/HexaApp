@@ -71,7 +71,10 @@ export function StandingsTable(props: Props) {
   );
 }
 
-/** El puesto: medalla para los clasificados directos, número para el resto. */
+/**
+ * El puesto: medalla para los clasificados directos, número para el resto.
+ * Los retirados no llevan puesto: ya no están compitiendo por él.
+ */
 function Puesto({
   position,
   qualifiedSlots,
@@ -79,8 +82,18 @@ function Puesto({
   position: number;
   qualifiedSlots: number;
 }) {
+  if (position === 0) return <span title="Se retiró del locke">—</span>;
   if (position > qualifiedSlots) return <>{position}</>;
   return <span title="Clasificado directo">{MEDALS[position - 1] ?? position}</span>;
+}
+
+/** La chapa de "este se fue", para no tener que adivinarlo por el tachado. */
+function Retirado() {
+  return (
+    <span className="ml-2 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      Retirado
+    </span>
+  );
 }
 
 /**
@@ -163,6 +176,7 @@ function Ficha({
         row.userId === highlightUserId
           ? "border-brand-500/40 bg-brand-500/10"
           : "border-white/5 bg-white/[0.03]",
+        row.retirado && "opacity-60",
       )}
     >
       <div className="flex items-center gap-2.5">
@@ -175,9 +189,15 @@ function Ficha({
           editableParticipantIds={editableParticipantIds}
           size={26}
         />
-        <p className="min-w-0 flex-1 truncate font-semibold text-white">
+        <p
+          className={cx(
+            "min-w-0 flex-1 truncate font-semibold text-white",
+            row.retirado && "text-slate-400 line-through",
+          )}
+        >
           {row.displayName}
         </p>
+        {row.retirado ? <Retirado /> : null}
       </div>
 
       {/* El título, en su propia línea y a todo el ancho de la ficha: aquí sí
@@ -252,7 +272,12 @@ function Fila({
   compact = false,
 }: Props & { row: StandingRow }) {
   return (
-    <tr className={cx(row.userId === highlightUserId && "bg-brand-500/10")}>
+    <tr
+      className={cx(
+        row.userId === highlightUserId && "bg-brand-500/10",
+        row.retirado && "opacity-60",
+      )}
+    >
       <td className="text-slate-400">
         <Puesto position={row.position} qualifiedSlots={qualifiedSlots} />
       </td>
@@ -265,7 +290,15 @@ function Fila({
             size={24}
           />
           <div className="min-w-0">
-            <p className="truncate font-medium text-white">{row.displayName}</p>
+            <p
+              className={cx(
+                "truncate font-medium text-white",
+                row.retirado && "text-slate-400 line-through",
+              )}
+            >
+              {row.displayName}
+            </p>
+            {row.retirado ? <Retirado /> : null}
             {compact ? null : row.title ? (
               // Con tope de ancho y hasta dos líneas: un título largo se lee
               // entero sin estirar la columna del nombre

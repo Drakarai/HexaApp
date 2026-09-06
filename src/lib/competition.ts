@@ -32,7 +32,10 @@ export type StandingRow = {
   losses: number;
   played: number;
   pokemonDiff: number;
+  /** Su puesto entre los que siguen jugando; 0 si se retiró */
   position: number;
+  /** Se retiró del locke: sale tachado y al final, y no ocupa puesto */
+  retirado: boolean;
   /** El que lleva puesto, si lleva alguno. Es solo adorno. */
   title: TituloPuesto | null;
 };
@@ -108,6 +111,20 @@ export const getParticipants = cache(async (competitionId: string) => {
     user: { ...participante.user, avatarImage: avatares(participante.userId) },
   }));
 });
+
+/**
+ * Los que siguen jugando: sin los retirados.
+ *
+ * Es lo que hay que usar para todo lo que hace avanzar al grupo —los gimnasios
+ * que hay que superar, quién tiene que votar el MVP, contra quién se puede
+ * emparejar—, porque esperar a alguien que se ha ido bloquea al resto. Para
+ * enseñar lo que ya pasó se sigue usando `getParticipants`, con todos.
+ */
+export function soloActivos<T extends { retiredAt: Date | null }>(
+  participantes: T[],
+) {
+  return participantes.filter((participante) => !participante.retiredAt);
+}
 
 /**
  * Participante del usuario actual dentro de una competición (null si sólo mira).
@@ -324,17 +341,28 @@ export async function getStandings(
       played: stat.played,
       pokemonDiff: stat.diff,
       position: 0,
+      retirado: participant.retiredAt !== null,
       title: titulos.get(participant.userId) ?? null,
     };
   });
 
+  /**
+   * Los retirados van al final y **no ocupan puesto**. Si se quedaran en su
+   * sitio, alguien que ya no juega saldría segundo y parecería clasificado
+   * para la Final Four; el puesto tiene que decir algo de quien sigue.
+   */
   rows.sort(
     (a, b) =>
+      Number(a.retirado) - Number(b.retirado) ||
       b.points - a.points ||
       a.deaths - b.deaths ||
       b.pokemonDiff - a.pokemonDiff ||
       a.displayName.localeCompare(b.displayName, "es"),
   );
 
-  return rows.map((row, index) => ({ ...row, position: index + 1 }));
+  let puesto = 0;
+  return rows.map((row) => ({
+    ...row,
+    position: row.retirado ? 0 : ++puesto,
+  }));
 }
