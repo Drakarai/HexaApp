@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addMatchAction,
   createMatchdayAction,
+  darPorRetiradaAction,
   setMatchResultAction,
 } from "@/app/actions/matchdays";
 import type { FormState } from "@/app/actions/auth";
@@ -115,16 +116,32 @@ export function MatchResultForm({
   };
 }) {
   const [open, setOpen] = useState(false);
+  const [retirada, setRetirada] = useState(false);
+
+  if (retirada) {
+    return <FormularioDeRetirada match={match} onCerrar={() => setRetirada(false)} />;
+  }
 
   if (!open) {
     return (
-      <button
-        type="button"
-        className="btn-ghost btn-sm mt-2"
-        onClick={() => setOpen(true)}
-      >
-        {match.winnerId ? "✎ Cambiar resultado" : "✓ Anotar resultado"}
-      </button>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          onClick={() => setOpen(true)}
+        >
+          {match.winnerId ? "✎ Cambiar resultado" : "✓ Anotar resultado"}
+        </button>
+        {/* Aparte del resultado normal: no es lo mismo perder jugando que no
+            aparecer, y mezclarlo en el mismo formulario lo escondía */}
+        <button
+          type="button"
+          className="btn-ghost btn-sm text-amber-300"
+          onClick={() => setRetirada(true)}
+        >
+          🏳️ Dar por retirada
+        </button>
+      </div>
     );
   }
 
@@ -185,6 +202,75 @@ export function MatchResultForm({
       <div className="flex gap-2 sm:col-span-4">
         <SubmitButton>Guardar resultado</SubmitButton>
         <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+          Cancelar
+        </button>
+      </div>
+    </form>
+  );
+}
+
+/**
+ * Dar un combate por retirada: uno de los dos no se presenta.
+ *
+ * Va en su propio formulario y no como una opción más del resultado porque no
+ * es un resultado cualquiera: se elige **quién no apareció**, no quién ganó,
+ * que es como se cuenta en el grupo, y el castigo lo pone la aplicación para
+ * que sea el mismo siempre.
+ */
+function FormularioDeRetirada({
+  match,
+  onCerrar,
+}: {
+  match: {
+    id: string;
+    a: { id: string; name: string };
+    b: { id: string; name: string };
+  };
+  onCerrar: () => void;
+}) {
+  const [seRetiraId, setSeRetiraId] = useState(match.a.id);
+  const gana = seRetiraId === match.a.id ? match.b : match.a;
+
+  return (
+    <form
+      action={async (formData) => {
+        await darPorRetiradaAction(formData);
+        onCerrar();
+      }}
+      className="mt-3 grid gap-2 rounded-lg border border-amber-500/25 bg-amber-500/[0.06] p-3 sm:grid-cols-3"
+    >
+      <input type="hidden" name="matchId" value={match.id} />
+      <div className="sm:col-span-3">
+        <p className="text-sm font-semibold text-amber-200">
+          🏳️ Dar el combate por retirada
+        </p>
+      </div>
+      <div>
+        <label className="label">No se presentó</label>
+        <select
+          name="seRetiraId"
+          className="input"
+          value={seRetiraId}
+          onChange={(evento) => setSeRetiraId(evento.target.value)}
+        >
+          <option value={match.a.id}>{match.a.name}</option>
+          <option value={match.b.id}>{match.b.name}</option>
+        </select>
+      </div>
+      <div>
+        <label className="label">Fecha</label>
+        <input name="playedAt" type="date" className="input" />
+      </div>
+      <div className="flex items-end">
+        <p className="text-xs leading-snug text-amber-200/80">
+          Gana <strong>{gana.name}</strong> con diferencia de 3.
+        </p>
+      </div>
+      <div className="flex gap-2 sm:col-span-3">
+        <SubmitButton className="btn-primary btn-sm">
+          Dar por retirada
+        </SubmitButton>
+        <button type="button" className="btn-ghost btn-sm" onClick={onCerrar}>
           Cancelar
         </button>
       </div>

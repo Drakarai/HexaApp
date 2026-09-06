@@ -198,23 +198,24 @@ export default async function MatchdaysPage() {
                           </div>
                           <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
                             <ReplayLink url={match.replayUrl} />
-                            {/* Que no parezca una victoria como las demás */}
+                            {/* Bien visible: no es una victoria como las
+                                demás y tiene que verse de un vistazo */}
                             {match.porRetirada ? (
-                              <span
-                                className="chip text-amber-300/90"
-                                title="No se jugó: el otro se retiró del locke"
-                              >
-                                por retirada
+                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-200">
+                                🏳️ Por retirada de{" "}
+                                {match.winnerId === match.participantAId
+                                  ? match.participantB.displayName
+                                  : match.participantA.displayName}
                               </span>
                             ) : null}
                             {/* Esperando a que acabe el resto de la jornada
                                 para darse por ganado: ver lib/retiradas.ts */}
                             {esperando.has(match.id) ? (
                               <span
-                                className="chip text-amber-300/90"
+                                className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200/90"
                                 title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
                               >
-                                por retirada, al acabar la jornada
+                                🏳️ Por retirada, al acabar la jornada
                               </span>
                             ) : null}
                             {match.pokemonDiff !== null ? (

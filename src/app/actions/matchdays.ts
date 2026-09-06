@@ -5,6 +5,13 @@ import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { enlaceSeguro } from "@/lib/utils";
+
+/**
+ * Lo que se lleva de diferencia quien gana porque el otro no se presentó. No
+ * presentarse no puede salir más barato que perder jugando, y la diferencia de
+ * pokémon es el segundo desempate de la clasificación.
+ */
+const DIFERENCIA_POR_RETIRADA = 3;
 import type { FormState } from "@/app/actions/auth";
 
 export async function createMatchdayAction(
@@ -131,6 +138,9 @@ export async function setMatchResultAction(formData: FormData) {
       pokemonDiff:
         diff !== null && Number.isFinite(diff) ? Math.abs(Math.trunc(diff)) : null,
       playedAt: playedAtRaw ? new Date(playedAtRaw) : winnerId ? new Date() : null,
+      // Guardar un resultado a mano quiere decir que se jugó: si antes estaba
+      // dado por retirada, deja de estarlo
+      porRetirada: false,
       notes: String(formData.get("notes") ?? "").trim() || null,
       // Saneado antes de guardarlo: acaba en un href de la pantalla de todos
       replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
@@ -169,6 +179,83 @@ export async function setMatchResultAction(formData: FormData) {
    * Con este resultado puede haberse completado la jornada, y entonces toca
    * dar por ganados los combates que estaban esperando por retirada.
    */
+  await resolverRetiradas(match.matchday.competitionId, manager.id);
+
+  revalidatePath("/jornadas");
+  revalidatePath("/puntos");
+  revalidatePath("/");
+}
+
+/**
+ * Dar un combate por retirada: alguien no se presenta y lo pierde.
+ *
+ * Es distinto de retirarse del locke entero (ver `lib/retiradas.ts`): aquí el
+ * que no aparece sigue jugando, simplemente no se presentó a ese combate. Por
+ * eso se resuelve **en el momento**, sin esperar a que acabe la jornada.
+ *
+ * El ganador se lleva su punto y una **diferencia de 3 pokémon**, que es el
+ * castigo acordado: no presentarse no puede salir más barato que perder
+ * jugando.
+ */
+export async function darPorRetiradaAction(formData: FormData) {
+  const matchId = String(formData.get("matchId") ?? "");
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    include: { matchday: true },
+  });
+  if (!match) return;
+  const manager = await requireCompetitionManager(match.matchday.competitionId);
+
+  const seRetiraId = String(formData.get("seRetiraId") ?? "").trim();
+  if (seRetiraId !== match.participantAId && seRetiraId !== match.participantBId) {
+    return;
+  }
+  const ganadorId =
+    seRetiraId === match.participantAId
+      ? match.participantBId
+      : match.participantAId;
+
+  const [ganador, perdedor] = await Promise.all([
+    prisma.participant.findUnique({
+      where: { id: ganadorId },
+      select: { displayName: true },
+    }),
+    prisma.participant.findUnique({
+      where: { id: seRetiraId },
+      select: { displayName: true },
+    }),
+  ]);
+
+  const fechaRaw = String(formData.get("playedAt") ?? "").trim();
+
+  await prisma.match.update({
+    where: { id: matchId },
+    data: {
+      winnerId: ganadorId,
+      pokemonDiff: DIFERENCIA_POR_RETIRADA,
+      porRetirada: true,
+      playedAt: fechaRaw ? new Date(fechaRaw) : new Date(),
+    },
+  });
+
+  const datos = {
+    competitionId: match.matchday.competitionId,
+    participantId: ganadorId,
+    delta: match.matchday.pointsForWin,
+    reason: `${match.matchday.label}: victoria de ${ganador?.displayName ?? "?"} por retirada de ${perdedor?.displayName ?? "?"}`,
+    createdById: manager.id,
+    sourceMatchId: matchId,
+  };
+  const existente = await prisma.pointEntry.findUnique({
+    where: { sourceMatchId: matchId },
+  });
+  if (existente) {
+    await prisma.pointEntry.update({ where: { id: existente.id }, data: datos });
+  } else {
+    await prisma.pointEntry.create({ data: datos });
+  }
+
+  // Puede haber completado la jornada y desbloquear otras retiradas
   await resolverRetiradas(match.matchday.competitionId, manager.id);
 
   revalidatePath("/jornadas");

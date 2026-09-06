@@ -8,7 +8,7 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 6 de septiembre de 2026 (retirar a un participante que
-se va a mitad del locke).
+se va a mitad del locke, y dar un combate suelto por retirada).
 
 ---
 
@@ -37,7 +37,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
-| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
+| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
 | **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
@@ -770,6 +770,22 @@ Al guardar, la zona manda: si viene una válida, el texto se descarta. Y se
 comprueba en el servidor que la zona sea de la región de esa edición, porque el
 desplegable solo ofrece las que tocan pero el formulario se puede mandar a mano.
 
+**Hay dos retiradas distintas y conviene no confundirlas.** Una es **irse del
+locke** (`retirarParticipanteAction`, abajo): esa persona deja de jugar del
+todo. La otra es **no presentarse a un combate** (`darPorRetiradaAction`), que
+le puede pasar a alguien que sigue jugando tan tranquilo. Comparten la marca
+`Match.porRetirada` —las dos son victorias sin jugar y se enseñan igual— pero
+se resuelven distinto:
+
+- **No presentarse** se resuelve en el momento, se elige quién faltó (no quién
+  ganó, que es como se cuenta en el grupo) y el ganador se lleva el punto **y
+  una diferencia de 3 pokémon**: no presentarse no puede salir más barato que
+  perder jugando, y la diferencia es el segundo desempate de la clasificación.
+- **Irse del locke** no reparte nada de golpe; ver más abajo.
+
+Guardar un resultado normal encima quita la marca: si se jugó, ya no fue una
+retirada.
+
 **Retirarse no es lo mismo que salirse de la competición.** Sacar a alguien
 (`removeParticipantAction`) le borra el cementerio y los puntos, como si nunca
 hubiera jugado, y eso falsea lo que pasó. Cuando alguien se raja a mitad del
@@ -1168,3 +1184,5 @@ lugar de destruir datos, y hay que avisar antes.
     MVP y emparejamientos, sale tachado y al final de la clasificación, y sus
     combates pendientes los gana el rival por retirada según se van cerrando
     las jornadas.
+35. **Combates por retirada**: si alguien no se presenta, el combate se da por
+    retirada desde Jornadas y el otro gana con diferencia de 3.
