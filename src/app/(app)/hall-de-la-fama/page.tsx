@@ -12,6 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
+import { getCampeonesDeLiga } from "@/lib/liga";
+import { CampeonesDeLiga } from "@/components/marcador-dual";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
 
 export const metadata = { title: "Hall de la fama" };
@@ -52,13 +54,14 @@ export default async function HallOfFamePage() {
     );
   }
 
-  const [canManage, standings, entries] = await Promise.all([
+  const [canManage, standings, entries, campeonesDeLiga] = await Promise.all([
     canManageCompetition(competition.id, user),
     getStandings(competition.id),
     prisma.hallOfFameEntry.findMany({
       where: { participant: { competitionId: competition.id } },
       orderBy: { position: "asc" },
     }),
+    getCampeonesDeLiga(competition.id),
   ]);
 
   // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
@@ -116,6 +119,12 @@ export default async function HallOfFamePage() {
           {competition.name} · {formatDate(competition.startedAt)}
         </p>
       </section>
+
+      {/* La otra victoria: pasarse la Liga es ganar el locke del juego, y la
+          puede tener alguien que no ganó ni un combate */}
+      <div className="mb-6">
+        <CampeonesDeLiga campeones={campeonesDeLiga} />
+      </div>
 
       <div className="space-y-4">
         {jugadores.map((row, index) => {

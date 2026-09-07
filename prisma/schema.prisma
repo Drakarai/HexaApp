@@ -371,6 +371,16 @@ model Competition {
    * decide si su diferencia entra en el tercer criterio.
    */
   challengeDiffCounts Boolean @default(false)
+  /**
+   * Cuántas jornadas se van a jugar en total, si se sabe de antemano.
+   *
+   * Hace falta para los lockes que se ganan **por jornadas** y no por puntos
+   * (el dualocke): "gana el que se lleve 4 de las 6" solo se puede calcular
+   * sabiendo que son seis. Las jornadas se van creando sobre la marcha, así que
+   * contar las que hay daría un número que cambia y podría coronar a alguien
+   * antes de tiempo. Sin rellenar se usa las que haya creadas.
+   */
+  jornadasPrevistas Int?
   startedAt      DateTime  @default(now())
   endedAt        DateTime?
   createdAt      DateTime  @default(now())

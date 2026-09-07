@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 7 de septiembre de 2026 (un locke solo lo ven quienes lo
-juegan, más los administradores y los espectadores invitados).
+Última actualización: 7 de septiembre de 2026 (la aplicación deja de dar por
+hecho que un locke son seis: jornadas, marcador y rótulos según cuántos jueguen).
 
 ---
 
@@ -37,9 +37,9 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
-| **Jornadas** | Emparejamientos; marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
+| **Jornadas** | Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
-| **Puntos** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. |
+| **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
@@ -591,6 +591,62 @@ llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
 as como para la del cementerio.
 
+**Un locke no son necesariamente seis personas.** La aplicación nació para el
+Hexalocke y lo daba por hecho en todas partes. Ahora hay un **perfil de locke**
+(`lib/perfiles-de-locke.ts`) que dice qué cambia según cuánta gente juega, y las
+pantallas preguntan al perfil en vez de saberse los casos.
+
+- **El tamaño sale de `Competition.maxPlayers`** —para cuánta gente se montó la
+  edición—, **no de los que quedan activos**. Se decide al crear el locke y no
+  se recalcula: si se recalculara, retirarse a mitad le cambiaría los menús y
+  las reglas a una partida empezada. (El *final* del locke sí mira los activos,
+  porque ahí lo que importa es quién queda para jugarlo; son dos cosas
+  distintas.) De regalo, las ediciones de antes tienen `maxPlayers` a 6 y no se
+  enteran de nada, que era justo lo que se pidió: esto vale **para lockes
+  nuevos**.
+- **Las cinco reglas de emparejamiento son en realidad una.** Se acordó: seis
+  todos contra todos, cinco con uno descansando, cuatro repitiendo parejas, tres
+  estilo Champions dentro de la jornada y dos al mejor de tres. Todo eso es
+  **una liguilla** vista de dos maneras: con cuatro o más, cada jornada es **una
+  ronda**; con tres o menos, la liguilla **entera** cabe en una jornada. De ahí
+  salen solos el descanso rotatorio de los impares (rotación fija: todos
+  descansan una vez antes de que repita nadie), la repetición de parejas cuando
+  se dan más jornadas que rondas tiene la liguilla —que es tanto como decir que
+  siempre se propone la pareja que más tiempo lleva sin jugarse— y, de propina,
+  el siete y el ocho el día que hagan falta. Está en `lib/emparejamientos.ts`,
+  con el método del círculo, y no hay ni un caso escrito a mano.
+- **Los emparejamientos se proponen, no se imponen.** Al crear una jornada hay
+  una casilla que los reparte; salen combates normales y corrientes, así que se
+  borran y se ponen otros como siempre. El orden de los jugadores para la
+  rotación es **por fecha de alta**, no por nombre: si alguien se cambia el mote,
+  el reparto no puede bailar.
+- **El dualocke se gana por jornadas, no por puntos.** Con dos jugadores la
+  clasificación no dice nada —un punto por combate y siempre a un palmo—, así
+  que la pantalla de Puntos pasa a ser el **Marcador**: jornadas ganadas, cuántas
+  faltan y quién se llevó cada una. Cada jornada es un mejor de tres y se cierra
+  con un 2-0 sin jugar el tercero, igual que la serie de la Jornada Final.
+- **Cuántas jornadas hacen falta sale de `Competition.jornadasPrevistas`.** La
+  regla es "gana quien se lleve 4 de las 6", o sea la mayoría, y las jornadas se
+  van creando sobre la marcha: contando las que hay, el que ganara la primera
+  saldría campeón, porque de una la mayoría es una. El campo es opcional y sin
+  rellenar se usan las creadas.
+- **La pantalla es la misma, el rótulo cambia.** El marcador vive dentro de
+  `/puntos` y el menú dice "Marcador" en vez de "Puntos", igual que la Final Four
+  pasa a llamarse Jornada Final. Una ruta nueva habría duplicado los permisos y
+  el aviso de novedades para enseñar lo mismo en otro sitio.
+- **Los nombres (Dualocke, Triolocke…) son solo rótulos.** No hay nada colgando
+  de ellos: cambiarlos es tocar una línea.
+
+**Pasarse la Liga Pokémon es la otra forma de ganar.** Ganar los combates y
+ganarse el juego son cosas distintas —se puede terminar la Liga habiendo perdido
+todas las jornadas, y al revés— y la pueden conseguir **varios**, así que no es
+un puesto sino una lista. Sale en la clasificación y en el hall de la fama.
+
+**No se guarda en ningún sitio nuevo**: se deduce de tener marcado el level cap
+de tipo `CHAMPION`, que es el que ya representa la Liga. Un dato calculado no se
+puede desincronizar de la marca de la que sale, que es la misma razón por la que
+el MVP tampoco se guarda.
+
 **Un locke no se ve por defecto.** Hasta ahora cualquier cuenta que entrara se
 leía todos los Hexalockes enteros —muertes, puntos, jornadas, perfiles—, y eso
 no es lo que quiere un grupo privado: un locke es de los que lo juegan. Ahora
@@ -1094,6 +1150,15 @@ Piezas con truco:
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
+- `lib/perfiles-de-locke.ts` — qué cambia según cuánta gente juega el locke: su
+  nombre, si la liguilla cabe en una jornada, si se gana por puntos o por
+  jornadas y cómo se llama la pantalla de la tabla. Sin `server-only`, porque lo
+  leen también componentes de cliente. `lib/emparejamientos.ts` es la liguilla
+  (método del círculo) y de ahí salen los combates que propone
+  `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
+  dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `lib/liga.ts` — quién se ha pasado la Liga Pokémon. No guarda nada: lo deduce
+  de tener marcado el level cap de tipo `CHAMPION`.
 - `lib/acceso.ts` — quién puede abrir un locke y quién puede escribir en él.
   `filtroDeLockesVisibles()` es el trozo de `where` que usan
   `getActiveCompetition` y `listCompetitions`; `puedeVerLocke()` es para las
@@ -1166,31 +1231,15 @@ píxeles y se ve borroso. Basta con subir uno más grande desde Administración 
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
 píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
 
-**Pendiente hablado y no hecho**: las **jornadas por número de jugadores**. El
-final del locke ya se adapta, pero el calendario de jornadas sigue pensado para
-seis. Esto es lo que dijo el usuario que quiere, **para lockes nuevos**: el que
-está en marcha se queda como está.
+**Hecho, pero conviene saberlo**: la aplicación ya sirve **de dos a ocho
+jugadores** (jornadas, final y marcador), y todo eso se aplica **a los lockes
+nuevos**: el que está en marcha tiene `maxPlayers` a 6 y se comporta igual que
+siempre. Al crear un dualocke hay que rellenarle **"Jornadas previstas"** (6, en
+lo acordado), que es de donde sale el "gana quien se lleve 4".
 
-| Jugadores | Cómo se emparejan las jornadas |
-| --- | --- |
-| 6 | Como ahora: tres combates por jornada, todos juegan. |
-| 5 | Como el de cuatro, pero **descansa uno distinto** cada jornada. |
-| 4 | Como ahora, asumiendo que **habrá parejas que se repitan**. |
-| 3 | **Estilo Champions dentro de cada jornada**: A-B, B-C y A-C. |
-| 2 | Cada jornada es un **combate al mejor de tres**. |
-
-Y el **dualocke** (dos jugadores) es el caso raro: quien gane **4 de las 6
-jornadas** —contando la Jornada Final— gana el locke en combates, que es una
-victoria aparte de ser campeón de la Liga (esa también cuenta). Ahí la tabla de
-clasificación no dice gran cosa y los retos casi no se usan, así que el usuario
-quiere un **menú alternativo** para los lockes de dos, no la pantalla de
-siempre. Está por decidir cómo se plantea eso; hay una propuesta hablada de
-hacerlo con un "perfil de locke" por número de jugadores en vez de con menús
-escritos a mano. **No tocar sin cerrarlo antes.**
-
-Por debajo de todo eso, lo de siempre: que la aplicación deje de dar por hecho
-que un locke son seis personas, y que llegue a servir **de dos a seis** (quizá
-siete u ocho más adelante). `lib/formatos-finales.ts` es el primer paso.
+Ideas del dualocke que se propusieron y están **sin aprobar**: esconder Retos y
+la Ruleta cuando sois dos, poner el marcador también en el Resumen, y un aviso
+de "bola de partido" cuando a alguien le vale una jornada más.
 
 Ideas comentadas y no hechas:
 
@@ -1309,3 +1358,6 @@ lugar de destruir datos, y hay que avisar antes.
 37. **Los lockes dejan de ser públicos entre las cuentas**: cada edición la ven
     solo quienes la juegan o la jugaron, los administradores y los espectadores
     a los que se les dé ese locke.
+38. **De dos a ocho jugadores**: las jornadas se emparejan solas con la liguilla
+    que toque, el locke de dos se gana por jornadas en vez de por puntos, y
+    pasarse la Liga Pokémon queda apuntado como la otra forma de ganar.

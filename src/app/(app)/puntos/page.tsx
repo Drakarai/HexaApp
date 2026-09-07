@@ -18,6 +18,10 @@ import {
 import { PointsForms } from "./points-forms";
 import { getGraficoClasificacion } from "@/lib/grafico-clasificacion";
 import { PointsChart } from "@/components/points-chart";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getMarcador } from "@/lib/marcador";
+import { getCampeonesDeLiga } from "@/lib/liga";
+import { MarcadorDual, CampeonesDeLiga } from "@/components/marcador-dual";
 
 export const metadata = { title: "Puntos" };
 
@@ -26,10 +30,18 @@ export default async function PointsPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, standings, grafico, formatoFinal, history] = await Promise.all([
+  /**
+   * Con dos jugadores esta pantalla es otra cosa: no una clasificación por
+   * puntos sino el marcador de jornadas ganadas. Lo decide el perfil del locke,
+   * que se fija al crear la edición.
+   */
+  const perfil = perfilDeLocke(competition.maxPlayers);
+  const porJornadas = perfil.victoria === "jornadas";
+
+  const [canManage, standings, grafico, formatoFinal, history, marcador, campeonesDeLiga] = await Promise.all([
     canManageCompetition(competition.id, user),
     getStandings(competition.id),
-    getGraficoClasificacion(competition.id),
+    porJornadas ? null : getGraficoClasificacion(competition.id),
     // Cuántos llevan medalla de clasificado depende del formato de la final
     getFormatoFinal(competition.id),
     prisma.pointEntry.findMany({
@@ -41,6 +53,8 @@ export default async function PointsPage() {
         createdBy: { select: { displayName: true } },
       },
     }),
+    porJornadas ? getMarcador(competition.id) : null,
+    getCampeonesDeLiga(competition.id),
   ]);
 
   // Cada uno puede tocar su propio as; los administradores, el de todos
@@ -53,9 +67,15 @@ export default async function PointsPage() {
   return (
     <>
       <PageHeader
-        title="Puntos y clasificación"
-        subtitle={`Todo el mundo empieza con ${competition.startingPoints} puntos. Los dos primeros se clasifican directos para la Final Four.`}
+        title={porJornadas ? "Marcador" : "Puntos y clasificación"}
+        subtitle={
+          porJornadas
+            ? "En un locke de dos no hay tabla que valga: gana quien se lleve más jornadas."
+            : `Todo el mundo empieza con ${competition.startingPoints} puntos. Los que se saltan la primera ronda de la final se clasifican directos.`
+        }
       />
+
+      {marcador ? <MarcadorDual marcador={marcador} /> : null}
 
       {grafico ? (
         <section className="card mb-4">
@@ -72,6 +92,7 @@ export default async function PointsPage() {
         </section>
       ) : null}
 
+      {porJornadas ? null : (
       <section className="card">
         <h2 className="section-title mb-4">Clasificación global</h2>
         <StandingsTable
@@ -151,6 +172,11 @@ export default async function PointsPage() {
           </div>
         ) : null}
       </section>
+      )}
+
+      <div className="mt-4">
+        <CampeonesDeLiga campeones={campeonesDeLiga} />
+      </div>
 
       {canManage ? (
         <div className="mt-6">

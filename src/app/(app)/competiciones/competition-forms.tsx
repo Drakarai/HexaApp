@@ -63,6 +63,19 @@ export function NewCompetitionForm({
               />
             </div>
           </div>
+          {/* De cuántas jornadas va el locke. Solo hace falta de verdad en el
+              dualocke, que se gana con la mayoría de ellas */}
+          <div>
+            <label className="label">Jornadas previstas</label>
+            <input
+              name="jornadasPrevistas"
+              type="number"
+              min={1}
+              max={50}
+              className="input"
+              placeholder="Opcional"
+            />
+          </div>
         </div>
 
         <div>
@@ -142,6 +155,7 @@ export function EditCompetitionForm({
     modality: string | null;
     description: string | null;
     startingPoints: number;
+    jornadasPrevistas: number | null;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -183,6 +197,18 @@ export function EditCompetitionForm({
               type="number"
               className="input"
               defaultValue={competition.startingPoints}
+            />
+          </div>
+          <div>
+            <label className="label">Jornadas previstas</label>
+            <input
+              name="jornadasPrevistas"
+              type="number"
+              min={1}
+              max={50}
+              className="input"
+              placeholder="Opcional"
+              defaultValue={competition.jornadasPrevistas ?? ""}
             />
           </div>
         </div>

@@ -15,6 +15,7 @@ import { MarcarVisto } from "@/components/marcar-visto";
 import { Avatar } from "@/components/ui";
 import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getAvisos } from "@/lib/novedades";
 
 /**
@@ -98,6 +99,8 @@ export default async function AppLayout({
    * que decir lo mismo que la pantalla.
    */
   const formatoFinal = active ? await getFormatoFinal(active.id) : null;
+  /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
+  const perfil = perfilDeLocke(active?.maxPlayers ?? 6);
   const [puedeGestionar, avisos] = active
     ? await Promise.all([
         canManageCompetition(active.id, user),
@@ -168,7 +171,13 @@ export default async function AppLayout({
       ? {
           ...grupo,
           children: [
-            ...grupo.children,
+            // En un locke de dos, "Puntos" es en realidad el marcador de
+            // jornadas ganadas: el menú tiene que decir lo mismo que la pantalla
+            ...grupo.children.map((item) =>
+              item.href === S.puntos.href
+                ? { ...item, label: perfil.rotuloDeLaTabla }
+                : item,
+            ),
             S.ediciones,
             ...(isAdmin(user) ? [S.admin] : []),
           ],

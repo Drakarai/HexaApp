@@ -301,6 +301,7 @@ export default async function CompetitionsPage() {
                   modality: active.modality,
                   description: active.description,
                   startingPoints: active.startingPoints,
+                  jornadasPrevistas: active.jornadasPrevistas,
                 }}
               />
             </div>

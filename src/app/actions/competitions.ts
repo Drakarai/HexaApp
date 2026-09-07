@@ -16,6 +16,15 @@ import { resolverRetiradas } from "@/lib/retiradas";
 import { slugify } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
+/** Un número entero de un formulario, o null si viene vacío o mal. */
+function numeroOpcional(valor: FormDataEntryValue | null, tope: number) {
+  const texto = String(valor ?? "").trim();
+  if (!texto) return null;
+  const numero = Number(texto);
+  if (!Number.isFinite(numero) || numero < 1) return null;
+  return Math.min(tope, Math.trunc(numero));
+}
+
 async function uniqueSlug(base: string) {
   const root = slugify(base) || "competicion";
   let candidate = root;
@@ -83,6 +92,7 @@ export async function createCompetitionAction(
       description,
       startingPoints: Math.trunc(startingPoints),
       maxPlayers: Math.max(2, Math.trunc(maxPlayers)),
+      jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
       createdById: admin.id,
     },
   });
@@ -205,6 +215,7 @@ export async function updateCompetitionAction(
       gameId: juegoPorId(String(formData.get("gameId") ?? "").trim())?.id ?? null,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
+      jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }
         : {}),

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
+import { emparejamientosDeJornada } from "@/lib/emparejamientos";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { enlaceSeguro } from "@/lib/utils";
 
 /**
@@ -34,19 +36,86 @@ export async function createMatchdayAction(
     orderBy: { position: "desc" },
     select: { position: true },
   });
+  const position = (last?.position ?? 0) + 1;
 
-  await prisma.matchday.create({
+  const matchday = await prisma.matchday.create({
     data: {
       competitionId,
       label,
       milestone: String(formData.get("milestone") ?? "").trim() || null,
       pointsForWin: Number.isFinite(pointsForWin) ? Math.trunc(pointsForWin) : 1,
-      position: (last?.position ?? 0) + 1,
+      position,
     },
   });
 
+  /**
+   * Los emparejamientos se proponen solos si se pide (`lib/emparejamientos.ts`).
+   * Se **proponen**, no se imponen: son combates normales y corrientes, así que
+   * se pueden borrar y añadir otros a mano como siempre.
+   */
+  let propuestos = 0;
+  let descansa: string | null = null;
+  if (formData.get("emparejar") === "on") {
+    const resultado = await emparejarJornada(competitionId, matchday.id, position);
+    propuestos = resultado.propuestos;
+    descansa = resultado.descansa;
+  }
+
   revalidatePath("/jornadas");
-  return { success: "Jornada creada." };
+  if (!propuestos) return { success: "Jornada creada." };
+  return {
+    success: `Jornada creada con ${propuestos} ${
+      propuestos === 1 ? "combate" : "combates"
+    }${descansa ? `. Descansa ${descansa}.` : "."}`,
+  };
+}
+
+/**
+ * Rellena una jornada recién creada con los emparejamientos que le tocan.
+ *
+ * El orden de los jugadores es **por fecha de alta**, no por nombre: la
+ * rotación de la liguilla se cuenta desde ahí, y si alguien se cambia el mote
+ * el reparto no puede bailar. Solo entran los que siguen jugando.
+ */
+async function emparejarJornada(
+  competitionId: string,
+  matchdayId: string,
+  position: number,
+) {
+  const competition = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { maxPlayers: true },
+  });
+
+  const jugadores = await prisma.participant.findMany({
+    where: { competitionId, retiredAt: null },
+    orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
+    select: { id: true, displayName: true },
+  });
+  if (jugadores.length < 2) return { propuestos: 0, descansa: null };
+
+  const perfil = perfilDeLocke(competition?.maxPlayers ?? jugadores.length);
+  const ronda = emparejamientosDeJornada(
+    perfil,
+    jugadores.map((jugador) => jugador.id),
+    position,
+  );
+  if (!ronda.pares.length) return { propuestos: 0, descansa: null };
+
+  await prisma.match.createMany({
+    data: ronda.pares.map(([participantAId, participantBId], indice) => ({
+      matchdayId,
+      participantAId,
+      participantBId,
+      position: indice,
+    })),
+  });
+
+  const queDescansa = jugadores.find((jugador) => jugador.id === ronda.descansa);
+  return {
+    propuestos: ronda.pares.length,
+    descansa: queDescansa?.displayName ?? null,
+  };
 }
 
 export async function deleteMatchdayAction(formData: FormData) {

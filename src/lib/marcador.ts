@@ -1,0 +1,133 @@
+import "server-only";
+import { prisma } from "@/lib/db";
+import { getParticipants } from "@/lib/competition";
+import { jornadasParaGanar } from "@/lib/perfiles-de-locke";
+
+/**
+ * El marcador de un locke que se decide **por jornadas ganadas** y no por
+ * puntos: hoy, el dualocke.
+ *
+ * Con dos jugadores la tabla de clasificación no dice nada —un punto por
+ * combate ganado y siempre a un puñado de distancia—, así que lo que cuenta es
+ * quién se lleva cada jornada, que ahí es un combate al mejor de tres. Gana el
+ * locke en combates el primero que se lleve **la mayoría de las jornadas**: con
+ * las seis de siempre, cuatro.
+ *
+ * Ganar el locke en combates no es lo mismo que superar la Liga Pokémon (ver
+ * `lib/liga.ts`): son dos victorias distintas y las dos cuentan.
+ */
+
+export type JornadaDelMarcador = {
+  id: string;
+  label: string;
+  milestone: string | null;
+  /** Quién se llevó la jornada, si ya está decidida */
+  ganadorId: string | null;
+  /** Combates ganados por cada uno dentro de la jornada */
+  porJugador: Record<string, number>;
+  /** Combates de la jornada que todavía no se han jugado */
+  faltan: number;
+};
+
+export type Marcador = {
+  jugadores: Array<{
+    participantId: string;
+    displayName: string;
+    color: string;
+    avatarImage: string | null;
+    ganadas: number;
+    /** Cuántas jornadas más necesita para llevarse el locke */
+    leFaltan: number;
+  }>;
+  jornadas: JornadaDelMarcador[];
+  /** Jornadas que hacen falta para ganar: la mayoría de las que hay */
+  hacenFalta: number;
+  /** Quien ya lo ha ganado en combates, si lo ha ganado alguien */
+  campeonId: string | null;
+};
+
+export async function getMarcador(competitionId: string): Promise<Marcador> {
+  const [competition, participantes, jornadas] = await Promise.all([
+    prisma.competition.findUnique({
+      where: { id: competitionId },
+      select: { jornadasPrevistas: true },
+    }),
+    getParticipants(competitionId),
+    prisma.matchday.findMany({
+      where: { competitionId },
+      orderBy: { position: "asc" },
+      include: {
+        matches: {
+          select: {
+            winnerId: true,
+            participantAId: true,
+            participantBId: true,
+          },
+        },
+      },
+    }),
+  ]);
+
+  // Las previstas mandan sobre las creadas: si no, el primero que gane la
+  // primera jornada saldría campeón, porque de una la mayoría es una
+  const hacenFalta = jornadasParaGanar(
+    competition?.jornadasPrevistas ?? jornadas.length,
+  );
+  const ganadas = new Map<string, number>();
+
+  const filas: JornadaDelMarcador[] = jornadas.map((jornada) => {
+    const porJugador: Record<string, number> = {};
+    let faltan = 0;
+    for (const combate of jornada.matches) {
+      if (!combate.winnerId) {
+        faltan += 1;
+        continue;
+      }
+      porJugador[combate.winnerId] = (porJugador[combate.winnerId] ?? 0) + 1;
+    }
+
+    /**
+     * La jornada es de quien tenga más combates **y nadie pueda alcanzarle**
+     * con los que quedan: en un mejor de tres, el 2-0 ya la cierra sin jugar el
+     * tercero, igual que en la serie de la Jornada Final.
+     */
+    const marcadores = Object.entries(porJugador).sort((a, b) => b[1] - a[1]);
+    const [lider, suyas] = marcadores[0] ?? [null, 0];
+    const segundas = marcadores[1]?.[1] ?? 0;
+    const ganadorId = lider && suyas > segundas + faltan ? lider : null;
+
+    if (ganadorId) ganadas.set(ganadorId, (ganadas.get(ganadorId) ?? 0) + 1);
+
+    return {
+      id: jornada.id,
+      label: jornada.label,
+      milestone: jornada.milestone,
+      ganadorId,
+      porJugador,
+      faltan,
+    };
+  });
+
+  const jugadores = participantes
+    .map((participante) => {
+      const suyas = ganadas.get(participante.id) ?? 0;
+      return {
+        participantId: participante.id,
+        displayName: participante.displayName,
+        color: participante.color,
+        avatarImage: participante.user.avatarImage,
+        ganadas: suyas,
+        leFaltan: Math.max(0, hacenFalta - suyas),
+      };
+    })
+    .sort((a, b) => b.ganadas - a.ganadas || a.displayName.localeCompare(b.displayName, "es"));
+
+  const campeon = jugadores.find((jugador) => jugador.ganadas >= hacenFalta);
+
+  return {
+    jugadores,
+    jornadas: filas,
+    hacenFalta,
+    campeonId: campeon?.participantId ?? null,
+  };
+}

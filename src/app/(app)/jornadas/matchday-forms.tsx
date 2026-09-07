@@ -52,6 +52,21 @@ export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
             />
           </div>
         </div>
+        <label className="flex items-start gap-2 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            name="emparejar"
+            defaultChecked
+            className="mt-0.5 accent-indigo-500"
+          />
+          <span>
+            Emparejar sola
+            <span className="block text-xs text-slate-500">
+              Reparte los combates siguiendo la liguilla: nadie repite rival
+              hasta haber jugado contra todos. Se pueden borrar y poner otros.
+            </span>
+          </span>
+        </label>
         <FormMessage state={state} />
         <SubmitButton>Crear jornada</SubmitButton>
       </form>
