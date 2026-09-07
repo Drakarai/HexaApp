@@ -12,6 +12,9 @@ import { combatesEsperandoRetirada } from "@/lib/retiradas";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getMarcador } from "@/lib/marcador";
+import { BolaDePartido } from "@/components/marcador-dual";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import {
@@ -30,7 +33,7 @@ export default async function MatchdaysPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, myParticipant, participants, matchdays, esperando] = await Promise.all([
+  const [canManage, myParticipant, participants, matchdays, esperando, marcador] = await Promise.all([
     canManageCompetition(competition.id, user),
     getMyParticipant(competition.id, user.id),
     getParticipants(competition.id),
@@ -51,6 +54,10 @@ export default async function MatchdaysPage() {
       },
     }),
     combatesEsperandoRetirada(competition.id),
+    // Solo en los lockes que se ganan por jornadas: ver lib/marcador.ts
+    perfilDeLocke(competition.maxPlayers).victoria === "jornadas"
+      ? getMarcador(competition.id)
+      : null,
   ]);
 
   /**
@@ -98,6 +105,12 @@ export default async function MatchdaysPage() {
         title="Jornadas"
         subtitle="Emparejamientos de cada jornada. Al marcar un ganador se le suma automáticamente el punto de la victoria."
       />
+
+      {marcador?.bolaDePartido.length ? (
+        <div className="mb-4">
+          <BolaDePartido quienes={marcador.bolaDePartido} />
+        </div>
+      ) : null}
 
       {matchdays.length === 0 ? (
         <EmptyState

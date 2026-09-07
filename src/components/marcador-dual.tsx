@@ -19,7 +19,7 @@ export function MarcadorDual({
   marcador: Marcador;
   compacto?: boolean;
 }) {
-  const { jugadores, jornadas, hacenFalta, campeonId } = marcador;
+  const { jugadores, jornadas, hacenFalta, campeonId, bolaDePartido } = marcador;
   const nombreDe = (id: string | null) =>
     jugadores.find((jugador) => jugador.participantId === id)?.displayName ?? null;
 
@@ -82,6 +82,10 @@ export function MarcadorDual({
           <p className="mt-4 text-center text-sm text-amber-300">
             {nombreDe(campeonId)} ya se ha llevado el locke en combates.
           </p>
+        ) : bolaDePartido.length ? (
+          <div className="mt-4">
+            <BolaDePartido quienes={bolaDePartido} />
+          </div>
         ) : compacto ? (
           <p className="mt-3 text-center text-xs text-slate-500">
             Gana el locke el primero que se lleve {hacenFalta} jornadas.
@@ -138,6 +142,33 @@ export function MarcadorDual({
       </section>
       )}
     </>
+  );
+}
+
+/**
+ * El aviso de que la jornada que viene puede cerrar el locke.
+ *
+ * Sin esto había que entrar al marcador y leer el "le vale una más" en letra
+ * pequeña para enterarse de que el siguiente combate vale doble. Es un adorno:
+ * no cambia ninguna regla, solo la cuenta.
+ */
+export function BolaDePartido({
+  quienes,
+}: {
+  quienes: Array<{ participantId: string; displayName: string }>;
+}) {
+  if (!quienes.length) return null;
+
+  return (
+    <p className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+      <span aria-hidden>⚡</span>
+      <span>
+        <strong className="font-semibold">Bola de partido.</strong>{" "}
+        {quienes.length === 1
+          ? `Si ${quienes[0].displayName} gana la próxima jornada, se lleva el locke.`
+          : "El que gane la próxima jornada se lleva el locke."}
+      </span>
+    </p>
   );
 }
 

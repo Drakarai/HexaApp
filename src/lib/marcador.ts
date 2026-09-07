@@ -44,6 +44,14 @@ export type Marcador = {
   hacenFalta: number;
   /** Quien ya lo ha ganado en combates, si lo ha ganado alguien */
   campeonId: string | null;
+  /**
+   * A quién le vale ganar la siguiente jornada para llevarse el locke.
+   *
+   * Vacío si ya hay campeón o si no quedan jornadas por decidir: con seis
+   * jornadas y cuatro para ganar se puede acabar 3-3, y ahí decir "bola de
+   * partido" sería mentira porque no queda nada que jugar.
+   */
+  bolaDePartido: Array<{ participantId: string; displayName: string }>;
 };
 
 export async function getMarcador(competitionId: string): Promise<Marcador> {
@@ -124,10 +132,28 @@ export async function getMarcador(competitionId: string): Promise<Marcador> {
 
   const campeon = jugadores.find((jugador) => jugador.ganadas >= hacenFalta);
 
+  /**
+   * Cuántas jornadas pueden todavía cambiar el marcador. Se cuenta sobre las
+   * previstas y no sobre las creadas, porque el calendario se va montando sobre
+   * la marcha y las que faltan por crear también se van a jugar.
+   */
+  const decididas = filas.filter((jornada) => jornada.ganadorId).length;
+  const quedanPorDecidir =
+    Math.max(competition?.jornadasPrevistas ?? 0, filas.length) - decididas;
+
   return {
     jugadores,
     jornadas: filas,
     hacenFalta,
     campeonId: campeon?.participantId ?? null,
+    bolaDePartido:
+      campeon || quedanPorDecidir < 1
+        ? []
+        : jugadores
+            .filter((jugador) => jugador.leFaltan === 1)
+            .map(({ participantId, displayName }) => ({
+              participantId,
+              displayName,
+            })),
   };
 }

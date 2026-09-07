@@ -632,6 +632,13 @@ pantallas preguntan al perfil en vez de saberse los casos.
   rellenar se usan las creadas.
 - **El resumen también enseña el marcador**, en el hueco de la clasificación, y
   la tarjeta de "Líder" dice jornadas ganadas en vez de puntos.
+- **Aviso de "bola de partido"** en el resumen, en Jornadas y en el marcador
+  cuando a alguien le vale ganar la siguiente para llevarse el locke. No sale si
+  ya hay campeón ni si **no quedan jornadas por decidir**: con seis jornadas y
+  cuatro para ganar se puede acabar 3-3, y ahí decirlo sería mentira. Las que
+  quedan se cuentan sobre las **previstas**, no sobre las creadas, porque el
+  calendario se monta sobre la marcha. Si los dos están a una, el aviso lo dice
+  sin nombres.
 - **El cara a cara del perfil, con un solo rival, no tiene presa favorita ni
   bestia negra**: son la misma persona y no decían nada. Se cambian por a quién
   se enfrenta uno, y como el total de victorias-derrotas ya **es** el cara a
@@ -1246,9 +1253,9 @@ nuevos**: el que está en marcha tiene `maxPlayers` a 6 y se comporta igual que
 siempre. Al crear un dualocke hay que rellenarle **"Jornadas previstas"** (6, en
 lo acordado), que es de donde sale el "gana quien se lleve 4".
 
-Idea del dualocke propuesta y **sin decidir**: un aviso de "bola de partido"
-—en la portada o en Jornadas— cuando a alguien le vale una jornada más para
-llevarse el locke. Hoy eso solo se lee dentro del marcador ("Le vale una más").
+Se planteó esconder Retos y la Ruleta en los lockes de dos y el usuario lo
+descartó: la ruleta se usa para sortearle algo al ganador y los retos también
+pueden caer.
 
 Ideas comentadas y no hechas:
 
