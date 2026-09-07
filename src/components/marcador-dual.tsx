@@ -11,19 +11,30 @@ import { cx } from "@/lib/utils";
  * jornadas y cuántas le faltan. Y al lado, la otra victoria, que es pasarse la
  * Liga Pokémon: son dos cosas distintas y las dos cuentan.
  */
-export function MarcadorDual({ marcador }: { marcador: Marcador }) {
+export function MarcadorDual({
+  marcador,
+  /** En el resumen solo cabe el marcador, sin el desglose jornada a jornada */
+  compacto = false,
+}: {
+  marcador: Marcador;
+  compacto?: boolean;
+}) {
   const { jugadores, jornadas, hacenFalta, campeonId } = marcador;
   const nombreDe = (id: string | null) =>
     jugadores.find((jugador) => jugador.participantId === id)?.displayName ?? null;
 
   return (
     <>
-      <section className="card mb-4">
-        <h2 className="section-title mb-1">El marcador</h2>
-        <p className="muted mb-4">
-          Cada jornada es un combate al mejor de tres. Gana el locke en combates
-          el primero que se lleve {hacenFalta} jornadas.
-        </p>
+      <section className={compacto ? "" : "card mb-4"}>
+        {compacto ? null : (
+          <>
+            <h2 className="section-title mb-1">El marcador</h2>
+            <p className="muted mb-4">
+              Cada jornada es un combate al mejor de tres. Gana el locke en
+              combates el primero que se lleve {hacenFalta} jornadas.
+            </p>
+          </>
+        )}
 
         <div className="flex items-stretch gap-2">
           {jugadores.map((jugador, indice) => (
@@ -71,9 +82,14 @@ export function MarcadorDual({ marcador }: { marcador: Marcador }) {
           <p className="mt-4 text-center text-sm text-amber-300">
             {nombreDe(campeonId)} ya se ha llevado el locke en combates.
           </p>
+        ) : compacto ? (
+          <p className="mt-3 text-center text-xs text-slate-500">
+            Gana el locke el primero que se lleve {hacenFalta} jornadas.
+          </p>
         ) : null}
       </section>
 
+      {compacto ? null : (
       <section className="card mb-4">
         <h2 className="section-title mb-1">Jornada a jornada</h2>
         <p className="muted mb-4">
@@ -120,6 +136,7 @@ export function MarcadorDual({ marcador }: { marcador: Marcador }) {
           />
         )}
       </section>
+      )}
     </>
   );
 }

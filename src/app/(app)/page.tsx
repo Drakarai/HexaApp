@@ -14,6 +14,9 @@ import { getActivity } from "@/lib/activity";
 import { urlsDeMedallas } from "@/lib/imagenes";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getMarcador } from "@/lib/marcador";
+import { MarcadorDual } from "@/components/marcador-dual";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -24,7 +27,14 @@ export default async function DashboardPage() {
 
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal] =
+  /**
+   * En un locke de dos, la portada no enseña una clasificación sino el
+   * marcador: quién va ganando más jornadas y cuántas le faltan.
+   */
+  const perfil = perfilDeLocke(competition.maxPlayers);
+  const porJornadas = perfil.victoria === "jornadas";
+
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -56,7 +66,16 @@ export default async function DashboardPage() {
       }),
       // Cuántos llevan medalla de clasificado depende del formato de la final
       getFormatoFinal(competition.id),
+      porJornadas ? getMarcador(competition.id) : null,
     ]);
+
+  /** Quién va primero, dicho como toque: por puntos o por jornadas ganadas */
+  const lider = marcador ? marcador.jugadores[0] : standings[0];
+  const pieDelLider = marcador
+    ? `${marcador.jugadores[0]?.ganadas ?? 0} jornadas ganadas`
+    : standings[0]
+    ? `${standings[0].points} puntos`
+    : "Sin clasificación";
 
   const totalPlayers = standings.length;
   /** Los que siguen: un retirado ni avanza gimnasios ni tiene que esperar */
@@ -116,10 +135,8 @@ export default async function DashboardPage() {
         />
         <StatCard
           label="Líder"
-          value={standings[0]?.displayName ?? "—"}
-          hint={
-            standings[0] ? `${standings[0].points} puntos` : "Sin clasificación"
-          }
+          value={lider?.displayName ?? "—"}
+          hint={pieDelLider}
           href="/puntos"
         />
       </div>
@@ -127,23 +144,31 @@ export default async function DashboardPage() {
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="section-title">Clasificación</h2>
+            <h2 className="section-title">
+              {marcador ? "Marcador" : "Clasificación"}
+            </h2>
             <Link href="/puntos" className="text-xs text-brand-400 hover:underline">
               Ver detalle →
             </Link>
           </div>
-          <StandingsTable
-            qualifiedSlots={formatoFinal?.esperan ?? 2}
-            rows={standings}
-            highlightUserId={user.id}
-            editableParticipantIds={
-              myParticipant ? [myParticipant.id] : []
-            }
-          />
-          <p className="mt-3 text-xs text-slate-500">
-            Desempates: puntos → menos pokémon muertos → diferencia de pokémon en
-            jornadas.
-          </p>
+          {marcador ? (
+            <MarcadorDual marcador={marcador} compacto />
+          ) : (
+            <>
+              <StandingsTable
+                qualifiedSlots={formatoFinal?.esperan ?? 2}
+                rows={standings}
+                highlightUserId={user.id}
+                editableParticipantIds={
+                  myParticipant ? [myParticipant.id] : []
+                }
+              />
+              <p className="mt-3 text-xs text-slate-500">
+                Desempates: puntos → menos pokémon muertos → diferencia de
+                pokémon en jornadas.
+              </p>
+            </>
+          )}
         </section>
 
         <section className="card">

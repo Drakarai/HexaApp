@@ -630,6 +630,15 @@ pantallas preguntan al perfil en vez de saberse los casos.
   van creando sobre la marcha: contando las que hay, el que ganara la primera
   saldría campeón, porque de una la mayoría es una. El campo es opcional y sin
   rellenar se usan las creadas.
+- **El resumen también enseña el marcador**, en el hueco de la clasificación, y
+  la tarjeta de "Líder" dice jornadas ganadas en vez de puntos.
+- **El cara a cara del perfil, con un solo rival, no tiene presa favorita ni
+  bestia negra**: son la misma persona y no decían nada. Se cambian por a quién
+  se enfrenta uno, y como el total de victorias-derrotas ya **es** el cara a
+  cara, no se repite debajo.
+- **Los retos y la ruleta se quedan.** Se planteó esconderlos con dos jugadores
+  y el usuario lo descartó: la ruleta se usa para sortearle algo al ganador, y
+  los retos también pueden caer.
 - **La pantalla es la misma, el rótulo cambia.** El marcador vive dentro de
   `/puntos` y el menú dice "Marcador" en vez de "Puntos", igual que la Final Four
   pasa a llamarse Jornada Final. Una ruta nueva habría duplicado los permisos y
@@ -1237,9 +1246,9 @@ nuevos**: el que está en marcha tiene `maxPlayers` a 6 y se comporta igual que
 siempre. Al crear un dualocke hay que rellenarle **"Jornadas previstas"** (6, en
 lo acordado), que es de donde sale el "gana quien se lleve 4".
 
-Ideas del dualocke que se propusieron y están **sin aprobar**: esconder Retos y
-la Ruleta cuando sois dos, poner el marcador también en el Resumen, y un aviso
-de "bola de partido" cuando a alguien le vale una jornada más.
+Idea del dualocke propuesta y **sin decidir**: un aviso de "bola de partido"
+—en la portada o en Jornadas— cuando a alguien le vale una jornada más para
+llevarse el locke. Hoy eso solo se lee dentro del marcador ("Le vale una más").
 
 Ideas comentadas y no hechas:
 

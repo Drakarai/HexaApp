@@ -38,6 +38,12 @@ export function HeadToHead({
 }) {
   const [abierto, setAbierto] = useState(false);
   const jugados = wins + losses;
+  /**
+   * En un locke de dos, la presa favorita y la bestia negra son **la misma
+   * persona**: la única contra la que se juega. Enseñar las dos etiquetas ahí
+   * no dice nada, así que se cambian por el marcador de la serie.
+   */
+  const unicoRival = rivales.length === 1 ? rivales[0] : null;
 
   return (
     <div className="rounded-xl border border-white/5 bg-white/[0.03]">
@@ -45,17 +51,17 @@ export function HeadToHead({
         type="button"
         onClick={() => setAbierto((estaba) => !estaba)}
         aria-expanded={abierto}
-        disabled={!jugados}
+        disabled={!jugados || Boolean(unicoRival)}
         className={cx(
           "w-full p-3 text-left transition",
-          jugados > 0 && "hover:bg-white/[0.04]",
+          jugados > 0 && !unicoRival && "hover:bg-white/[0.04]",
         )}
       >
         <div className="flex items-baseline gap-2">
           <p className="text-xl font-bold tabular-nums text-white">
             {wins}-{losses}
           </p>
-          {jugados > 0 ? (
+          {jugados > 0 && !unicoRival ? (
             <span
               aria-hidden
               className={cx(
@@ -67,11 +73,15 @@ export function HeadToHead({
             </span>
           ) : null}
         </div>
+        {/* Con un solo rival el total y el cara a cara son el mismo número, así
+            que se dice contra quién en vez de repetirlo debajo */}
         <p className="text-[11px] uppercase tracking-wide text-slate-500">
-          Victorias-derrotas
+          {unicoRival
+            ? `Contra ${unicoRival.displayName}`
+            : "Victorias-derrotas"}
         </p>
 
-        {jugados > 0 ? (
+        {jugados > 0 && !unicoRival ? (
           <dl className="mt-2 space-y-1 border-t border-white/5 pt-2 text-xs">
             <Destaque
               icono="🎯"
