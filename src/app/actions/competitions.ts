@@ -10,6 +10,7 @@ import {
   COMPETITION_COOKIE,
   requireCompetitionManager,
 } from "@/lib/competition";
+import { puedeVerLocke } from "@/lib/acceso";
 import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { slugify } from "@/lib/utils";
@@ -31,6 +32,9 @@ export async function selectCompetitionAction(formData: FormData) {
   const id = String(formData.get("competitionId") ?? "");
   const competition = await prisma.competition.findUnique({ where: { id } });
   if (!competition) return;
+  // La cookie la manda el navegador, así que aquí se vuelve a comprobar quién
+  // puede abrir ese locke: si no, bastaría con escribir el identificador
+  if (!(await puedeVerLocke(competition.id))) return;
 
   const store = await cookies();
   store.set(COMPETITION_COOKIE, competition.id, {
@@ -371,5 +375,55 @@ export async function removeParticipantAction(formData: FormData) {
   await requireCompetitionManager(participant.competitionId);
 
   await prisma.participant.delete({ where: { id: participantId } });
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Da acceso de **solo mirar** a una edición.
+ *
+ * Es lo que hace de "rol de espectador", y va por locke y no como marca de la
+ * cuenta: el administrador decide qué edición enseña y a quién. Quien ya juega
+ * ese locke no necesita esto, así que se rechaza en vez de crear una fila que
+ * no significa nada.
+ */
+export async function darEspectadorAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  try {
+    await requireCompetitionManager(competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const userId = String(formData.get("userId") ?? "");
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { error: "Ese usuario no existe." };
+
+  const juega = await prisma.participant.count({
+    where: { competitionId, userId },
+  });
+  if (juega) {
+    return { error: `${user.displayName} ya juega este locke: lo ve entero.` };
+  }
+
+  await prisma.spectator.upsert({
+    where: { userId_competitionId: { userId, competitionId } },
+    update: {},
+    create: { userId, competitionId },
+  });
+
+  revalidatePath("/", "layout");
+  return { success: `${user.displayName} ya puede mirar este locke.` };
+}
+
+/** Le quita el acceso de espectador: deja de ver esa edición. */
+export async function quitarEspectadorAction(formData: FormData) {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const userId = String(formData.get("userId") ?? "");
+  await requireCompetitionManager(competitionId);
+
+  await prisma.spectator.deleteMany({ where: { competitionId, userId } });
   revalidatePath("/", "layout");
 }

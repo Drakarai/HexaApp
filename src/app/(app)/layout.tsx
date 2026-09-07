@@ -13,7 +13,6 @@ import { MobileTabBar } from "@/components/mobile-nav";
 import { BotonApuntar, type AtajoDeApunte } from "@/components/boton-apuntar";
 import { MarcarVisto } from "@/components/marcar-visto";
 import { Avatar } from "@/components/ui";
-import { ROLES } from "@/lib/constants";
 import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { getAvisos } from "@/lib/novedades";
@@ -151,6 +150,12 @@ export default async function AppLayout({
     label: formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO,
   };
 
+  /**
+   * El mapa, la bolsa y las notas son de **tu** ficha de jugador, así que a
+   * quien no juega esta edición —un espectador, o un administrador que solo
+   * mira— no le llevan a ninguna parte: se quedan fuera y en "Lo mío" queda su
+   * cuenta, que sí es suya.
+   */
   const grupos: NavGroup[] = GRUPOS.map((grupo) =>
     grupo.label === "Combates"
       ? {
@@ -168,9 +173,22 @@ export default async function AppLayout({
             ...(isAdmin(user) ? [S.admin] : []),
           ],
         }
+      : grupo.label === "Lo mío" && !yo
+      ? { ...grupo, children: [S.perfil] }
       : grupo,
   );
   const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
+
+  /**
+   * Qué eres **en este locke**, que no siempre es lo que eres en la aplicación:
+   * una cuenta normal que solo tiene acceso de mirar es "Espectador" aquí
+   * aunque su rol sea el de jugador de siempre.
+   */
+  const comoEstoyAqui = isAdmin(user)
+    ? "Administrador"
+    : active && !yo
+    ? "Espectador"
+    : "Jugador";
 
   /**
    * De qué grupo es cada dirección. Se saca del propio menú para que una
@@ -269,9 +287,7 @@ export default async function AppLayout({
           displayName: user.displayName,
           avatarColor: user.avatarColor,
           avatarImage: user.avatarImage,
-          subtitle: `@${user.username} · ${
-            user.role === ROLES.ADMIN ? "Administrador" : "Jugador"
-          }`,
+          subtitle: `@${user.username} · ${comoEstoyAqui}`,
         }}
       />
 

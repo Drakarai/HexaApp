@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { puedeVerLocke } from "@/lib/acceso";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -37,6 +38,14 @@ export default async function PlayerPage({
     include: { competition: { select: { id: true, name: true } } },
   });
   if (!participant) notFound();
+
+  /**
+   * A un perfil se llega por su identificador, sin pasar por la edición activa,
+   * así que aquí hay que volver a preguntar si esa persona puede ver ese locke.
+   * Sale un 404 y no un "no puedes": quien no tiene acceso tampoco tiene por
+   * qué enterarse de que ese jugador existe.
+   */
+  if (!(await puedeVerLocke(participant.competitionId))) notFound();
 
   const competitionId = participant.competitionId;
   const [canManage, standings, deaths, clears, capsTotales, favoritos] =

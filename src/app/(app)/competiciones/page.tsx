@@ -12,6 +12,7 @@ import { nombreDelJuego } from "@/lib/juegos";
 import { cx, formatDate } from "@/lib/utils";
 import {
   deleteCompetitionAction,
+  quitarEspectadorAction,
   removeParticipantAction,
   retirarParticipanteAction,
   selectCompetitionAction,
@@ -20,6 +21,7 @@ import {
 import {
   NewCompetitionForm,
   EditCompetitionForm,
+  AddEspectadorForm,
   AddParticipantForm,
   EditParticipantForm,
 } from "./competition-forms";
@@ -38,7 +40,7 @@ export default async function CompetitionsPage() {
     ? await canManageCompetition(active.id, user)
     : false;
 
-  const [participants, users] = await Promise.all([
+  const [participants, users, espectadores] = await Promise.all([
     active
       ? prisma.participant.findMany({
           where: { competitionId: active.id },
@@ -55,10 +57,22 @@ export default async function CompetitionsPage() {
           select: { id: true, displayName: true, username: true },
         })
       : Promise.resolve([]),
+    active
+      ? prisma.spectator.findMany({
+          where: { competitionId: active.id },
+          orderBy: { createdAt: "asc" },
+          include: {
+            user: { select: { id: true, displayName: true, username: true } },
+          },
+        })
+      : Promise.resolve([]),
   ]);
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
+  // Para dar acceso de mirar sobran los que ya juegan y los que ya miran
+  const mirandoYa = new Set(espectadores.map((e) => e.userId));
+  const puedenMirar = availableUsers.filter((u) => !mirandoYa.has(u.id));
 
   return (
     <>
@@ -194,6 +208,70 @@ export default async function CompetitionsPage() {
               ))}
             </ul>
           )}
+
+          {canManageActive || espectadores.length ? (
+            <div className="mt-5 border-t border-white/10 pt-4">
+              <h3 className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-400">
+                Espectadores ({espectadores.length})
+              </h3>
+              <p className="muted mb-3">
+                Este locke solo lo ven quienes lo juegan o lo han jugado. Aquí
+                se le puede dejar mirar a alguien de fuera: lo ve entero, pero
+                no puede tocar nada.
+              </p>
+
+              {espectadores.length ? (
+                <ul className="mb-3 space-y-2">
+                  {espectadores.map((espectador) => (
+                    <li
+                      key={espectador.id}
+                      className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
+                    >
+                      <Avatar
+                        name={espectador.user.displayName}
+                        color="#64748b"
+                        size={28}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-white">
+                          {espectador.user.displayName}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          @{espectador.user.username} · solo mira
+                        </p>
+                      </div>
+                      {canManageActive ? (
+                        <form action={quitarEspectadorAction}>
+                          <input
+                            type="hidden"
+                            name="competitionId"
+                            value={active.id}
+                          />
+                          <input
+                            type="hidden"
+                            name="userId"
+                            value={espectador.userId}
+                          />
+                          <ConfirmSubmit
+                            message={`¿Quitarle el acceso a ${espectador.user.displayName}? Dejará de ver este locke.`}
+                          >
+                            ✕
+                          </ConfirmSubmit>
+                        </form>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {canManageActive && admin ? (
+                <AddEspectadorForm
+                  competitionId={active.id}
+                  users={puedenMirar}
+                />
+              ) : null}
+            </div>
+          ) : null}
 
           {canManageActive ? (
             <div className="mt-5 space-y-4 border-t border-white/10 pt-4">

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getTitulosEquipados, type TituloPuesto } from "@/lib/titulos";
 import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
+import { filtroDeLockesVisibles } from "@/lib/acceso";
 import { firmasDeDosImagenes, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { COMPETITION_STATUS } from "@/lib/constants";
@@ -43,33 +44,48 @@ export type StandingRow = {
 /**
  * Competición sobre la que se está trabajando: la guardada en cookie si sigue
  * existiendo, si no la última activa, y como último recurso la más reciente.
+ *
+ * **Solo entre las que esa persona puede ver** (`lib/acceso.ts`). Este es el
+ * cuello de botella por el que pasan todas las páginas, así que filtrar aquí es
+ * lo que hace que una edición ajena no se pueda abrir ni escribiendo su
+ * identificador en la cookie a mano.
  */
 export const getActiveCompetition = cache(async () => {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const visibles = filtroDeLockesVisibles(user);
+
   const store = await cookies();
   const preferredId = store.get(COMPETITION_COOKIE)?.value;
 
   if (preferredId) {
-    const preferred = await prisma.competition.findUnique({
-      where: { id: preferredId },
+    const preferred = await prisma.competition.findFirst({
+      where: { AND: [{ id: preferredId }, visibles] },
     });
     if (preferred) return preferred;
   }
 
   return (
     (await prisma.competition.findFirst({
-      where: { status: COMPETITION_STATUS.ACTIVE },
+      where: { AND: [{ status: COMPETITION_STATUS.ACTIVE }, visibles] },
       orderBy: { startedAt: "desc" },
     })) ??
-    (await prisma.competition.findFirst({ orderBy: { createdAt: "desc" } }))
+    (await prisma.competition.findFirst({
+      where: visibles,
+      orderBy: { createdAt: "desc" },
+    }))
   );
 });
 
-export const listCompetitions = cache(async () =>
-  prisma.competition.findMany({
+/** Las ediciones que esa persona puede abrir, para el selector y el histórico. */
+export const listCompetitions = cache(async () => {
+  const user = await getCurrentUser();
+  return prisma.competition.findMany({
+    where: filtroDeLockesVisibles(user),
     orderBy: [{ status: "asc" }, { startedAt: "desc" }],
     include: { _count: { select: { participants: true } } },
-  }),
-);
+  });
+});
 
 /**
  * Participantes con las **direcciones** de sus imágenes, no las imágenes: los

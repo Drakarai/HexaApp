@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 6 de septiembre de 2026 (el formato del final del locke
-depende de cuántos jugadores queden activos: de seis a dos).
+Última actualización: 7 de septiembre de 2026 (un locke solo lo ven quienes lo
+juegan, más los administradores y los espectadores invitados).
 
 ---
 
@@ -44,7 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
@@ -54,9 +54,12 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
 
-Roles: **administrador global** (crea competiciones y usuarios),
-**administrador de competición** (participante con permisos en esa edición) y
-**jugador** (registra sus muertes, marca sus gimnasios, escribe sus notas).
+Roles: **administrador global** (crea competiciones y usuarios, y ve todos los
+lockes), **administrador de competición** (participante con permisos en esa
+edición), **jugador** (registra sus muertes, marca sus gimnasios, escribe sus
+notas) y **espectador** (mira una edición concreta entera y no puede tocar
+nada). Los tres primeros son el papel de la cuenta; el de espectador es **por
+locke**, no una marca del usuario.
 
 ---
 
@@ -588,6 +591,47 @@ llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
 as como para la del cementerio.
 
+**Un locke no se ve por defecto.** Hasta ahora cualquier cuenta que entrara se
+leía todos los Hexalockes enteros —muertes, puntos, jornadas, perfiles—, y eso
+no es lo que quiere un grupo privado: un locke es de los que lo juegan. Ahora
+una edición la ven sus **jugadores** (los de ahora y los de antes: basta con
+tener ficha de participante, aunque esté retirado, porque lo que jugó sigue
+siendo suyo), los **administradores globales** y los **espectadores** invitados.
+El resto no la ve ni sabe que existe.
+
+- **El espectador es por locke, no un papel de la cuenta.** El usuario lo pidió
+  como "rol", pero guardarlo en `User` obligaría a elegir entre enseñarlo todo o
+  nada; con una fila en `Spectator` (usuario + edición) el administrador decide
+  **qué locke** enseña y a quién, que es lo que pedía de verdad. Un espectador
+  ve la edición entera —clasificación, jornadas, cementerio, perfiles— y no
+  puede tocar nada.
+- **El filtro está en `getActiveCompetition` y `listCompetitions`**, que es por
+  donde pasan todas las páginas. Poner la comprobación en cada pantalla sería
+  acordarse de ella cada vez que se añade una; puesta aquí, una sección nueva
+  nace protegida sola. La cookie de "qué edición estoy viendo" la manda el
+  navegador, así que se vuelve a comprobar al leerla y al cambiarla: si no,
+  bastaría con escribir el identificador de un locke ajeno a mano.
+- **Se filtra con un trozo de `where`, no con una lista de identificadores.**
+  Traerse antes "los lockes de esta persona" sería un viaje más a la base de
+  datos en **cada** página, y de eso ya se habló largo en el apartado del
+  rendimiento. Para un administrador global el filtro es `{}`, o sea nada.
+- **Escribir sigue exigiendo ser jugador.** Casi todas las acciones ya pedían
+  ficha de participante o permisos de administrador, así que un espectador se
+  quedaba fuera solo; la única que se colaba eran las notas, que solo pedían
+  sesión iniciada —cualquiera podía escribir en cualquier edición—, y ahora pasa
+  por `assertPuedeTocarLocke`.
+- **La página de un jugador se comprueba aparte.** A `/jugador/[id]` se llega
+  por identificador y sin pasar por la edición activa. Si no puedes ver ese
+  locke sale un **404** y no un "no puedes": quien no tiene acceso tampoco tiene
+  por qué enterarse de que ese jugador existe.
+- **El mapa, la bolsa y las notas desaparecen del menú si no juegas.** Son de tu
+  ficha de participante, así que a un espectador no le llevan a ninguna parte:
+  en "Lo mío" le queda su cuenta, que sí es suya.
+- Lo que **no** cambia son las imágenes: se sirven por dirección firmada y
+  cacheable, con acceso público a sabiendas (está explicado más arriba). Quien
+  tenga la dirección exacta de un sprite la puede abrir sin sesión; lo que se ha
+  cerrado son las páginas, que es donde están los datos.
+
 **La Final Four se abre sola, pero se siembra a mano.** Mientras quede un
 combate de jornada sin resultado, la pantalla está bloqueada con una barra de
 progreso: hasta entonces no se sabe cómo queda la tabla. Cuando están todos,
@@ -1050,6 +1094,11 @@ Piezas con truco:
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
 - `lib/objetos.ts` — la lista de objetos de los juegos y su buscador, hermana de
   `lib/pokedex.ts`.
+- `lib/acceso.ts` — quién puede abrir un locke y quién puede escribir en él.
+  `filtroDeLockesVisibles()` es el trozo de `where` que usan
+  `getActiveCompetition` y `listCompetitions`; `puedeVerLocke()` es para las
+  pantallas a las que se llega por identificador (el perfil de un jugador) y
+  `assertPuedeTocarLocke()` el portero de las acciones que escriben.
 - `lib/formatos-finales.ts` — los cinco formatos del final del locke (de seis
   jugadores a dos) escritos como datos: cómo se llama cada uno, sus rondas, sus
   combates y cómo se decide el campeón. **No lleva `server-only` a propósito**:
@@ -1117,14 +1166,31 @@ píxeles y se ve borroso. Basta con subir uno más grande desde Administración 
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
 píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
 
-**Pendiente hablado y no hecho**: las **jornadas con cinco jugadores o menos**.
-El final del locke ya se adapta al número de jugadores, pero el calendario de
-jornadas sigue pensado para seis. El usuario dijo que explicaría cómo quiere que
-se emparejen para futuros lockes. **No tocar sin que lo cuente.**
+**Pendiente hablado y no hecho**: las **jornadas por número de jugadores**. El
+final del locke ya se adapta, pero el calendario de jornadas sigue pensado para
+seis. Esto es lo que dijo el usuario que quiere, **para lockes nuevos**: el que
+está en marcha se queda como está.
 
-Y por debajo de eso, lo de siempre: que la aplicación deje de dar por hecho que
-un locke son seis personas. `lib/formatos-finales.ts` es el primer paso; el
-usuario quiere más funciones que dependan del número de jugadores.
+| Jugadores | Cómo se emparejan las jornadas |
+| --- | --- |
+| 6 | Como ahora: tres combates por jornada, todos juegan. |
+| 5 | Como el de cuatro, pero **descansa uno distinto** cada jornada. |
+| 4 | Como ahora, asumiendo que **habrá parejas que se repitan**. |
+| 3 | **Estilo Champions dentro de cada jornada**: A-B, B-C y A-C. |
+| 2 | Cada jornada es un **combate al mejor de tres**. |
+
+Y el **dualocke** (dos jugadores) es el caso raro: quien gane **4 de las 6
+jornadas** —contando la Jornada Final— gana el locke en combates, que es una
+victoria aparte de ser campeón de la Liga (esa también cuenta). Ahí la tabla de
+clasificación no dice gran cosa y los retos casi no se usan, así que el usuario
+quiere un **menú alternativo** para los lockes de dos, no la pantalla de
+siempre. Está por decidir cómo se plantea eso; hay una propuesta hablada de
+hacerlo con un "perfil de locke" por número de jugadores en vez de con menús
+escritos a mano. **No tocar sin cerrarlo antes.**
+
+Por debajo de todo eso, lo de siempre: que la aplicación deje de dar por hecho
+que un locke son seis personas, y que llegue a servir **de dos a seis** (quizá
+siete u ocho más adelante). `lib/formatos-finales.ts` es el primer paso.
 
 Ideas comentadas y no hechas:
 
@@ -1240,3 +1306,6 @@ lugar de destruir datos, y hay que avisar antes.
 36. **El final del locke se adapta a cuántos queden**: cinco formatos de seis
     jugadores a dos, elegidos por el número de activos, y con dos nombres
     —Final Four de cuatro para arriba, Jornada Final de tres para abajo.
+37. **Los lockes dejan de ser públicos entre las cuentas**: cada edición la ven
+    solo quienes la juegan o la jugaron, los administradores y los espectadores
+    a los que se les dé ese locke.

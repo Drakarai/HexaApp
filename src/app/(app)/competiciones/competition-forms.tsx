@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addParticipantAction,
   createCompetitionAction,
+  darEspectadorAction,
   updateCompetitionAction,
   updateParticipantAction,
 } from "@/app/actions/competitions";
@@ -344,6 +345,53 @@ export function EditParticipantForm({
           Cancelar
         </button>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Dar acceso de solo mirar a alguien que no juega esta edición. Va aparte del
+ * alta de jugadores porque es justo lo contrario: entra para ver, no para
+ * jugar, y no ocupa plaza del locke.
+ */
+export function AddEspectadorForm({
+  competitionId,
+  users,
+}: {
+  competitionId: string;
+  users: Array<{ id: string; displayName: string; username: string }>;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    darEspectadorAction,
+    null,
+  );
+
+  if (!users.length) {
+    return (
+      <p className="muted">
+        No queda ningún usuario a quien dar acceso: o juegan este locke o ya lo
+        miran.
+      </p>
+    );
+  }
+
+  return (
+    <form action={formAction} className="space-y-3">
+      <input type="hidden" name="competitionId" value={competitionId} />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="min-w-52 flex-1">
+          <label className="label">Dejar mirar a</label>
+          <select name="userId" className="input" required>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>
+                {user.displayName} (@{user.username})
+              </option>
+            ))}
+          </select>
+        </div>
+        <SubmitButton className="btn-ghost">Dar acceso</SubmitButton>
+      </div>
+      <FormMessage state={state} />
     </form>
   );
 }

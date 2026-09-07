@@ -44,6 +44,7 @@ model User {
   titles         TitleAward[]  @relation("TitleOwner")
   titlesGiven    TitleAward[]  @relation("TitleGiver")
   visitas        TabSeen[]
+  espectador     Spectator[]
 }
 
 /**
@@ -389,6 +390,27 @@ model Competition {
   tickets      RouletteTicket[]
   challenges   ChallengeMatch[]
   visitas      TabSeen[]
+  espectadores Spectator[]
+}
+
+/**
+ * Permiso de **solo mirar** una edición concreta.
+ *
+ * Un locke lo ven sus jugadores (los de ahora y los de antes), los
+ * administradores globales y quien tenga una fila aquí. Es por edición y no una
+ * marca en `User` a propósito: el administrador decide qué locke enseña y a
+ * quién, no abre todos de golpe.
+ */
+model Spectator {
+  id            String   @id @default(cuid())
+  userId        String
+  competitionId String
+  createdAt     DateTime @default(now())
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, competitionId])
 }
 
 model Participant {

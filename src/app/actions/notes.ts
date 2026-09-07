@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
+import { assertPuedeTocarLocke } from "@/lib/acceso";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -15,6 +16,14 @@ export async function createNoteAction(
 ): Promise<FormState> {
   const me = await requireUser();
   const competitionId = String(formData.get("competitionId") ?? "");
+  // Escribir es de los que juegan: un espectador mira el locke y no deja nada
+  // dentro, ni siquiera en su propio cuaderno
+  try {
+    await assertPuedeTocarLocke(competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return { error: "Ponle un título a la nota." };
 
