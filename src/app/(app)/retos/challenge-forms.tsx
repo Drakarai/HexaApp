@@ -2,7 +2,9 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
+  anadirPremioAction,
   createChallengeAction,
+  quitarPremioAction,
   setChallengeResultAction,
 } from "@/app/actions/challenges";
 import type { FormState } from "@/app/actions/auth";
@@ -202,5 +204,125 @@ export function ChallengeResultForm({
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Los objetos que se lleva quien gane el reto, y el botón de añadir otro.
+ *
+ * Es aparte del premio escrito a mano porque son dos cosas distintas: el texto
+ * es cualquier cosa ("eliges su starter") y esto **cae solo en su bolsa** al
+ * apuntar el resultado.
+ */
+export function PremioEnObjetos({
+  challengeId,
+  premios,
+  catalogo,
+  yaEntregado,
+}: {
+  challengeId: string;
+  premios: Array<{
+    id: string;
+    quantity: number;
+    entregadoA: string | null;
+    item: { name: string; image: string | null };
+  }>;
+  catalogo: Array<{ id: string; name: string }>;
+  /** Nombre de quien ya se los ha llevado, si el reto está jugado */
+  yaEntregado: string | null;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    anadirPremioAction,
+    null,
+  );
+
+  return (
+    <div className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] p-3">
+      <p className="text-[11px] uppercase tracking-wide text-slate-500">
+        Objetos del premio
+      </p>
+
+      {premios.length ? (
+        <ul className="mt-2 flex flex-wrap gap-2">
+          {premios.map((premio) => (
+            <li
+              key={premio.id}
+              className="flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 py-1 pl-2 pr-1 text-sm text-emerald-100"
+            >
+              {premio.item.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={premio.item.image}
+                  alt=""
+                  className="h-5 w-5 object-contain"
+                />
+              ) : null}
+              <span>
+                {premio.quantity > 1 ? `${premio.quantity} × ` : ""}
+                {premio.item.name}
+              </span>
+              <form action={quitarPremioAction}>
+                <input type="hidden" name="premioId" value={premio.id} />
+                <button
+                  type="submit"
+                  className="rounded-full px-1.5 text-emerald-300/70 transition hover:bg-emerald-500/20 hover:text-emerald-100"
+                  title="Quitar del premio"
+                >
+                  ✕
+                </button>
+              </form>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-xs text-slate-500">
+          Ninguno. Si añades objetos, caen solos en la bolsa del que gane.
+        </p>
+      )}
+
+      {yaEntregado && premios.length ? (
+        <p className="mt-2 text-xs text-emerald-300/80">
+          Ya están en la bolsa de {yaEntregado}.
+        </p>
+      ) : null}
+
+      {catalogo.length ? (
+        <form action={formAction} className="mt-3 flex flex-wrap items-end gap-2">
+          <input type="hidden" name="challengeId" value={challengeId} />
+          <div className="min-w-40 flex-1">
+            <label className="label">Objeto</label>
+            <select name="itemId" className="input" required defaultValue="">
+              <option value="" disabled>
+                Elige uno
+              </option>
+              {catalogo.map((objeto) => (
+                <option key={objeto.id} value={objeto.id}>
+                  {objeto.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="w-20">
+            <label className="label">Cantidad</label>
+            <input
+              name="quantity"
+              type="number"
+              min={1}
+              max={99}
+              defaultValue={1}
+              className="input"
+            />
+          </div>
+          <SubmitButton className="btn-ghost btn-sm">Añadir</SubmitButton>
+          <div className="w-full">
+            <FormMessage state={state} />
+          </div>
+        </form>
+      ) : (
+        <p className="mt-2 text-xs text-slate-500">
+          El catálogo de objetos está vacío: créalos en Administración → Bolsa.
+        </p>
+      )}
+    </div>
   );
 }

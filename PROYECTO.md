@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 7 de septiembre de 2026 (la aplicación deja de dar por
-hecho que un locke son seis: jornadas, marcador y rótulos según cuántos jueguen).
+Última actualización: 7 de septiembre de 2026 (los retos reparten objetos y
+anuncian el castigo; la jornada del dualocke es un mejor de tres de verdad).
 
 ---
 
@@ -38,7 +38,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
-| **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. |
+| **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
@@ -591,6 +591,32 @@ llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
 as como para la del cementerio.
 
+**Un reto puede repartir objetos, y el castigo se anuncia.** Las dos cosas
+venían de lo mismo: un reto se apuntaba y luego había que acordarse de darle el
+premio por Administración y de recordarle a alguien su castigo, y ninguna de las
+dos se hacía.
+
+- **El premio tiene dos formas y no se pisan.** El texto libre de siempre es
+  cualquier cosa que no cabe en una bolsa ("eliges su starter", "te debe una"), y
+  sigue igual. Los **objetos del catálogo** (`ChallengePrize`) caen solos en la
+  bolsa del ganador al apuntar el resultado. Se puede poner uno, el otro o los
+  dos.
+- **Cada objeto del premio recuerda a quién se le dio** (`entregadoA`), fila por
+  fila y no un "ya entregado" global. Es lo que hace que los tres casos de
+  verdad salgan bien: apuntar el ganador entrega, corregirlo se lo quita al
+  primero y se lo da al segundo, y añadir un objeto con el reto ya jugado
+  entrega **solo ese** y deja los demás quietos. Borrar el reto o quitar el
+  objeto lo devuelve.
+- **Devolver nunca deja la bolsa en negativo.** Si mientras tanto se lo ha
+  gastado, la cuenta se queda en cero y la fila desaparece: perseguir un objeto
+  ya usado no tendría sentido.
+- **El castigo sale en la portada, no dentro de su reto.** Metido entre el
+  premio, la diferencia y los equipos se perdía, y de un castigo tiene que
+  enterarse todo el grupo. Sale hasta que un administrador le da a "Cumplido",
+  que **no lo borra**: `castigoVisible` solo deja de anunciarlo, y se puede
+  volver a encender. Empieza puesto y se apaga a mano, no al revés: si hubiera
+  que acordarse de encenderlo, no se encendería nunca.
+
 **Un locke no son necesariamente seis personas.** La aplicación nació para el
 Hexalocke y lo daba por hecho en todas partes. Ahora hay un **perfil de locke**
 (`lib/perfiles-de-locke.ts`) que dice qué cambia según cuánta gente juega, y las
@@ -620,6 +646,14 @@ pantallas preguntan al perfil en vez de saberse los casos.
   borran y se ponen otros como siempre. El orden de los jugadores para la
   rotación es **por fecha de alta**, no por nombre: si alguien se cambia el mote,
   el reparto no puede bailar.
+- **La jornada del dualocke son dos combates, o tres.** Un mejor de tres se
+  acaba en dos si alguien gana los dos primeros, así que la jornada **nace con
+  dos** y el desempate se añade solo cuando la serie queda 1-1 (`lib/series.ts`).
+  Crear los tres de entrada dejaba uno de adorno que la mitad de las veces no se
+  jugaba. Funciona en los dos sentidos: si se corrige un resultado y el
+  desempate deja de hacer falta, se quita —y nunca se borra un combate ya
+  jugado. Por eso el perfil guarda `serieAlMejorDe` (3) y no los combates que se
+  juegan: eso depende de cómo vaya la serie.
 - **El dualocke se gana por jornadas, no por puntos.** Con dos jugadores la
   clasificación no dice nada —un punto por combate y siempre a un palmo—, así
   que la pantalla de Puntos pasa a ser el **Marcador**: jornadas ganadas, cuántas
@@ -1173,6 +1207,12 @@ Piezas con truco:
   (método del círculo) y de ahí salen los combates que propone
   `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
   dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `lib/premios.ts` — los objetos que reparte un reto y los castigos que hay que
+  anunciar. `sincronizarPremios()` es la que da y quita según quién gane;
+  `components/castigos.tsx` es el bloque de la portada.
+- `lib/series.ts` — el desempate de una jornada al mejor de tres: lo añade
+  cuando la serie se empata y lo quita cuando sobra. Se llama desde las tres
+  acciones que pueden cambiar el resultado de un combate.
 - `lib/liga.ts` — quién se ha pasado la Liga Pokémon. No guarda nada: lo deduce
   de tener marcado el level cap de tipo `CHAMPION`.
 - `lib/acceso.ts` — quién puede abrir un locke y quién puede escribir en él.
@@ -1377,3 +1417,6 @@ lugar de destruir datos, y hay que avisar antes.
 38. **De dos a ocho jugadores**: las jornadas se emparejan solas con la liguilla
     que toque, el locke de dos se gana por jornadas en vez de por puntos, y
     pasarse la Liga Pokémon queda apuntado como la otra forma de ganar.
+39. **Los retos reparten objetos y anuncian el castigo**: el premio puede caer
+    solo en la bolsa del ganador y el castigo del perdedor sale en la portada
+    hasta que se da por cumplido.

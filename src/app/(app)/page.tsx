@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser, isAdmin } from "@/lib/auth";
-import { getActiveCompetition, getStandings } from "@/lib/competition";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getStandings,
+} from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
 import { getFormatoFinal } from "@/lib/final-four";
@@ -17,6 +21,8 @@ import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
 import { MarcadorDual } from "@/components/marcador-dual";
+import { getCastigosPendientes } from "@/lib/premios";
+import { Castigos } from "@/components/castigos";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -34,7 +40,7 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador, castigos, canManage] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -67,6 +73,9 @@ export default async function DashboardPage() {
       // Cuántos llevan medalla de clasificado depende del formato de la final
       getFormatoFinal(competition.id),
       porJornadas ? getMarcador(competition.id) : null,
+      // Los castigos de los retos perdidos, que son cosa de todos
+      getCastigosPendientes(competition.id),
+      canManageCompetition(competition.id, user),
     ]);
 
   /** Quién va primero, dicho como toque: por puntos o por jornadas ganadas */
@@ -248,6 +257,8 @@ export default async function DashboardPage() {
           )}
         </section>
       </div>
+
+      <Castigos castigos={castigos} canManage={canManage} />
 
       {myParticipant ? (
         <p className="mt-6 text-xs text-slate-500">

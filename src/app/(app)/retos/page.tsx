@@ -12,8 +12,16 @@ import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
-import { deleteChallengeAction } from "@/app/actions/challenges";
-import { NewChallengeForm, ChallengeResultForm } from "./challenge-forms";
+import { getCatalogo } from "@/lib/bolsa";
+import {
+  deleteChallengeAction,
+  ocultarCastigoAction,
+} from "@/app/actions/challenges";
+import {
+  NewChallengeForm,
+  ChallengeResultForm,
+  PremioEnObjetos,
+} from "./challenge-forms";
 
 export const metadata = { title: "Retos" };
 
@@ -22,15 +30,28 @@ export default async function RetosPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
 
-  const [canManage, participants, retos] = await Promise.all([
-    canManageCompetition(competition.id, user),
+  // Antes que lo demás: el catálogo solo se pide si esa persona puede tocarlo
+  const canManage = await canManageCompetition(competition.id, user);
+
+  const [participants, retos, catalogo] = await Promise.all([
     getParticipants(competition.id),
     prisma.challengeMatch.findMany({
       where: { competitionId: competition.id },
       orderBy: [{ playedAt: "desc" }, { createdAt: "desc" }],
-      include: { team: { orderBy: { position: "asc" } } },
+      include: {
+        team: { orderBy: { position: "asc" } },
+        premios: { include: { item: { omit: { image: true } } } },
+      },
     }),
+    // Para elegir qué objetos se lleva quien gane
+    canManage ? getCatalogo() : Promise.resolve([]),
   ]);
+
+  // Direcciones de las imágenes de los objetos del premio, no las imágenes
+  const imagenesDeObjeto = await urlsDeImagen(
+    "objeto",
+    retos.flatMap((reto) => reto.premios.map((premio) => premio.itemId)),
+  );
 
   const porId = new Map(participants.map((jugador) => [jugador.id, jugador]));
   const opciones = participants.map((jugador) => ({
@@ -138,15 +159,70 @@ export default async function RetosPage() {
                       </p>
                     ) : null}
                     {reto.punishment ? (
-                      <p className="rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-sm text-red-100">
-                        <span className="mr-1" aria-hidden>
-                          ☠️
-                        </span>
-                        <span className="text-red-300/80">Castigo: </span>
-                        {reto.punishment}
-                      </p>
+                      <div className="rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-sm text-red-100">
+                        <p>
+                          <span className="mr-1" aria-hidden>
+                            ☠️
+                          </span>
+                          <span className="text-red-300/80">Castigo: </span>
+                          {reto.punishment}
+                        </p>
+                        {canManage && jugado ? (
+                          <form action={ocultarCastigoAction} className="mt-1">
+                            <input
+                              type="hidden"
+                              name="challengeId"
+                              value={reto.id}
+                            />
+                            <button
+                              type="submit"
+                              className="text-xs text-red-300/70 underline underline-offset-2 transition hover:text-red-100"
+                            >
+                              {reto.castigoVisible
+                                ? "Dejar de anunciarlo en la portada"
+                                : "Volver a anunciarlo en la portada"}
+                            </button>
+                          </form>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
+                ) : null}
+
+                {reto.premios.length && !canManage ? (
+                  <p className="mt-2 text-xs text-emerald-300/80">
+                    🎒 También se lleva:{" "}
+                    {reto.premios
+                      .map(
+                        (premio) =>
+                          `${premio.quantity > 1 ? `${premio.quantity} × ` : ""}${premio.item.name}`,
+                      )
+                      .join(", ")}
+                  </p>
+                ) : null}
+
+                {canManage ? (
+                  <PremioEnObjetos
+                    challengeId={reto.id}
+                    premios={reto.premios.map((premio) => ({
+                      id: premio.id,
+                      quantity: premio.quantity,
+                      entregadoA: premio.entregadoA,
+                      item: {
+                        name: premio.item.name,
+                        image: imagenesDeObjeto(premio.itemId),
+                      },
+                    }))}
+                    catalogo={catalogo.map((objeto) => ({
+                      id: objeto.id,
+                      name: objeto.name,
+                    }))}
+                    yaEntregado={
+                      reto.winnerId
+                        ? (porId.get(reto.winnerId)?.displayName ?? null)
+                        : null
+                    }
+                  />
                 ) : null}
 
                 {reto.notes ? (

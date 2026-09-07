@@ -6,6 +6,7 @@ import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { ajustarDesempate } from "@/lib/series";
 import { enlaceSeguro } from "@/lib/utils";
 
 /**
@@ -250,6 +251,10 @@ export async function setMatchResultAction(formData: FormData) {
    */
   await resolverRetiradas(match.matchday.competitionId, manager.id);
 
+  // Y si la jornada es una serie al mejor de tres, puede tocar añadir o quitar
+  // el desempate: ver lib/series.ts
+  await ajustarDesempate(match.matchdayId);
+
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/");
@@ -326,6 +331,7 @@ export async function darPorRetiradaAction(formData: FormData) {
 
   // Puede haber completado la jornada y desbloquear otras retiradas
   await resolverRetiradas(match.matchday.competitionId, manager.id);
+  await ajustarDesempate(match.matchdayId);
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
@@ -346,6 +352,7 @@ export async function deleteMatchAction(formData: FormData) {
 
   // Borrar el combate que faltaba también deja la jornada terminada
   await resolverRetiradas(match.matchday.competitionId, null);
+  await ajustarDesempate(match.matchdayId);
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");

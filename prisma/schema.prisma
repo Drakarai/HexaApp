@@ -7,7 +7,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   // La que usa la aplicación para atender páginas. Con el pooler de Neon, es
   // la que lleva "-pooler" en el nombre del servidor.
   url       = env("DATABASE_URL")
@@ -37,19 +37,18 @@ model User {
 
   participations Participant[]
   notes          Note[]
-  pointsGiven    PointEntry[]  @relation("PointAuthor")
+  pointsGiven    PointEntry[]     @relation("PointAuthor")
   spins          RouletteSpin[]
-  competitions   Competition[] @relation("CompetitionCreator")
+  competitions   Competition[]    @relation("CompetitionCreator")
   ticketsGiven   RouletteTicket[] @relation("TicketAuthor")
-  titles         TitleAward[]  @relation("TitleOwner")
-  titlesGiven    TitleAward[]  @relation("TitleGiver")
+  titles         TitleAward[]     @relation("TitleOwner")
+  titlesGiven    TitleAward[]     @relation("TitleGiver")
   visitas        TabSeen[]
   espectador     Spectator[]
 }
 
 /**
  * Cuándo miró alguien por última vez una pestaña.
- *
  * Es lo único que hace falta para el punto de "hay algo nuevo aquí": lo nuevo
  * se calcula comparando esta fecha con la de lo que ha pasado, así que no hay
  * que guardar una lista de novedades por persona ni marcar nada como leído
@@ -59,7 +58,9 @@ model TabSeen {
   id            String   @id @default(cuid())
   userId        String
   competitionId String
-  /** El rótulo del grupo del menú: "Combates", "La edición" o "Lo mío". */
+  /**
+   * El rótulo del grupo del menú: "Combates", "La edición" o "Lo mío".
+   */
   tab           String
   seenAt        DateTime @default(now())
 
@@ -82,9 +83,13 @@ model TabSeen {
 model Title {
   id          String   @id @default(cuid())
   name        String
-  /** Qué significa. Sale al pasar por encima de la chapa. */
+  /**
+   * Qué significa. Sale al pasar por encima de la chapa.
+   */
   description String?
-  /** Un emoji, para que la chapa se reconozca de un vistazo */
+  /**
+   * Un emoji, para que la chapa se reconozca de un vistazo
+   */
   icon        String?
   color       String   @default("#a78bfa")
   createdAt   DateTime @default(now())
@@ -92,21 +97,25 @@ model Title {
   awards TitleAward[]
 }
 
-/** Que a alguien le hayan dado un título, con el porqué. */
+/**
+ * Que a alguien le hayan dado un título, con el porqué.
+ */
 model TitleAward {
-  id        String   @id @default(cuid())
-  titleId   String
-  userId    String
-  /** Por qué se lo ha llevado. Lo escribe quien lo concede. */
-  note      String?
+  id          String   @id @default(cuid())
+  titleId     String
+  userId      String
+  /**
+   * Por qué se lo ha llevado. Lo escribe quien lo concede.
+   */
+  note        String?
   /**
    * Si es el que lleva puesto ahora mismo, el que sale debajo de su nombre.
    * Solo puede haber uno encendido por persona; de eso se encarga la acción de
    * equipar, que apaga los demás en la misma transacción. Se guarda aquí y no
    * en `User` para no meter una clave foránea circular entre las dos tablas.
    */
-  equipped  Boolean  @default(false)
-  awardedAt DateTime @default(now())
+  equipped    Boolean  @default(false)
+  awardedAt   DateTime @default(now())
   awardedById String?
 
   title     Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
@@ -126,64 +135,75 @@ model TitleAward {
  * El mapa de una región (Johto, Kanto…). **Es global, no de cada edición**: el
  * mapa de Johto vale igual para un locke en Oro que para uno en HeartGold, y
  * así se edita una vez y sirve para siempre.
- *
  * Los mapas viven en la base de datos y no en el código a propósito: se editan
  * desde Administración, y un nombre mal traducido o una zona que falte se
  * arregla ahí en vez de esperar a que alguien toque el programa. De
  * `lib/mapas-de-fabrica.ts` solo se copian la primera vez.
  */
 model MapRegion {
-  id      String @id @default(cuid())
-  /** "johto", "kanto"… El identificador de lib/juegos.ts */
-  slug    String @unique
-  name    String
+  id     String  @id @default(cuid())
+  /**
+   * "johto", "kanto"… El identificador de lib/juegos.ts
+   */
+  slug   String  @unique
+  name   String
   /**
    * La imagen del mapa, si alguien la sube: las chinchetas se pintan encima.
    * Es opcional y el esquema funciona igual sin ella.
    */
-  image   String?
-  /** Tamaño del lienzo sobre el que se colocan las zonas */
-  width   Int    @default(1490)
-  height  Int    @default(890)
+  image  String?
+  /**
+   * Tamaño del lienzo sobre el que se colocan las zonas
+   */
+  width  Int     @default(1490)
+  height Int     @default(890)
 
   zones MapZone[]
 }
 
 /**
  * Un sitio del mapa donde se puede capturar algo: una ruta, una cueva…
- *
  * Cada zona es una **forma dibujada sobre el mapa**, y se pinta transparente
  * hasta que apuntas algo dentro; entonces se rellena de su color. Por eso no
  * lleva el nombre escrito encima: el mapa se vería lleno de etiquetas y ya no
  * se vería el mapa. El nombre sale al tocarla.
- *
  * Una zona puede **llevar otras dentro** (`parentId`): una ciudad que además
  * tiene su propia zona capturable aparte. Entonces la forma del padre no se
  * captura directamente; al tocarla salen las hijas para elegir.
  */
 model MapZone {
-  id       String @id @default(cuid())
+  id       String  @id @default(cuid())
   regionId String
   name     String
-  /** "ruta" | "ciudad" | "cueva" | "bosque" | "agua" | "otro". Solo es color. */
-  kind     String @default("ruta")
+  /**
+   * "ruta" | "ciudad" | "cueva" | "bosque" | "agua" | "otro". Solo es color.
+   */
+  kind     String  @default("ruta")
   /**
    * Qué forma tiene sobre el mapa: "rect", "circle", "poly" o "none".
    * Las de "none" no salen dibujadas, solo en la lista de zonas.
    */
-  shape    String @default("rect")
-  /** Esquina superior izquierda del recuadro que la contiene */
+  shape    String  @default("rect")
+  /**
+   * Esquina superior izquierda del recuadro que la contiene
+   */
   x        Int
   y        Int
-  w        Int    @default(150)
-  h        Int    @default(44)
-  /** Solo para "poly": los vértices, en JSON `[[x,y], …]` del lienzo */
+  w        Int     @default(150)
+  h        Int     @default(44)
+  /**
+   * Solo para "poly": los vértices, en JSON `[[x,y], …]` del lienzo
+   */
   points   String?
-  /** Color propio. Si no lo tiene, se usa el de su tipo (ver lib/zonas.ts) */
+  /**
+   * Color propio. Si no lo tiene, se usa el de su tipo (ver lib/zonas.ts)
+   */
   color    String?
-  /** Si cuelga de otra zona, cuál. Las hijas no se dibujan: viven en su padre. */
+  /**
+   * Si cuelga de otra zona, cuál. Las hijas no se dibujan: viven en su padre.
+   */
   parentId String?
-  position Int    @default(0)
+  position Int     @default(0)
 
   region   MapRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
   parent   MapZone?  @relation("ZonaPadre", fields: [parentId], references: [id], onDelete: SetNull)
@@ -197,11 +217,9 @@ model MapZone {
 
 /**
  * Una captura apuntada por un jugador en su mapa.
- *
  * **Es privada como las notas**: se consulta y se borra siempre filtrando por
  * el participante de quien mira, y no hay ninguna pantalla que enseñe las de
  * otro, tampoco a los administradores.
- *
  * `zoneId` va vacío en las capturas extra, que son las que no salen de una zona
  * del mapa (un regalo, un intercambio, una captura de premio).
  */
@@ -211,9 +229,13 @@ model Capture {
   zoneId        String?
   species       String
   nickname      String?
-  /** Sprite de caja, descargado al guardar como en el resto de la aplicación */
+  /**
+   * Sprite de caja, descargado al guardar como en el resto de la aplicación
+   */
   image         String?
-  /** Si se escapó, se murió al capturarlo o lo que sea que pasara */
+  /**
+   * Si se escapó, se murió al capturarlo o lo que sea que pasara
+   */
   notes         String?
   /**
    * Que **no** se pudo capturar: se escapó, se murió, o el encuentro se falló.
@@ -238,13 +260,11 @@ model Capture {
 /**
  * Un objeto que puede acabar en la bolsa de alguien. Hay de dos clases y se
  * guardan igual:
- *
  * - Los del juego, elegidos de la lista de PokéAPI: llegan con su `apiSlug` y
- *   el servidor se baja el dibujo al crearlos, así que después la aplicación no
- *   depende de que GitHub siga en pie.
+ * el servidor se baja el dibujo al crearlos, así que después la aplicación no
+ * depende de que GitHub siga en pie.
  * - Los inventados ("Captura extra", "Objeto competitivo"), con la imagen que
- *   suba el administrador.
- *
+ * suba el administrador.
  * El catálogo es **global y no de cada edición**, como los títulos: "Captura
  * extra" significa lo mismo en el Hexalocke 3 que en el 2 y no tiene sentido
  * volver a crearlo cada vez. Las bolsas sí son de cada participante.
@@ -252,17 +272,22 @@ model Capture {
 model Item {
   id          String   @id @default(cuid())
   name        String
-  /** Para qué sirve. Sale debajo del nombre en la bolsa. */
+  /**
+   * Para qué sirve. Sale debajo del nombre en la bolsa.
+   */
   description String?
-  /** El objeto en PokéAPI. Único para no tener dos veces la misma Poké Ball. */
+  /**
+   * El objeto en PokéAPI. Único para no tener dos veces la misma Poké Ball.
+   */
   apiSlug     String?  @unique
-  /** La imagen ya reducida (data URL), venga de la lista o subida a mano */
+  /**
+   * La imagen ya reducida (data URL), venga de la lista o subida a mano
+   */
   image       String?
   /**
    * Si es un **grupo**: al usarlo no se gasta y ya, sino que sale la lista de
    * lo que lleva dentro para elegir con qué te quedas ("Objeto competitivo" →
    * Globo Helio, Casco Dentado…).
-   *
    * Se guarda aparte de tener o no `options` porque un grupo recién creado
    * todavía no tiene ninguno, y aun así hay que saber que es un grupo: si no,
    * se gastaría sin preguntar nada.
@@ -273,6 +298,7 @@ model Item {
   options ItemOption[]
   entries BagEntry[]
   uses    BagUse[]
+  premios ChallengePrize[]
 }
 
 /**
@@ -303,7 +329,9 @@ model BagEntry {
   participantId String
   itemId        String
   quantity      Int      @default(1)
-  /** Apunte del administrador: de dónde salió, hasta cuándo vale… */
+  /**
+   * Apunte del administrador: de dónde salió, hasta cuándo vale…
+   */
   note          String?
   updatedAt     DateTime @updatedAt
 
@@ -318,7 +346,6 @@ model BagEntry {
 /**
  * Que alguien haya gastado un objeto. Es lo que sale en el muro de actividad:
  * la bolsa es privada, pero **usar** algo se anuncia, que para eso cuenta.
- *
  * Guarda copiado el nombre de lo usado porque los enlaces se ponen a null si el
  * objeto desaparece del catálogo: el historial tiene que aguantar eso.
  */
@@ -344,47 +371,45 @@ model BagUse {
 // ---------------------------------------------------------------------------
 
 model Competition {
-  id             String    @id @default(cuid())
-  name           String
-  slug           String    @unique
+  id                  String    @id @default(cuid())
+  name                String
+  slug                String    @unique
   // Juego / edición sobre la que se juega ("Pokémon HeartGold y SoulSilver")
-  game           String?
+  game                String?
   /**
    * El juego elegido de la lista de `lib/juegos.ts` ("heartgold"). De aquí sale
    * la región, y de la región el mapa de capturas.
-   *
    * Convive con `game`, que es texto libre, y no lo sustituye: las ediciones de
    * antes de que existiera la lista siguen enseñando lo que se escribió a mano.
    */
-  gameId         String?
+  gameId              String?
   // Modalidad ("Random", "Nuzlocke clásico", ...)
-  modality       String?
-  description    String?
+  modality            String?
+  description         String?
   // "ACTIVE" | "ARCHIVED"
-  status         String    @default("ACTIVE")
+  status              String    @default("ACTIVE")
   // Puntos con los que arranca cada participante
-  startingPoints Int       @default(5)
-  maxPlayers     Int       @default(6)
+  startingPoints      Int       @default(5)
+  maxPlayers          Int       @default(6)
   /**
    * Si la diferencia de pokémon de los combates de reto cuenta para el
    * desempate de la clasificación. Los retos nunca dan puntos; esto solo
    * decide si su diferencia entra en el tercer criterio.
    */
-  challengeDiffCounts Boolean @default(false)
+  challengeDiffCounts Boolean   @default(false)
   /**
    * Cuántas jornadas se van a jugar en total, si se sabe de antemano.
-   *
    * Hace falta para los lockes que se ganan **por jornadas** y no por puntos
    * (el dualocke): "gana el que se lleve 4 de las 6" solo se puede calcular
    * sabiendo que son seis. Las jornadas se van creando sobre la marcha, así que
    * contar las que hay daría un número que cambia y podría coronar a alguien
    * antes de tiempo. Sin rellenar se usa las que haya creadas.
    */
-  jornadasPrevistas Int?
-  startedAt      DateTime  @default(now())
-  endedAt        DateTime?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  jornadasPrevistas   Int?
+  startedAt           DateTime  @default(now())
+  endedAt             DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   createdById String?
   createdBy   User?   @relation("CompetitionCreator", fields: [createdById], references: [id], onDelete: SetNull)
@@ -405,7 +430,6 @@ model Competition {
 
 /**
  * Permiso de **solo mirar** una edición concreta.
- *
  * Un locke lo ven sus jugadores (los de ahora y los de antes), los
  * administradores globales y quien tenga una fila aquí. Es por edición y no una
  * marca en `User` a propósito: el administrador decide qué locke enseña y a
@@ -424,26 +448,24 @@ model Spectator {
 }
 
 model Participant {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   competitionId String
   userId        String
   // Nombre mostrado dentro de esta competición (mote/nick del jugador)
   displayName   String
   // Edición del juego que le tocó ("HeartGold" / "SoulSilver")
   gameVersion   String?
-  color         String   @default("#6366f1")
+  color         String    @default("#6366f1")
   // Admin de esta competición concreta (puede editar reglas, ruletas y puntos)
-  isAdmin       Boolean  @default(false)
-  joinedAt      DateTime @default(now())
+  isAdmin       Boolean   @default(false)
+  joinedAt      DateTime  @default(now())
   /**
    * Cuándo se retiró del locke, si es que se retiró.
-   *
    * **No se le borra nada**: su cementerio, sus puntos y sus combates jugados
    * siguen ahí, y la clasificación lo sigue enseñando, tachado y al final. Lo
    * único que cambia es que deja de contar para lo que hace avanzar al grupo
    * —los gimnasios, el MVP, los emparejamientos nuevos— y que sus combates
    * pendientes se dan por perdidos.
-   *
    * Es reversible: si vuelve, se le quita la marca. Los combates que ya se
    * hayan dado por retirada no se deshacen solos.
    */
@@ -461,26 +483,26 @@ model Participant {
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  deaths       Death[]
-  pointEntries PointEntry[]
-  gymClears    GymClear[]
-  gymVideos    GymVideo[]
-  notesAbout   Note[]       @relation("NoteSubject")
-  matchesAsA   Match[]      @relation("MatchPlayerA")
-  matchesAsB   Match[]      @relation("MatchPlayerB")
-  matchesWon   Match[]      @relation("MatchWinner")
-  finalsWon    FinalMatch[] @relation("FinalMatchWinner")
-  hallOfFame   HallOfFameEntry[]
-  tickets      RouletteTicket[]
-  matchTeams   MatchPokemon[]
-  mvpVotes     MvpVote[]    @relation("MvpVoter")
-  favorites    FavoritePokemon[]
-  challengesA  ChallengeMatch[] @relation("ChallengePlayerA")
-  challengesB  ChallengeMatch[] @relation("ChallengePlayerB")
-  challengesWon ChallengeMatch[] @relation("ChallengeWinner")
-  bag          BagEntry[]
-  bagUses      BagUse[]
-  captures     Capture[]
+  deaths        Death[]
+  pointEntries  PointEntry[]
+  gymClears     GymClear[]
+  gymVideos     GymVideo[]
+  notesAbout    Note[]            @relation("NoteSubject")
+  matchesAsA    Match[]           @relation("MatchPlayerA")
+  matchesAsB    Match[]           @relation("MatchPlayerB")
+  matchesWon    Match[]           @relation("MatchWinner")
+  finalsWon     FinalMatch[]      @relation("FinalMatchWinner")
+  hallOfFame    HallOfFameEntry[]
+  tickets       RouletteTicket[]
+  matchTeams    MatchPokemon[]
+  mvpVotes      MvpVote[]         @relation("MvpVoter")
+  favorites     FavoritePokemon[]
+  challengesA   ChallengeMatch[]  @relation("ChallengePlayerA")
+  challengesB   ChallengeMatch[]  @relation("ChallengePlayerB")
+  challengesWon ChallengeMatch[]  @relation("ChallengeWinner")
+  bag           BagEntry[]
+  bagUses       BagUse[]
+  captures      Capture[]
   equipoDeTipos TypeTeam?
 
   @@unique([competitionId, userId])
@@ -510,13 +532,13 @@ model RuleSection {
 }
 
 model LevelCap {
-  id            String  @id @default(cuid())
+  id            String   @id @default(cuid())
   competitionId String
   // Nombre del líder / hito ("Pegaso", "Alto Mando", "Liga Pokémon")
   label         String
   cap           Int
   // "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER"
-  kind          String  @default("GYM")
+  kind          String   @default("GYM")
   badge         String?
   notes         String?
   // Medallas o retratos: si hay más de una, se van alternando con un fundido.
@@ -525,7 +547,7 @@ model LevelCap {
   // Legado de cuando solo se admitía una imagen. Se sigue leyendo como
   // respaldo si "images" está vacío, y se vacía al guardar desde el formulario.
   image         String?
-  position      Int     @default(0)
+  position      Int      @default(0)
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   clears      GymClear[]
@@ -551,7 +573,6 @@ model GymClear {
  * El vídeo de cómo alguien se pasó un gimnasio. **Solo el enlace de YouTube**:
  * un combate son unos 115 MB y la base de datos gratis entera son 500 MB, así
  * que los vídeos viven fuera y aquí queda la dirección.
- *
  * Va en su propia tabla y no dentro de `GymClear` a propósito: si colgara de
  * ahí, desmarcar la casilla de "superado" por un descuido se llevaría por
  * delante el enlace. Así el vídeo sobrevive a que alguien toque la casilla.
@@ -639,7 +660,6 @@ model Note {
 
 /**
  * El equipo de seis que alguien está probando en la calculadora de tipos.
- *
  * Vive en la pantalla de las notas y es **igual de privado**: se consulta y se
  * guarda siempre por su participante, no hay ninguna pantalla que enseñe el de
  * otro y los administradores tampoco lo ven. Uno por persona y edición: es un
@@ -721,7 +741,7 @@ model Matchday {
    * Cuándo se creó. No se enseña en ninguna parte: sirve para el punto de
    * "jornada nueva" del menú, que compara con la última visita de cada uno.
    */
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime @default(now())
 
   competition Competition   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   matches     Match[]
@@ -753,10 +773,10 @@ model Match {
    */
   porRetirada    Boolean   @default(false)
 
-  matchday     Matchday    @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
-  participantA Participant @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
-  participantB Participant @relation("MatchPlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
-  winner       Participant? @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  matchday     Matchday       @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+  participantA Participant    @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB Participant    @relation("MatchPlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winner       Participant?   @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
   team         MatchPokemon[]
 
   @@index([matchdayId])
@@ -767,7 +787,7 @@ model Match {
  * administrador y son los candidatos a MVP de esa jornada.
  */
 model MatchPokemon {
-  id            String  @id @default(cuid())
+  id               String  @id @default(cuid())
   /**
    * De qué combate es el equipo. Va uno de los dos, nunca los dos: los de
    * jornada apuntan a `matchId` y los de reto a `challengeMatchId`. Se comparte
@@ -775,14 +795,18 @@ model MatchPokemon {
    */
   matchId          String?
   challengeMatchId String?
-  participantId String
-  species       String
-  nickname      String?
-  /** Sprite de caja de Pokémon HOME: es el que se ve en la lista del combate. */
-  boxImage      String?
-  /** Ilustración oficial. Solo se usa en la ficha si gana la votación de MVP. */
-  detailImage   String?
-  position      Int     @default(0)
+  participantId    String
+  species          String
+  nickname         String?
+  /**
+   * Sprite de caja de Pokémon HOME: es el que se ve en la lista del combate.
+   */
+  boxImage         String?
+  /**
+   * Ilustración oficial. Solo se usa en la ficha si gana la votación de MVP.
+   */
+  detailImage      String?
+  position         Int     @default(0)
 
   match          Match?          @relation(fields: [matchId], references: [id], onDelete: Cascade)
   challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
@@ -802,29 +826,68 @@ model MatchPokemon {
  * la clasificación si la competición lo tiene activado.
  */
 model ChallengeMatch {
-  id            String    @id @default(cuid())
-  competitionId String
+  id             String    @id @default(cuid())
+  competitionId  String
   participantAId String
   participantBId String
-  winnerId      String?
-  pokemonDiff   Int?
-  /** Enlace a la repetición del combate, igual que en las jornadas. */
-  replayUrl     String?
-  /** Qué se lleva el ganador */
-  prize         String?
-  /** Qué se traga el perdedor */
-  punishment    String?
-  playedAt      DateTime?
-  notes         String?
-  createdAt     DateTime  @default(now())
+  winnerId       String?
+  pokemonDiff    Int?
+  /**
+   * Enlace a la repetición del combate, igual que en las jornadas.
+   */
+  replayUrl      String?
+  /**
+   * Qué se lleva el ganador, escrito a mano ("eliges su starter")
+   */
+  prize          String?
+  /**
+   * Qué se traga el perdedor
+   */
+  punishment     String?
+  /**
+   * Si el castigo se anuncia al resto del grupo.
+   * Un castigo es información para todos —de eso va el pique—, así que sale en
+   * la portada hasta que un administrador lo quite. Empieza puesto y se apaga a
+   * mano, no al revés: si hubiera que acordarse de encenderlo, no se encendería
+   * nunca.
+   */
+  castigoVisible Boolean   @default(true)
+  playedAt       DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
 
-  competition  Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  participantA Participant  @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
-  participantB Participant  @relation("ChallengePlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
-  winner       Participant? @relation("ChallengeWinner", fields: [winnerId], references: [id], onDelete: SetNull)
+  competition  Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participantA Participant      @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB Participant      @relation("ChallengePlayerB", fields: [participantBId], references: [id], onDelete: Cascade)
+  winner       Participant?     @relation("ChallengeWinner", fields: [winnerId], references: [id], onDelete: SetNull)
   team         MatchPokemon[]
+  premios      ChallengePrize[]
 
   @@index([competitionId])
+}
+
+/**
+ * Un objeto de la bolsa que se lleva quien gane un reto.
+ * Convive con `ChallengeMatch.prize`, que es texto libre: hay premios que no
+ * son un objeto ("eliges su starter") y esos se siguen escribiendo a mano. Lo
+ * de aquí, en cambio, **cae solo en la bolsa del ganador** al apuntar quién
+ * ganó.
+ * `entregadoA` guarda a quién se le dio ya, fila por fila. Es lo que permite
+ * corregir un resultado sin liarla: si cambia el ganador se le quita al primero
+ * y se le da al segundo, y si se añade un objeto después de haber apuntado el
+ * resultado, ese objeto se entrega y los demás se quedan como están.
+ */
+model ChallengePrize {
+  id               String  @id @default(cuid())
+  challengeMatchId String
+  itemId           String
+  quantity         Int     @default(1)
+  entregadoA       String?
+
+  challenge ChallengeMatch @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
+  item      Item           @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeMatchId, itemId])
 }
 
 /**
@@ -858,12 +921,13 @@ model MvpVote {
 model FinalFour {
   id            String   @id @default(cuid())
   competitionId String   @unique
-  /** Los clasificados en orden, del 1º al último, tantos como diga el formato */
+  /**
+   * Los clasificados en orden, del 1º al último, tantos como diga el formato
+   */
   seeds         String[]
   /**
    * Con cuántos jugadores se sembró, que es lo que decide el formato del
    * cuadro (ver `lib/formatos-finales.ts`).
-   *
    * Se guarda en vez de mirar cuántos hay ahora **a propósito**: si alguien se
    * retira con la final ya empezada, el cuadro no puede cambiar de forma a
    * mitad y dejar los combates jugados sin sentido. Los seis de las ediciones
@@ -897,7 +961,9 @@ model FinalMatch {
   @@unique([finalFourId, key])
 }
 
-/** Un pokémon del equipo con el que cada jugador termina el locke. */
+/**
+ * Un pokémon del equipo con el que cada jugador termina el locke.
+ */
 model HallOfFameEntry {
   id            String   @id @default(cuid())
   participantId String
@@ -946,7 +1012,7 @@ model Roulette {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  competition Competition     @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competition Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   options     RouletteOption[]
   spins       RouletteSpin[]
   tickets     RouletteTicket[]
@@ -991,10 +1057,10 @@ model RouletteTicket {
   createdById   String?
   createdAt     DateTime @default(now())
 
-  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
-  participant Participant  @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  roulette    Roulette?    @relation(fields: [rouletteId], references: [id], onDelete: SetNull)
-  createdBy   User?        @relation("TicketAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  roulette    Roulette?   @relation(fields: [rouletteId], references: [id], onDelete: SetNull)
+  createdBy   User?       @relation("TicketAuthor", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([competitionId])
   @@index([participantId])
@@ -1020,25 +1086,34 @@ model RouletteSpin {
 /**
  * Una copia de seguridad completa: todas las tablas menos esta, en JSON,
  * comprimido y guardado como texto.
- *
  * **No tiene ninguna relación con el resto del modelo, y es a propósito.** Al
  * restaurar se vacían todas las tablas; si esta colgara de `User`, el vaciado
  * se llevaría por delante las copias justo cuando hacen falta. Por eso el autor
  * se guarda como nombre suelto y no como enlace.
  */
 model Backup {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  /** "auto" (la del día), "manual" (a mano) o "previa" (antes de restaurar) */
-  kind      String   @default("auto")
-  /** Quién la pidió, por su nombre. Suelto: ver el comentario de arriba. */
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now())
+  /**
+   * "auto" (la del día), "manual" (a mano) o "previa" (antes de restaurar)
+   */
+  kind       String   @default("auto")
+  /**
+   * Quién la pidió, por su nombre. Suelto: ver el comentario de arriba.
+   */
   authorName String?
-  /** Cuántas filas de cada tabla, para enseñarlo sin abrir el fichero */
-  summary   String
-  /** Lo que ocupa el JSON sin comprimir, en bytes */
-  rawSize   Int
-  /** El volcado entero: JSON comprimido con gzip y pasado a base64 */
-  payload   String
+  /**
+   * Cuántas filas de cada tabla, para enseñarlo sin abrir el fichero
+   */
+  summary    String
+  /**
+   * Lo que ocupa el JSON sin comprimir, en bytes
+   */
+  rawSize    Int
+  /**
+   * El volcado entero: JSON comprimido con gzip y pasado a base64
+   */
+  payload    String
 
   @@index([createdAt])
 }

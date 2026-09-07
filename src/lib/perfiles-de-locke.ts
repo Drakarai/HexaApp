@@ -38,10 +38,14 @@ export type PerfilDeLocke = {
    */
   liguillaEntera: boolean;
   /**
-   * Cuántas veces se juega cada emparejamiento dentro de la jornada. Solo el
-   * dualocke lo usa: allí cada jornada es un **combate al mejor de tres**.
+   * Si cada jornada es una **serie** entre los mismos dos, al mejor de N. Solo
+   * el dualocke: allí una jornada es un combate al mejor de tres.
+   *
+   * Se guarda el total de la serie (3) y no los combates que se juegan (2 o 3),
+   * porque el tercero **depende de cómo vayan los dos primeros**: si alguien
+   * gana los dos, no se juega. Ver `lib/series.ts`.
    */
-  repeticiones: number;
+  serieAlMejorDe: number | null;
   /**
    * Cómo se gana el locke en combates. Con dos jugadores no hay tabla que
    * valga: gana quien se lleve más jornadas.
@@ -61,8 +65,7 @@ export function perfilDeLocke(jugadores: number): PerfilDeLocke {
     jugadores: cuantos,
     nombre: NOMBRES[cuantos] ?? `Locke de ${cuantos}`,
     liguillaEntera: cuantos <= 3,
-    // El mejor de tres del dualocke: tres veces el mismo emparejamiento
-    repeticiones: esDual ? 3 : 1,
+    serieAlMejorDe: esDual ? 3 : null,
     victoria: esDual ? "jornadas" : "puntos",
     rotuloDeLaTabla: esDual ? "Marcador" : "Puntos",
   };

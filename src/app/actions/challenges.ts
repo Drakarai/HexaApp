@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
+import { devolverPremio, sincronizarPremios } from "@/lib/premios";
 import { enlaceSeguro } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
@@ -82,9 +83,95 @@ export async function setChallengeResultAction(formData: FormData) {
     },
   });
 
+  // Los objetos del premio caen solos en la bolsa del que ha ganado, y se
+  // corrigen si el ganador cambia: ver lib/premios.ts
+  await sincronizarPremios(id);
+
   revalidatePath("/retos");
   revalidatePath("/puntos");
+  revalidatePath("/bolsa");
+  revalidatePath("/");
   revalidatePath("/jugador", "layout");
+}
+
+/** Añade un objeto del catálogo a lo que se lleva quien gane el reto. */
+export async function anadirPremioAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const challengeMatchId = String(formData.get("challengeId") ?? "");
+  const reto = await prisma.challengeMatch.findUnique({
+    where: { id: challengeMatchId },
+  });
+  if (!reto) return { error: "Ese reto ya no está." };
+  try {
+    await requireCompetitionManager(reto.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const itemId = String(formData.get("itemId") ?? "");
+  if (!itemId) return { error: "Elige el objeto." };
+  const objeto = await prisma.item.findUnique({
+    where: { id: itemId },
+    select: { name: true },
+  });
+  if (!objeto) return { error: "Ese objeto ya no está en el catálogo." };
+
+  const cantidad = Number(String(formData.get("quantity") ?? "1"));
+  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 99) {
+    return { error: "La cantidad tiene que ser un número del 1 al 99." };
+  }
+
+  await prisma.challengePrize.upsert({
+    where: { challengeMatchId_itemId: { challengeMatchId, itemId } },
+    create: { challengeMatchId, itemId, quantity: cantidad },
+    update: { quantity: cantidad },
+  });
+
+  // Si el reto ya tiene ganador, el objeto se le da en el momento
+  await sincronizarPremios(challengeMatchId);
+
+  revalidatePath("/retos");
+  revalidatePath("/bolsa");
+  return { success: `${objeto.name} añadido al premio.` };
+}
+
+/** Quita un objeto del premio, devolviéndolo si ya se había entregado. */
+export async function quitarPremioAction(formData: FormData) {
+  const premioId = String(formData.get("premioId") ?? "");
+  const premio = await prisma.challengePrize.findUnique({
+    where: { id: premioId },
+    include: { challenge: { select: { competitionId: true } } },
+  });
+  if (!premio) return;
+  await requireCompetitionManager(premio.challenge.competitionId);
+
+  // Primero se devuelve y luego se borra: después ya no se sabría a quién
+  await devolverPremio(premioId);
+  await prisma.challengePrize.delete({ where: { id: premioId } });
+
+  revalidatePath("/retos");
+  revalidatePath("/bolsa");
+}
+
+/**
+ * Deja de anunciar un castigo en la portada. No lo borra: sigue en su reto,
+ * simplemente ya no se le recuerda a nadie.
+ */
+export async function ocultarCastigoAction(formData: FormData) {
+  const id = String(formData.get("challengeId") ?? "");
+  const reto = await prisma.challengeMatch.findUnique({ where: { id } });
+  if (!reto) return;
+  await requireCompetitionManager(reto.competitionId);
+
+  await prisma.challengeMatch.update({
+    where: { id },
+    data: { castigoVisible: !reto.castigoVisible },
+  });
+
+  revalidatePath("/retos");
+  revalidatePath("/");
 }
 
 export async function deleteChallengeAction(formData: FormData) {
@@ -93,9 +180,18 @@ export async function deleteChallengeAction(formData: FormData) {
   if (!reto) return;
   await requireCompetitionManager(reto.competitionId);
 
+  // Los objetos ya entregados se devuelven: el reto deja de existir
+  for (const premio of await prisma.challengePrize.findMany({
+    where: { challengeMatchId: id },
+    select: { id: true },
+  })) {
+    await devolverPremio(premio.id);
+  }
+
   await prisma.challengeMatch.delete({ where: { id } });
 
   revalidatePath("/retos");
+  revalidatePath("/bolsa");
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
 }

@@ -74,11 +74,19 @@ export function emparejamientosDeJornada(
   if (!rondas.length) return { pares: [], descansa: null };
 
   if (perfil.liguillaEntera) {
-    // Toda la liguilla en una jornada. Con dos jugadores solo hay una pareja,
-    // y repetirla tres veces es el combate al mejor de tres.
+    /**
+     * Toda la liguilla en una jornada. Con dos jugadores solo hay una pareja, y
+     * la jornada es una serie: se crean **los combates que se juegan siempre**
+     * —dos, de un mejor de tres— y el desempate se añade solo si hace falta
+     * (`lib/series.ts`). Crear los tres de entrada dejaba uno de adorno que la
+     * mitad de las veces no se juega.
+     */
     const pares = rondas.flatMap((ronda) => ronda.pares);
+    const veces = perfil.serieAlMejorDe
+      ? Math.ceil(perfil.serieAlMejorDe / 2)
+      : 1;
     return {
-      pares: Array.from({ length: perfil.repeticiones }, () => pares).flat(),
+      pares: Array.from({ length: veces }, () => pares).flat(),
       descansa: null,
     };
   }
