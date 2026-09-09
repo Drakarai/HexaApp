@@ -585,10 +585,16 @@ model LevelCapTemplate {
 }
 
 model LevelCapTemplateItem {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   templateId String
   label      String
   cap        Int
+  /**
+   * Las medallas o los retratos del líder, ya reducidos (data URL), igual que
+   * en `LevelCap`. Se guardan aquí para que un locke nuevo salga **con las
+   * imágenes puestas** en vez de tener que subirlas cada edición.
+   */
+  images     String[] @default([])
   /**
    * "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER", igual que en LevelCap
    */

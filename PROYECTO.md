@@ -8,7 +8,8 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 9 de septiembre de 2026 (plantillas de level caps por
-juego, editables en Administración y traíbles a cada locke).
+pareja de juegos, con sus medallas, editables en Administración y traíbles a
+cada locke).
 
 ---
 
@@ -619,6 +620,17 @@ igual que los mapas.
 - **Dentro del locke los level caps son suyos.** Traerlos es una copia: a partir
   de ahí se cambian, se borran y se añaden en la edición sin tocar la plantilla,
   y cambiar la plantilla no toca a los lockes que ya la trajeron.
+- **La plantilla también guarda las medallas**, que era de lo que iba tener
+  plantilla: una edición nueva sale con sus imágenes puestas en vez de tener que
+  subir las once otra vez. Se suben en Administración igual que en el locke y se
+  copian con el hito.
+- **Las medallas de la plantilla tampoco viajan dentro del HTML.** Se sirven por
+  dirección firmada (`/api/imagen/medalla-plantilla/…`) como todas las demás, y
+  la columna entra en el `omit` global de `lib/db.ts`. Quien necesita los bytes
+  —copiar una plantilla en otra, traerla a un locke, guardar el formulario— los
+  pide a mano con `getPlantillaConImagenes`. Sin eso, el panel con las siete
+  regiones preparadas habría vuelto a ser una página de megas, que es el fallo
+  que costó arreglar en su día.
 - **Alola no tiene gimnasios, tiene pruebas.** Su plantilla lleva las pruebas
   con su **pokémon dominante** además de las grandes pruebas de los kahunas:
   poner solo a los kahunas dejaba fuera media partida. Y **Ultrasol/Ultraluna

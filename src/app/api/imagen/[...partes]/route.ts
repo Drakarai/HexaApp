@@ -77,6 +77,16 @@ async function buscarValor(
     return lista[Number(indice ?? 0)] ?? null;
   }
 
+  // Las medallas de una plantilla son una lista, como las del level cap
+  if (tipo === "medalla-plantilla") {
+    const item = await prisma.levelCapTemplateItem.findUnique({
+      where: { id },
+      select: { images: true },
+    });
+    if (!item) return null;
+    return item.images[Number(indice ?? 0)] ?? null;
+  }
+
   const fuente = FUENTES[tipo as TipoConsultable];
   if (!fuente) return null;
 

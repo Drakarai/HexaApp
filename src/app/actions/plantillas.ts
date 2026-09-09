@@ -13,8 +13,10 @@ import {
   asegurarPlantilla,
   deFabricaParaGrupo,
   getPlantilla,
+  getPlantillaConImagenes,
 } from "@/lib/plantillas";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
+import { IMAGEN_SIN_CAMBIOS, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -22,6 +24,29 @@ import type { FormState } from "@/app/actions/auth";
  * empezar un locke. Se administra igual que los mapas: global, con un botón
  * para traer lo de fábrica y editable a mano después.
  */
+
+/**
+ * Las medallas que llegan del formulario, sin huecos ni basura.
+ *
+ * Las que ya estaban guardadas no vuelven a viajar enteras: llegan como
+ * "__igual__:N", donde N es el sitio que ocupaban al abrir el formulario, y
+ * aquí se cambian por la imagen de verdad. Es lo mismo que hace
+ * `actions/level-caps.ts` con las del locke, y por el mismo motivo: si no, cada
+ * guardado subiría y bajaría megas de base64.
+ */
+function leerImagenes(formData: FormData, anteriores: string[] = []) {
+  return formData
+    .getAll("images")
+    .map((valor) => {
+      const texto = String(valor ?? "").trim();
+      if (texto.startsWith(`${IMAGEN_SIN_CAMBIOS}:`)) {
+        return anteriores[Number(texto.split(":")[1])] ?? null;
+      }
+      return sanitizeImageValue(texto);
+    })
+    .filter((valor): valor is string => Boolean(valor))
+    .slice(0, 8);
+}
 
 const TIPOS = new Set<string>(Object.values(LEVEL_CAP_KINDS));
 const tipoValido = (valor: string) =>
@@ -65,6 +90,7 @@ export async function rellenarPlantillaAction(formData: FormData) {
         cap: item.cap,
         kind: item.kind,
         notes: item.notes ?? null,
+        // De fábrica no vienen medallas: las sube quien prepara la plantilla
         position: existentes.length + indice,
       })),
     });
@@ -102,6 +128,7 @@ export async function anadirItemPlantillaAction(
       cap: Math.trunc(cap),
       kind: tipoValido(String(formData.get("kind") ?? "")),
       notes: String(formData.get("notes") ?? "").trim() || null,
+      images: leerImagenes(formData),
       position: cuantos,
     },
   });
@@ -114,7 +141,12 @@ export async function editarItemPlantillaAction(formData: FormData) {
   await requireAdmin();
 
   const id = String(formData.get("itemId") ?? "");
-  const item = await prisma.levelCapTemplateItem.findUnique({ where: { id } });
+  const item = await prisma.levelCapTemplateItem.findUnique({
+    where: { id },
+    // Aquí sí hacen falta los bytes: el formulario manda "__igual__:N" para
+    // las que no se han tocado y hay que sustituirlas por la imagen de verdad
+    omit: { images: false },
+  });
   if (!item) return;
 
   const label = String(formData.get("label") ?? "").trim();
@@ -127,6 +159,7 @@ export async function editarItemPlantillaAction(formData: FormData) {
       cap: Number.isFinite(cap) && cap >= 1 && cap <= 100 ? Math.trunc(cap) : item.cap,
       kind: tipoValido(String(formData.get("kind") ?? "")),
       notes: String(formData.get("notes") ?? "").trim() || null,
+      images: leerImagenes(formData, item.images),
     },
   });
 
@@ -203,7 +236,7 @@ export async function traerPlantillaAlLockeAction(
     return { error: "Esta edición no tiene juego elegido de la lista." };
   }
 
-  const plantilla = await getPlantilla(grupo.id);
+  const plantilla = await getPlantillaConImagenes(grupo.id);
   if (!plantilla.length) {
     return {
       error: `${grupo.nombre} todavía no tiene plantilla. Un administrador puede prepararla en Administración → Level caps.`,
@@ -230,6 +263,9 @@ export async function traerPlantillaAlLockeAction(
       cap: item.cap,
       kind: item.kind,
       notes: item.notes,
+      // Las medallas se copian con el hito: de eso va tener plantilla, de que
+      // una edición nueva salga entera y no haya que subirlas otra vez
+      images: item.images,
       position: existentes.length + indice,
     })),
   });
@@ -265,7 +301,7 @@ export async function copiarDeOtraPlantillaAction(
     return { error: "Esa es la misma plantilla." };
   }
 
-  const aCopiar = await getPlantilla(origen.id);
+  const aCopiar = await getPlantillaConImagenes(origen.id);
   if (!aCopiar.length) {
     return { error: `${origen.nombre} todavía no tiene nada que copiar.` };
   }
@@ -291,6 +327,7 @@ export async function copiarDeOtraPlantillaAction(
       cap: item.cap,
       kind: item.kind,
       notes: item.notes,
+      images: item.images,
       position: existentes.length + indice,
     })),
   });

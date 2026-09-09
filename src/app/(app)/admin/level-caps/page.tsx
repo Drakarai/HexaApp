@@ -7,6 +7,7 @@ import {
 } from "@/lib/plantillas";
 import { grupoDePlantillaPorId, nombreDeRegion } from "@/lib/juegos";
 import { rellenarPlantillaAction } from "@/app/actions/plantillas";
+import { urlsDeMedallasDePlantilla } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
 import {
@@ -46,6 +47,9 @@ export default async function PlantillasPage({
   const candidatos = resumen.filter(
     (fila) => fila.id !== elegido.id && fila.hitos > 0,
   );
+
+  // Direcciones de las medallas, no las medallas: ver lib/imagen-url.ts
+  const medallas = await urlsDeMedallasDePlantilla(items.map((item) => item.id));
 
   // Las pestañas, repartidas por generación como el desplegable de las ediciones
   const porGeneracion = new Map<string, typeof resumen>();
@@ -122,6 +126,7 @@ export default async function PlantillasPage({
                 <ItemDeLaPlantilla
                   key={item.id}
                   item={item}
+                  imagenes={medallas(item.id)}
                   primero={indice === 0}
                   ultimo={indice === items.length - 1}
                 />

@@ -26,7 +26,8 @@ export type TipoImagen =
   | "objeto-opcion"
   | "mapa"
   | "captura"
-  | "medalla";
+  | "medalla"
+  | "medalla-plantilla";
 
 /**
  * Dirección de una imagen, o null si esa fila no tiene ninguna (la firma solo
@@ -49,4 +50,14 @@ export function urlDeMedalla(
 ): string | null {
   if (!firma) return null;
   return `/api/imagen/medalla/${id}/${indice}?v=${firma}`;
+}
+
+/** Y las de un hito de plantilla, que son la misma lista pero de la base. */
+export function urlDeMedallaDePlantilla(
+  id: string,
+  indice: number,
+  firma: string | null | undefined,
+): string | null {
+  if (!firma) return null;
+  return `/api/imagen/medalla-plantilla/${id}/${indice}?v=${firma}`;
 }

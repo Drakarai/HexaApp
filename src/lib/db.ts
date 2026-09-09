@@ -19,6 +19,7 @@ const SIN_IMAGENES = {
   hallOfFameEntry: { image: true },
   favoritePokemon: { image: true },
   levelCap: { images: true, image: true },
+  levelCapTemplateItem: { images: true },
   // No es una imagen, pero pesa como todas juntas: el volcado de una copia son
   // varios megas y no puede colarse en un listado por descuido
   backup: { payload: true },

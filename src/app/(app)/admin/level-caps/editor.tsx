@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   anadirItemPlantillaAction,
   borrarItemPlantillaAction,
@@ -10,6 +10,8 @@ import {
 } from "@/app/actions/plantillas";
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
+import { ImageListInput } from "@/components/image-list-input";
+import { IMAGE_SIZES } from "@/lib/image";
 import { LEVEL_CAP_KIND_LABELS, LEVEL_CAP_KINDS } from "@/lib/constants";
 import type { ItemDePlantilla } from "@/lib/plantillas";
 
@@ -21,10 +23,13 @@ const TIPOS = Object.values(LEVEL_CAP_KINDS);
  */
 export function ItemDeLaPlantilla({
   item,
+  imagenes,
   primero,
   ultimo,
 }: {
   item: ItemDePlantilla;
+  /** Direcciones de sus medallas, no las medallas: ver lib/imagen-url.ts */
+  imagenes: string[];
   primero: boolean;
   ultimo: boolean;
 }) {
@@ -64,6 +69,15 @@ export function ItemDeLaPlantilla({
             className="input"
             defaultValue={item.notes ?? ""}
             placeholder="Ciudad Malva · Volador"
+          />
+        </div>
+        <div className="sm:col-span-12">
+          <ImageListInput
+            name="images"
+            label="Medallas o líderes"
+            defaultValues={imagenes}
+            maxSize={IMAGE_SIZES.badge}
+            hint="Se copian al locke con el resto: así una edición nueva sale ya con sus medallas puestas."
           />
         </div>
         <div className="flex flex-wrap items-center gap-2 sm:col-span-12">
@@ -120,9 +134,15 @@ export function NuevoItemDePlantilla({ grupoId }: { grupoId: string }) {
     null,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  // El selector de imagen lleva su propio estado: un reset() del formulario no
+  // lo limpiaría, así que se remonta con la clave
+  const [resetKey, setResetKey] = useState(0);
 
   useEffect(() => {
-    if (state?.success) formRef.current?.reset();
+    if (state?.success) {
+      formRef.current?.reset();
+      setResetKey((n) => n + 1);
+    }
   }, [state]);
 
   return (
@@ -160,6 +180,15 @@ export function NuevoItemDePlantilla({ grupoId }: { grupoId: string }) {
       <div className="sm:col-span-3">
         <label className="label">Dónde y de qué</label>
         <input name="notes" className="input" placeholder="Ciudad Malva · Volador" />
+      </div>
+      <div className="sm:col-span-12">
+        <ImageListInput
+          key={resetKey}
+          name="images"
+          label="Medallas o líderes"
+          maxSize={IMAGE_SIZES.badge}
+          hint="Opcional. Se copian al locke junto con el hito."
+        />
       </div>
       <div className="sm:col-span-12">
         <FormMessage state={state} />

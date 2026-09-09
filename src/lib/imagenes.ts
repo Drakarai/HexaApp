@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import {
   urlDeImagen,
   urlDeMedalla,
+  urlDeMedallaDePlantilla,
   type TipoImagen,
 } from "@/lib/imagen-url";
 
@@ -27,7 +28,7 @@ export const FUENTES = {
   mapa: { tabla: "MapRegion", columna: "image" },
   captura: { tabla: "Capture", columna: "image" },
 } as const satisfies Record<
-  Exclude<TipoImagen, "medalla">,
+  Exclude<TipoImagen, "medalla" | "medalla-plantilla">,
   { tabla: string; columna: string }
 >;
 
@@ -141,6 +142,37 @@ export async function firmasDeMedallas(
 export async function urlsDeImagen(tipo: TipoConsultable, ids: string[]) {
   const firmas = await firmasDeImagen(tipo, ids);
   return (id: string) => urlDeImagen(tipo, id, firmas.get(id));
+}
+
+/**
+ * Las firmas de las medallas de un hito de plantilla. Es la misma consulta que
+ * la de `LevelCap` pero más corta: aquí no hay `image` suelta de las primeras
+ * versiones que resolver, porque la tabla nació con la lista.
+ */
+export async function firmasDeMedallasDePlantilla(
+  ids: string[],
+): Promise<Map<string, string[]>> {
+  const firmas = new Map<string, string[]>();
+  const unicos = [...new Set(ids)];
+  if (!unicos.length) return firmas;
+
+  const filas = await prisma.$queryRaw<{ id: string; v: string[] }[]>`
+    select "id", array(
+      select substr(md5(x), 1, 10) from unnest("images") as x
+    ) as v
+    from "LevelCapTemplateItem"
+    where "id" in (${Prisma.join(unicos)})
+  `;
+  for (const fila of filas) firmas.set(fila.id, fila.v);
+  return firmas;
+}
+
+export async function urlsDeMedallasDePlantilla(ids: string[]) {
+  const firmas = await firmasDeMedallasDePlantilla(ids);
+  return (id: string) =>
+    (firmas.get(id) ?? []).map(
+      (firma, indice) => urlDeMedallaDePlantilla(id, indice, firma)!,
+    );
 }
 
 export async function urlsDeMedallas(ids: string[]) {

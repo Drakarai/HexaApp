@@ -37,13 +37,34 @@ export type ItemDePlantilla = {
   position: number;
 };
 
-/** Los hitos guardados de un grupo de juegos, en orden. */
+/**
+ * Los hitos guardados de un grupo de juegos, en orden.
+ *
+ * **Sin las medallas**: los bytes se quedan en la base de datos y las pantallas
+ * piden solo su dirección (`urlsDeMedallasDePlantilla`). Quien necesita las
+ * imágenes de verdad —copiar una plantilla, traerla a un locke— usa
+ * `getPlantillaConImagenes`.
+ */
 export async function getPlantilla(grupoId: string) {
   const plantilla = await prisma.levelCapTemplate.findUnique({
     where: { grupoId },
     include: { items: { orderBy: { position: "asc" } } },
   });
   return plantilla?.items ?? [];
+}
+
+/**
+ * Igual, pero con las medallas dentro: solo para copiarlas a otro sitio.
+ *
+ * Va contra los hitos directamente y no por la plantilla porque el `omit` que
+ * esconde las imágenes solo se puede levantar en la consulta de primer nivel.
+ */
+export async function getPlantillaConImagenes(grupoId: string) {
+  return prisma.levelCapTemplateItem.findMany({
+    where: { template: { grupoId } },
+    orderBy: { position: "asc" },
+    omit: { images: false },
+  });
 }
 
 /**
