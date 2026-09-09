@@ -40,7 +40,7 @@ export async function rellenarPlantillaAction(formData: FormData) {
   const gameId = String(formData.get("gameId") ?? "");
   if (!juegoPorId(gameId)) return;
 
-  const deFabrica = deFabricaParaJuego(gameId);
+  const { items: deFabrica } = deFabricaParaJuego(gameId);
   if (!deFabrica.length) return;
 
   const plantilla = await asegurarPlantilla(gameId);

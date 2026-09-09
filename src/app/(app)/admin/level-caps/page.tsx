@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth";
-import { getPlantilla, getResumenDePlantillas } from "@/lib/plantillas";
+import {
+  deFabricaParaJuego,
+  getPlantilla,
+  getResumenDePlantillas,
+} from "@/lib/plantillas";
 import { juegoPorId, nombreDeRegion } from "@/lib/juegos";
 import { rellenarPlantillaAction } from "@/app/actions/plantillas";
 import { PageHeader } from "@/components/page-header";
@@ -29,6 +33,8 @@ export default async function PlantillasPage({
   const elegido = juegoPorId(pedido)?.id ?? resumen[0].id;
   const juego = juegoPorId(elegido)!;
   const items = await getPlantilla(elegido);
+  // De dónde saldrían los de fábrica: su región, o su propia lista
+  const { desde } = deFabricaParaJuego(elegido);
 
   // Los juegos, agrupados como en el desplegable de crear la edición
   const grupos = new Map<string, typeof resumen>();
@@ -113,13 +119,13 @@ export default async function PlantillasPage({
               {juego.name} todavía no tiene plantilla.
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
-              Trae los de {nombreDeRegion(juego.region)} y ajústalos, o ve
+              Trae los de {desde} y ajústalos, o ve
               añadiéndolos a mano abajo.
             </p>
             <form action={rellenarPlantillaAction} className="mt-3">
               <input type="hidden" name="gameId" value={juego.id} />
               <button type="submit" className="btn-primary btn-sm">
-                Traer los de {nombreDeRegion(juego.region)}
+                Traer los de {desde}
               </button>
             </form>
           </div>
@@ -134,7 +140,7 @@ export default async function PlantillasPage({
           >
             <input type="hidden" name="gameId" value={juego.id} />
             <button type="submit" className="btn-ghost btn-sm">
-              Traer los que falten de {nombreDeRegion(juego.region)}
+              Traer los que falten de {desde}
             </button>
             <p className="mt-1 text-xs text-slate-500">
               Solo añade los que no estén por nombre: lo que ya has cambiado se

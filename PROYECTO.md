@@ -612,7 +612,13 @@ igual que los mapas.
   y cambiar la plantilla no toca a los lockes que ya la trajeron.
 - **Alola no tiene gimnasios, tiene pruebas.** Su plantilla lleva las pruebas
   con su **pokémon dominante** además de las grandes pruebas de los kahunas:
-  poner solo a los kahunas dejaba fuera media partida.
+  poner solo a los kahunas dejaba fuera media partida. Y **Ultrasol/Ultraluna
+  tienen su propia lista de partida**, no la de Sol/Luna: cambian tres
+  dominantes (Araquanid, Marowak de Alola y Togedemaru donde Sol/Luna llevan
+  Wishiwashi, Salazzle y Vikavolt) y añaden la prueba de Mina. Es la única
+  excepción de momento a que la semilla vaya por región, y para eso está
+  `POR_JUEGO` en `lib/level-caps-de-fabrica.ts`: caben más el día que hagan
+  falta.
 - **Los niveles son un punto de partida y se dice en la pantalla.** Están
   escritos a mano, cambian entre versiones de la misma región y cada grupo los
   ajusta a su gusto. La respuesta es la misma que con los nombres de las zonas

@@ -114,17 +114,17 @@ const KALOS: ItemDeFabrica[] = [
  * Alola no tiene gimnasios: tiene **pruebas**, y cada una acaba contra un
  * **pokémon dominante**. Por eso aquí van las pruebas con su dominante y
  * aparte las grandes pruebas de los kahunas, que es como se juega de verdad;
- * poner solo los kahunas se dejaba fuera la mitad del recorrido.
+ * poner solo a los kahunas dejaba fuera la mitad del recorrido.
  *
- * Sol/Luna y Ultrasol/Ultraluna no traen exactamente las mismas pruebas ni los
- * mismos dominantes: esto es la de Sol/Luna, y lo que sobre o falte se ajusta
- * en la plantilla de cada juego.
+ * Sol/Luna y Ultrasol/Ultraluna **no comparten lista**: cambian tres
+ * dominantes y Ultrasol/Ultraluna añaden la prueba de Mina, así que cada par
+ * tiene la suya.
  */
 const ALOLA: ItemDeFabrica[] = [
-  { label: "Prueba de Iliman", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos o Raticate de Alola" },
+  { label: "Prueba de Iliman", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Sol) o Raticate de Alola (Luna)" },
   { label: "Gran prueba de Hala", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
-  { label: "Prueba de Mayla", cap: 20, kind: OTHER, notes: "Akala · dominante Araquanid" },
-  { label: "Prueba de Kiawe", cap: 22, kind: OTHER, notes: "Akala · dominante Marowak de Alola" },
+  { label: "Prueba de Mayla", cap: 20, kind: OTHER, notes: "Akala · dominante Wishiwashi" },
+  { label: "Prueba de Kiawe", cap: 22, kind: OTHER, notes: "Akala · dominante Salazzle" },
   { label: "Prueba de Lulú", cap: 24, kind: OTHER, notes: "Akala · dominante Lurantis" },
   { label: "Gran prueba de Olivia", cap: 27, kind: GYM, notes: "Akala · Roca" },
   { label: "Prueba de Chris", cap: 29, kind: OTHER, notes: "Ula-Ula · dominante Vikavolt" },
@@ -136,6 +136,29 @@ const ALOLA: ItemDeFabrica[] = [
   { label: "Campeón", cap: 60, kind: CHAMPION, notes: "El primer campeón de Alola" },
 ];
 
+/**
+ * Ultrasol y Ultraluna. Cambian los dominantes de las pruebas de Mayla, Kiawe
+ * y Chris, y aparece la **prueba de Mina**, que en Sol/Luna no se llega a
+ * hacer. El orden del final de Poni conviene comprobarlo con el juego delante.
+ */
+const ALOLA_ULTRA: ItemDeFabrica[] = [
+  { label: "Prueba de Iliman", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Ultrasol) o Raticate de Alola (Ultraluna)" },
+  { label: "Gran prueba de Hala", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
+  { label: "Prueba de Mayla", cap: 20, kind: OTHER, notes: "Akala · dominante Araquanid" },
+  { label: "Prueba de Kiawe", cap: 22, kind: OTHER, notes: "Akala · dominante Marowak de Alola" },
+  { label: "Prueba de Lulú", cap: 24, kind: OTHER, notes: "Akala · dominante Lurantis" },
+  { label: "Gran prueba de Olivia", cap: 27, kind: GYM, notes: "Akala · Roca" },
+  { label: "Prueba de Chris", cap: 29, kind: OTHER, notes: "Ula-Ula · dominante Togedemaru" },
+  { label: "Prueba de Acerola", cap: 35, kind: OTHER, notes: "Ula-Ula · dominante Mimikyu" },
+  { label: "Gran prueba de Nanu", cap: 38, kind: GYM, notes: "Ula-Ula · Siniestro" },
+  { label: "Gran prueba de Hapu", cap: 49, kind: GYM, notes: "Poni · Tierra" },
+  { label: "Prueba del Cañón de Poni", cap: 45, kind: OTHER, notes: "Poni · dominante Kommo-o" },
+  { label: "Prueba de Mina", cap: 51, kind: OTHER, notes: "Poni · dominante Ribombee" },
+  { label: "Alto Mando", cap: 60, kind: ELITE_FOUR, notes: "Los cuatro de la Liga de Alola" },
+  { label: "Campeón", cap: 63, kind: CHAMPION, notes: "El combate que cierra la Liga" },
+];
+
+/** La base de cada región, que es la que vale para casi todos los juegos. */
 export const LEVEL_CAPS_DE_FABRICA: Record<Region, ItemDeFabrica[]> = {
   kanto: KANTO,
   johto: JOHTO,
@@ -145,3 +168,26 @@ export const LEVEL_CAPS_DE_FABRICA: Record<Region, ItemDeFabrica[]> = {
   kalos: KALOS,
   alola: ALOLA,
 };
+
+/**
+ * Juegos que **no** se conforman con la lista de su región.
+ *
+ * Casi todas las versiones de una región comparten gimnasios y orden, y lo que
+ * cambia son los niveles, que se ajustan luego en la plantilla de cada juego.
+ * Ultrasol y Ultraluna no: cambian tres dominantes y añaden una prueba, así que
+ * merecen su propia lista de partida. Aquí caben más el día que hagan falta.
+ */
+const POR_JUEGO: Record<string, { desde: string; items: ItemDeFabrica[] }> = {
+  ultrasol: { desde: "Ultrasol y Ultraluna", items: ALOLA_ULTRA },
+  ultraluna: { desde: "Ultrasol y Ultraluna", items: ALOLA_ULTRA },
+};
+
+/**
+ * Qué trae de fábrica un juego y de dónde sale, para poder decirlo en el botón:
+ * su propia lista si la tiene, y si no la de su región.
+ */
+export function baseDeFabrica(gameId: string, region: Region, nombreRegion: string) {
+  const propia = POR_JUEGO[gameId];
+  if (propia) return propia;
+  return { desde: nombreRegion, items: LEVEL_CAPS_DE_FABRICA[region] ?? [] };
+}

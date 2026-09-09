@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { JUEGOS, juegoPorId } from "@/lib/juegos";
-import { LEVEL_CAPS_DE_FABRICA } from "@/lib/level-caps-de-fabrica";
+import { JUEGOS, juegoPorId, nombreDeRegion } from "@/lib/juegos";
+import { baseDeFabrica } from "@/lib/level-caps-de-fabrica";
 
 /**
  * Las plantillas de level caps: los hitos que trae cada juego de serie.
@@ -49,7 +49,10 @@ export async function getResumenDePlantillas() {
   return JUEGOS.map((juego) => ({
     ...juego,
     hitos: porJuego.get(juego.id) ?? 0,
-    hayDeFabrica: Boolean(LEVEL_CAPS_DE_FABRICA[juego.region]?.length),
+    hayDeFabrica: Boolean(
+      baseDeFabrica(juego.id, juego.region, nombreDeRegion(juego.region)).items
+        .length,
+    ),
   }));
 }
 
@@ -63,15 +66,16 @@ export async function asegurarPlantilla(gameId: string) {
 }
 
 /**
- * Lo que traería de fábrica un juego: lo de su región.
+ * Lo que traería de fábrica un juego, y de dónde sale para poder decirlo en el
+ * botón ("Traer los de Johto", "Traer los de Ultrasol y Ultraluna").
  *
- * La semilla es por región porque los gimnasios y su orden son los mismos en
- * todas las versiones de una; lo que cambia de una versión a otra son los
- * niveles, y eso se ajusta después en la plantilla de cada juego, que se guarda
- * por separado.
+ * Casi siempre es la lista de su región: los gimnasios y su orden son los
+ * mismos en todas las versiones de una, y lo que cambia son los niveles, que se
+ * ajustan luego en la plantilla de cada juego. La excepción son Ultrasol y
+ * Ultraluna, que cambian dominantes y añaden una prueba, así que traen la suya.
  */
 export function deFabricaParaJuego(gameId: string) {
   const juego = juegoPorId(gameId);
-  if (!juego) return [];
-  return LEVEL_CAPS_DE_FABRICA[juego.region] ?? [];
+  if (!juego) return { desde: "", items: [] };
+  return baseDeFabrica(juego.id, juego.region, nombreDeRegion(juego.region));
 }
