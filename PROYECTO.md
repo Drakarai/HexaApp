@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 7 de septiembre de 2026 (los retos reparten objetos y
-anuncian el castigo; la jornada del dualocke es un mejor de tres de verdad).
+Última actualización: 9 de septiembre de 2026 (plantillas de level caps por
+juego, editables en Administración y traíbles a cada locke).
 
 ---
 
@@ -35,7 +35,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
@@ -45,7 +45,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas) y las copias de seguridad. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -590,6 +590,34 @@ llevan `backdrop-blur`, y un elemento con `backdrop-filter` hace que sus hijos
 `position: fixed` se posicionen respecto a la tarjeta en vez de a la pantalla:
 el diálogo salía incrustado en mitad de la página. Vale tanto para la ficha del
 as como para la del cementerio.
+
+**Los level caps de cada juego se preparan una vez y se traen con un botón.**
+Montar un locke nuevo empezaba escribiendo a mano los ocho gimnasios, el Alto
+Mando y la Liga, con sus nombres y sus niveles; copiar de una edición anterior
+solo servía si era el mismo juego, así que cambiar de juego era volver a
+escribirlo todo. Ahora cada juego tiene su **plantilla**, que se administra
+igual que los mapas.
+
+- **Es global, como los mapas, y por el mismo motivo**: los gimnasios de Johto
+  son los mismos en Oro que en HeartGold, así que se prepara una vez y sirve
+  siempre. Se puede dejar listo Rubí mientras se juega en HeartGold.
+- **Va por juego y no por región**, aunque la semilla sea por región: Platino no
+  tiene los mismos niveles que Diamante, y así se ajusta uno sin tocar el otro.
+- **De fábrica solo se copia con un botón**, y solo lo que falte comparando por
+  nombre. Si has renombrado o ajustado un hito no se toca, y si borraste uno a
+  conciencia vuelve a salir y lo borras otra vez. Es exactamente la regla de los
+  mapas.
+- **Dentro del locke los level caps son suyos.** Traerlos es una copia: a partir
+  de ahí se cambian, se borran y se añaden en la edición sin tocar la plantilla,
+  y cambiar la plantilla no toca a los lockes que ya la trajeron.
+- **Alola no tiene gimnasios, tiene pruebas.** Su plantilla lleva las pruebas
+  con su **pokémon dominante** además de las grandes pruebas de los kahunas:
+  poner solo a los kahunas dejaba fuera media partida.
+- **Los niveles son un punto de partida y se dice en la pantalla.** Están
+  escritos a mano, cambian entre versiones de la misma región y cada grupo los
+  ajusta a su gusto. La respuesta es la misma que con los nombres de las zonas
+  del mapa: como se editan en dos clics, un fallo se arregla ahí en vez de
+  esperar a que alguien toque el programa.
 
 **Un reto puede repartir objetos, y el castigo se anuncia.** Las dos cosas
 venían de lo mismo: un reto se apuntaba y luego había que acordarse de darle el
@@ -1207,6 +1235,10 @@ Piezas con truco:
   (método del círculo) y de ahí salen los combates que propone
   `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
   dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `lib/plantillas.ts` y `lib/level-caps-de-fabrica.ts` — los hitos que trae
+  cada juego. El segundo es la semilla (por región); el primero, lo guardado
+  (por juego). `admin/level-caps/` es el editor y
+  `app/actions/plantillas.ts` las acciones, incluida la de traerlos a un locke.
 - `lib/premios.ts` — los objetos que reparte un reto y los castigos que hay que
   anunciar. `sincronizarPremios()` es la que da y quita según quién gane;
   `components/castigos.tsx` es el bloque de la portada.
@@ -1420,3 +1452,6 @@ lugar de destruir datos, y hay que avisar antes.
 39. **Los retos reparten objetos y anuncian el castigo**: el premio puede caer
     solo en la bolsa del ganador y el castigo del perdedor sale en la portada
     hasta que se da por cumplido.
+40. **Plantillas de level caps por juego**: los gimnasios (y las pruebas de
+    Alola, con sus dominantes) se preparan una vez en Administración y se traen
+    a cada locke con un botón.

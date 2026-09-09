@@ -5,6 +5,7 @@ import {
   createLevelCapAction,
   updateLevelCapAction,
 } from "@/app/actions/level-caps";
+import { traerPlantillaAlLockeAction } from "@/app/actions/plantillas";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { ImageListInput } from "@/components/image-list-input";
@@ -175,6 +176,43 @@ export function EditLevelCapForm({
           Cancelar
         </button>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Traer los hitos que trae el juego de serie, para no escribirlos a mano.
+ *
+ * Lo que se copia es la plantilla de Administración; a partir de ahí los level
+ * caps son **de este locke** y se cambian aquí sin tocar la plantilla.
+ */
+export function TraerPlantilla({
+  competitionId,
+  nombreDelJuego,
+  hayAlguno,
+}: {
+  competitionId: string;
+  nombreDelJuego: string;
+  /** Si el locke ya tiene level caps, el botón se ofrece más discreto */
+  hayAlguno: boolean;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    traerPlantillaAlLockeAction,
+    null,
+  );
+
+  return (
+    <form action={formAction} className={hayAlguno ? "mt-4" : "mt-3"}>
+      <input type="hidden" name="competitionId" value={competitionId} />
+      <SubmitButton className={hayAlguno ? "btn-ghost btn-sm" : "btn-primary btn-sm"}>
+        🎯 Traer los de {nombreDelJuego}
+      </SubmitButton>
+      <p className="mt-1 text-xs text-slate-500">
+        {hayAlguno
+          ? "Solo añade los que falten. Lo que ya tengas no se toca."
+          : "Los copia de la plantilla del juego. Aquí los puedes cambiar, quitar o añadir lo que quieras: la plantilla no se entera."}
+      </p>
+      <FormMessage state={state} />
     </form>
   );
 }

@@ -103,6 +103,18 @@ export default async function AdminPage() {
         </Link>
       </section>
 
+      <section className="card mb-6">
+        <h2 className="section-title mb-1">Level caps de los juegos</h2>
+        <p className="muted mb-4">
+          Los gimnasios, pruebas y hitos que trae cada juego, para no
+          escribirlos a mano en cada locke. También son globales, y dentro de
+          una edición se traen con un botón y se ajustan allí.
+        </p>
+        <Link href="/admin/level-caps" className="btn-ghost btn-sm">
+          🎯 Editar las plantillas
+        </Link>
+      </section>
+
       {competition ? (
         <section className="card mb-6">
           <h2 className="section-title mb-1">Ajustes de la edición</h2>

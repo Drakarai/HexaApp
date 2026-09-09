@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
+import { juegoPorId } from "@/lib/juegos";
 import { urlsDeMedallas } from "@/lib/imagenes";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
@@ -17,7 +18,11 @@ import {
   deleteLevelCapAction,
   toggleGymClearAction,
 } from "@/app/actions/level-caps";
-import { NewLevelCapForm, EditLevelCapForm } from "./level-cap-forms";
+import {
+  NewLevelCapForm,
+  EditLevelCapForm,
+  TraerPlantilla,
+} from "./level-cap-forms";
 import { GymVideos, type VideoDeGimnasio } from "./gym-videos";
 import { Resaltar } from "./resaltar";
 
@@ -45,6 +50,9 @@ export default async function LevelCapsPage({
 
   /** Los que siguen jugando: son los que tienen que superar cada gimnasio */
   const activos = soloActivos(participants);
+
+  // Para el botón de traerse los hitos del juego, si la edición tiene uno
+  const nombreJuego = juegoPorId(competition.gameId)?.name ?? null;
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>
@@ -98,10 +106,28 @@ export default async function LevelCapsPage({
       ) : null}
 
       {levelCaps.length === 0 ? (
-        <EmptyState
-          title="No hay level caps configurados"
-          hint={canManage ? "Añádelos abajo." : undefined}
-        />
+        <div className="card text-center">
+          <p className="text-4xl" aria-hidden>
+            🎯
+          </p>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            No hay level caps configurados
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+            {canManage
+              ? "Tráete los del juego de un tirón y ajústalos, o añádelos a mano abajo."
+              : "Un administrador tiene que configurarlos."}
+          </p>
+          {canManage && nombreJuego ? (
+            <div className="mx-auto max-w-sm">
+              <TraerPlantilla
+                competitionId={competition.id}
+                nombreDelJuego={nombreJuego}
+                hayAlguno={false}
+              />
+            </div>
+          ) : null}
+        </div>
       ) : (
         <div className="space-y-3">
           {levelCaps.map((levelCap) => {
@@ -263,6 +289,13 @@ export default async function LevelCapsPage({
       {canManage ? (
         <div className="mt-8">
           <NewLevelCapForm competitionId={competition.id} />
+          {nombreJuego && levelCaps.length ? (
+            <TraerPlantilla
+              competitionId={competition.id}
+              nombreDelJuego={nombreJuego}
+              hayAlguno
+            />
+          ) : null}
         </div>
       ) : null}
 

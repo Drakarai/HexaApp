@@ -557,6 +557,41 @@ model LevelCap {
 }
 
 // Marca de "gimnasio superado" por participante, para saber quién va por dónde
+/**
+ * La plantilla de level caps de un juego: los gimnasios, pruebas y hitos que
+ * trae de serie, para no escribirlos a mano en cada locke.
+ *
+ * **Es global, como los mapas**, y por eso no cuelga de ninguna edición: los
+ * gimnasios de Johto son los mismos en Oro que en HeartGold. Se edita desde
+ * Administración y de `lib/level-caps-de-fabrica.ts` solo se copia la primera
+ * vez, con un botón; después manda lo que haya aquí guardado.
+ *
+ * Va por **juego** y no por región a propósito: Platino no tiene los mismos
+ * niveles que Diamante, y así se pueden separar sin tocar el otro.
+ */
+model LevelCapTemplate {
+  id     String @id @default(cuid())
+  /** El juego de lib/juegos.ts ("heartgold") */
+  gameId String @unique
+
+  items LevelCapTemplateItem[]
+}
+
+model LevelCapTemplateItem {
+  id         String  @id @default(cuid())
+  templateId String
+  label      String
+  cap        Int
+  /** "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER", igual que en LevelCap */
+  kind       String  @default("GYM")
+  notes      String?
+  position   Int     @default(0)
+
+  template LevelCapTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@index([templateId, position])
+}
+
 model GymClear {
   id            String   @id @default(cuid())
   participantId String
