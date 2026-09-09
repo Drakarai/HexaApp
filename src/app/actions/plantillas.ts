@@ -4,10 +4,14 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireAdmin } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
-import { juegoPorId } from "@/lib/juegos";
+import {
+  grupoDePlantillaDeJuego,
+  grupoDePlantillaPorId,
+  juegoPorId,
+} from "@/lib/juegos";
 import {
   asegurarPlantilla,
-  deFabricaParaJuego,
+  deFabricaParaGrupo,
   getPlantilla,
 } from "@/lib/plantillas";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
@@ -37,13 +41,13 @@ function refrescar() {
 export async function rellenarPlantillaAction(formData: FormData) {
   await requireAdmin();
 
-  const gameId = String(formData.get("gameId") ?? "");
-  if (!juegoPorId(gameId)) return;
+  const grupo = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
+  if (!grupo) return;
 
-  const { items: deFabrica } = deFabricaParaJuego(gameId);
+  const { items: deFabrica } = deFabricaParaGrupo(grupo);
   if (!deFabrica.length) return;
 
-  const plantilla = await asegurarPlantilla(gameId);
+  const plantilla = await asegurarPlantilla(grupo.id);
   const existentes = await prisma.levelCapTemplateItem.findMany({
     where: { templateId: plantilla.id },
     select: { label: true },
@@ -75,8 +79,8 @@ export async function anadirItemPlantillaAction(
 ): Promise<FormState> {
   await requireAdmin();
 
-  const gameId = String(formData.get("gameId") ?? "");
-  if (!juegoPorId(gameId)) return { error: "Ese juego no está en la lista." };
+  const grupo = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
+  if (!grupo) return { error: "Ese grupo de juegos no está en la lista." };
 
   const label = String(formData.get("label") ?? "").trim();
   if (!label) return { error: "Ponle nombre al hito." };
@@ -86,7 +90,7 @@ export async function anadirItemPlantillaAction(
     return { error: "El nivel tiene que ser un número del 1 al 100." };
   }
 
-  const plantilla = await asegurarPlantilla(gameId);
+  const plantilla = await asegurarPlantilla(grupo.id);
   const cuantos = await prisma.levelCapTemplateItem.count({
     where: { templateId: plantilla.id },
   });
@@ -194,14 +198,15 @@ export async function traerPlantillaAlLockeAction(
     select: { gameId: true },
   });
   const juego = juegoPorId(competition?.gameId);
-  if (!juego) {
+  const grupo = grupoDePlantillaDeJuego(competition?.gameId);
+  if (!juego || !grupo) {
     return { error: "Esta edición no tiene juego elegido de la lista." };
   }
 
-  const plantilla = await getPlantilla(juego.id);
+  const plantilla = await getPlantilla(grupo.id);
   if (!plantilla.length) {
     return {
-      error: `${juego.name} todavía no tiene plantilla. Un administrador puede prepararla en Administración → Level caps.`,
+      error: `${grupo.nombre} todavía no tiene plantilla. Un administrador puede prepararla en Administración → Level caps.`,
     };
   }
 
@@ -232,6 +237,6 @@ export async function traerPlantillaAlLockeAction(
   revalidatePath("/level-caps");
   revalidatePath("/");
   return {
-    success: `${nuevos.length} ${nuevos.length === 1 ? "hito traído" : "hitos traídos"} de ${juego.name}. Ya son de este locke: cámbialos como quieras.`,
+    success: `${nuevos.length} ${nuevos.length === 1 ? "hito traído" : "hitos traídos"} de ${grupo.nombre}. Ya son de este locke: cámbialos como quieras.`,
   };
 }

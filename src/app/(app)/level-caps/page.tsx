@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
-import { juegoPorId } from "@/lib/juegos";
+import { grupoDePlantillaDeJuego } from "@/lib/juegos";
 import { urlsDeMedallas } from "@/lib/imagenes";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
@@ -51,8 +51,8 @@ export default async function LevelCapsPage({
   /** Los que siguen jugando: son los que tienen que superar cada gimnasio */
   const activos = soloActivos(participants);
 
-  // Para el botón de traerse los hitos del juego, si la edición tiene uno
-  const nombreJuego = juegoPorId(competition.gameId)?.name ?? null;
+  // Para el botón de traerse los hitos: la plantilla es de la pareja de juegos
+  const nombreJuego = grupoDePlantillaDeJuego(competition.gameId)?.nombre ?? null;
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>

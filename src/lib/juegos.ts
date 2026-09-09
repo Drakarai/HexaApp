@@ -1,6 +1,7 @@
 /**
  * Los juegos de la saga principal, de la 1ª a la 7ª generación, con la región
- * en la que se juega cada uno.
+ * en la que se juega cada uno. De la 8ª para arriba no hay nada a propósito:
+ * el grupo no juega esos lockes de momento.
  *
  * Es una lista aparte de la de `themes.ts` **a propósito**: allí quedan fuera
  * los remakes (Rubí Omega, HeartGold, Ultrasol…) porque compartirían color con
@@ -83,11 +84,84 @@ export const JUEGOS: Juego[] = [
   { id: "soulsilver", name: "SoulSilver", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "plata" },
   { id: "rubi-omega", name: "Rubí Omega", grupo: "Remakes", region: "hoenn", tema: "rubi" },
   { id: "zafiro-alfa", name: "Zafiro Alfa", grupo: "Remakes", region: "hoenn", tema: "zafiro" },
-  { id: "lets-go-pikachu", name: "Let's Go, Pikachu!", grupo: "Remakes", region: "kanto", tema: "amarillo" },
-  { id: "lets-go-eevee", name: "Let's Go, Eevee!", grupo: "Remakes", region: "kanto", tema: "amarillo" },
+];
+
+/**
+ * Los juegos que **comparten la plantilla de level caps**.
+ *
+ * Rojo y Azul son el mismo juego con distintos bichos, así que sus gimnasios y
+ * sus niveles también son los mismos, y preparar dos listas idénticas no tiene
+ * sentido. Las **terceras versiones** (Amarillo, Cristal, Esmeralda, Platino) y
+ * los **remakes** van aparte a propósito, porque ahí sí suele haber cambios:
+ * Platino recoloca gimnasios, Esmeralda cambia el último y los remakes tocan
+ * niveles. Ultrasol y Ultraluna también van por su cuenta, que cambian
+ * dominantes y añaden una prueba.
+ *
+ * De aquí salen las pestañas de Administración → Level caps y a qué plantilla
+ * mira cada edición.
+ */
+export type GrupoDePlantilla = {
+  id: string;
+  nombre: string;
+  /** Los juegos que la comparten */
+  juegos: string[];
+};
+
+export const GRUPOS_DE_PLANTILLA: GrupoDePlantilla[] = [
+  { id: "rojo-azul", nombre: "Rojo y Azul", juegos: ["rojo", "azul"] },
+  { id: "amarillo", nombre: "Amarillo", juegos: ["amarillo"] },
+
+  { id: "oro-plata", nombre: "Oro y Plata", juegos: ["oro", "plata"] },
+  { id: "cristal", nombre: "Cristal", juegos: ["cristal"] },
+
+  { id: "rubi-zafiro", nombre: "Rubí y Zafiro", juegos: ["rubi", "zafiro"] },
+  { id: "esmeralda", nombre: "Esmeralda", juegos: ["esmeralda"] },
+
+  { id: "diamante-perla", nombre: "Diamante y Perla", juegos: ["diamante", "perla"] },
+  { id: "platino", nombre: "Platino", juegos: ["platino"] },
+
+  { id: "negro-blanco", nombre: "Negro y Blanco", juegos: ["negro", "blanco"] },
+  { id: "negro2-blanco2", nombre: "Negro 2 y Blanco 2", juegos: ["negro-2", "blanco-2"] },
+
+  { id: "x-y", nombre: "X e Y", juegos: ["x", "y"] },
+
+  { id: "sol-luna", nombre: "Sol y Luna", juegos: ["sol", "luna"] },
+  { id: "ultrasol-ultraluna", nombre: "Ultrasol y Ultraluna", juegos: ["ultrasol", "ultraluna"] },
+
+  { id: "rojofuego-verdehoja", nombre: "Rojo Fuego y Verde Hoja", juegos: ["rojo-fuego", "verde-hoja"] },
+  { id: "heartgold-soulsilver", nombre: "HeartGold y SoulSilver", juegos: ["heartgold", "soulsilver"] },
+  { id: "rubiomega-zafiroalfa", nombre: "Rubí Omega y Zafiro Alfa", juegos: ["rubi-omega", "zafiro-alfa"] },
 ];
 
 const POR_ID = new Map(JUEGOS.map((juego) => [juego.id, juego]));
+
+const GRUPO_POR_JUEGO = new Map(
+  GRUPOS_DE_PLANTILLA.flatMap((grupo) =>
+    grupo.juegos.map((juegoId) => [juegoId, grupo] as const),
+  ),
+);
+const GRUPO_POR_ID = new Map(
+  GRUPOS_DE_PLANTILLA.map((grupo) => [grupo.id, grupo] as const),
+);
+
+/** A qué plantilla de level caps mira un juego. */
+export function grupoDePlantillaDeJuego(id: string | null | undefined) {
+  return id ? GRUPO_POR_JUEGO.get(id) : undefined;
+}
+
+export function grupoDePlantillaPorId(id: string | null | undefined) {
+  return id ? GRUPO_POR_ID.get(id) : undefined;
+}
+
+/** La región de un grupo: la del primero de sus juegos, que la comparten. */
+export function regionDelGrupo(grupo: GrupoDePlantilla) {
+  return POR_ID.get(grupo.juegos[0])!.region;
+}
+
+/** De qué generación es, para agrupar las pestañas como el desplegable. */
+export function generacionDelGrupo(grupo: GrupoDePlantilla) {
+  return POR_ID.get(grupo.juegos[0])!.grupo;
+}
 
 export function juegoPorId(id: string | null | undefined) {
   return id ? POR_ID.get(id) : undefined;

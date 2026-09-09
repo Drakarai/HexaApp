@@ -113,7 +113,7 @@ function MoverBoton({
 }
 
 /** Añadir un hito que no venía de fábrica. */
-export function NuevoItemDePlantilla({ gameId }: { gameId: string }) {
+export function NuevoItemDePlantilla({ grupoId }: { grupoId: string }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     anadirItemPlantillaAction,
     null,
@@ -130,7 +130,7 @@ export function NuevoItemDePlantilla({ gameId }: { gameId: string }) {
       action={formAction}
       className="grid gap-2 border-t border-white/10 pt-4 sm:grid-cols-12"
     >
-      <input type="hidden" name="gameId" value={gameId} />
+      <input type="hidden" name="grupoId" value={grupoId} />
       <div className="sm:col-span-4">
         <label className="label">Nombre</label>
         <input name="label" className="input" placeholder="Pegaso" required />

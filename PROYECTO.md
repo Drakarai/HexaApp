@@ -601,8 +601,17 @@ igual que los mapas.
 - **Es global, como los mapas, y por el mismo motivo**: los gimnasios de Johto
   son los mismos en Oro que en HeartGold, así que se prepara una vez y sirve
   siempre. Se puede dejar listo Rubí mientras se juega en HeartGold.
-- **Va por juego y no por región**, aunque la semilla sea por región: Platino no
-  tiene los mismos niveles que Diamante, y así se ajusta uno sin tocar el otro.
+- **Va por pareja de juegos**, no por juego suelto ni por región. Rojo y Azul
+  son el mismo juego con distintos bichos, así que preparar dos listas idénticas
+  no aportaba nada; pero las **terceras versiones** (Amarillo, Cristal,
+  Esmeralda, Platino) y los **remakes** van aparte, porque ahí sí suele haber
+  cambios: Platino recoloca gimnasios, Esmeralda cambia el último y los remakes
+  tocan niveles. Los grupos están en `GRUPOS_DE_PLANTILLA` (`lib/juegos.ts`).
+- **La columna de la base de datos se sigue llamando `gameId`** aunque el campo
+  del código sea `grupoId`, con un `@map`. Renombrarla haría que
+  `prisma db push` la viera como borrar una columna y crear otra, y eso avisa de
+  posible pérdida de datos y **para el despliegue en seco**, que es justo la
+  protección que se montó a propósito.
 - **De fábrica solo se copia con un botón**, y solo lo que falte comparando por
   nombre. Si has renombrado o ajustado un hito no se toca, y si borraste uno a
   conciencia vuelve a salir y lo borras otra vez. Es exactamente la regla de los
@@ -613,11 +622,11 @@ igual que los mapas.
 - **Alola no tiene gimnasios, tiene pruebas.** Su plantilla lleva las pruebas
   con su **pokémon dominante** además de las grandes pruebas de los kahunas:
   poner solo a los kahunas dejaba fuera media partida. Y **Ultrasol/Ultraluna
-  tienen su propia lista de partida**, no la de Sol/Luna: cambian tres
+  son un grupo aparte con su propia lista de partida**, no la de Sol/Luna: cambian tres
   dominantes (Araquanid, Marowak de Alola y Togedemaru donde Sol/Luna llevan
   Wishiwashi, Salazzle y Vikavolt) y añaden la prueba de Mina. Es la única
   excepción de momento a que la semilla vaya por región, y para eso está
-  `POR_JUEGO` en `lib/level-caps-de-fabrica.ts`: caben más el día que hagan
+  `POR_GRUPO` en `lib/level-caps-de-fabrica.ts`: caben más el día que hagan
   falta.
 - **Los niveles son un punto de partida y se dice en la pantalla.** Están
   escritos a mano, cambian entre versiones de la misma región y cada grupo los
@@ -839,6 +848,11 @@ añadirla o quitarla. De `lib/mapas-de-fabrica.ts` solo se **copian la primera
 vez**, con un botón, y nunca vuelven a tocar nada; si borras una zona a
 conciencia no reaparece sola. Es lo que hace que un nombre mal traducido se
 arregle en cinco segundos en vez de esperar a que alguien toque el programa.
+
+**La lista de juegos llega hasta la 7ª generación y ahí se para.** De la 8ª
+para arriba no hay nada porque el grupo no juega esos lockes; los Let's Go
+estuvieron un rato y se quitaron por lo mismo. Añadir uno es una línea en
+`JUEGOS` y otra en `GRUPOS_DE_PLANTILLA`.
 
 **Y son globales, no de cada edición.** El mapa de Johto vale igual para un
 locke en Oro que en HeartGold, así que se prepara una vez y sirve siempre; por

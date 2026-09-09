@@ -170,24 +170,23 @@ export const LEVEL_CAPS_DE_FABRICA: Record<Region, ItemDeFabrica[]> = {
 };
 
 /**
- * Juegos que **no** se conforman con la lista de su región.
+ * Grupos que **no** se conforman con la lista de su región.
  *
- * Casi todas las versiones de una región comparten gimnasios y orden, y lo que
- * cambia son los niveles, que se ajustan luego en la plantilla de cada juego.
- * Ultrasol y Ultraluna no: cambian tres dominantes y añaden una prueba, así que
- * merecen su propia lista de partida. Aquí caben más el día que hagan falta.
+ * Casi todos los grupos de una región comparten gimnasios y orden, y lo que
+ * cambia son los niveles, que se ajustan luego en cada plantilla. Ultrasol y
+ * Ultraluna no: cambian tres dominantes y añaden una prueba, así que traen su
+ * propia lista de partida. Aquí caben más el día que hagan falta.
  */
-const POR_JUEGO: Record<string, { desde: string; items: ItemDeFabrica[] }> = {
-  ultrasol: { desde: "Ultrasol y Ultraluna", items: ALOLA_ULTRA },
-  ultraluna: { desde: "Ultrasol y Ultraluna", items: ALOLA_ULTRA },
+const POR_GRUPO: Record<string, { desde: string; items: ItemDeFabrica[] }> = {
+  "ultrasol-ultraluna": { desde: "Ultrasol y Ultraluna", items: ALOLA_ULTRA },
 };
 
 /**
- * Qué trae de fábrica un juego y de dónde sale, para poder decirlo en el botón:
- * su propia lista si la tiene, y si no la de su región.
+ * Qué trae de fábrica un grupo de juegos y de dónde sale, para poder decirlo en
+ * el botón: su propia lista si la tiene, y si no la de su región.
  */
-export function baseDeFabrica(gameId: string, region: Region, nombreRegion: string) {
-  const propia = POR_JUEGO[gameId];
+export function baseDeFabrica(grupoId: string, region: Region, nombreRegion: string) {
+  const propia = POR_GRUPO[grupoId];
   if (propia) return propia;
   return { desde: nombreRegion, items: LEVEL_CAPS_DE_FABRICA[region] ?? [] };
 }

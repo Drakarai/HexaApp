@@ -560,19 +560,26 @@ model LevelCap {
 /**
  * La plantilla de level caps de un juego: los gimnasios, pruebas y hitos que
  * trae de serie, para no escribirlos a mano en cada locke.
- *
  * **Es global, como los mapas**, y por eso no cuelga de ninguna edición: los
  * gimnasios de Johto son los mismos en Oro que en HeartGold. Se edita desde
  * Administración y de `lib/level-caps-de-fabrica.ts` solo se copia la primera
  * vez, con un botón; después manda lo que haya aquí guardado.
- *
  * Va por **juego** y no por región a propósito: Platino no tiene los mismos
  * niveles que Diamante, y así se pueden separar sin tocar el otro.
  */
 model LevelCapTemplate {
-  id     String @id @default(cuid())
-  /** El juego de lib/juegos.ts ("heartgold") */
-  gameId String @unique
+  id      String @id @default(cuid())
+  /**
+   * El grupo de juegos que comparte esta plantilla ("oro-plata"), de
+   * `GRUPOS_DE_PLANTILLA` en lib/juegos.ts.
+   *
+   * La columna se sigue llamando `gameId` porque antes guardaba el juego suelto,
+   * y renombrarla haría que `prisma db push` la viera como borrar una y crear
+   * otra: eso avisa de posible pérdida de datos y **para el despliegue en seco**,
+   * que es la protección que se montó a propósito. El `@map` deja el nombre
+   * viejo en la base de datos y el bueno en el código.
+   */
+  grupoId String @unique @map("gameId")
 
   items LevelCapTemplateItem[]
 }
@@ -582,7 +589,9 @@ model LevelCapTemplateItem {
   templateId String
   label      String
   cap        Int
-  /** "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER", igual que en LevelCap */
+  /**
+   * "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER", igual que en LevelCap
+   */
   kind       String  @default("GYM")
   notes      String?
   position   Int     @default(0)

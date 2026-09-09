@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth";
 import {
-  deFabricaParaJuego,
+  deFabricaParaGrupo,
   getPlantilla,
   getResumenDePlantillas,
 } from "@/lib/plantillas";
-import { juegoPorId, nombreDeRegion } from "@/lib/juegos";
+import { grupoDePlantillaPorId, nombreDeRegion } from "@/lib/juegos";
 import { rellenarPlantillaAction } from "@/app/actions/plantillas";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
@@ -14,32 +14,34 @@ import { ItemDeLaPlantilla, NuevoItemDePlantilla } from "./editor";
 export const metadata = { title: "Level caps de los juegos" };
 
 /**
- * Las plantillas de level caps, una por juego.
+ * Las plantillas de level caps, una por **pareja de juegos**.
  *
  * **Son globales, como los mapas**: no cuelgan de ninguna edición, así que se
- * puede dejar preparado Rubí mientras se juega en HeartGold. Dentro de un locke
- * se traen con un botón y a partir de ahí son suyos: cambiarlos allí no toca
- * esta plantilla, y al revés tampoco.
+ * puede dejar preparado Rubí y Zafiro mientras se juega en HeartGold. Dentro de
+ * un locke se traen con un botón y a partir de ahí son suyos: cambiarlos allí no
+ * toca esta plantilla, y al revés tampoco.
  */
 export default async function PlantillasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ juego?: string }>;
+  searchParams: Promise<{ grupo?: string }>;
 }) {
   await requireAdminPage();
 
-  const { juego: pedido } = await searchParams;
+  const { grupo: pedido } = await searchParams;
   const resumen = await getResumenDePlantillas();
-  const elegido = juegoPorId(pedido)?.id ?? resumen[0].id;
-  const juego = juegoPorId(elegido)!;
-  const items = await getPlantilla(elegido);
+  const elegido = grupoDePlantillaPorId(pedido) ?? resumen[0];
+  const items = await getPlantilla(elegido.id);
   // De dónde saldrían los de fábrica: su región, o su propia lista
-  const { desde } = deFabricaParaJuego(elegido);
+  const { desde } = deFabricaParaGrupo(elegido);
 
-  // Los juegos, agrupados como en el desplegable de crear la edición
-  const grupos = new Map<string, typeof resumen>();
+  // Las pestañas, repartidas por generación como el desplegable de las ediciones
+  const porGeneracion = new Map<string, typeof resumen>();
   for (const fila of resumen) {
-    grupos.set(fila.grupo, [...(grupos.get(fila.grupo) ?? []), fila]);
+    porGeneracion.set(fila.generacion, [
+      ...(porGeneracion.get(fila.generacion) ?? []),
+      fila,
+    ]);
   }
 
   return (
@@ -55,23 +57,23 @@ export default async function PlantillasPage({
       />
 
       <div className="mb-5 space-y-3">
-        {[...grupos.entries()].map(([grupo, juegos]) => (
-          <div key={grupo}>
+        {[...porGeneracion.entries()].map(([generacion, grupos]) => (
+          <div key={generacion}>
             <p className="mb-1.5 text-xs uppercase tracking-wide text-slate-500">
-              {grupo}
+              {generacion}
             </p>
             <div className="flex flex-wrap gap-2">
-              {juegos.map((fila) => (
+              {grupos.map((fila) => (
                 <Link
                   key={fila.id}
-                  href={`/admin/level-caps?juego=${fila.id}`}
+                  href={`/admin/level-caps?grupo=${fila.id}`}
                   className={cx(
                     "chip",
-                    fila.id === elegido &&
+                    fila.id === elegido.id &&
                       "border-brand-500/40 bg-brand-600/20 text-white",
                   )}
                 >
-                  {fila.name}
+                  {fila.nombre}
                   <span className="text-xs text-slate-500">
                     {fila.hitos || "—"}
                   </span>
@@ -84,23 +86,22 @@ export default async function PlantillasPage({
 
       <section className="card space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="section-title">{juego.name}</h2>
+          <h2 className="section-title">{elegido.nombre}</h2>
           <span className="text-xs text-slate-500">
-            {nombreDeRegion(juego.region)} · {items.length}{" "}
-            {items.length === 1 ? "hito" : "hitos"}
+            {nombreDeRegion(
+              resumen.find((fila) => fila.id === elegido.id)!.region,
+            )}{" "}
+            · {items.length} {items.length === 1 ? "hito" : "hitos"}
           </span>
         </div>
 
         {items.length ? (
           <>
             <p className="muted">
-              Estos son el punto de partida de cualquier locke en {juego.name}.
-              Los niveles están sacados de los juegos y{" "}
-              <strong className="text-slate-300">
-                conviene comprobarlos
-              </strong>
-              : cambian de una versión a otra de la misma región y cada grupo
-              suele ajustarlos a su gusto.
+              El punto de partida de cualquier locke en {elegido.nombre}. Los
+              niveles están sacados de los juegos y{" "}
+              <strong className="text-slate-300">conviene comprobarlos</strong>:
+              cada grupo suele ajustarlos a su gusto de todas formas.
             </p>
             <ul className="space-y-2">
               {items.map((item, indice) => (
@@ -116,14 +117,13 @@ export default async function PlantillasPage({
         ) : (
           <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
             <p className="text-sm text-slate-300">
-              {juego.name} todavía no tiene plantilla.
+              {elegido.nombre} todavía no tiene plantilla.
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
-              Trae los de {desde} y ajústalos, o ve
-              añadiéndolos a mano abajo.
+              Trae los de {desde} y ajústalos, o ve añadiéndolos a mano abajo.
             </p>
             <form action={rellenarPlantillaAction} className="mt-3">
-              <input type="hidden" name="gameId" value={juego.id} />
+              <input type="hidden" name="grupoId" value={elegido.id} />
               <button type="submit" className="btn-primary btn-sm">
                 Traer los de {desde}
               </button>
@@ -131,14 +131,14 @@ export default async function PlantillasPage({
           </div>
         )}
 
-        <NuevoItemDePlantilla gameId={juego.id} />
+        <NuevoItemDePlantilla grupoId={elegido.id} />
 
         {items.length ? (
           <form
             action={rellenarPlantillaAction}
             className="border-t border-white/10 pt-4"
           >
-            <input type="hidden" name="gameId" value={juego.id} />
+            <input type="hidden" name="grupoId" value={elegido.id} />
             <button type="submit" className="btn-ghost btn-sm">
               Traer los que falten de {desde}
             </button>

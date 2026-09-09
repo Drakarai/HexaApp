@@ -1,6 +1,13 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { JUEGOS, juegoPorId, nombreDeRegion } from "@/lib/juegos";
+import {
+  GRUPOS_DE_PLANTILLA,
+  generacionDelGrupo,
+  grupoDePlantillaPorId,
+  nombreDeRegion,
+  regionDelGrupo,
+  type GrupoDePlantilla,
+} from "@/lib/juegos";
 import { baseDeFabrica } from "@/lib/level-caps-de-fabrica";
 
 /**
@@ -11,6 +18,11 @@ import { baseDeFabrica } from "@/lib/level-caps-de-fabrica";
  * son los mismos jueguen quien juegue. Lo de fábrica
  * (`lib/level-caps-de-fabrica.ts`) solo se copia **con un botón**, así que
  * borrar un hito a conciencia no lo hace volver.
+ *
+ * Van por **pareja de juegos** y no por juego suelto: Rojo y Azul tienen los
+ * mismos gimnasios y los mismos niveles, así que preparar dos listas iguales no
+ * aportaba nada. Las terceras versiones y los remakes sí van aparte, que ahí es
+ * donde suele haber cambios (ver `GRUPOS_DE_PLANTILLA` en lib/juegos.ts).
  *
  * Dentro de un locke, los level caps siguen siendo suyos y editables como
  * siempre: la plantilla solo es el punto de partida que se copia una vez.
@@ -25,57 +37,56 @@ export type ItemDePlantilla = {
   position: number;
 };
 
-/** Los hitos guardados de un juego, en orden. */
-export async function getPlantilla(gameId: string) {
+/** Los hitos guardados de un grupo de juegos, en orden. */
+export async function getPlantilla(grupoId: string) {
   const plantilla = await prisma.levelCapTemplate.findUnique({
-    where: { gameId },
+    where: { grupoId },
     include: { items: { orderBy: { position: "asc" } } },
   });
   return plantilla?.items ?? [];
 }
 
 /**
- * Cuántos hitos tiene la plantilla de cada juego, para pintar las pestañas del
- * panel sin traerse todos los hitos de los veintiocho juegos.
+ * Cuántos hitos tiene cada grupo, para pintar las pestañas del panel sin
+ * traerse todos los hitos de todos.
  */
 export async function getResumenDePlantillas() {
   const cuentas = await prisma.levelCapTemplate.findMany({
-    select: { gameId: true, _count: { select: { items: true } } },
+    select: { grupoId: true, _count: { select: { items: true } } },
   });
-  const porJuego = new Map(
-    cuentas.map((fila) => [fila.gameId, fila._count.items]),
+  const porGrupo = new Map(
+    cuentas.map((fila) => [fila.grupoId, fila._count.items]),
   );
 
-  return JUEGOS.map((juego) => ({
-    ...juego,
-    hitos: porJuego.get(juego.id) ?? 0,
-    hayDeFabrica: Boolean(
-      baseDeFabrica(juego.id, juego.region, nombreDeRegion(juego.region)).items
-        .length,
-    ),
+  return GRUPOS_DE_PLANTILLA.map((grupo) => ({
+    ...grupo,
+    generacion: generacionDelGrupo(grupo),
+    region: regionDelGrupo(grupo),
+    hitos: porGrupo.get(grupo.id) ?? 0,
   }));
 }
 
 /** Crea la fila de la plantilla si no existía. */
-export async function asegurarPlantilla(gameId: string) {
+export async function asegurarPlantilla(grupoId: string) {
   const existente = await prisma.levelCapTemplate.findUnique({
-    where: { gameId },
+    where: { grupoId },
   });
   if (existente) return existente;
-  return prisma.levelCapTemplate.create({ data: { gameId } });
+  return prisma.levelCapTemplate.create({ data: { grupoId } });
 }
 
 /**
- * Lo que traería de fábrica un juego, y de dónde sale para poder decirlo en el
+ * Lo que traería de fábrica un grupo, y de dónde sale para poder decirlo en el
  * botón ("Traer los de Johto", "Traer los de Ultrasol y Ultraluna").
  *
  * Casi siempre es la lista de su región: los gimnasios y su orden son los
  * mismos en todas las versiones de una, y lo que cambia son los niveles, que se
- * ajustan luego en la plantilla de cada juego. La excepción son Ultrasol y
- * Ultraluna, que cambian dominantes y añaden una prueba, así que traen la suya.
+ * ajustan luego en cada plantilla. La excepción son Ultrasol y Ultraluna, que
+ * cambian dominantes y añaden una prueba, así que traen la suya.
  */
-export function deFabricaParaJuego(gameId: string) {
-  const juego = juegoPorId(gameId);
-  if (!juego) return { desde: "", items: [] };
-  return baseDeFabrica(juego.id, juego.region, nombreDeRegion(juego.region));
+export function deFabricaParaGrupo(grupo: GrupoDePlantilla) {
+  const region = regionDelGrupo(grupo);
+  return baseDeFabrica(grupo.id, region, nombreDeRegion(region));
 }
+
+export { grupoDePlantillaPorId };
