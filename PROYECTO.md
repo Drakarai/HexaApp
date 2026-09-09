@@ -628,11 +628,19 @@ igual que los mapas.
   excepción de momento a que la semilla vaya por región, y para eso está
   `POR_GRUPO` en `lib/level-caps-de-fabrica.ts`: caben más el día que hagan
   falta.
-- **Los niveles son un punto de partida y se dice en la pantalla.** Están
-  escritos a mano, cambian entre versiones de la misma región y cada grupo los
-  ajusta a su gusto. La respuesta es la misma que con los nombres de las zonas
-  del mapa: como se editan en dos clics, un fallo se arregla ahí en vez de
-  esperar a que alguien toque el programa.
+- **Lo de fábrica es la lista de la región, sin las diferencias de cada
+  versión, y la pantalla lo dice.** Amarillo, Cristal, Esmeralda, Platino y los
+  remakes cambian nombres, niveles y hasta el orden de los gimnasios, y **esos
+  datos no están en ninguna parte a la que la aplicación pueda mirar**: PokéAPI
+  no tiene entrenadores, así que escribirlos sería tirar de memoria. Ya pasó una
+  vez —a Sol/Luna se le pusieron los dominantes de Ultrasol/Ultraluna— y por eso
+  no se hace: la plantilla trae la base y las diferencias las pone quien tiene
+  el juego delante.
+- **Para eso está "copiar de otra plantilla".** Una tercera versión se parece
+  muchísimo a su pareja, así que se traen los diez hitos de Oro y Plata a
+  Cristal con un desplegable y se cambian los dos o tres que sean distintos.
+  Sale mucho más barato que escribirlo otra vez, y no obliga a la aplicación a
+  fingir que se sabe de memoria las diferencias de cada versión.
 
 **Un reto puede repartir objetos, y el castigo se anuncia.** Las dos cosas
 venían de lo mismo: un reto se apuntaba y luego había que acordarse de darle el

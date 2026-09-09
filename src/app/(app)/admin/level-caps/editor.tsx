@@ -4,6 +4,7 @@ import { useActionState, useRef, useEffect } from "react";
 import {
   anadirItemPlantillaAction,
   borrarItemPlantillaAction,
+  copiarDeOtraPlantillaAction,
   editarItemPlantillaAction,
   moverItemPlantillaAction,
 } from "@/app/actions/plantillas";
@@ -164,6 +165,57 @@ export function NuevoItemDePlantilla({ grupoId }: { grupoId: string }) {
         <FormMessage state={state} />
         <SubmitButton className="btn-ghost mt-1">Añadir hito</SubmitButton>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Copiar los hitos de otra plantilla ya hecha.
+ *
+ * Una tercera versión o un remake se parecen muchísimo a su pareja original, y
+ * lo que cambia son dos o tres cosas. Copiar y retocar es mucho menos trabajo
+ * que escribirlo todo otra vez, y evita que la aplicación tenga que fingir que
+ * se sabe de memoria las diferencias de cada versión.
+ */
+export function CopiarDeOtra({
+  grupoId,
+  candidatos,
+}: {
+  grupoId: string;
+  /** Los grupos que ya tienen hitos preparados */
+  candidatos: Array<{ id: string; nombre: string; hitos: number }>;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    copiarDeOtraPlantillaAction,
+    null,
+  );
+
+  if (!candidatos.length) return null;
+
+  return (
+    <form action={formAction} className="border-t border-white/10 pt-4">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="min-w-52 flex-1">
+          <label className="label">Copiar los hitos de</label>
+          <select name="origenId" className="input" required defaultValue="">
+            <option value="" disabled>
+              Elige una plantilla
+            </option>
+            {candidatos.map((candidato) => (
+              <option key={candidato.id} value={candidato.id}>
+                {candidato.nombre} ({candidato.hitos})
+              </option>
+            ))}
+          </select>
+        </div>
+        <input type="hidden" name="grupoId" value={grupoId} />
+        <SubmitButton className="btn-ghost">Copiar</SubmitButton>
+      </div>
+      <p className="mt-1 text-xs text-slate-500">
+        Para las terceras versiones y los remakes: trae las de su pareja y
+        cambia solo lo que sea distinto. Solo añade lo que falte.
+      </p>
+      <FormMessage state={state} />
     </form>
   );
 }

@@ -240,3 +240,63 @@ export async function traerPlantillaAlLockeAction(
     success: `${nuevos.length} ${nuevos.length === 1 ? "hito traído" : "hitos traídos"} de ${grupo.nombre}. Ya son de este locke: cámbialos como quieras.`,
   };
 }
+
+/**
+ * Copia los hitos de otra plantilla ya preparada.
+ *
+ * Es lo que hace llevadero preparar una tercera versión o un remake: Amarillo
+ * se parece muchísimo a Rojo y Azul y Platino a Diamante y Perla, así que en
+ * vez de escribir diez filas otra vez se traen las del hermano y se cambia solo
+ * lo que de verdad es distinto.
+ *
+ * Como el resto de copias, **solo añade lo que falte** comparando por nombre,
+ * así que se puede pulsar dos veces sin duplicar nada.
+ */
+export async function copiarDeOtraPlantillaAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const destino = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
+  const origen = grupoDePlantillaPorId(String(formData.get("origenId") ?? ""));
+  if (!destino || !origen) return { error: "Elige de dónde copiar." };
+  if (destino.id === origen.id) {
+    return { error: "Esa es la misma plantilla." };
+  }
+
+  const aCopiar = await getPlantilla(origen.id);
+  if (!aCopiar.length) {
+    return { error: `${origen.nombre} todavía no tiene nada que copiar.` };
+  }
+
+  const plantilla = await asegurarPlantilla(destino.id);
+  const existentes = await prisma.levelCapTemplateItem.findMany({
+    where: { templateId: plantilla.id },
+    select: { label: true },
+  });
+  const yaEstan = new Set(existentes.map((item) => item.label.toLowerCase()));
+
+  const nuevos = aCopiar.filter(
+    (item) => !yaEstan.has(item.label.toLowerCase()),
+  );
+  if (!nuevos.length) {
+    return { success: "Ya estaban todos: no había nada que copiar." };
+  }
+
+  await prisma.levelCapTemplateItem.createMany({
+    data: nuevos.map((item, indice) => ({
+      templateId: plantilla.id,
+      label: item.label,
+      cap: item.cap,
+      kind: item.kind,
+      notes: item.notes,
+      position: existentes.length + indice,
+    })),
+  });
+
+  refrescar();
+  return {
+    success: `${nuevos.length} hitos copiados de ${origen.nombre}. Ahora cambia lo que sea distinto en ${destino.nombre}.`,
+  };
+}

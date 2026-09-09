@@ -9,7 +9,11 @@ import { grupoDePlantillaPorId, nombreDeRegion } from "@/lib/juegos";
 import { rellenarPlantillaAction } from "@/app/actions/plantillas";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
-import { ItemDeLaPlantilla, NuevoItemDePlantilla } from "./editor";
+import {
+  CopiarDeOtra,
+  ItemDeLaPlantilla,
+  NuevoItemDePlantilla,
+} from "./editor";
 
 export const metadata = { title: "Level caps de los juegos" };
 
@@ -34,6 +38,14 @@ export default async function PlantillasPage({
   const items = await getPlantilla(elegido.id);
   // De dónde saldrían los de fábrica: su región, o su propia lista
   const { desde } = deFabricaParaGrupo(elegido);
+  /**
+   * Las otras plantillas que ya tienen hitos, para poder copiarlas. Es lo que
+   * hace llevadero preparar una tercera versión: se traen los de su pareja y se
+   * cambia lo poco que es distinto.
+   */
+  const candidatos = resumen.filter(
+    (fila) => fila.id !== elegido.id && fila.hitos > 0,
+  );
 
   // Las pestañas, repartidas por generación como el desplegable de las ediciones
   const porGeneracion = new Map<string, typeof resumen>();
@@ -98,10 +110,12 @@ export default async function PlantillasPage({
         {items.length ? (
           <>
             <p className="muted">
-              El punto de partida de cualquier locke en {elegido.nombre}. Los
-              niveles están sacados de los juegos y{" "}
-              <strong className="text-slate-300">conviene comprobarlos</strong>:
-              cada grupo suele ajustarlos a su gusto de todas formas.
+              El punto de partida de cualquier locke en {elegido.nombre}. Lo
+              de fábrica es la lista de la región{" "}
+              <strong className="text-slate-300">sin las diferencias</strong> de
+              cada versión, así que compruébalo con el juego delante: las
+              terceras versiones y los remakes cambian nombres, niveles y hasta
+              el orden de los gimnasios.
             </p>
             <ul className="space-y-2">
               {items.map((item, indice) => (
@@ -120,7 +134,8 @@ export default async function PlantillasPage({
               {elegido.nombre} todavía no tiene plantilla.
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
-              Trae los de {desde} y ajústalos, o ve añadiéndolos a mano abajo.
+              Trae los de {desde} y ajústalos, copia los de otra plantilla ya
+              hecha, o ve añadiéndolos a mano abajo.
             </p>
             <form action={rellenarPlantillaAction} className="mt-3">
               <input type="hidden" name="grupoId" value={elegido.id} />
@@ -130,6 +145,8 @@ export default async function PlantillasPage({
             </form>
           </div>
         )}
+
+        <CopiarDeOtra grupoId={elegido.id} candidatos={candidatos} />
 
         <NuevoItemDePlantilla grupoId={elegido.id} />
 
