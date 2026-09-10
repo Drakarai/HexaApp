@@ -247,7 +247,7 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="card lg:col-span-2">
+        <section className={progreso ? "card lg:col-span-3" : "card lg:col-span-2"}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">Actividad reciente</h2>
             <Link
@@ -260,7 +260,7 @@ export default async function DashboardPage() {
           <ActivityFeed entries={activity} compact />
         </section>
 
-        <section className="card">
+        <section className={progreso ? "hidden" : "card"}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">Ruleta</h2>
             <Link href="/ruleta" className="text-xs text-brand-400 hover:underline">

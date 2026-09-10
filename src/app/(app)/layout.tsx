@@ -160,48 +160,63 @@ export default async function AppLayout({
    * mira— no le llevan a ninguna parte: se quedan fuera y en "Lo mío" queda su
    * cuenta, que sí es suya.
    */
-  const grupos: NavGroup[] = GRUPOS.map((grupo) =>
+  const grupos: NavGroup[] = GRUPOS.flatMap((grupo) =>
     grupo.label === "Combates"
-      ? {
-          ...grupo,
-          /**
-           * En solitario no hay contra quién: fuera jornadas, retos y la final.
-           * Queda la ruleta —que sigue sirviendo para sortearte cosas— y el
-           * hall de la fama, que es donde acaba la partida. El grupo se llama
-           * distinto porque "Combates" con dos enlaces que no son combates
-           * quedaría raro.
-           */
-          label: perfil.enSolitario ? "La partida" : grupo.label,
-          icon: perfil.enSolitario ? "🎮" : grupo.icon,
-          children: perfil.enSolitario
-            ? [S.ruleta, S.hall]
-            : grupo.children.map((item) =>
+      ? /**
+         * En solitario el grupo entero desaparece: no hay jornadas, ni retos,
+         * ni final. La ruleta y la bolsa tampoco se quedan —la bolsa la llenan
+         * los administradores con premios de combates y sortearse cosas a uno
+         * mismo no aporta—, así que lo único que se salva es el hall de la
+         * fama, y se muda a "La edición" en vez de dejar un grupo con un
+         * enlace suelto.
+         */
+        perfil.enSolitario
+        ? []
+        : [
+            {
+              ...grupo,
+              children: grupo.children.map((item) =>
                 item.href === S.finalFour.href ? finalConSuNombre : item,
               ),
-        }
+            },
+          ]
       : grupo.label === "La edición"
-      ? {
-          ...grupo,
-          children: [
-            // En un locke de dos, "Puntos" es en realidad el marcador de
-            // jornadas ganadas: el menú tiene que decir lo mismo que la
-            // pantalla. Y en solitario no hay clasificación que enseñar.
-            ...grupo.children
-              .filter(
-                (item) => !(perfil.enSolitario && item.href === S.puntos.href),
-              )
-              .map((item) =>
-                item.href === S.puntos.href
-                  ? { ...item, label: perfil.rotuloDeLaTabla }
-                  : item,
-              ),
-            S.ediciones,
-            ...(isAdmin(user) ? [S.admin] : []),
-          ],
-        }
-      : grupo.label === "Lo mío" && !yo
-      ? { ...grupo, children: [S.perfil] }
-      : grupo,
+      ? [
+          {
+            ...grupo,
+            children: [
+              // En un locke de dos, "Puntos" es en realidad el marcador de
+              // jornadas ganadas: el menú tiene que decir lo mismo que la
+              // pantalla. Y en solitario no hay clasificación que enseñar.
+              ...grupo.children
+                .filter(
+                  (item) => !(perfil.enSolitario && item.href === S.puntos.href),
+                )
+                .map((item) =>
+                  item.href === S.puntos.href
+                    ? { ...item, label: perfil.rotuloDeLaTabla }
+                    : item,
+                ),
+              ...(perfil.enSolitario ? [S.hall] : []),
+              S.ediciones,
+              ...(isAdmin(user) ? [S.admin] : []),
+            ],
+          },
+        ]
+      : grupo.label === "Lo mío"
+      ? [
+          {
+            ...grupo,
+            children: !yo
+              ? [S.perfil]
+              : // La bolsa es de los premios que se reparten en un locke de
+                // varios: en solitario no la llena nadie
+                grupo.children.filter(
+                  (item) => !(perfil.enSolitario && item.href === S.bolsa.href),
+                ),
+          },
+        ]
+      : [grupo],
   );
   const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
 

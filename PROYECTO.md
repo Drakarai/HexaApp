@@ -699,9 +699,16 @@ igual siendo uno.
   el progreso de la run: hitos hechos y cuál toca, caídos y zonas del mapa con
   captura. Todo sale de lo que ya se apunta, así que no hay ningún dato nuevo
   que mantener (`lib/solitario.ts`).
-- **El menú se queda en lo que tiene sentido**: fuera Jornadas, Retos, la final
-  y Puntos; el grupo "Combates" pasa a llamarse "La partida" y guarda la Ruleta
-  —que sigue sirviendo para sortearse cosas— y el hall de la fama.
+- **El menú se queda en lo que tiene sentido.** El grupo de Combates
+  desaparece entero, y con él Jornadas, Retos, la final y también la **Ruleta**;
+  fuera va además **Puntos** y, de "Lo mío", la **Bolsa**. La ruleta y la bolsa
+  se cayeron por lo mismo: la bolsa la llenan los administradores con premios de
+  combates, y sortearse cosas a uno mismo no aporta. Lo único que se salva de
+  Combates es el hall de la fama, que se muda a "La edición" para no dejar un
+  grupo con un enlace suelto.
+- **Los rótulos de los grupos no se tocan** aunque cambien de contenido: el
+  aviso de novedades va por el nombre del grupo (`TabSeen.tab`), así que
+  renombrar "La edición" apagaría su punto para siempre.
 
 **Crear ediciones sigue siendo de administradores; pedir la tuya, no.** Si
 cualquiera pudiera crear competiciones, el selector acabaría lleno de pruebas a
