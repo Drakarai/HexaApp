@@ -18,6 +18,7 @@
 
 /** Cómo se llama un locke de cada tamaño. Es solo el rótulo. */
 const NOMBRES: Record<number, string> = {
+  1: "Locke en solitario",
   2: "Dualocke",
   3: "Triolocke",
   4: "Tetralocke",
@@ -47,27 +48,51 @@ export type PerfilDeLocke = {
    */
   serieAlMejorDe: number | null;
   /**
-   * Cómo se gana el locke en combates. Con dos jugadores no hay tabla que
-   * valga: gana quien se lleve más jornadas.
+   * Cómo se gana el locke.
+   *
+   * - `puntos`: la clasificación de siempre, de tres jugadores para arriba.
+   * - `jornadas`: el dualocke, que va por jornadas ganadas.
+   * - `liga`: en solitario **no hay contra quién**, así que el locke se gana
+   *   pasándose la Liga Pokémon (`lib/liga.ts`). Es la misma victoria que en
+   *   los demás lockes existe en paralelo a la de los combates; aquí es la
+   *   única que hay.
    */
-  victoria: "puntos" | "jornadas";
+  victoria: "puntos" | "jornadas" | "liga";
   /** Cómo se llama la pantalla de la clasificación en este locke */
   rotuloDeLaTabla: string;
+  /**
+   * Un locke de una persona: ni jornadas, ni retos, ni clasificación, ni final.
+   * Lo que queda —la caja, el mapa, los gimnasios, la bolsa y las notas— es
+   * justo la mitad de la aplicación que no va de competir, y funciona igual
+   * siendo uno. Es una marca aparte y no `jugadores === 1` para que las
+   * pantallas no tengan que saberse el número.
+   */
+  enSolitario: boolean;
 };
 
-/** El menos que puede tener un locke para que sea un locke. */
-export const MINIMO_DE_JUGADORES = 2;
+/**
+ * El menos que puede tener un locke.
+ *
+ * Es **uno**: un nuzlocke en solitario es un locke perfectamente válido, solo
+ * que no es una competición. Lo que no puede haber es un locke de cero.
+ */
+export const MINIMO_DE_JUGADORES = 1;
+
+/** De cuántos hace falta ser para que haya combates entre jugadores. */
+export const MINIMO_PARA_COMPETIR = 2;
 
 export function perfilDeLocke(jugadores: number): PerfilDeLocke {
   const cuantos = Math.max(MINIMO_DE_JUGADORES, Math.trunc(jugadores || 0));
+  const solo = cuantos === 1;
   const esDual = cuantos === 2;
   return {
     jugadores: cuantos,
     nombre: NOMBRES[cuantos] ?? `Locke de ${cuantos}`,
-    liguillaEntera: cuantos <= 3,
+    liguillaEntera: !solo && cuantos <= 3,
     serieAlMejorDe: esDual ? 3 : null,
-    victoria: esDual ? "jornadas" : "puntos",
-    rotuloDeLaTabla: esDual ? "Marcador" : "Puntos",
+    victoria: solo ? "liga" : esDual ? "jornadas" : "puntos",
+    rotuloDeLaTabla: solo ? "Mi partida" : esDual ? "Marcador" : "Puntos",
+    enSolitario: solo,
   };
 }
 

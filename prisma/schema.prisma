@@ -35,16 +35,18 @@ model User {
   theme        String   @default("hexa")
   createdAt    DateTime @default(now())
 
-  participations Participant[]
-  notes          Note[]
-  pointsGiven    PointEntry[]     @relation("PointAuthor")
-  spins          RouletteSpin[]
-  competitions   Competition[]    @relation("CompetitionCreator")
-  ticketsGiven   RouletteTicket[] @relation("TicketAuthor")
-  titles         TitleAward[]     @relation("TitleOwner")
-  titlesGiven    TitleAward[]     @relation("TitleGiver")
-  visitas        TabSeen[]
-  espectador     Spectator[]
+  participations       Participant[]
+  notes                Note[]
+  pointsGiven          PointEntry[]     @relation("PointAuthor")
+  spins                RouletteSpin[]
+  competitions         Competition[]    @relation("CompetitionCreator")
+  ticketsGiven         RouletteTicket[] @relation("TicketAuthor")
+  titles               TitleAward[]     @relation("TitleOwner")
+  titlesGiven          TitleAward[]     @relation("TitleGiver")
+  visitas              TabSeen[]
+  espectador           Spectator[]
+  solicitudes          LockeRequest[]   @relation("SolicitanteDeLocke")
+  solicitudesResueltas LockeRequest[]   @relation("ResolutorDeLocke")
 }
 
 /**
@@ -572,7 +574,6 @@ model LevelCapTemplate {
   /**
    * El grupo de juegos que comparte esta plantilla ("oro-plata"), de
    * `GRUPOS_DE_PLANTILLA` en lib/juegos.ts.
-   *
    * La columna se sigue llamando `gameId` porque antes guardaba el juego suelto,
    * y renombrarla haría que `prisma db push` la viera como borrar una y crear
    * otra: eso avisa de posible pérdida de datos y **para el despliegue en seco**,
@@ -598,13 +599,57 @@ model LevelCapTemplateItem {
   /**
    * "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER", igual que en LevelCap
    */
-  kind       String  @default("GYM")
+  kind       String   @default("GYM")
   notes      String?
-  position   Int     @default(0)
+  position   Int      @default(0)
 
   template LevelCapTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
 
   @@index([templateId, position])
+}
+
+/**
+ * La petición de alguien para abrir su propio **locke en solitario**.
+ * Crear ediciones es cosa de administradores, y así se queda: si cualquiera
+ * pudiera, el selector de competiciones acabaría lleno de pruebas a medias.
+ * Pero un locke de una persona no le quita el sitio a nadie, así que en vez de
+ * ir a pedírselo al administrador por WhatsApp se pide desde la aplicación y él
+ * lo acepta o lo rechaza con un botón.
+ * Al aceptarla se crea la competición y **el que la pidió entra como su único
+ * jugador y administrador de esa edición**: es su partida, así que se apaña
+ * solo con sus level caps y sus reglas.
+ */
+model LockeRequest {
+  id            String    @id @default(cuid())
+  userId        String
+  name          String
+  /**
+   * El juego de lib/juegos.ts, si eligió uno de la lista
+   */
+  gameId        String?
+  modality      String?
+  description   String?
+  /**
+   * "PENDIENTE" | "ACEPTADA" | "RECHAZADA"
+   */
+  estado        String    @default("PENDIENTE")
+  /**
+   * Lo que conteste el administrador, sobre todo si dice que no
+   */
+  respuesta     String?
+  createdAt     DateTime  @default(now())
+  resueltaAt    DateTime?
+  resueltaById  String?
+  /**
+   * La edición que se creó al aceptarla, para poder enlazarla
+   */
+  competitionId String?
+
+  user     User  @relation("SolicitanteDeLocke", fields: [userId], references: [id], onDelete: Cascade)
+  resuelta User? @relation("ResolutorDeLocke", fields: [resueltaById], references: [id], onDelete: SetNull)
+
+  @@index([estado, createdAt])
+  @@index([userId])
 }
 
 model GymClear {

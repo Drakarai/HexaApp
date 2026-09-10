@@ -23,6 +23,8 @@ import { getMarcador } from "@/lib/marcador";
 import { MarcadorDual } from "@/components/marcador-dual";
 import { getCastigosPendientes } from "@/lib/premios";
 import { Castigos } from "@/components/castigos";
+import { getProgresoEnSolitario } from "@/lib/solitario";
+import { ResumenEnSolitario } from "@/components/resumen-solitario";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -40,7 +42,7 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador, castigos, canManage] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador, castigos, canManage, progreso] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -76,6 +78,8 @@ export default async function DashboardPage() {
       // Los castigos de los retos perdidos, que son cosa de todos
       getCastigosPendientes(competition.id),
       canManageCompetition(competition.id, user),
+      // En solitario la portada enseña el progreso de la run, no una tabla
+      perfil.enSolitario ? getProgresoEnSolitario(competition.id) : null,
     ]);
 
   /** Quién va primero, dicho como toque: por puntos o por jornadas ganadas */
@@ -127,10 +131,16 @@ export default async function DashboardPage() {
           images={medallasDelCap}
         />
         <StatCard
-          label="Jugadores"
-          value={`${activos}/${competition.maxPlayers}`}
+          label={perfil.enSolitario ? "Jugando" : "Jugadores"}
+          value={
+            perfil.enSolitario
+              ? (progreso?.displayName ?? "—")
+              : `${activos}/${competition.maxPlayers}`
+          }
           hint={
-            retirados
+            perfil.enSolitario
+              ? perfil.nombre
+              : retirados
               ? `${retirados} retirado${retirados === 1 ? "" : "s"} · empiezan con ${competition.startingPoints} puntos`
               : `Empiezan con ${competition.startingPoints} puntos`
           }
@@ -139,28 +149,45 @@ export default async function DashboardPage() {
         <StatCard
           label="Pokémon caídos"
           value={String(totalDeaths)}
-          hint="En toda la competición"
+          hint={perfil.enSolitario ? "En tu partida" : "En toda la competición"}
           href="/muertes"
         />
-        <StatCard
-          label="Líder"
-          value={lider?.displayName ?? "—"}
-          hint={pieDelLider}
-          href="/puntos"
-        />
+        {progreso ? (
+          <StatCard
+            label="Hitos"
+            value={`${progreso.hitos.hechos}/${progreso.hitos.total}`}
+            hint={
+              progreso.siguiente
+                ? `Te toca ${progreso.siguiente.label}`
+                : "No queda ninguno"
+            }
+            href="/level-caps"
+          />
+        ) : (
+          <StatCard
+            label="Líder"
+            value={lider?.displayName ?? "—"}
+            hint={pieDelLider}
+            href="/puntos"
+          />
+        )}
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className="card lg:col-span-2">
+        <section className={progreso ? "card lg:col-span-3" : "card lg:col-span-2"}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">
-              {marcador ? "Marcador" : "Clasificación"}
+              {progreso ? "Tu partida" : marcador ? "Marcador" : "Clasificación"}
             </h2>
-            <Link href="/puntos" className="text-xs text-brand-400 hover:underline">
-              Ver detalle →
-            </Link>
+            {progreso ? null : (
+              <Link href="/puntos" className="text-xs text-brand-400 hover:underline">
+                Ver detalle →
+              </Link>
+            )}
           </div>
-          {marcador ? (
+          {progreso ? (
+            <ResumenEnSolitario progreso={progreso} />
+          ) : marcador ? (
             <MarcadorDual marcador={marcador} compacto />
           ) : (
             <>
@@ -180,7 +207,8 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        <section className="card">
+        {/* En solitario no hay jornadas: el hueco sobra */}
+        <section className={progreso ? "hidden" : "card"}>
           <h2 className="section-title mb-4">Próxima jornada</h2>
           {nextMatchday ? (
             <div className="space-y-3">

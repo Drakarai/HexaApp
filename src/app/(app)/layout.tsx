@@ -108,6 +108,7 @@ export default async function AppLayout({
           userId: user.id,
           competitionId: active.id,
           participantId: yo?.id ?? null,
+          esAdmin: isAdmin(user),
         }),
       ])
     : [false, {} as Record<string, boolean>];
@@ -163,21 +164,37 @@ export default async function AppLayout({
     grupo.label === "Combates"
       ? {
           ...grupo,
-          children: grupo.children.map((item) =>
-            item.href === S.finalFour.href ? finalConSuNombre : item,
-          ),
+          /**
+           * En solitario no hay contra quién: fuera jornadas, retos y la final.
+           * Queda la ruleta —que sigue sirviendo para sortearte cosas— y el
+           * hall de la fama, que es donde acaba la partida. El grupo se llama
+           * distinto porque "Combates" con dos enlaces que no son combates
+           * quedaría raro.
+           */
+          label: perfil.enSolitario ? "La partida" : grupo.label,
+          icon: perfil.enSolitario ? "🎮" : grupo.icon,
+          children: perfil.enSolitario
+            ? [S.ruleta, S.hall]
+            : grupo.children.map((item) =>
+                item.href === S.finalFour.href ? finalConSuNombre : item,
+              ),
         }
       : grupo.label === "La edición"
       ? {
           ...grupo,
           children: [
             // En un locke de dos, "Puntos" es en realidad el marcador de
-            // jornadas ganadas: el menú tiene que decir lo mismo que la pantalla
-            ...grupo.children.map((item) =>
-              item.href === S.puntos.href
-                ? { ...item, label: perfil.rotuloDeLaTabla }
-                : item,
-            ),
+            // jornadas ganadas: el menú tiene que decir lo mismo que la
+            // pantalla. Y en solitario no hay clasificación que enseñar.
+            ...grupo.children
+              .filter(
+                (item) => !(perfil.enSolitario && item.href === S.puntos.href),
+              )
+              .map((item) =>
+                item.href === S.puntos.href
+                  ? { ...item, label: perfil.rotuloDeLaTabla }
+                  : item,
+              ),
             S.ediciones,
             ...(isAdmin(user) ? [S.admin] : []),
           ],

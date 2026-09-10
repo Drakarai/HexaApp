@@ -18,6 +18,11 @@ import {
   selectCompetitionAction,
   setCompetitionStatusAction,
 } from "@/app/actions/competitions";
+import { getMisSolicitudes } from "@/lib/solicitudes";
+import {
+  LockeEnSolitarioForm,
+  MisSolicitudes,
+} from "./solitario-forms";
 import {
   NewCompetitionForm,
   EditCompetitionForm,
@@ -40,7 +45,7 @@ export default async function CompetitionsPage() {
     ? await canManageCompetition(active.id, user)
     : false;
 
-  const [participants, users, espectadores] = await Promise.all([
+  const [participants, users, misSolicitudes, espectadores] = await Promise.all([
     active
       ? prisma.participant.findMany({
           where: { competitionId: active.id },
@@ -57,6 +62,7 @@ export default async function CompetitionsPage() {
           select: { id: true, displayName: true, username: true },
         })
       : Promise.resolve([]),
+    getMisSolicitudes(user.id),
     active
       ? prisma.spectator.findMany({
           where: { competitionId: active.id },
@@ -396,6 +402,13 @@ export default async function CompetitionsPage() {
           ))}
         </div>
       </section>
+
+      <MisSolicitudes solicitudes={misSolicitudes} />
+
+      {/* Un locke para uno mismo: el admin lo crea y el resto lo pide */}
+      <div className="mb-6">
+        <LockeEnSolitarioForm puedeCrearDirecto={admin} />
+      </div>
 
       {admin ? (
         <NewCompetitionForm

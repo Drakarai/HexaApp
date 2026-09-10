@@ -22,6 +22,8 @@ import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
 import { getCampeonesDeLiga } from "@/lib/liga";
 import { MarcadorDual, CampeonesDeLiga } from "@/components/marcador-dual";
+import { getProgresoEnSolitario } from "@/lib/solitario";
+import { ResumenEnSolitario } from "@/components/resumen-solitario";
 
 export const metadata = { title: "Puntos" };
 
@@ -37,6 +39,13 @@ export default async function PointsPage() {
    */
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
+  /**
+   * En solitario esta pantalla no está en el menú, pero se puede llegar por la
+   * dirección: en vez de una clasificación de una fila, enseña la partida.
+   */
+  const progreso = perfil.enSolitario
+    ? await getProgresoEnSolitario(competition.id)
+    : null;
 
   const [canManage, standings, grafico, formatoFinal, history, marcador, campeonesDeLiga] = await Promise.all([
     canManageCompetition(competition.id, user),
@@ -67,13 +76,21 @@ export default async function PointsPage() {
   return (
     <>
       <PageHeader
-        title={porJornadas ? "Marcador" : "Puntos y clasificación"}
+        title={perfil.enSolitario ? "Mi partida" : porJornadas ? "Marcador" : "Puntos y clasificación"}
         subtitle={
-          porJornadas
+          perfil.enSolitario
+            ? "Un locke en solitario no tiene clasificación: lo que hay es tu progreso, y se gana pasándote la Liga."
+            : porJornadas
             ? "En un locke de dos no hay tabla que valga: gana quien se lleve más jornadas."
             : `Todo el mundo empieza con ${competition.startingPoints} puntos. Los que se saltan la primera ronda de la final se clasifican directos.`
         }
       />
+
+      {progreso ? (
+        <section className="card mb-4">
+          <ResumenEnSolitario progreso={progreso} />
+        </section>
+      ) : null}
 
       {marcador ? <MarcadorDual marcador={marcador} /> : null}
 
@@ -92,7 +109,7 @@ export default async function PointsPage() {
         </section>
       ) : null}
 
-      {porJornadas ? null : (
+      {porJornadas || perfil.enSolitario ? null : (
       <section className="card">
         <h2 className="section-title mb-4">Clasificación global</h2>
         <StandingsTable
@@ -178,7 +195,7 @@ export default async function PointsPage() {
         <CampeonesDeLiga campeones={campeonesDeLiga} />
       </div>
 
-      {canManage ? (
+      {canManage && !perfil.enSolitario ? (
         <div className="mt-6">
           <PointsForms
             competitionId={competition.id}
@@ -190,7 +207,7 @@ export default async function PointsPage() {
         </div>
       ) : null}
 
-      <section className="card mt-6">
+      <section className={perfil.enSolitario ? "hidden" : "card mt-6"}>
         <h2 className="section-title mb-4">Historial de movimientos</h2>
         {history.length === 0 ? (
           <EmptyState title="Todavía no se han movido puntos" />

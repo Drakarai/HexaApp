@@ -13,6 +13,8 @@ import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import { getCampeonesDeLiga } from "@/lib/liga";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getProgresoEnSolitario } from "@/lib/solitario";
 import { CampeonesDeLiga } from "@/components/marcador-dual";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
 
@@ -31,7 +33,41 @@ export default async function HallOfFamePage() {
   const nombreFinal =
     ("formato" in state ? state.formato?.nombre : null) ?? NOMBRE_POR_DEFECTO;
 
-  if (state.status !== "TERMINADA") {
+  /**
+   * En solitario no hay final que ganar, así que lo que cierra el locke es
+   * **pasarse la Liga**. Sin esto el hall no se abriría nunca en una partida de
+   * una persona, porque exige campeón de la Final Four.
+   */
+  const perfil = perfilDeLocke(competition.maxPlayers);
+  const progreso = perfil.enSolitario
+    ? await getProgresoEnSolitario(competition.id)
+    : null;
+  const terminadoEnSolitario = Boolean(progreso?.ligaSuperada);
+
+  if (perfil.enSolitario && !terminadoEnSolitario) {
+    return (
+      <>
+        <PageHeader title="Hall de la fama" />
+        <section className="card text-center">
+          <p className="text-4xl" aria-hidden>
+            🏅
+          </p>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            Todavía no te has pasado la Liga
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+            En un locke en solitario el final es ese. Cuando marques el último
+            hito, aquí quedará el equipo con el que lo terminaste.
+          </p>
+          <Link href="/level-caps" className="btn-ghost mt-5">
+            Ver los level caps
+          </Link>
+        </section>
+      </>
+    );
+  }
+
+  if (!perfil.enSolitario && state.status !== "TERMINADA") {
     return (
       <>
         <PageHeader title="Hall de la fama" />
@@ -53,6 +89,13 @@ export default async function HallOfFamePage() {
       </>
     );
   }
+
+  /**
+   * El estado de la final ya estrechado. En solitario no hay final, así que es
+   * null y el podio de campeón y subcampeón simplemente no se pinta: lo que
+   * cierra el locke ahí es la Liga.
+   */
+  const elFinal = state.status === "TERMINADA" ? state : null;
 
   const [canManage, standings, entries, campeonesDeLiga] = await Promise.all([
     canManageCompetition(competition.id, user),
@@ -82,8 +125,8 @@ export default async function HallOfFamePage() {
 
   // Primero el campeón, después el subcampeón, y el resto por clasificación
   const orden = new Map<string, number>();
-  if (state.champion) orden.set(state.champion.participantId, -2);
-  if (state.runnerUp) orden.set(state.runnerUp.participantId, -1);
+  if (elFinal?.champion) orden.set(elFinal.champion.participantId, -2);
+  if (elFinal?.runnerUp) orden.set(elFinal.runnerUp.participantId, -1);
   const jugadores = [...standings].sort(
     (a, b) =>
       (orden.get(a.participantId) ?? a.position) -
@@ -94,31 +137,55 @@ export default async function HallOfFamePage() {
     <>
       <PageHeader
         title="Hall de la fama"
-        subtitle={`Así terminó el ${competition.name}. El equipo con el que cada uno llegó al final, para el recuerdo.`}
+        subtitle={
+          perfil.enSolitario
+            ? `Así terminó el ${competition.name}. El equipo con el que te pasaste la Liga, para el recuerdo.`
+            : `Así terminó el ${competition.name}. El equipo con el que cada uno llegó al final, para el recuerdo.`
+        }
       />
 
-      <section className="card mb-6 text-center">
-        <p className="text-5xl" aria-hidden>
-          🏆
-        </p>
-        <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
-          Campeón
-        </p>
-        <div className="mt-3 flex items-center justify-center gap-3">
-          <Avatar
-            name={state.champion!.displayName}
-            color={state.champion!.color}
-            image={state.champion!.avatarImage}
-            size={48}
-          />
-          <p className="text-3xl font-black text-white">
-            {state.champion!.displayName}
+      {/* El podio solo tiene sentido si hubo final. En solitario lo que cierra
+          el locke es la Liga, y eso se cuenta en el bloque de abajo. */}
+      {elFinal?.champion ? (
+        <section className="card mb-6 text-center">
+          <p className="text-5xl" aria-hidden>
+            🏆
           </p>
-        </div>
-        <p className="mt-2 text-xs text-slate-500">
-          {competition.name} · {formatDate(competition.startedAt)}
-        </p>
-      </section>
+          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
+            Campeón
+          </p>
+          <div className="mt-3 flex items-center justify-center gap-3">
+            <Avatar
+              name={elFinal.champion.displayName}
+              color={elFinal.champion.color}
+              image={elFinal.champion.avatarImage}
+              size={48}
+            />
+            <p className="text-3xl font-black text-white">
+              {elFinal.champion.displayName}
+            </p>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">
+            {competition.name} · {formatDate(competition.startedAt)}
+          </p>
+        </section>
+      ) : (
+        <section className="card mb-6 text-center">
+          <p className="text-5xl" aria-hidden>
+            🏆
+          </p>
+          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
+            Locke terminado
+          </p>
+          <p className="mt-3 text-3xl font-black text-white">
+            {progreso?.displayName}
+          </p>
+          <p className="mt-2 text-xs text-slate-500">
+            Se pasó la Liga · {competition.name} ·{" "}
+            {formatDate(competition.startedAt)}
+          </p>
+        </section>
+      )}
 
       {/* La otra victoria: pasarse la Liga es ganar el locke del juego, y la
           puede tener alguien que no ganó ni un combate */}
@@ -130,7 +197,7 @@ export default async function HallOfFamePage() {
         {jugadores.map((row, index) => {
           const team = teamOf(row.participantId);
           const editable = canManage || row.userId === user.id;
-          const esCampeon = state.champion?.participantId === row.participantId;
+          const esCampeon = elFinal?.champion?.participantId === row.participantId;
 
           return (
             <section

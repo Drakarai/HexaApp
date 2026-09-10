@@ -7,9 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 9 de septiembre de 2026 (plantillas de level caps por
-pareja de juegos, con sus medallas, editables en Administración y traíbles a
-cada locke).
+Última actualización: 10 de septiembre de 2026 (modo en solitario, con su
+circuito de peticiones al administrador).
 
 ---
 
@@ -45,6 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
+| **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
@@ -680,6 +680,48 @@ dos se hacía.
   volver a encender. Empieza puesto y se apaga a mano, no al revés: si hubiera
   que acordarse de encenderlo, no se encendería nunca.
 
+**Un locke puede ser de una sola persona, y entonces no es una competición.**
+Con uno no hay contra quién: ni jornadas, ni retos, ni clasificación, ni final.
+Lo que queda —la caja, el mapa de capturas, los level caps, la bolsa y las
+notas— es justo la mitad de la aplicación que nunca fue de competir, y funciona
+igual siendo uno.
+
+- **`MINIMO_DE_JUGADORES` pasa a ser 1.** Un nuzlocke en solitario es un locke
+  perfectamente válido; lo que no puede haber es uno de cero. Ojo con el otro
+  mínimo: `lib/formatos-finales.ts` tiene el suyo en 2, y ese sí se queda,
+  porque una final de uno no existe.
+- **El locke se gana pasándose la Liga.** Es la victoria que ya existía en
+  paralelo en todos los lockes (`lib/liga.ts`, deducida del hito de tipo
+  `CHAMPION`); aquí es la única que hay, y es la que **abre el hall de la fama**,
+  que en un locke de grupo exige campeón de la final y por tanto no se abriría
+  nunca en una partida de una persona.
+- **La portada cambia de contenido, no de sitio.** Donde va la clasificación va
+  el progreso de la run: hitos hechos y cuál toca, caídos y zonas del mapa con
+  captura. Todo sale de lo que ya se apunta, así que no hay ningún dato nuevo
+  que mantener (`lib/solitario.ts`).
+- **El menú se queda en lo que tiene sentido**: fuera Jornadas, Retos, la final
+  y Puntos; el grupo "Combates" pasa a llamarse "La partida" y guarda la Ruleta
+  —que sigue sirviendo para sortearse cosas— y el hall de la fama.
+
+**Crear ediciones sigue siendo de administradores; pedir la tuya, no.** Si
+cualquiera pudiera crear competiciones, el selector acabaría lleno de pruebas a
+medias. Pero un locke de una persona no le quita el sitio a nadie, así que se
+pide desde la aplicación (`LockeRequest`) y el administrador lo acepta o lo
+rechaza con un botón, en vez de que haya que ir a buscarle por WhatsApp.
+
+- **El aviso reutiliza el punto de novedades.** Al administrador le sale el
+  punto ámbar en "La edición", que es donde vive Administración. **No se apaga
+  por mirar la pestaña**, igual que el del MVP por votar: no es algo que ver,
+  es algo que hacer, y se va cuando la petición queda resuelta.
+- **Una petición a la vez por persona.** Un despiste con el botón dejaba al
+  administrador con cinco peticiones iguales que resolver una a una.
+- **Al aceptarla, quien la pidió entra como jugador único y administrador de esa
+  edición**: es su partida, y tiene que poder apañarse con sus level caps y sus
+  reglas sin ir preguntando.
+- **No archiva las demás**, al revés que crear una competición normal. Un locke
+  en solitario corre en paralelo; archivar el Hexalocke que está jugando todo el
+  grupo porque alguien empieza su partida sería un destrozo.
+
 **Un locke no son necesariamente seis personas.** La aplicación nació para el
 Hexalocke y lo daba por hecho en todas partes. Ahora hay un **perfil de locke**
 (`lib/perfiles-de-locke.ts`) que dice qué cambia según cuánta gente juega, y las
@@ -1275,6 +1317,13 @@ Piezas con truco:
   (método del círculo) y de ahí salen los combates que propone
   `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
   dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `lib/solitario.ts` — cómo va una partida de una persona (hitos, siguiente,
+  caídos, zonas). `components/resumen-solitario.tsx` lo pinta, y sale tanto en
+  la portada como en la pantalla de la tabla.
+- `lib/solicitudes.ts` y `app/actions/solicitudes.ts` — pedir, aceptar y
+  rechazar un locke en solitario. Los formularios están en
+  `competiciones/solitario-forms.tsx` (pedirlo o crearlo) y
+  `admin/solicitudes.tsx` (responderlas).
 - `lib/plantillas.ts` y `lib/level-caps-de-fabrica.ts` — los hitos que trae
   cada juego. El segundo es la semilla (por región); el primero, lo guardado
   (por juego). `admin/level-caps/` es el editor y
@@ -1494,4 +1543,7 @@ lugar de destruir datos, y hay que avisar antes.
     hasta que se da por cumplido.
 40. **Plantillas de level caps por juego**: los gimnasios (y las pruebas de
     Alola, con sus dominantes) se preparan una vez en Administración y se traen
-    a cada locke con un botón.
+    a cada locke con un botón, con sus medallas incluidas.
+41. **Modo en solitario**: una partida para uno, que se gana pasándose la Liga,
+    con su propia portada y su menú, y que cualquiera puede pedirle a la
+    organización desde la propia aplicación.

@@ -31,11 +31,14 @@ export async function getAvisos({
   userId,
   competitionId,
   participantId,
+  esAdmin = false,
 }: {
   userId: string;
   competitionId: string;
   /** Su participante en esta edición, o null si no la juega */
   participantId: string | null;
+  /** Administrador global: a él además le avisan las peticiones sin responder */
+  esAdmin?: boolean;
 }): Promise<Avisos> {
   const marcas = await prisma.tabSeen.findMany({
     where: { userId, competitionId },
@@ -109,9 +112,23 @@ export async function getAvisos({
       ) AS lomio
   `;
 
+  /**
+   * Las peticiones de locke en solitario sin responder avisan al administrador
+   * en "La edición", que es donde vive Administración.
+   *
+   * **Este punto no se apaga por mirar la pestaña**, igual que el del MVP por
+   * votar: no es algo que ver, es algo que hacer. Se va cuando la petición se
+   * acepta o se rechaza, que es cuando de verdad está resuelta. Va aparte de la
+   * consulta grande porque solo le hace falta a los administradores y es un
+   * `count` de nada.
+   */
+  const peticiones =
+    esAdmin &&
+    (await prisma.lockeRequest.count({ where: { estado: "PENDIENTE" } })) > 0;
+
   return {
     Combates: Boolean(fila?.combates),
-    "La edición": Boolean(fila?.edicion),
+    "La edición": Boolean(fila?.edicion) || peticiones,
     "Lo mío": Boolean(fila?.lomio),
   };
 }

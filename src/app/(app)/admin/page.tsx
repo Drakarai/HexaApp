@@ -12,6 +12,8 @@ import { deleteUserAction, updateUserRoleAction } from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
 import { Backups, type CopiaView } from "./backups";
 import { Titles, type TituloAdmin } from "./titles";
+import { getSolicitudesPendientes } from "@/lib/solicitudes";
+import { SolicitudesPendientes } from "./solicitudes";
 import {
   COPIAS_HECHAS,
   COPIAS_QUE_SE_GUARDAN,
@@ -34,6 +36,9 @@ export default async function AdminPage() {
   });
 
   const competition = await getActiveCompetition();
+
+  // Las peticiones de locke en solitario que esperan respuesta
+  const solicitudes = await getSolicitudesPendientes();
 
   // Sin el volcado: son varios megas por copia y aquí solo se listan
   const copias = await prisma.backup.findMany({
@@ -90,6 +95,8 @@ export default async function AdminPage() {
         title="Administración"
         subtitle="Usuarios de la aplicación. Cada jugador necesita una cuenta antes de poder apuntarse a una competición."
       />
+
+      <SolicitudesPendientes solicitudes={solicitudes} />
 
       <section className="card mb-6">
         <h2 className="section-title mb-1">Mapas de las regiones</h2>
