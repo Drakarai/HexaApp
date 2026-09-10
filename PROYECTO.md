@@ -8,7 +8,8 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 10 de septiembre de 2026 (Alola repartida en sus cuatro
-islas, zonas que se giran y relleno regulable por mapa).
+islas, zonas que se giran, relleno regulable por mapa y la guía de uso rehecha
+y guardada en `guia/`).
 
 ---
 
@@ -1290,6 +1291,11 @@ scripts/
   export-sqlite.ts / import-json.ts   migración desde la versión antigua
 public/
   sw.js, icons/     piezas de la PWA
+guia/
+  guia.html         la guía de uso que se reparte, una hoja A4 por sección
+  datos.mjs         prepara la partida de ejemplo para las fotos
+  capturas.mjs      saca las fotos de la aplicación en marcha
+  pdf.mjs           arma el PDF y avisa si algo no cabe en su hoja
 ```
 
 Piezas con truco:
@@ -1484,9 +1490,13 @@ Ideas comentadas y no hechas:
 - **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
   sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
 
-Hay una **guía de uso en PDF** hecha con capturas de la app (15 páginas,
-escrita para el móvil). No está en el repositorio: se generó a partir de un
-HTML y las capturas se sacan con Playwright.
+Hay una **guía de uso en PDF** hecha con capturas de la aplicación (20
+páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
+`guia/`: el texto en `guia.html` y tres scripts que preparan la partida de
+ejemplo, sacan las fotos y arman el PDF. La primera versión no se guardó y se
+perdió con la máquina donde se hizo, así que hubo que rehacerla entera; el PDF
+y las fotos siguen sin subirse (pesan trece megas) pero se rehacen en cinco
+minutos. Instrucciones en `guia/README.md`.
 
 ---
 

@@ -1,0 +1,4 @@
+# Las fotos y el PDF se vuelven a generar con los scripts de al lado, y entre
+# las dos cosas pesan más que el resto del proyecto entero.
+img/
+*.pdf

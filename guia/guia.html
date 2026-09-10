@@ -1,0 +1,884 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>HexaApp · Guía de uso</title>
+<style>
+  @page { size: A4; margin: 0; }
+
+  :root {
+    --tinta: #14162b;
+    --suave: #5a5f7d;
+    --marca: #5b53e6;
+    --marca-flojo: #eeecfd;
+    --linea: #e4e4ef;
+    --papel: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--papel);
+    color: var(--tinta);
+    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pagina {
+    width: 210mm;
+    height: 297mm;
+    padding: 16mm 15mm 14mm;
+    position: relative;
+    overflow: hidden;
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+  }
+  .pagina:last-child { page-break-after: auto; }
+
+  /* ---- Cabecera y pie ---- */
+  .cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1.5px solid var(--linea);
+    padding-bottom: 3mm;
+    margin-bottom: 7mm;
+    font-size: 8.5pt;
+    color: var(--suave);
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+  .cabecera strong { color: var(--marca); font-weight: 700; }
+
+  .pie {
+    position: absolute;
+    left: 15mm; right: 15mm; bottom: 8mm;
+    display: flex;
+    justify-content: space-between;
+    font-size: 8pt;
+    color: #9a9db3;
+    border-top: 1px solid var(--linea);
+    padding-top: 2.5mm;
+  }
+
+  h1 { font-size: 30pt; line-height: 1.05; margin: 0 0 4mm; letter-spacing: -.02em; }
+  h2 { font-size: 19pt; line-height: 1.15; margin: 0 0 3mm; letter-spacing: -.015em; }
+  h3 { font-size: 11.5pt; margin: 6mm 0 2mm; color: var(--marca); }
+  p { margin: 0 0 3mm; }
+  .entradilla { font-size: 11.5pt; color: var(--suave); margin-bottom: 6mm; }
+
+  strong { font-weight: 650; }
+  em { font-style: normal; background: var(--marca-flojo); padding: 0 .3em; border-radius: 3px; }
+
+  /* ---- Pasos numerados ---- */
+  ol.pasos { margin: 0 0 4mm; padding: 0; list-style: none; counter-reset: paso; }
+  ol.pasos li {
+    counter-increment: paso;
+    position: relative;
+    padding-left: 9mm;
+    margin-bottom: 3mm;
+  }
+  ol.pasos li::before {
+    content: counter(paso);
+    position: absolute;
+    left: 0; top: .1mm;
+    width: 6mm; height: 6mm;
+    border-radius: 50%;
+    background: var(--marca);
+    color: #fff;
+    font-size: 8.5pt;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  ul.puntos { margin: 0 0 4mm; padding-left: 5mm; }
+  ul.puntos li { margin-bottom: 2mm; }
+
+  /* ---- Avisos ---- */
+  .aviso {
+    border-left: 3px solid var(--marca);
+    background: #f7f6ff;
+    padding: 3mm 4mm;
+    border-radius: 0 6px 6px 0;
+    font-size: 9.5pt;
+    margin: 0 0 4mm;
+  }
+  .aviso.ojo { border-color: #e0a300; background: #fff9e8; }
+  .aviso > strong:first-child { display: block; margin-bottom: 1mm; }
+
+  /* ---- Móviles ---- */
+  .movil {
+    border: 3px solid #24263f;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #0b1020;
+    display: block;
+  }
+  .movil img { width: 100%; display: block; }
+
+  figure { margin: 0; }
+  figcaption {
+    font-size: 8pt;
+    color: var(--suave);
+    text-align: center;
+    margin-top: 2mm;
+    line-height: 1.35;
+  }
+
+  .fila { display: flex; gap: 8mm; align-items: flex-start; }
+  .fila .texto { flex: 1; }
+  .fila .foto { width: 62mm; flex: none; }
+
+  .duo { display: flex; gap: 7mm; margin-top: 2mm; justify-content: center; }
+  .duo figure { width: 56mm; flex: none; }
+
+  .ancha { max-width: 152mm; margin: 0 auto; border: 3px solid #24263f; border-radius: 12px; overflow: hidden; background: #0b1020; }
+  .ancha img { width: 100%; display: block; }
+  .fila .foto { width: 62mm; }
+
+  /* ---- Portada ---- */
+  .portada {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(160deg, #14162b 0%, #241f52 55%, #4b3fb8 100%);
+    color: #fff;
+  }
+  .portada .hexa { font-size: 46pt; line-height: 1; margin-bottom: 4mm; }
+  .portada h1 { font-size: 44pt; margin-bottom: 3mm; }
+  .portada .sub { font-size: 13pt; color: #c9c6f2; max-width: 120mm; margin: 0 auto 12mm; }
+  .portada .pie-portada { position: absolute; bottom: 18mm; font-size: 9.5pt; color: #a9a5db; }
+  .portada .chapas { display: flex; gap: 3mm; justify-content: center; flex-wrap: wrap; margin-top: 4mm; }
+  .portada .chapa {
+    border: 1px solid rgba(255,255,255,.28);
+    border-radius: 999px;
+    padding: 1.5mm 4mm;
+    font-size: 9pt;
+    color: #ded ;
+    color: #dedcfa;
+  }
+
+  /* ---- Índice ---- */
+  .indice { columns: 2; column-gap: 10mm; font-size: 10pt; }
+  .indice div {
+    break-inside: avoid;
+    display: flex;
+    justify-content: space-between;
+    gap: 3mm;
+    padding: 1.6mm 0;
+    border-bottom: 1px dotted var(--linea);
+  }
+  .indice span:last-child { color: var(--marca); font-weight: 650; }
+
+  .tarjetas { display: flex; gap: 4mm; margin-bottom: 5mm; }
+  .tarjeta {
+    flex: 1;
+    border: 1px solid var(--linea);
+    border-radius: 8px;
+    padding: 3.5mm;
+    font-size: 9pt;
+  }
+  .tarjeta b { display: block; color: var(--marca); margin-bottom: 1mm; font-size: 9.5pt; }
+</style>
+</head>
+<body>
+
+<!-- ============ 1. PORTADA ============ -->
+<section class="pagina portada">
+  <div class="hexa">⬢</div>
+  <h1>HexaApp</h1>
+  <p class="sub">Guía de uso del Hexalocke: apuntar capturas y bajas, llevar las jornadas
+    y no perderse nada. Escrita para usarla desde el móvil.</p>
+  <div class="chapas">
+    <span class="chapa">Capturas y cementerio</span>
+    <span class="chapa">Jornadas y puntos</span>
+    <span class="chapa">Retos y ruleta</span>
+    <span class="chapa">De 1 a 8 jugadores</span>
+  </div>
+  <div class="pie-portada">Septiembre de 2026 · Todo lo que sale en las fotos es de una partida de ejemplo</div>
+</section>
+
+<!-- ============ 2. EN 30 SEGUNDOS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para empezar</span><strong>HexaApp</strong></div>
+  <h2>Esto, en treinta segundos</h2>
+  <p class="entradilla">HexaApp es el cuaderno del locke. Lo que antes iba en un grupo de
+    WhatsApp y en una hoja de cálculo, aquí está en un sitio y hace las cuentas solo.</p>
+
+  <div class="tarjetas">
+    <div class="tarjeta"><b>Tú apuntas</b>Lo que capturas, lo que se te muere y los gimnasios que te pasas.</div>
+    <div class="tarjeta"><b>Ella cuenta</b>Puntos, clasificación, emparejamientos y el cuadro del final.</div>
+    <div class="tarjeta"><b>Todos miran</b>La tabla, el cementerio y lo que va pasando, en directo.</div>
+  </div>
+
+  <p><strong>Hay cosas que son solo tuyas</strong> y no las ve nadie, ni la organización: tu
+    mapa de capturas y tus notas. Y hay cosas que ve todo el mundo: las bajas, los puntos y
+    los resultados. Está hecho así a propósito.</p>
+
+  <h3>Lo que vas a encontrar</h3>
+  <div class="indice">
+    <div><span>Entrar y dejarla en el móvil</span><span>3</span></div>
+    <div><span>Moverte por la app</span><span>4</span></div>
+    <div><span>La portada del locke</span><span>5</span></div>
+    <div><span>Apuntar una captura</span><span>6</span></div>
+    <div><span>El mapa</span><span>7</span></div>
+    <div><span>Cuando se te muere uno</span><span>8</span></div>
+    <div><span>Level caps y gimnasios</span><span>9</span></div>
+    <div><span>Las jornadas</span><span>10</span></div>
+    <div><span>MVP y puntos</span><span>11</span></div>
+    <div><span>Retos</span><span>12</span></div>
+    <div><span>Ruleta y bolsa</span><span>13</span></div>
+    <div><span>Notas y cobertura de tipos</span><span>14</span></div>
+    <div><span>Tu perfil y la actividad</span><span>15</span></div>
+    <div><span>El final del locke</span><span>16</span></div>
+    <div><span>Otras formas de jugar</span><span>17</span></div>
+    <div><span>Para el que organiza</span><span>18</span></div>
+    <div><span>Los mapas por dentro</span><span>19</span></div>
+    <div><span>Dudas rápidas</span><span>20</span></div>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>2</span></div>
+</section>
+
+<!-- ============ 3. ENTRAR ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para empezar</span><strong>Entrar</strong></div>
+  <h2>Entrar y dejarla en el móvil</h2>
+  <p class="entradilla">La app se abre en el navegador, pero se puede dejar en la pantalla
+    de inicio y se comporta como una de verdad: pantalla completa y su icono.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <ol class="pasos">
+        <li>Abre el enlace que te haya pasado la organización.</li>
+        <li>Escribe tu <strong>usuario</strong> y tu <strong>contraseña</strong>. Te las da
+          quien organiza; luego puedes cambiarlas en <em>Lo mío → Mi perfil</em>.</li>
+        <li>Una vez dentro, en el menú del navegador dale a
+          <strong>«Añadir a pantalla de inicio»</strong>.</li>
+        <li>Ábrela desde ahí a partir de ahora. La sesión se queda guardada, así que no hay
+          que escribir la contraseña cada día.</li>
+      </ol>
+
+      <div class="aviso">
+        <strong>¿Se te ha olvidado la contraseña?</strong>
+        No hay correo de recuperación: se la pides a un administrador y te pone una nueva
+        en diez segundos.
+      </div>
+
+      <p>Si tienes cuenta pero <strong>no juegas ningún locke todavía</strong>, verás la app
+        vacía. Es normal: hasta que no te apuntan a una edición no hay nada tuyo que enseñar.</p>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/login.png" alt="Pantalla de entrada"></div>
+      <figcaption>La pantalla de entrada. Nada más que usuario y contraseña.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>3</span></div>
+</section>
+
+<!-- ============ 4. MOVERSE ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para empezar</span><strong>Moverse</strong></div>
+  <h2>Moverte por la app</h2>
+  <p class="entradilla">Abajo del todo hay cuatro botones. Cada uno abre un grupo de
+    pantallas: no hay más menú que ese.</p>
+
+  <ul class="puntos">
+    <li><strong>Resumen</strong> — la portada del locke. Es donde caes al entrar.</li>
+    <li><strong>Combates</strong> — jornadas, retos, ruleta y el final.</li>
+    <li><strong>La edición</strong> — puntos, caja de muertos, level caps, reglas y actividad.</li>
+    <li><strong>Lo mío</strong> — tu mapa, tu bolsa, tus notas y tu perfil.</li>
+  </ul>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/menu.png" alt="Menú de La edición"></div>
+      <figcaption>Al tocar un botón de abajo se despliegan sus pantallas.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/menu-lomio.png" alt="Menú de Lo mío"></div>
+      <figcaption>«Lo mío» es todo lo que es tuyo y de nadie más.</figcaption>
+    </figure>
+  </div>
+
+  <div class="aviso">
+    <strong>El puntito de color</strong>
+    Cuando aparece un punto sobre uno de los botones, es que hay algo nuevo por ahí: un
+    resultado, un reto o una votación abierta. Al mirarlo se apaga solo.
+  </div>
+
+  <p>Arriba, al lado del nombre, está el <strong>selector de edición</strong>. Si juegas más
+    de un locke a la vez, o quieres mirar uno viejo, se cambia desde ahí.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>4</span></div>
+</section>
+
+<!-- ============ 5. RESUMEN ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El día a día</span><strong>La portada</strong></div>
+  <h2>La portada del locke</h2>
+  <p class="entradilla">De un vistazo: por qué gimnasio vais, cuántos han caído, quién manda
+    y qué toca ahora.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <p>Arriba, las cuatro cifras que importan: el <strong>level cap</strong> que está en
+        vigor, cuántos jugáis, cuántos pokémon se han perdido entre todos y quién va primero.</p>
+      <p>Debajo, la <strong>clasificación</strong> completa, la próxima jornada con sus
+        emparejamientos, y lo último que ha pasado.</p>
+
+      <h3>El botón ＋</h3>
+      <p>El círculo violeta de abajo a la derecha está en todas las pantallas y es el atajo
+        para lo que más se usa:</p>
+      <ul class="puntos">
+        <li>Apuntar una <strong>captura</strong>.</li>
+        <li>Registrar una <strong>baja</strong>.</li>
+        <li>Marcar un <strong>gimnasio</strong> superado.</li>
+      </ul>
+      <p>Cada uno te lleva a su pantalla con el formulario ya abierto, así que apuntar algo
+        son dos toques.</p>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/resumen.png" alt="Portada del locke"></div>
+      <figcaption>La portada, con las cifras y la clasificación.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>5</span></div>
+</section>
+
+<!-- ============ 6. CAPTURAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El día a día</span><strong>Capturas</strong></div>
+  <h2>Apuntar una captura</h2>
+  <p class="entradilla">Cada zona del juego se apunta una vez. Es tu mapa: no lo ve nadie
+    más, tampoco los administradores.</p>
+
+  <ol class="pasos">
+    <li>Entra en <em>Lo mío → Mapa de capturas</em> (o dale al ＋ → Apuntar captura).</li>
+    <li>Escribe la ruta en el buscador y tócala. Se abre el cuadro de apuntar.</li>
+    <li>Escribe la especie y <strong>elígela de la lista</strong>: así la app le pone la
+      imagen sola. Si era shiny, marca la casilla.</li>
+    <li>Ponle el mote y, si quieres, una nota. Dale a <strong>Apuntar</strong>.</li>
+  </ol>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/mapa-lista.png" alt="Lista de zonas"></div>
+      <figcaption>La lista con el buscador: lo que se usa mientras juegas.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/mapa-apuntar.png" alt="Cuadro de apuntar una captura"></div>
+      <figcaption>Elige la especie de la lista y la imagen se pone sola.</figcaption>
+    </figure>
+  </div>
+
+  <div class="aviso ojo">
+    <strong>¿Y si se te escapó?</strong>
+    Marca la casilla <strong>«No lo pude capturar»</strong>. La zona queda como hecha —ya has gastado tu
+    encuentro— pero en rojo y con una ✕, para distinguirla de las que sí te dieron algo.
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>6</span></div>
+</section>
+
+<!-- ============ 7. EL MAPA ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El día a día</span><strong>El mapa</strong></div>
+  <h2>El mapa, de un vistazo</h2>
+  <p class="entradilla">La misma información que la lista, pero dibujada encima de la región.
+    Sirve para ver por dónde te falta pasar.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <ul class="puntos">
+        <li>Las zonas <strong>vacías</strong> se ven apenas marcadas.</li>
+        <li>Las que tienen algo se <strong>rellenan de color</strong> con el número de
+          capturas dentro.</li>
+        <li>Las que solo tuvieron fallos salen <strong>en rojo con una ✕</strong>.</li>
+        <li>La <strong>chapa roja</strong> de la esquina dice cuántos pokémon tuyos han
+          caído ahí.</li>
+      </ul>
+      <p>Las formas no llevan el nombre escrito —el mapa se vería lleno de letras—, así que
+        <strong>el primer toque te dice qué zona es y el segundo la abre</strong>.</p>
+      <p>Si el juego tiene <strong>más de un mapa</strong>, arriba salen sus pestañas: la
+        2ª generación abre Kanto además de Johto, y la 7ª reparte Alola en sus
+        <strong>cuatro islas</strong>.</p>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/mapa-dibujo.png" alt="El mapa dibujado"></div>
+      <figcaption>Johto y Kanto en pestañas, con lo apuntado en cada zona.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>7</span></div>
+</section>
+
+<!-- ============ 8. BAJAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El día a día</span><strong>Bajas</strong></div>
+  <h2>Cuando se te muere uno</h2>
+  <p class="entradilla">Las bajas sí son públicas: salen en la caja de todos, cuentan para
+    los desempates y pintan el mapa de rojo.</p>
+
+  <ol class="pasos">
+    <li>Dale al ＋ → <strong>Registrar baja</strong>.</li>
+    <li>Elige la especie de la lista y ponle su mote.</li>
+    <li>Escribe <strong>cómo fue</strong> («crítico de Scyther», «me confié») y
+      <strong>dónde</strong>, eligiendo la zona.</li>
+    <li>Guarda. Aparecerá en la caja, en el muro de actividad y en tu mapa.</li>
+  </ol>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/muertes-form.png" alt="Formulario de baja"></div>
+      <figcaption>La causa es el mejor sitio para la anécdota.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/muertes.png" alt="La caja de los caídos"></div>
+      <figcaption>La caja: los de todos, con su mote y su historia.</figcaption>
+    </figure>
+  </div>
+
+  <div class="aviso">
+    <strong>Decir dónde cayó no es un capricho</strong>
+    De ahí sale el ranking de rutas asesinas del locke y la chapa roja de tu mapa. Si no lo
+    sabes seguro, déjalo en blanco y ya está.
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>8</span></div>
+</section>
+
+<!-- ============ 9. LEVEL CAPS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El día a día</span><strong>Level caps</strong></div>
+  <h2>Level caps y gimnasios</h2>
+  <p class="entradilla">El nivel máximo al que puedes llevar el equipo antes de cada
+    gimnasio. Es la regla que más se incumple sin querer, así que está en su propia pantalla.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <p>Cada hito trae su <strong>nivel</strong>, el nombre del líder y dónde está.
+        <strong>Marca tu casilla</strong> cuando te lo pases: al lado ves quién lo ha hecho
+        ya y quién va con retraso.</p>
+      <p>El level cap que manda en la portada es <strong>el del primer hito que le falte a
+        alguien</strong>: nadie corre más que el grupo.</p>
+      <h3>El vídeo del combate</h3>
+      <p>Debajo de cada gimnasio puedes pegar el enlace de tu grabación. Se ve ahí mismo, sin
+        salir de la app.</p>
+      <div class="aviso ojo">
+        <strong>En un locke en solitario</strong>
+        Además puedes apuntar <strong>con qué equipo te pasaste cada gimnasio</strong>, con
+        sus motes y sus imágenes. En los lockes de varios no está: serían seis equipos por
+        gimnasio y no lo haría nadie.
+      </div>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/level-caps.png" alt="Level caps"></div>
+      <figcaption>Un hito por gimnasio y la casilla de cada jugador.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>9</span></div>
+</section>
+
+<!-- ============ 10. JORNADAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Los combates</span><strong>Jornadas</strong></div>
+  <h2>Las jornadas</h2>
+  <p class="entradilla">Los emparejamientos los propone la app siguiendo la liguilla: nadie
+    repite rival hasta haber jugado contra todos.</p>
+
+  <ol class="pasos">
+    <li>Antes del combate, <strong>＋ Apuntar equipos</strong>: los seis pokémon de cada uno,
+      con sus motes. De ahí salen luego los candidatos a MVP.</li>
+    <li>Después, <strong>✓ Anotar resultado</strong>: quién ganó y con
+      <strong>cuántos pokémon de diferencia</strong> (los que le quedaban vivos).</li>
+    <li>El punto de la victoria se suma solo. No hay que tocar la clasificación.</li>
+  </ol>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/equipos.png" alt="Apuntar los equipos"></div>
+      <figcaption>Los equipos del combate, con sus imágenes.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/jornada-jugada.png" alt="Una jornada jugada"></div>
+      <figcaption>La corona marca al ganador de cada combate.</figcaption>
+    </figure>
+  </div>
+
+  <div class="aviso">
+    <strong>Si alguien no se presenta</strong>
+    <strong>🏳️ Dar por retirada</strong> le da la victoria al otro con diferencia de 3, sin
+    tener que inventarse un resultado.
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>10</span></div>
+</section>
+
+<!-- ============ 11. MVP Y PUNTOS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Los combates</span><strong>MVP y puntos</strong></div>
+  <h2>El MVP y la clasificación</h2>
+  <p class="entradilla">Cuando la jornada termina se abre la votación, y la tabla se pone al
+    día sola.</p>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/mvp.png" alt="Votación de MVP"></div>
+      <figcaption>Cada uno vota una vez, y se puede cambiar el voto.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/puntos.png" alt="Puntos y clasificación"></div>
+      <figcaption>El gráfico enseña el puesto de cada uno jornada a jornada.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Cómo se cuentan los puntos</h3>
+  <ul class="puntos">
+    <li>Todo el mundo <strong>empieza con 5</strong>.</li>
+    <li><strong>+1</strong> por ganar un combate de jornada.</li>
+    <li>La organización puede sumar o restar a mano, y <strong>siempre con un motivo</strong>
+      escrito, que queda a la vista de todos.</li>
+    <li>Se desempata por: puntos → menos pokémon muertos → diferencia de pokémon.</li>
+  </ul>
+  <p>Los <strong>retos no dan puntos</strong>: cuentan para el historial de victorias y para
+    el orgullo, nada más.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>11</span></div>
+</section>
+
+<!-- ============ 12. RETOS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Los combates</span><strong>Retos</strong></div>
+  <h2>Retos</h2>
+  <p class="entradilla">Piques sueltos entre dos, fuera de la liguilla, con su premio y su
+    castigo.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <p>Se crea eligiendo a los dos jugadores y escribiendo qué se juegan. Luego se apuntan
+        los equipos y el resultado, igual que en una jornada.</p>
+
+      <h3>El premio puede caer solo</h3>
+      <p>Además del premio escrito, se pueden añadir <strong>objetos</strong>: cuando se
+        anote el ganador, van solos a su bolsa. Si luego se corrige quién ganó, los objetos
+        cambian de dueño también.</p>
+
+      <h3>El castigo se ve</h3>
+      <p>El castigo del perdedor <strong>sale en la portada del locke</strong> para que no se
+        le olvide a nadie, y se queda ahí hasta que un administrador lo da por cumplido.</p>
+
+      <div class="aviso">
+        <strong>No dan puntos</strong>
+        Pero sí cuentan en tu historial de victorias y derrotas, y en el cara a cara de tu
+        perfil.
+      </div>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/retos.png" alt="Retos"></div>
+      <figcaption>Un reto con premio, castigo y objetos.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>12</span></div>
+</section>
+
+<!-- ============ 13. RULETA Y BOLSA ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Los combates</span><strong>Ruleta y bolsa</strong></div>
+  <h2>La ruleta y la bolsa</h2>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/ruleta.png" alt="La ruleta"></div>
+      <figcaption>Los pesos hacen que unas opciones salgan más que otras.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/bolsa.png" alt="La bolsa"></div>
+      <figcaption>Tu bolsa: solo la ves tú y la organización.</figcaption>
+    </figure>
+  </div>
+
+  <h3>La ruleta</h3>
+  <p>Sorteos para lo que haga falta: el castigo del que pierde, un premio para el líder, un
+    reto al azar. Cada opción puede pesar más que otra, y se puede decidir si una opción
+    <strong>se gasta</strong> al salir o puede repetirse.</p>
+  <p>Los jugadores giran gastando <strong>tickets</strong>, que reparte la organización; los
+    administradores giran sin gastar nada.</p>
+
+  <h3>La bolsa</h3>
+  <p>Lo que llevas encima: objetos de los juegos, cosas inventadas para el locke o «grupos»
+    de los que sale algo al azar. La llena la organización —por un premio, por un reto o por
+    una ruleta— y tú los <strong>gastas con un botón</strong>, que deja constancia de cuándo
+    lo usaste.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>13</span></div>
+</section>
+
+<!-- ============ 14. NOTAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Lo tuyo</span><strong>Notas</strong></div>
+  <h2>Notas y cobertura de tipos</h2>
+  <p class="entradilla">Un cuaderno privado de verdad: no lo ve nadie más, ni los
+    administradores.</p>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/notas.png" alt="Notas"></div>
+      <figcaption>Notas generales o una libreta por rival.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/tipos.png" alt="Cobertura de tipos"></div>
+      <figcaption>Metes tu equipo y te dice por dónde te pueden dar.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Para qué sirven</h3>
+  <ul class="puntos">
+    <li>Preparar un gimnasio: qué llevar y a qué nivel.</li>
+    <li>Espiar a un rival: hay un apartado por jugador para apuntar lo que le has visto.</li>
+    <li>Dejar recordatorios de lo que quieras. Las importantes se pueden fijar arriba.</li>
+  </ul>
+
+  <h3>La cobertura de tipos</h3>
+  <p>Arriba de las notas, plegada, hay una herramienta para montar un equipo de hasta seis y
+    ver <strong>sus debilidades y sus huecos</strong>: qué tipos te machacan y contra cuáles
+    no tienes nada que hacer. Usa la tabla de tipos de la generación que estéis jugando.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>14</span></div>
+</section>
+
+<!-- ============ 15. PERFIL Y ACTIVIDAD ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Lo tuyo</span><strong>Perfil</strong></div>
+  <h2>Tu perfil y lo que va pasando</h2>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/perfil.png" alt="Mi perfil"></div>
+      <figcaption>Tu foto, tu color, tu pokémon as y tus títulos.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/actividad.png" alt="Muro de actividad"></div>
+      <figcaption>Todo lo que ha pasado, de lo más reciente a lo más viejo.</figcaption>
+    </figure>
+  </div>
+
+  <h3>Tu perfil</h3>
+  <ul class="puntos">
+    <li><strong>Foto y color</strong>: se usan en la clasificación, en la caja y en las
+      jornadas. Si no pones foto, se usa tu color.</li>
+    <li><strong>Tu pokémon as</strong>: tu representante en el locke.</li>
+    <li><strong>Favoritos</strong>: hasta seis, los que te han hecho la partida.</li>
+    <li><strong>Títulos</strong>: los reparte la organización y te pones el que más te guste.</li>
+    <li>Aquí también se cambia la <strong>contraseña</strong>.</li>
+  </ul>
+
+  <h3>La actividad</h3>
+  <p>El muro junta todo lo que ha ido pasando —bajas, gimnasios, combates, giros de
+    ruleta— en una sola lista por fecha. Es la forma rápida de enterarse de lo que te has
+    perdido, y si algo se borra, desaparece también de aquí.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>15</span></div>
+</section>
+
+<!-- ============ 16. EL FINAL ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>El final</span><strong>Final Four</strong></div>
+  <h2>Cómo termina el locke</h2>
+  <p class="entradilla">Cuando se resuelven todas las jornadas, se abre el cuadro final. La
+    tabla decide quién entra y con qué ventaja.</p>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/final.png" alt="Final Four cerrada"></div>
+      <figcaption>Hasta que no están todos los combates, sigue cerrada.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/hall.png" alt="Hall de la fama"></div>
+      <figcaption>El hall se abre cuando hay campeón.</figcaption>
+    </figure>
+  </div>
+
+  <h3>El cuadro se adapta a cuántos seáis</h3>
+  <ul class="puntos">
+    <li><strong>Seis o cinco</strong>: los dos primeros esperan en semifinales y los demás se
+      juegan las plazas.</li>
+    <li><strong>Cuatro</strong>: semifinales y final, 1º-4º y 2º-3º.</li>
+    <li><strong>Tres</strong>: el primero espera en la final.</li>
+    <li><strong>Dos</strong>: no hay cuadro; gana el locke quien se lleve
+      <strong>4 de las 6 jornadas</strong>.</li>
+  </ul>
+
+  <h3>El hall de la fama</h3>
+  <p>Con el campeón decidido, cada uno registra <strong>el equipo con el que terminó</strong>
+    y el locke queda ahí como recuerdo, ordenado como una clasificación final. Al crear la
+    edición siguiente, esta se archiva entera y se puede seguir mirando.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>16</span></div>
+</section>
+
+<!-- ============ 17. OTRAS FORMAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Variantes</span><strong>Otras formas de jugar</strong></div>
+  <h2>Otras formas de jugar</h2>
+  <p class="entradilla">La app sirve para un hexalocke de seis, pero también para dos, para
+    tres… y para jugar solo.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <h3>De dos a ocho jugadores</h3>
+      <p>Las jornadas se emparejan solas con la liguilla que toque. Con cinco, uno descansa
+        por turno; con tres, los tres combates caben en una jornada; con dos,
+        <strong>cada jornada es al mejor de tres</strong> y el tercer combate solo aparece si
+        se empata a uno.</p>
+
+      <h3>El dualocke</h3>
+      <p>Con dos jugadores no hay clasificación que valga: en la portada sale un
+        <strong>marcador de jornadas ganadas</strong>, y quien llegue a cuatro se lleva el
+        locke. Cuando alguien está a una de ganar, se avisa: <em>bola de partido</em>.</p>
+
+      <h3>Locke en solitario</h3>
+      <p>Una partida para ti: sin jornadas, sin puntos y sin final. Se gana
+        <strong>pasándote la Liga Pokémon</strong>, y la portada te enseña por dónde vas, qué
+        te falta y a quién has perdido. Cualquiera puede <strong>pedirlo</strong> desde
+        Competiciones; le llega el aviso a la organización y, si acepta, se crea solo.</p>
+
+      <h3>Espectadores</h3>
+      <p>Un locke solo lo ven los que lo juegan o lo jugaron. Si quieres que alguien de fuera
+        lo siga, la organización le da permiso de <strong>espectador</strong>: lo ve todo
+        pero no puede tocar nada.</p>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/competiciones.png" alt="Competiciones"></div>
+      <figcaption>Desde Competiciones se crean, se archivan y se piden lockes.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>17</span></div>
+</section>
+
+<!-- ============ 18. ADMINISTRACIÓN ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para el que organiza</span><strong>Administración</strong></div>
+  <h2>Para el que organiza</h2>
+  <p class="entradilla">Todo lo que sigue solo lo ven los administradores. Está en
+    <em>La edición → Administración</em>.</p>
+
+  <div class="fila">
+    <div class="texto">
+      <ul class="puntos">
+        <li><strong>Usuarios</strong>: crear cuentas, cambiar contraseñas y repartir el rol
+          de administrador o de espectador.</li>
+        <li><strong>Jugadores de la edición</strong>: apuntarlos, ponerles versión y color, y
+          <strong>retirar</strong> al que se va a mitad del locke sin borrar lo suyo.</li>
+        <li><strong>Títulos</strong>: crearlos y dárselos a quien se los gane.</li>
+        <li><strong>Ajustes de la edición</strong>: puntos por victoria, jornadas previstas y
+          demás.</li>
+        <li><strong>Copias de seguridad</strong>: bajarte un fichero con todo y restaurarlo si
+          hiciera falta.</li>
+      </ul>
+
+      <div class="aviso ojo">
+        <strong>Lo que un administrador no puede ver</strong>
+        El mapa de capturas y las notas de los demás. No hay pantalla que los enseñe, y es a
+        propósito.
+      </div>
+    </div>
+    <figure class="foto">
+      <div class="movil"><img src="img/admin.png" alt="Administración"></div>
+      <figcaption>El panel de administración.</figcaption>
+    </figure>
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>18</span></div>
+</section>
+
+<!-- ============ 19. MAPAS Y PLANTILLAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para el que organiza</span><strong>Mapas y plantillas</strong></div>
+  <h2>Los mapas y los level caps, por dentro</h2>
+  <p class="entradilla">Los mapas y las plantillas son <strong>globales</strong>: se preparan
+    una vez y sirven para todos los lockes. Se editan mejor desde un ordenador.</p>
+
+  <figure>
+    <div class="ancha"><img src="img/editor-mapa.png" alt="Editor de mapas"></div>
+    <figcaption>Se trabaja sobre el propio mapa: se elige una zona y ahí mismo se mueve,
+      se estira por su esquina, se gira con el tirador ↻ o se le cambian nombre, forma y color.</figcaption>
+  </figure>
+
+  <h3>Cómo se prepara una región</h3>
+  <ol class="pasos">
+    <li>Súbele la <strong>imagen de fondo</strong> y ponle al lienzo sus mismas proporciones.</li>
+    <li>Si la imagen lleva las casillas dibujadas, <strong>sácalas de la imagen</strong> con
+      el botón y solo te queda renombrarlas. Si no, añade las zonas a mano.</li>
+    <li>Coloca cada zona encima de su sitio. Las que van en diagonal, gíralas.</li>
+    <li>Si la imagen es un dibujo detallado, <strong>baja el relleno</strong>: las zonas se
+      quedan como puntos de color encima y el mapa se sigue viendo.</li>
+  </ol>
+
+  <div class="aviso">
+    <strong>Alola son cuatro mapas</strong>
+    La 7ª generación no tiene una lámina, tiene cuatro: Melemele, Akala, Ula-Ula y Poni.
+    Cada isla se prepara por separado y al jugador le salen las cuatro en pestañas.
+  </div>
+
+  <p>Las <strong>plantillas de level caps</strong> funcionan igual: se escriben una vez por
+    pareja de juegos —con sus medallas y sus imágenes— y dentro de cada locke se traen con un
+    botón. Tocar la plantilla <strong>no</strong> cambia el locke que ya esté en marcha.</p>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>19</span></div>
+</section>
+
+<!-- ============ 20. DUDAS ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Para terminar</span><strong>Dudas rápidas</strong></div>
+  <h2>Dudas rápidas</h2>
+
+  <h3>¿Quién ve qué?</h3>
+  <ul class="puntos">
+    <li><strong>Solo tú</strong>: tu mapa de capturas y tus notas. Ni la organización.</li>
+    <li><strong>Todos los del locke</strong>: bajas, puntos, resultados, gimnasios, títulos,
+      castigos pendientes y el muro de actividad.</li>
+    <li><strong>Tú y la organización</strong>: tu bolsa.</li>
+    <li><strong>Nadie de fuera</strong>: un locke solo lo ven quienes lo juegan, lo jugaron o
+      tienen permiso de espectador.</li>
+  </ul>
+
+  <h3>He apuntado algo mal</h3>
+  <p>Casi todo se puede editar o borrar donde lo apuntaste: las capturas desde su zona, las
+    bajas desde la caja, los resultados con <strong>✎ Cambiar resultado</strong>. Los puntos
+    que da una victoria se recalculan solos al corregirla.</p>
+
+  <h3>No me aparece un locke</h3>
+  <p>O no estás apuntado en él, o está archivado y hay que elegirlo en el selector de arriba.
+    Si debería salirte, pídeselo a la organización.</p>
+
+  <h3>Voy a jugar en otro juego</h3>
+  <p>Al crear la edición se elige el juego de una lista, y de ahí salen el mapa y la
+    plantilla de level caps. Están de la 1ª a la 7ª generación, con los remakes aparte.</p>
+
+  <h3>¿Se pierde algo al crear una edición nueva?</h3>
+  <p>No. La anterior se archiva <strong>entera</strong> —clasificación, cementerio, mapas,
+    hall de la fama— y se puede volver a mirar cuando quieras.</p>
+
+  <div class="aviso">
+    <strong>Y si algo no funciona</strong>
+    Hay una pantalla de <em>Diagnóstico</em> en Administración que dice si la base de datos
+    responde y desde dónde. Es lo primero que mirar antes de dar la voz de alarma.
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía de uso</span><span>20</span></div>
+</section>
+
+</body>
+</html>
