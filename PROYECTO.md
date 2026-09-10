@@ -8,7 +8,7 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 10 de septiembre de 2026 (modo en solitario, con su
-circuito de peticiones al administrador).
+circuito de peticiones y el equipo con el que se pasó cada gimnasio).
 
 ---
 
@@ -35,7 +35,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
@@ -403,6 +403,13 @@ mismo dato y así el editor, la descarga de sprites y las direcciones de imagen
 se comparten tal cual; duplicar la tabla habría obligado a duplicar las cuatro
 piezas.
 
+Y ahí mismo cuelga el tercero: el equipo con el que alguien se pasó un
+**gimnasio** (`levelCapId`), que es lo que se apunta en los lockes en solitario.
+Por eso `MatchTeams` admite **uno o dos lados**: con dos es un combate y con uno
+es "el equipo que sacaste". Cuelga del level cap y no de `GymClear` por lo mismo
+que el vídeo del gimnasio tiene su propia tabla: desmarcar la casilla de
+superado por un descuido se llevaría el equipo por delante.
+
 **La navegación va por grupos, y es la misma en el móvil y en el PC.** Antes
 eran dos cosas distintas y las dos se estaban desbordando: en el móvil, las
 secciones que no caben abajo se amontonaban detrás de un botón "Más", en una
@@ -699,6 +706,11 @@ igual siendo uno.
   el progreso de la run: hitos hechos y cuál toca, caídos y zonas del mapa con
   captura. Todo sale de lo que ya se apunta, así que no hay ningún dato nuevo
   que mantener (`lib/solitario.ts`).
+- **Se apunta el equipo con el que pasaste cada gimnasio**, igual que los
+  equipos que se ven debajo de cada combate de jornada. Es **solo de los lockes
+  en solitario** a propósito: en uno de seis serían seis equipos por gimnasio y
+  no lo apuntaría nadie. Se comprueba en el servidor, no solo escondiendo el
+  botón.
 - **El menú se queda en lo que tiene sentido.** El grupo de Combates
   desaparece entero, y con él Jornadas, Retos, la final y también la **Ruleta**;
   fuera va además **Puntos** y, de "Lo mío", la **Bolsa**. La ruleta y la bolsa
@@ -1552,5 +1564,6 @@ lugar de destruir datos, y hay que avisar antes.
     Alola, con sus dominantes) se preparan una vez en Administración y se traen
     a cada locke con un botón, con sus medallas incluidas.
 41. **Modo en solitario**: una partida para uno, que se gana pasándose la Liga,
-    con su propia portada y su menú, y que cualquiera puede pedirle a la
-    organización desde la propia aplicación.
+    con su propia portada y su menú, con el equipo con el que se pasó cada
+    gimnasio, y que cualquiera puede pedirle a la organización desde la propia
+    aplicación.

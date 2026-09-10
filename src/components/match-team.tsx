@@ -10,6 +10,7 @@ import type { FormState } from "@/app/actions/auth";
 import { Avatar, ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { spriteCandidates } from "@/lib/pokedex";
+import { cx } from "@/lib/utils";
 
 export type TeamPokemon = {
   id: string;
@@ -36,12 +37,22 @@ export function MatchTeams({
   sides,
   canManage,
   esReto = false,
+  levelCapId,
+  rotulo,
 }: {
   matchId: string;
-  sides: [TeamSide, TeamSide];
+  /**
+   * Uno o dos. Dos en un combate, y **uno** en el equipo con el que alguien se
+   * pasó un gimnasio: allí no hay rival, solo el equipo que sacaste.
+   */
+  sides: TeamSide[];
   canManage: boolean;
   /** Los retos usan el mismo editor, solo cambia dónde se guarda */
   esReto?: boolean;
+  /** Si viene, el equipo es el de ese gimnasio y no el de un combate */
+  levelCapId?: string;
+  /** Qué poner en la cabecera del editor */
+  rotulo?: string;
 }) {
   const [editing, setEditing] = useState(false);
   const hasTeams = sides.some((side) => side.team.length > 0);
@@ -59,8 +70,13 @@ export function MatchTeams({
             ))}
           </div>
 
-          {/* PC: los dos equipos como cajas de 3x2, una al lado de la otra */}
-          <div className="hidden gap-3 lg:grid lg:grid-cols-2">
+          {/* PC: los equipos como cajas de 3x2, una al lado de la otra */}
+          <div
+            className={cx(
+              "hidden gap-3 lg:grid",
+              sides.length > 1 ? "lg:grid-cols-2" : "lg:max-w-sm",
+            )}
+          >
             {sides.map((side) => (
               <TeamBox key={side.participantId} side={side} />
             ))}
@@ -74,7 +90,13 @@ export function MatchTeams({
           className="btn-ghost btn-sm mt-2"
           onClick={() => setEditing(true)}
         >
-          {hasTeams ? "✎ Cambiar equipos" : "＋ Apuntar equipos"}
+          {sides.length > 1
+            ? hasTeams
+              ? "✎ Cambiar equipos"
+              : "＋ Apuntar equipos"
+            : hasTeams
+            ? "✎ Cambiar el equipo"
+            : "＋ Apuntar con qué lo pasaste"}
         </button>
       ) : null}
 
@@ -82,6 +104,8 @@ export function MatchTeams({
         <TeamEditor
           matchId={matchId}
           esReto={esReto}
+          levelCapId={levelCapId}
+          rotulo={rotulo}
           sides={sides}
           onClose={() => setEditing(false)}
         />
@@ -210,12 +234,16 @@ export function Sprite({
 function TeamEditor({
   matchId,
   esReto,
+  levelCapId,
+  rotulo,
   sides,
   onClose,
 }: {
   matchId: string;
   esReto: boolean;
-  sides: [TeamSide, TeamSide];
+  levelCapId?: string;
+  rotulo?: string;
+  sides: TeamSide[];
   onClose: () => void;
 }) {
   /**
@@ -232,7 +260,7 @@ function TeamEditor({
         lado.participantId === recien.participantId
           ? { ...lado, team: [...lado.team, recien] }
           : lado,
-      ) as [TeamSide, TeamSide],
+      ),
   );
 
   const [state, setState] = useState<FormState>(null);
@@ -303,10 +331,13 @@ function TeamEditor({
         <div className="mb-4 flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
-              Equipos del combate
+              {sides.length > 1 ? "Equipos del combate" : "El equipo que sacaste"}
             </p>
             <p className="text-sm text-slate-400">
-              {sides[0].displayName} vs {sides[1].displayName}
+              {rotulo ??
+                (sides.length > 1
+                  ? `${sides[0].displayName} vs ${sides[1].displayName}`
+                  : sides[0].displayName)}
             </p>
           </div>
           <button
@@ -381,6 +412,10 @@ function TeamEditor({
         >
           <input type="hidden" name="matchId" value={matchId} />
           {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
+          {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
+          {levelCapId ? (
+            <input type="hidden" name="levelCapId" value={levelCapId} />
+          ) : null}
           <SpeciesPicker key={limpiezas} />
           <div className="grid gap-3 sm:grid-cols-2">
             <div>

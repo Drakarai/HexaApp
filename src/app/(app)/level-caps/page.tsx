@@ -11,7 +11,9 @@ import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 import { grupoDePlantillaDeJuego } from "@/lib/juegos";
-import { urlsDeMedallas } from "@/lib/imagenes";
+import { urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { MatchTeams } from "@/components/match-team";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
 import {
@@ -53,6 +55,22 @@ export default async function LevelCapsPage({
 
   // Para el botón de traerse los hitos: la plantilla es de la pareja de juegos
   const nombreJuego = grupoDePlantillaDeJuego(competition.gameId)?.nombre ?? null;
+
+  /**
+   * El equipo con el que se pasó cada gimnasio. **Solo en solitario**: en un
+   * locke de seis serían seis equipos por gimnasio y no lo apuntaría nadie.
+   */
+  const perfil = perfilDeLocke(competition.maxPlayers);
+  const equiposPorHito = perfil.enSolitario
+    ? await prisma.matchPokemon.findMany({
+        where: { levelCap: { competitionId: competition.id } },
+        orderBy: { position: "asc" },
+      })
+    : [];
+  const spritesDeEquipo = await urlsDeImagen(
+    "equipo",
+    equiposPorHito.map((pokemon) => pokemon.id),
+  );
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>
@@ -259,6 +277,34 @@ export default async function LevelCapsPage({
                       );
                     })}
                   </div>
+                ) : null}
+
+                {/* El equipo con el que lo pasaste, como los de un combate */}
+                {perfil.enSolitario && yo ? (
+                  <MatchTeams
+                    matchId={levelCap.id}
+                    levelCapId={levelCap.id}
+                    rotulo={levelCap.label}
+                    canManage={canManage || yo.userId === user.id}
+                    sides={[
+                      {
+                        participantId: yo.id,
+                        displayName: yo.displayName,
+                        color: yo.color,
+                        avatarImage: yo.user.avatarImage,
+                        team: equiposPorHito
+                          .filter(
+                            (pokemon) => pokemon.levelCapId === levelCap.id,
+                          )
+                          .map((pokemon) => ({
+                            id: pokemon.id,
+                            species: pokemon.species,
+                            nickname: pokemon.nickname,
+                            boxImage: spritesDeEquipo(pokemon.id),
+                          })),
+                      },
+                    ]}
+                  />
                 ) : null}
 
                 <GymVideos

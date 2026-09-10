@@ -551,9 +551,10 @@ model LevelCap {
   image         String?
   position      Int      @default(0)
 
-  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competition Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   clears      GymClear[]
   videos      GymVideo[]
+  equipos     MatchPokemon[]
 
   @@index([competitionId, position])
 }
@@ -890,6 +891,16 @@ model MatchPokemon {
    */
   matchId          String?
   challengeMatchId String?
+  /**
+   * El equipo con el que alguien se pasó un **gimnasio**, en los lockes en
+   * solitario. Es el tercer sitio del que puede colgar un equipo, y va aquí por
+   * lo mismo que los retos: es el mismo dato, así que comparte el editor, la
+   * descarga de sprites y las direcciones de imagen.
+   * Cuelga del level cap y no de `GymClear`, que es la marca de "superado", por
+   * el mismo motivo por el que el vídeo del gimnasio tiene su propia tabla:
+   * desmarcar la casilla por un descuido se llevaría el equipo por delante.
+   */
+  levelCapId       String?
   participantId    String
   species          String
   nickname         String?
@@ -905,12 +916,14 @@ model MatchPokemon {
 
   match          Match?          @relation(fields: [matchId], references: [id], onDelete: Cascade)
   challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
+  levelCap       LevelCap?       @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
   participant    Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
   votes          MvpVote[]
   tiebreakOf     Matchday[]      @relation("MatchdayTiebreak")
 
   @@index([matchId])
   @@index([challengeMatchId])
+  @@index([levelCapId, participantId])
   @@index([participantId])
 }
 
