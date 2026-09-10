@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
-import { colorDeZona } from "@/lib/zonas";
+import { colorDeZona, esRedonda } from "@/lib/zonas";
 import { cx } from "@/lib/utils";
 
 /**
@@ -133,6 +133,8 @@ export function Mapa({
     inicial: Caja;
     /** Solo al girar: el centro y el ángulo del que se partía */
     centro?: { cx: number; cy: number };
+    /** Que la zona es un círculo: al estirarla no puede quedarse ovalada */
+    redonda?: boolean;
     movido: boolean;
   } | null>(null);
 
@@ -195,11 +197,27 @@ export function Mapa({
       const radianes = (-inicial.angle * Math.PI) / 180;
       const dxSuyo = dx * Math.cos(radianes) - dy * Math.sin(radianes);
       const dySuyo = dx * Math.sin(radianes) + dy * Math.cos(radianes);
-      nueva = {
-        ...inicial,
-        w: Math.round(Math.max(12, Math.min(mapa.width, inicial.w + dxSuyo))),
-        h: Math.round(Math.max(12, Math.min(mapa.height, inicial.h + dySuyo))),
-      };
+
+      if (activo.redonda) {
+        // Un círculo tiene un solo tamaño: manda el lado que más se arrastre
+        const lado = Math.round(
+          Math.max(
+            12,
+            Math.min(
+              mapa.width,
+              mapa.height,
+              Math.min(inicial.w, inicial.h) + Math.max(dxSuyo, dySuyo),
+            ),
+          ),
+        );
+        nueva = { ...inicial, w: lado, h: lado };
+      } else {
+        nueva = {
+          ...inicial,
+          w: Math.round(Math.max(12, Math.min(mapa.width, inicial.w + dxSuyo))),
+          h: Math.round(Math.max(12, Math.min(mapa.height, inicial.h + dySuyo))),
+        };
+      }
     }
 
     setBorrador((antes) => ({ ...antes, [activo.id]: nueva }));
@@ -315,7 +333,14 @@ export function Mapa({
 
             return (
               <g key={zona.id}>
-                {zona.shape === "circle" ? (
+                {esRedonda(zona.shape) ? (
+                  <circle
+                    {...comun}
+                    cx={caja.x + caja.w / 2}
+                    cy={caja.y + caja.h / 2}
+                    r={Math.min(caja.w, caja.h) / 2}
+                  />
+                ) : zona.shape === "circle" ? (
                   <ellipse
                     {...comun}
                     cx={caja.x + caja.w / 2}
@@ -398,6 +423,7 @@ export function Mapa({
                             desdeX: punto.x,
                             desdeY: punto.y,
                             inicial: caja,
+                            redonda: esRedonda(zona.shape),
                             movido: false,
                           };
                           (evento.target as Element).setPointerCapture(

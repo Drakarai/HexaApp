@@ -24,7 +24,7 @@ export type ZonaDelMapa = {
   id: string;
   name: string;
   kind: string;
-  /** "rect" | "circle" | "poly" | "none" */
+  /** "rect" | "circulo" | "circle" (óvalo) | "poly" | "none" */
   shape: string;
   x: number;
   y: number;

@@ -188,7 +188,9 @@ model MapZone {
    */
   kind     String  @default("ruta")
   /**
-   * Qué forma tiene sobre el mapa: "rect", "circle", "poly" o "none".
+   * Qué forma tiene sobre el mapa: "rect", "circulo" (redondo), "circle"
+   * (óvalo, se llama así porque es el nombre que ya estaba guardado), "poly"
+   * o "none".
    * Las de "none" no salen dibujadas, solo en la lista de zonas.
    */
   shape    String  @default("rect")

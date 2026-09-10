@@ -8,7 +8,7 @@ import { imagenEditada } from "@/lib/image";
 import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
-import { FORMAS } from "@/lib/zonas";
+import { FORMAS, esRedonda } from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
@@ -109,15 +109,22 @@ export async function anadirZonaAction(
   const region = await asegurarRegion(slug);
   const cuantas = await prisma.mapZone.count({ where: { regionId: region.id } });
 
+  const forma = String(formData.get("shape") ?? "rect");
+  // Un círculo nace cuadrado; con el ancho de una ruta saldría un punto diminuto
+  const ancho = esRedonda(forma) ? 90 : 150;
+  const alto = esRedonda(forma) ? 90 : 44;
+
   await prisma.mapZone.create({
     data: {
       regionId: region.id,
       name,
       kind: String(formData.get("kind") ?? "ruta"),
-      shape: String(formData.get("shape") ?? "rect"),
+      shape: forma,
       // En el centro del lienzo: se arrastra y se estira a donde toque
-      x: Math.round(region.width / 2) - 75,
-      y: Math.round(region.height / 2) - 22,
+      x: Math.round(region.width / 2) - Math.round(ancho / 2),
+      y: Math.round(region.height / 2) - Math.round(alto / 2),
+      w: ancho,
+      h: alto,
       position: cuantas,
     },
   });
@@ -136,12 +143,30 @@ export async function editarZonaAction(formData: FormData) {
   const forma = String(formData.get("shape") ?? "");
   const color = String(formData.get("color") ?? "").trim();
 
+  /**
+   * Al pasar una zona a círculo se le iguala el ancho y el alto: se dibuja con
+   * el lado más corto, y si la caja se quedara alargada el tirador de estirar
+   * aparecería en una esquina que ya no toca el dibujo.
+   */
+  let cuadrada: { w: number; h: number } | null = null;
+  if (esRedonda(forma)) {
+    const antes = await prisma.mapZone.findUnique({
+      where: { id },
+      select: { w: true, h: true },
+    });
+    if (antes && antes.w !== antes.h) {
+      const lado = Math.max(12, Math.min(antes.w, antes.h));
+      cuadrada = { w: lado, h: lado };
+    }
+  }
+
   await prisma.mapZone.update({
     where: { id },
     data: {
       name,
       kind: String(formData.get("kind") ?? "ruta"),
       angle: gradosValidos(Number(formData.get("angle") ?? 0)),
+      ...(cuadrada ?? {}),
       ...(FORMAS.some((f) => f.id === forma) ? { shape: forma } : {}),
       // Un color vacío significa "el de su tipo", no "negro"
       color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,

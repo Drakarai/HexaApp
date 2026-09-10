@@ -39,15 +39,29 @@ export function colorDeZona(tipo: string) {
   return COLOR_DE_ZONA[tipo] ?? COLOR_DE_ZONA.otro;
 }
 
-/** Las formas que puede tener una zona sobre el mapa. */
-export type FormaDeZona = "rect" | "circle" | "poly" | "none";
+/**
+ * Las formas que puede tener una zona sobre el mapa.
+ *
+ * "circle" es el **óvalo**, que se estira a lo ancho y a lo alto por separado,
+ * y "circulo" el **círculo redondo de verdad**, que mantiene el mismo ancho que
+ * alto pase lo que pase. Se llama "circle" el óvalo por lo de siempre: es el
+ * nombre que ya está guardado en la base de datos y cambiarlo dejaría todas las
+ * zonas de antes sin forma.
+ */
+export type FormaDeZona = "rect" | "circle" | "circulo" | "poly" | "none";
 
 export const FORMAS: { id: FormaDeZona; nombre: string }[] = [
   { id: "rect", nombre: "Rectángulo" },
-  { id: "circle", nombre: "Círculo" },
+  { id: "circulo", nombre: "Círculo" },
+  { id: "circle", nombre: "Óvalo" },
   { id: "poly", nombre: "A medida" },
   { id: "none", nombre: "Sin dibujar" },
 ];
+
+/** Las que se dibujan redondas, con el ancho y el alto siempre iguales. */
+export function esRedonda(forma: string) {
+  return forma === "circulo";
+}
 
 /** Los vértices de un polígono, o null si no los tiene o vienen rotos. */
 export function verticesDeZona(points: string | null): [number, number][] | null {

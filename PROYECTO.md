@@ -8,8 +8,8 @@
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
 Última actualización: 10 de septiembre de 2026 (Alola repartida en sus cuatro
-islas, zonas que se giran, relleno regulable por mapa y la guía de uso rehecha
-y guardada en `guia/`).
+islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
+por mapa y la guía de uso rehecha y guardada en `guia/`).
 
 ---
 
@@ -47,7 +47,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -950,6 +950,14 @@ es de donde salen la generación y la plantilla de level caps, pero lleva ademá
 capturas. Se aprovecha entero el mecanismo de pestañas que ya existía para
 Johto + Kanto: cada isla tiene su imagen, sus zonas y sus cuentas. Alola se
 queda marcada `sinMapa` y por eso no sale en Administración → Mapas.
+
+**El círculo y el óvalo son dos formas distintas.** El "círculo" de siempre
+era en realidad una elipse: se estiraba a lo ancho y a lo alto por separado y
+salir de ahí con un redondo perfecto era imposible a pulso. Ahora hay
+**"Círculo"**, que se dibuja con un solo radio y mantiene el ancho igual que el
+alto al estirarlo, y **"Óvalo"**, que es lo de antes. El óvalo sigue guardándose
+como `circle` a propósito: es lo que ya hay escrito en la base de datos y
+cambiarle el nombre dejaría sin forma a todas las zonas viejas.
 
 **Las zonas se pueden girar y el relleno se regula por mapa.** Hay rutas en
 diagonal que un rectángulo recto no cubre sin comerse media ciudad de al lado,
