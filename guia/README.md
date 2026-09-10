@@ -5,9 +5,11 @@ está en `guia.html` y el PDF se genera a partir de él con las fotos de la
 aplicación funcionando.
 
 Está en el repositorio porque una vez se perdió y hubo que rehacerla entera.
-Lo que **no** se guarda aquí son las fotos ni el PDF (`img/` y `*.pdf` están
-ignorados): pesan trece megas entre las dos cosas y se vuelven a sacar en
-cinco minutos con los tres pasos de abajo.
+Las fotos (`img/`) **no** se guardan: pesan tres megas y se vuelven a sacar en
+cinco minutos. El PDF sí, pero en **`public/guia-de-uso.pdf`**, porque es el
+que descarga el apartado *Guía de uso* de la aplicación y tiene que viajar con
+el despliegue. Por eso las capturas se sacan en JPEG: en PNG el PDF se iba a
+cinco megas.
 
 ## Cómo rehacerla
 
@@ -19,7 +21,7 @@ npm run build && npm run start
 
 node guia/datos.mjs      # 1. prepara la partida de ejemplo
 node guia/capturas.mjs   # 2. saca las fotos a guia/img
-node guia/pdf.mjs        # 3. arma guia/HexaApp-guia-de-uso.pdf
+node guia/pdf.mjs        # 3. arma public/guia-de-uso.pdf
 ```
 
 `datos.mjs` **no se puede pasar dos veces**: rellena los mapas, apunta
@@ -48,8 +50,13 @@ Las clases que se usan:
 | `ol.pasos` | los pasos numerados con su bolita |
 | `.aviso` / `.aviso.ojo` | el recuadro de nota y el de ojo con esto |
 
+Al terminar, **el PDF nuevo hay que subirlo al repositorio**: hasta que no se
+despliega, la aplicación sigue sirviendo el anterior.
+
 ## Al añadir algo a la aplicación
 
 Si la novedad cambia algo que sale en la guía, toca actualizarla también: el
 texto en `guia.html` y, si la pantalla ha cambiado de aspecto, volver a sacar
-las fotos.
+las fotos. Y si se añade o se mueve una página, el índice del apartado
+*Guía de uso* (`src/app/(app)/guia/page.tsx`) está escrito a mano y no se
+entera solo.

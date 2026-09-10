@@ -1,4 +1,4 @@
-# Las fotos y el PDF se vuelven a generar con los scripts de al lado, y entre
-# las dos cosas pesan más que el resto del proyecto entero.
+# Las fotos se vuelven a sacar con capturas.mjs y pesan más que el resto del
+# proyecto entero. El PDF sí se sube, pero a public/, que es de donde lo
+# descarga la aplicación.
 img/
-*.pdf

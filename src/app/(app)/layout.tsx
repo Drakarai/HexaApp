@@ -42,6 +42,7 @@ const S = {
   mapa: { href: "/mapa", label: "Mapa de capturas", icon: "🗺️" },
   notas: { href: "/notas", label: "Mis notas", icon: "🗒️" },
   perfil: { href: "/perfil", label: "Mi perfil", icon: "👤" },
+  guia: { href: "/guia", label: "Guía de uso", icon: "❓" },
   ediciones: { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
   admin: { href: "/admin", label: "Administración", icon: "⚙️" },
 } satisfies Record<string, NavItem>;
@@ -72,7 +73,10 @@ const GRUPOS: NavGroup[] = [
     label: "Lo mío",
     icon: "👤",
     personal: true,
-    children: [S.mapa, S.bolsa, S.notas, S.perfil],
+    // La guía va la última y **no se cae nunca**: es de la aplicación, no del
+    // locke, así que la ve igual quien juega, quien mira y quien acaba de
+    // entrar sin saber dónde se aprieta
+    children: [S.mapa, S.bolsa, S.notas, S.perfil, S.guia],
   },
 ];
 
@@ -208,7 +212,7 @@ export default async function AppLayout({
           {
             ...grupo,
             children: !yo
-              ? [S.perfil]
+              ? [S.perfil, S.guia]
               : // La bolsa es de los premios que se reparten en un locke de
                 // varios: en solitario no la llena nadie
                 grupo.children.filter(

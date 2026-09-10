@@ -18,6 +18,8 @@ const { chromium } = await cargarPlaywright();
 
 const BASE = process.env.GUIA_URL ?? "http://localhost:3000";
 const CLAVE = process.env.SEED_PASSWORD ?? "hexalocke";
+/** Suficiente para que el texto de las capturas se lea sin que pese */
+const CALIDAD = 88;
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const destino = join(aqui, "img");
@@ -52,7 +54,9 @@ async function foto(pagina, nombre, ruta, prepara) {
     await pagina.waitForTimeout(1400);
   }
   if (prepara) await prepara(pagina);
-  await pagina.screenshot({ path: join(destino, nombre + ".png") });
+  // En JPEG y no en PNG: son treinta fotos y en PNG el PDF se iba a cinco
+  // megas, que en el móvil con datos es una descarga tonta
+  await pagina.screenshot({ path: join(destino, nombre + ".jpg"), quality: CALIDAD });
   console.log("✓", nombre);
 }
 
@@ -146,7 +150,8 @@ async function foto(pagina, nombre, ruta, prepara) {
   await pagina.locator("svg rect[fill-opacity]").nth(12).click();
   await pagina.waitForTimeout(900);
   await pagina.screenshot({
-    path: join(destino, "editor-mapa.png"),
+    path: join(destino, "editor-mapa.jpg"),
+    quality: CALIDAD,
     clip: { x: 0, y: 0, width: 980, height: 600 },
   });
   console.log("✓ editor-mapa");
@@ -154,7 +159,8 @@ async function foto(pagina, nombre, ruta, prepara) {
   await pagina.goto(BASE + "/admin/level-caps", { waitUntil: "domcontentloaded" });
   await pagina.waitForTimeout(1400);
   await pagina.screenshot({
-    path: join(destino, "editor-levelcaps.png"),
+    path: join(destino, "editor-levelcaps.jpg"),
+    quality: CALIDAD,
     clip: { x: 0, y: 0, width: 980, height: 700 },
   });
   console.log("✓ editor-levelcaps");

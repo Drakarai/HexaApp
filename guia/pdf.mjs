@@ -22,7 +22,12 @@ const pagina = await (await navegador.newContext()).newPage();
 await pagina.goto("file://" + join(aqui, "guia.html"), { waitUntil: "load" });
 await pagina.waitForTimeout(1500);
 
-const salida = join(aqui, "HexaApp-guia-de-uso.pdf");
+/**
+ * Se guarda en `public/` y **se sube al repositorio**: es lo que sirve el
+ * apartado "Guía de uso" de la aplicación, así que tiene que viajar con el
+ * despliegue. Por eso las fotos van en JPEG, para que pese lo menos posible.
+ */
+const salida = join(aqui, "..", "public", "guia-de-uso.pdf");
 await pagina.pdf({
   path: salida,
   format: "A4",
