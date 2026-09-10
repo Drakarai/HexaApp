@@ -81,8 +81,8 @@ export function EditorDeMapa({ mapa }: { mapa: MapaDeRegion }) {
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-center text-xs text-slate-500">
-          Toca una zona del mapa para moverla, estirarla por su esquina o
-          cambiarle el nombre, la forma y el color.
+          Toca una zona del mapa para moverla, estirarla por su esquina,
+          girarla con el tirador ↻ o cambiarle el nombre, la forma y el color.
         </p>
       )}
 
@@ -254,6 +254,7 @@ export function FondoDelMapa({ mapa }: { mapa: MapaDeRegion }) {
           />
         </div>
       </div>
+      <Relleno inicial={Math.round(mapa.relleno * 100)} />
       <p className="text-xs text-slate-500">
         Si cambias el tamaño, las zonas se quedan donde estaban en números, así
         que tendrás que recolocarlas.
@@ -270,6 +271,41 @@ export function FondoDelMapa({ mapa }: { mapa: MapaDeRegion }) {
         </button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Cuánto se rellenan las zonas de este mapa.
+ *
+ * Con un mapa de casillas dibujadas interesa el 100: la zona se pinta entera y
+ * se ve de lejos. Con una imagen de verdad —las islas de Alola, que son un
+ * dibujo detallado y no una cuadrícula— eso tapa el mapa, así que se baja y
+ * cada zona se queda en un punto de color encima del sitio que marca.
+ */
+function Relleno({ inicial }: { inicial: number }) {
+  const [valor, setValor] = useState(inicial);
+
+  return (
+    <div>
+      <label className="label" htmlFor="relleno">
+        Relleno de las zonas · {valor}%
+      </label>
+      <input
+        id="relleno"
+        name="relleno"
+        type="range"
+        min={10}
+        max={100}
+        step={5}
+        value={valor}
+        onChange={(evento) => setValor(Number(evento.target.value))}
+        className="w-full accent-brand-500"
+      />
+      <p className="text-xs text-slate-500">
+        Bájalo si el mapa de fondo es un dibujo detallado: las zonas quedan como
+        puntos encima en vez de taparlo. El borde se sigue viendo igual.
+      </p>
+    </div>
   );
 }
 
@@ -381,6 +417,24 @@ function PanelDeZona({
           valor={zona.color}
           tipo={zona.kind}
         />
+        <div>
+          <label className="label">Giro</label>
+          <div className="flex items-center gap-2">
+            <input
+              key={`a-${zona.id}`}
+              name="angle"
+              type="number"
+              className="input w-24"
+              min={0}
+              max={359}
+              step={5}
+              defaultValue={zona.angle}
+            />
+            <span className="text-xs text-slate-500">
+              grados, o con el tirador ↻ del mapa
+            </span>
+          </div>
+        </div>
         <div className="flex items-end">
           <SubmitButton className="btn-primary btn-sm">Guardar</SubmitButton>
         </div>

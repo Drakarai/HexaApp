@@ -158,8 +158,13 @@ const ALOLA_ULTRA: ItemDeFabrica[] = [
   { label: "Campeón", cap: 63, kind: CHAMPION, notes: "El combate que cierra la Liga" },
 ];
 
-/** La base de cada región, que es la que vale para casi todos los juegos. */
-export const LEVEL_CAPS_DE_FABRICA: Record<Region, ItemDeFabrica[]> = {
+/**
+ * La base de cada región, que es la que vale para casi todos los juegos.
+ *
+ * No están todas las de `Region`: ahí también viven las islas de Alola, que
+ * son láminas del mapa y no regiones donde se juegue una liga entera.
+ */
+export const LEVEL_CAPS_DE_FABRICA: Partial<Record<Region, ItemDeFabrica[]>> = {
   kanto: KANTO,
   johto: JOHTO,
   hoenn: HOENN,

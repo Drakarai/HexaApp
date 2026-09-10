@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireAdminPage } from "@/lib/auth";
 import { getMapa, getResumenDeMapas } from "@/lib/mapas";
-import { REGIONES } from "@/lib/juegos";
+import { REGIONES_DE_MAPA } from "@/lib/juegos";
 import {
   rellenarRegionAction,
 } from "@/app/actions/mapas";
@@ -17,11 +17,15 @@ import {
 export const metadata = { title: "Mapas de las regiones" };
 
 /**
- * Los mapas de las siete regiones.
+ * Los mapas de las regiones.
  *
  * **Se editan desde aquí estés en el locke que estés**: el mapa de Johto es el
  * mismo para un locke en Oro que en HeartGold, así que no cuelga de ninguna
  * edición y se puede preparar Kanto mientras se juega en Johto.
+ *
+ * Una pestaña no es siempre una región: Alola no tiene mapa propio y en su
+ * sitio están sus **cuatro islas**, que es como se juega y como caben en una
+ * pantalla.
  */
 export default async function MapasPage({
   searchParams,
@@ -33,7 +37,8 @@ export default async function MapasPage({
   const { region: pedida } = await searchParams;
   const resumen = await getResumenDeMapas();
   const elegida =
-    REGIONES.find((region) => region.slug === pedida)?.slug ?? REGIONES[1].slug;
+    REGIONES_DE_MAPA.find((region) => region.slug === pedida)?.slug ??
+    REGIONES_DE_MAPA[1].slug;
   const mapa = await getMapa(elegida);
 
   return (

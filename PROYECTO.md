@@ -7,8 +7,8 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de septiembre de 2026 (modo en solitario, con su
-circuito de peticiones y el equipo con el que se pasó cada gimnasio).
+Última actualización: 10 de septiembre de 2026 (Alola repartida en sus cuatro
+islas, zonas que se giran y relleno regulable por mapa).
 
 ---
 
@@ -41,12 +41,12 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
-| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de una región** —la 2ª generación y sus remakes abren Kanto—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
+| **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
-| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, colorearlas y agruparlas), las **plantillas de level caps** de cada juego y las copias de seguridad. |
+| **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
 | **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
@@ -937,8 +937,28 @@ estuvieron un rato y se quitaron por lo mismo. Añadir uno es una línea en
 
 **Y son globales, no de cada edición.** El mapa de Johto vale igual para un
 locke en Oro que en HeartGold, así que se prepara una vez y sirve siempre; por
-eso se pueden editar los siete desde cualquier locke, y preparar Kanto mientras
-se juega en Johto.
+eso se pueden editar todos desde cualquier locke, y preparar Kanto mientras se
+juega en Johto.
+
+**Una pestaña de mapa no es siempre una región: Alola son sus cuatro islas.**
+La 7ª generación se juega saltando de isla en isla, y las cuatro juntas en un
+lienzo dejarían cada ruta del tamaño de un sello —en el móvil sería imposible
+acertarle—. Así que en `JUEGOS` la 7ª sigue apuntando a la región `alola`, que
+es de donde salen la generación y la plantilla de level caps, pero lleva además
+`mapas: [melemele, akala, ula-ula, poni]`, y eso es lo que usa el Mapa de
+capturas. Se aprovecha entero el mecanismo de pestañas que ya existía para
+Johto + Kanto: cada isla tiene su imagen, sus zonas y sus cuentas. Alola se
+queda marcada `sinMapa` y por eso no sale en Administración → Mapas.
+
+**Las zonas se pueden girar y el relleno se regula por mapa.** Hay rutas en
+diagonal que un rectángulo recto no cubre sin comerse media ciudad de al lado,
+así que cada zona guarda su `angle` y se gira arrastrando un tirador ↻ (o
+escribiendo los grados, para clavarlos). El giro es solo al dibujar: por dentro
+la zona sigue derecha, y por eso el número de capturas y la chapa de bajas se
+siguen leyendo del derecho. Y como las imágenes bonitas —las islas de Alola son
+un dibujo detallado, no una cuadrícula— se tapan con zonas rellenas, cada mapa
+guarda su `relleno` en tanto por ciento: al bajarlo, las zonas quedan como
+puntos de color encima del sitio que marcan, con su borde de siempre.
 
 **Los nombres de las zonas están escritos a mano porque PokéAPI no los tiene.**
 Se comprobó: de Johto, Kanto, Sinnoh y Teselia no hay **ni un solo** nombre en
@@ -1312,7 +1332,9 @@ Piezas con truco:
 - `lib/mapas.ts` — los mapas y las capturas. `lib/detectar-zonas.ts` saca las
   zonas de los colores de la imagen de fondo, `lib/mapas-de-fabrica.ts` es la
   semilla de nombres de Johto y de Kanto, `lib/juegos.ts` la lista de juegos y
-  sus regiones —`regionesDelJuego()`, porque la 2ª generación tiene dos—, y
+  sus regiones —`regionesDelJuego()` devuelve **las láminas de mapa**, que no
+  siempre son la región: la 2ª tiene dos y la 7ª cuatro islas, y
+  `REGIONES_DE_MAPA` deja fuera a Alola, que no se dibuja—, y
   `lib/zonas.ts` los tipos, las formas y sus colores —**este
   último existe porque un módulo con `"use client"` no puede exportar datos a un
   componente de servidor**: Next devuelve una referencia al cliente en vez del
@@ -1320,7 +1342,11 @@ Piezas con truco:
   SVG, `mapa/mapa-client.tsx` la vista del jugador y `admin/mapas/editor.tsx` el
   editor. Ojo con este último: **el panel de la zona elegida se pinta en el
   cliente**, no en la página, porque un componente de servidor no puede pasarle
-  una función a uno de cliente y la página se quedaba en blanco.
+  una función a uno de cliente y la página se quedaba en blanco. El giro de una
+  zona es solo un `transform` al dibujar: los tiradores van dentro de él para
+  que sigan a la forma, el número y la chapa de bajas se quedan fuera para no
+  salir torcidos, y **estirar deshace el giro antes de aplicar el arrastre**,
+  porque si no una zona tumbada crecería por donde no toca.
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
@@ -1425,7 +1451,9 @@ Hasta entonces la aplicación solo corre en su ordenador.
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
-píxeles de la imagen. De las siete regiones, solo Johto tiene zonas hechas.
+píxeles de la imagen. De los diez mapas, solo Johto tiene zonas hechas: **las
+cuatro islas de Alola están vacías** y hay que ponerles su imagen y dibujarles
+las zonas isla por isla (y bajarles el relleno, que son dibujos detallados).
 
 **Hecho, pero conviene saberlo**: la aplicación ya sirve **de dos a ocho
 jugadores** (jornadas, final y marcador), y todo eso se aplica **a los lockes
@@ -1567,3 +1595,6 @@ lugar de destruir datos, y hay que avisar antes.
     con su propia portada y su menú, con el equipo con el que se pasó cada
     gimnasio, y que cualquiera puede pedirle a la organización desde la propia
     aplicación.
+42. **Alola se dibuja por islas, y las zonas se giran**: la 7ª generación trae
+    cuatro mapas en vez de uno, las zonas pueden ir en diagonal y cada mapa
+    decide cuánto se rellenan, para poder usar imágenes detalladas sin taparlas.

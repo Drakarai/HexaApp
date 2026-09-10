@@ -159,6 +159,12 @@ model MapRegion {
    */
   width  Int     @default(1490)
   height Int     @default(890)
+  /**
+   * Cuánto se rellenan las zonas, en tanto por ciento. Con un mapa dibujado a
+   * mano interesa el 100; con una imagen detallada —las islas de Alola— se baja
+   * para que las zonas queden como puntos encima sin tapar el dibujo.
+   */
+  relleno Int @default(100)
 
   zones MapZone[]
 }
@@ -197,6 +203,11 @@ model MapZone {
    * Solo para "poly": los vértices, en JSON `[[x,y], …]` del lienzo
    */
   points   String?
+  /**
+   * Grados que está girada sobre su centro. Hay rutas que van en diagonal y un
+   * rectángulo recto encima de ellas se come media ciudad de al lado.
+   */
+  angle    Int     @default(0)
   /**
    * Color propio. Si no lo tiene, se usa el de su tipo (ver lib/zonas.ts)
    */

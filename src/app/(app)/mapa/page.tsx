@@ -18,9 +18,10 @@ export const metadata = { title: "Mapa de capturas" };
  * sesión y `getMisCapturas` no acepta más de uno. Es privado igual que las
  * notas, también para los administradores.
  *
- * Un juego puede tener **más de una región** —la 2ª generación y sus remakes
- * abren Kanto entero al ganar la Liga de Johto—, y entonces sale una fila de
- * pestañas para cambiar de mapa. Cuál se está viendo va en la dirección
+ * Un juego puede tener **más de un mapa** —la 2ª generación y sus remakes
+ * abren Kanto entero al ganar la Liga de Johto, y la 7ª reparte Alola en sus
+ * cuatro islas—, y entonces sale una fila de pestañas para cambiar. Cuál se
+ * está viendo va en la dirección
  * (`?region=kanto`) y no en un estado del navegador, para que el enlace se
  * pueda guardar y para no tener que traerse las dos regiones a la vez.
  */
@@ -125,7 +126,7 @@ export default async function MapaPage({
   );
 }
 
-/** Las pestañas de región, solo cuando el juego tiene más de una. */
+/** Las pestañas de mapa, solo cuando el juego tiene más de uno. */
 function Regiones({
   regiones,
   actual,

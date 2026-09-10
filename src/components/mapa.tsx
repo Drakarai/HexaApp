@@ -35,6 +35,52 @@ const COLOR_FALLADO = "#ef4444";
 /** Lo apuntado en una zona: capturas buenas y encuentros fallados */
 export type CuentaDeZona = { hechas: number; fallos: number };
 
+/** La caja de una zona mientras se la mueve, se la estira o se la gira. */
+type Caja = { x: number; y: number; w: number; h: number; angle: number };
+
+/**
+ * Deja el giro en grados enteros de 0 a 359, y **se pega a los múltiplos de
+ * 15** cuando anda cerca: con el dedo es imposible clavar un 45 a pulso, y 45
+ * es justo el que se quiere casi siempre.
+ */
+function redondearGiro(grados: number) {
+  const normal = ((Math.round(grados) % 360) + 360) % 360;
+  const cerca = Math.round(normal / 15) * 15;
+  return Math.abs(normal - cerca) <= 3 ? cerca % 360 : normal;
+}
+
+/**
+ * El centro sobre el que gira una zona.
+ *
+ * Los polígonos se dibujan con sus vértices y pasan de la caja, así que la suya
+ * puede haberse quedado en cualquier sitio: para ellos el centro sale de los
+ * propios vértices o girarían alrededor de un punto que no se ve.
+ */
+function centroDeZona(zona: ZonaDelMapa, caja: Caja) {
+  if (zona.shape === "poly" && zona.points?.length) {
+    const xs = zona.points.map(([x]) => x);
+    const ys = zona.points.map(([, y]) => y);
+    return {
+      cx: (Math.min(...xs) + Math.max(...xs)) / 2,
+      cy: (Math.min(...ys) + Math.max(...ys)) / 2,
+      arriba: Math.min(...ys),
+    };
+  }
+  return { cx: caja.x + caja.w / 2, cy: caja.y + caja.h / 2, arriba: caja.y };
+}
+
+/** Un punto girado alrededor de otro, para colocar cosas en una zona torcida. */
+function girarPunto(x: number, y: number, cx: number, cy: number, grados: number) {
+  if (!grados) return { x, y };
+  const radianes = (grados * Math.PI) / 180;
+  const dx = x - cx;
+  const dy = y - cy;
+  return {
+    x: cx + dx * Math.cos(radianes) - dy * Math.sin(radianes),
+    y: cy + dx * Math.sin(radianes) + dy * Math.cos(radianes),
+  };
+}
+
 export function Mapa({
   mapa,
   cuentas,
@@ -65,6 +111,7 @@ export function Mapa({
       y: number;
       w?: number;
       h?: number;
+      angle?: number;
       points?: [number, number][];
     }[],
   ) => void;
@@ -77,22 +124,28 @@ export function Mapa({
    * Mientras arrastras, la zona vive aquí y no en el servidor: mandar una
    * petición por cada píxel sería absurdo. Al soltar se avisa con el resultado.
    */
-  const [borrador, setBorrador] = useState<
-    Record<string, { x: number; y: number; w: number; h: number }>
-  >({});
+  const [borrador, setBorrador] = useState<Record<string, Caja>>({});
   const gesto = useRef<{
     id: string;
-    modo: "mover" | "estirar";
+    modo: "mover" | "estirar" | "girar";
     desdeX: number;
     desdeY: number;
-    inicial: { x: number; y: number; w: number; h: number };
+    inicial: Caja;
+    /** Solo al girar: el centro y el ángulo del que se partía */
+    centro?: { cx: number; cy: number };
     movido: boolean;
   } | null>(null);
 
   useEffect(() => setBorrador({}), [mapa.id, mapa.zones.length]);
 
-  const cajaDe = (zona: ZonaDelMapa) =>
-    borrador[zona.id] ?? { x: zona.x, y: zona.y, w: zona.w, h: zona.h };
+  const cajaDe = (zona: ZonaDelMapa): Caja =>
+    borrador[zona.id] ?? {
+      x: zona.x,
+      y: zona.y,
+      w: zona.w,
+      h: zona.h,
+      angle: zona.angle,
+    };
 
   /** De píxeles de pantalla a unidades del lienzo. */
   function aLienzo(evento: { clientX: number; clientY: number }) {
@@ -114,20 +167,40 @@ export function Mapa({
     if (Math.abs(dx) > 2 || Math.abs(dy) > 2) activo.movido = true;
 
     const { inicial } = activo;
-    const nueva =
-      activo.modo === "mover"
-        ? {
-            x: Math.round(Math.max(0, Math.min(mapa.width - inicial.w, inicial.x + dx))),
-            y: Math.round(Math.max(0, Math.min(mapa.height - inicial.h, inicial.y + dy))),
-            w: inicial.w,
-            h: inicial.h,
-          }
-        : {
-            x: inicial.x,
-            y: inicial.y,
-            w: Math.round(Math.max(12, Math.min(mapa.width - inicial.x, inicial.w + dx))),
-            h: Math.round(Math.max(12, Math.min(mapa.height - inicial.y, inicial.h + dy))),
-          };
+    let nueva: Caja;
+
+    if (activo.modo === "girar" && activo.centro) {
+      /**
+       * El ángulo va del centro de la zona al dedo, y se le resta el que había
+       * al empezar: así la forma no pega un salto al agarrar el tirador, se
+       * gire desde donde se gire.
+       */
+      const { cx, cy } = activo.centro;
+      const ahora = Math.atan2(punto.y - cy, punto.x - cx);
+      const antes = Math.atan2(activo.desdeY - cy, activo.desdeX - cx);
+      const grados = ((ahora - antes) * 180) / Math.PI + inicial.angle;
+      nueva = { ...inicial, angle: redondearGiro(grados) };
+    } else if (activo.modo === "mover") {
+      nueva = {
+        ...inicial,
+        x: Math.round(Math.max(0, Math.min(mapa.width - inicial.w, inicial.x + dx))),
+        y: Math.round(Math.max(0, Math.min(mapa.height - inicial.h, inicial.y + dy))),
+      };
+    } else {
+      /**
+       * Estirar va en los ejes de la zona, no en los de la pantalla: si está
+       * girada 90°, arrastrar hacia abajo tiene que alargarla por su lado
+       * largo. Se deshace el giro del movimiento y ya se estira como siempre.
+       */
+      const radianes = (-inicial.angle * Math.PI) / 180;
+      const dxSuyo = dx * Math.cos(radianes) - dy * Math.sin(radianes);
+      const dySuyo = dx * Math.sin(radianes) + dy * Math.cos(radianes);
+      nueva = {
+        ...inicial,
+        w: Math.round(Math.max(12, Math.min(mapa.width, inicial.w + dxSuyo))),
+        h: Math.round(Math.max(12, Math.min(mapa.height, inicial.h + dySuyo))),
+      };
+    }
 
     setBorrador((antes) => ({ ...antes, [activo.id]: nueva }));
   }
@@ -191,13 +264,27 @@ export function Mapa({
             const soloFallos = !hechas && fallos > 0;
             const color = soloFallos ? COLOR_FALLADO : suyo;
 
+            const { cx: centroX, cy: centroY, arriba } = centroDeZona(zona, caja);
+            // El tirador de girar asoma por arriba, o por dentro si la zona
+            // está pegada al borde y ahí fuera no se vería
+            const tiradorY = arriba >= 34 ? arriba - 26 : arriba + 26;
+            // El giro se aplica al dibujar: por dentro la zona sigue derecha
+            const giro = caja.angle
+              ? `rotate(${caja.angle} ${centroX} ${centroY})`
+              : undefined;
+
             const comun = {
               fill: color,
-              fillOpacity: hechas
-                ? RELLENO_HECHO
-                : soloFallos
-                  ? RELLENO_FALLADO
-                  : RELLENO_VACIO,
+              transform: giro,
+              fillOpacity: Number(
+                (
+                  (hechas
+                    ? RELLENO_HECHO
+                    : soloFallos
+                      ? RELLENO_FALLADO
+                      : RELLENO_VACIO) * mapa.relleno
+                ).toFixed(3),
+              ),
               stroke: activa ? "#ffffff" : color,
               strokeWidth: activa ? 5 : 2.5,
               strokeOpacity: activa ? 1 : 0.85,
@@ -254,11 +341,12 @@ export function Mapa({
 
                 <title>{zona.name}</title>
 
-                {/* Cuántas llevas ahí, o una ✕ si solo hubo fallos */}
+                {/* Cuántas llevas ahí, o una ✕ si solo hubo fallos. Va sin
+                    girar aunque la zona lo esté: un número torcido no se lee */}
                 {hechas || soloFallos ? (
                   <text
-                    x={caja.x + caja.w / 2}
-                    y={caja.y + caja.h / 2}
+                    x={centroX}
+                    y={centroY}
                     textAnchor="middle"
                     dominantBaseline="central"
                     fontSize={Math.min(26, caja.h * 0.7)}
@@ -277,34 +365,99 @@ export function Mapa({
                     región entero cabe en un móvil, así que cada zona mide
                     cuatro píxeles y el dibujo de un emoji ahí no se distingue.
                     Una forma plana de un solo color sí. */}
-                {caidos ? <Chapa caja={caja} cuantos={caidos} /> : null}
-
-                {/* El tirador de estirar, solo en el editor y en la elegida */}
-                {editable && activa && zona.shape !== "poly" ? (
-                  <rect
-                    x={caja.x + caja.w - 9}
-                    y={caja.y + caja.h - 9}
-                    width={18}
-                    height={18}
-                    rx={4}
-                    fill="#ffffff"
-                    stroke="#0b1020"
-                    strokeWidth={2}
-                    className="cursor-nwse-resize"
-                    onPointerDown={(evento) => {
-                      evento.stopPropagation();
-                      const punto = aLienzo(evento);
-                      gesto.current = {
-                        id: zona.id,
-                        modo: "estirar",
-                        desdeX: punto.x,
-                        desdeY: punto.y,
-                        inicial: caja,
-                        movido: false,
-                      };
-                      (evento.target as Element).setPointerCapture(evento.pointerId);
-                    }}
+                {caidos ? (
+                  <Chapa
+                    caja={caja}
+                    centro={{ cx: centroX, cy: centroY }}
+                    cuantos={caidos}
                   />
+                ) : null}
+
+                {/* Los tiradores del editor, solo en la zona elegida. Van
+                    dentro del giro para que sigan a la forma: el de estirar en
+                    su esquina de siempre y el de girar asomando por arriba. */}
+                {editable && activa ? (
+                  <g transform={giro}>
+                    {zona.shape !== "poly" ? (
+                      <rect
+                        x={caja.x + caja.w - 9}
+                        y={caja.y + caja.h - 9}
+                        width={18}
+                        height={18}
+                        rx={4}
+                        fill="#ffffff"
+                        stroke="#0b1020"
+                        strokeWidth={2}
+                        className="cursor-nwse-resize"
+                        onPointerDown={(evento) => {
+                          evento.stopPropagation();
+                          const punto = aLienzo(evento);
+                          gesto.current = {
+                            id: zona.id,
+                            modo: "estirar",
+                            desdeX: punto.x,
+                            desdeY: punto.y,
+                            inicial: caja,
+                            movido: false,
+                          };
+                          (evento.target as Element).setPointerCapture(
+                            evento.pointerId,
+                          );
+                        }}
+                      >
+                        <title>Estirar</title>
+                      </rect>
+                    ) : null}
+
+                    <line
+                      x1={centroX}
+                      y1={arriba}
+                      x2={centroX}
+                      y2={tiradorY}
+                      stroke="#ffffff"
+                      strokeWidth={2}
+                      strokeOpacity={0.6}
+                      pointerEvents="none"
+                    />
+                    <circle
+                      cx={centroX}
+                      cy={tiradorY}
+                      r={11}
+                      fill="#ffffff"
+                      stroke="#0b1020"
+                      strokeWidth={2}
+                      className="cursor-grab"
+                      onPointerDown={(evento) => {
+                        evento.stopPropagation();
+                        const punto = aLienzo(evento);
+                        gesto.current = {
+                          id: zona.id,
+                          modo: "girar",
+                          desdeX: punto.x,
+                          desdeY: punto.y,
+                          inicial: caja,
+                          centro: { cx: centroX, cy: centroY },
+                          movido: false,
+                        };
+                        (evento.target as Element).setPointerCapture(
+                          evento.pointerId,
+                        );
+                      }}
+                    >
+                      <title>Girar</title>
+                    </circle>
+                    <text
+                      x={centroX}
+                      y={tiradorY}
+                      textAnchor="middle"
+                      dominantBaseline="central"
+                      fontSize={13}
+                      fill="#0b1020"
+                      pointerEvents="none"
+                    >
+                      ↻
+                    </text>
+                  </g>
                 ) : null}
               </g>
             );
@@ -323,14 +476,25 @@ export function Mapa({
  */
 function Chapa({
   caja,
+  centro,
   cuantos,
 }: {
-  caja: { x: number; y: number; w: number; h: number };
+  caja: Caja;
+  centro: { cx: number; cy: number };
   cuantos: number;
 }) {
   const radio = Math.max(6, Math.min(12, caja.h * 0.32, caja.w * 0.32));
-  const cx = caja.x + caja.w - radio * 0.7;
-  const cy = caja.y + radio * 0.7;
+  /**
+   * La esquina de la zona, girada a mano en vez de con un `transform`: así la
+   * chapa se va con la forma pero la cifra de dentro no sale del revés.
+   */
+  const { x: cx, y: cy } = girarPunto(
+    caja.x + caja.w - radio * 0.7,
+    caja.y + radio * 0.7,
+    centro.cx,
+    centro.cy,
+    caja.angle,
+  );
 
   return (
     <g pointerEvents="none">

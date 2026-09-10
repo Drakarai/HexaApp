@@ -2,7 +2,11 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
-import { REGIONES, regionesDelJuego, type Region } from "@/lib/juegos";
+import {
+  REGIONES_DE_MAPA,
+  regionesDelJuego,
+  type Region,
+} from "@/lib/juegos";
 import { verticesDeZona } from "@/lib/zonas";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 
@@ -26,6 +30,8 @@ export type ZonaDelMapa = {
   y: number;
   w: number;
   h: number;
+  /** Grados que está girada sobre su centro */
+  angle: number;
   /** Los vértices, ya leídos, cuando la forma es "poly" */
   points: [number, number][] | null;
   /** Su color propio, si le han puesto uno */
@@ -46,6 +52,11 @@ export type MapaDeRegion = {
   image: string | null;
   width: number;
   height: number;
+  /**
+   * Cuánto se rellenan las zonas, de 0 a 1. Es el tanto por ciento guardado ya
+   * dividido: al componente le llega listo para multiplicar.
+   */
+  relleno: number;
   zones: ZonaDelMapa[];
 };
 
@@ -69,7 +80,8 @@ export type CapturaApuntada = {
  * conciencia, no vuelve a aparecer sola en la siguiente visita.
  */
 export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
-  const region = REGIONES.find((candidata) => candidata.slug === slug);
+  // Solo las que se dibujan: Alola no tiene mapa propio, lo tienen sus islas
+  const region = REGIONES_DE_MAPA.find((candidata) => candidata.slug === slug);
   if (!region) return null;
 
   const fila = await prisma.mapRegion.upsert({
@@ -99,6 +111,7 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     y: zona.y,
     w: zona.w,
     h: zona.h,
+    angle: zona.angle,
     points: verticesDeZona(zona.points),
     color: zona.color,
     parentId: zona.parentId,
@@ -113,6 +126,7 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
         y: hija.y,
         w: hija.w,
         h: hija.h,
+        angle: hija.angle,
         points: verticesDeZona(hija.points),
         color: hija.color,
         parentId: hija.parentId,
@@ -130,11 +144,12 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     image: urlDeImagen("mapa", fila.id, firma),
     width: fila.width,
     height: fila.height,
+    relleno: fila.relleno / 100,
     zones: fila.zones.filter((zona) => !zona.parentId).map(aZona),
   };
 }
 
-/** Las siete regiones con cuántas zonas tiene cada una, para Administración. */
+/** Los mapas con cuántas zonas tiene cada uno, para Administración. */
 export async function getResumenDeMapas() {
   const filas = await prisma.mapRegion.findMany({
     omit: { image: true },
@@ -142,7 +157,7 @@ export async function getResumenDeMapas() {
   });
   const porSlug = new Map(filas.map((fila) => [fila.slug, fila]));
 
-  return REGIONES.map((region) => ({
+  return REGIONES_DE_MAPA.map((region) => ({
     slug: region.slug,
     nombre: region.nombre,
     generacion: region.generacion,

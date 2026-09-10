@@ -1,7 +1,12 @@
 "use client";
 
 import { useId, useState } from "react";
-import { juegoPorId, juegosPorGrupo, nombreDeRegion } from "@/lib/juegos";
+import {
+  juegoPorId,
+  juegosPorGrupo,
+  nombreDeRegion,
+  regionesDelJuego,
+} from "@/lib/juegos";
 
 /**
  * En qué juego se juega la edición.
@@ -25,6 +30,11 @@ export function JuegoPicker({
   const [gameId, setGameId] = useState(defaultGameId ?? "");
   const campo = useId();
   const region = juegoPorId(gameId)?.region;
+  /**
+   * Los mapas no siempre son la región: la 2ª generación abre Kanto además de
+   * Johto, y la 7ª se reparte en las cuatro islas de Alola.
+   */
+  const mapas = regionesDelJuego(gameId);
 
   return (
     <div className="space-y-3">
@@ -55,7 +65,18 @@ export function JuegoPicker({
             <>
               Se juega en{" "}
               <span className="text-slate-300">{nombreDeRegion(region)}</span>,
-              así que el Mapa de capturas usará ese mapa.
+              {mapas.length > 1 ? (
+                <>
+                  {" "}
+                  así que el Mapa de capturas traerá sus {mapas.length} mapas:{" "}
+                  <span className="text-slate-300">
+                    {mapas.map((mapa) => nombreDeRegion(mapa)).join(", ")}
+                  </span>
+                  .
+                </>
+              ) : (
+                " así que el Mapa de capturas usará ese mapa."
+              )}
             </>
           ) : (
             "Si lo eliges, cada jugador tendrá el mapa de esa región en Lo mío."

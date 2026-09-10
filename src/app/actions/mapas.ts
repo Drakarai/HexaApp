@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
-import { REGIONES, type Region } from "@/lib/juegos";
+import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
 import { FORMAS } from "@/lib/zonas";
@@ -32,9 +32,15 @@ function refrescarMapa() {
 // El mapa (administradores)
 // ---------------------------------------------------------------------------
 
-/** Crea la fila de la región si no existe todavía. */
+/** Un giro en grados enteros de 0 a 359, venga como venga del formulario. */
+function gradosValidos(grados: number) {
+  if (!Number.isFinite(grados)) return 0;
+  return ((Math.round(grados) % 360) + 360) % 360;
+}
+
+/** Crea la fila del mapa si no existe todavía. */
 async function asegurarRegion(slug: string) {
-  const region = REGIONES.find((candidata) => candidata.slug === slug);
+  const region = REGIONES_DE_MAPA.find((candidata) => candidata.slug === slug);
   if (!region) throw new Error("Esa región no existe.");
 
   return prisma.mapRegion.upsert({
@@ -135,6 +141,7 @@ export async function editarZonaAction(formData: FormData) {
     data: {
       name,
       kind: String(formData.get("kind") ?? "ruta"),
+      angle: gradosValidos(Number(formData.get("angle") ?? 0)),
       ...(FORMAS.some((f) => f.id === forma) ? { shape: forma } : {}),
       // Un color vacío significa "el de su tipo", no "negro"
       color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
@@ -246,6 +253,7 @@ export async function moverZonasAction(
     y: number;
     w?: number;
     h?: number;
+    angle?: number;
     points?: [number, number][];
   }[];
   try {
@@ -272,6 +280,7 @@ export async function moverZonasAction(
             // El tamaño y los vértices solo si vienen: mover no es redimensionar
             ...(Number.isFinite(sitio.w) ? { w: Math.max(8, Math.round(sitio.w!)) } : {}),
             ...(Number.isFinite(sitio.h) ? { h: Math.max(8, Math.round(sitio.h!)) } : {}),
+            ...(Number.isFinite(sitio.angle) ? { angle: gradosValidos(sitio.angle!) } : {}),
             ...(sitio.points ? { points: JSON.stringify(sitio.points) } : {}),
           },
         }),
@@ -301,12 +310,15 @@ export async function guardarFondoAction(
     return { error: "El alto tiene que estar entre 200 y 4000." };
   }
 
+  const relleno = Number(formData.get("relleno") ?? region.relleno);
+
   await prisma.mapRegion.update({
     where: { id: region.id },
     data: {
       image: imagenEditada(formData.get("image")),
       width: Math.round(ancho),
       height: Math.round(alto),
+      relleno: Math.min(100, Math.max(10, Math.round(relleno) || 100)),
     },
   });
 

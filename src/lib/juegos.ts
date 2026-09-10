@@ -19,7 +19,11 @@ export type Region =
   | "sinnoh"
   | "teselia"
   | "kalos"
-  | "alola";
+  | "alola"
+  | "melemele"
+  | "akala"
+  | "ula-ula"
+  | "poni";
 
 export type Juego = {
   id: string;
@@ -33,19 +37,48 @@ export type Juego = {
    * y sus remakes, que traen **Kanto entero** después de la Liga de Johto.
    */
   extra?: Region[];
+  /**
+   * Las **láminas de mapa** del juego, cuando no coinciden con su región.
+   *
+   * Alola es una región de cuatro islas, y las cuatro juntas en un lienzo dejan
+   * cada ruta del tamaño de un sello: en el móvil sería imposible acertarle.
+   * Así que la 7ª generación se juega en la región "alola" —de ahí salen la
+   * generación y las plantillas de level caps— pero se dibuja en cuatro mapas,
+   * uno por isla, con las mismas pestañas que usan Oro y Plata para Kanto.
+   */
+  mapas?: Region[];
   /** El tema de `themes.ts` que le pega, para proponerlo al crear la edición */
   tema?: string;
 };
 
-export const REGIONES: { slug: Region; nombre: string; generacion: number }[] = [
+export const REGIONES: {
+  slug: Region;
+  nombre: string;
+  generacion: number;
+  /**
+   * Que la región no se dibuja: existe para decir de qué generación es un juego
+   * y a qué level caps mira, pero sus mapas son otros. Solo le pasa a Alola.
+   */
+  sinMapa?: true;
+}[] = [
   { slug: "kanto", nombre: "Kanto", generacion: 1 },
   { slug: "johto", nombre: "Johto", generacion: 2 },
   { slug: "hoenn", nombre: "Hoenn", generacion: 3 },
   { slug: "sinnoh", nombre: "Sinnoh", generacion: 4 },
   { slug: "teselia", nombre: "Teselia", generacion: 5 },
   { slug: "kalos", nombre: "Kalos", generacion: 6 },
-  { slug: "alola", nombre: "Alola", generacion: 7 },
+  { slug: "alola", nombre: "Alola", generacion: 7, sinMapa: true },
+  { slug: "melemele", nombre: "Isla Melemele", generacion: 7 },
+  { slug: "akala", nombre: "Isla Akala", generacion: 7 },
+  { slug: "ula-ula", nombre: "Isla Ula-Ula", generacion: 7 },
+  { slug: "poni", nombre: "Isla Poni", generacion: 7 },
 ];
+
+/** Las regiones que tienen mapa propio, que son las de Administración. */
+export const REGIONES_DE_MAPA = REGIONES.filter((region) => !region.sinMapa);
+
+/** En el orden en el que se recorren jugando. */
+const ISLAS_DE_ALOLA: Region[] = ["melemele", "akala", "ula-ula", "poni"];
 
 export const JUEGOS: Juego[] = [
   { id: "rojo", name: "Rojo", grupo: "1ª generación", region: "kanto", tema: "rojo" },
@@ -72,10 +105,11 @@ export const JUEGOS: Juego[] = [
   { id: "x", name: "X", grupo: "6ª generación", region: "kalos", tema: "x" },
   { id: "y", name: "Y", grupo: "6ª generación", region: "kalos", tema: "y" },
 
-  { id: "sol", name: "Sol", grupo: "7ª generación", region: "alola", tema: "sol" },
-  { id: "luna", name: "Luna", grupo: "7ª generación", region: "alola", tema: "luna" },
-  { id: "ultrasol", name: "Ultrasol", grupo: "7ª generación", region: "alola", tema: "sol" },
-  { id: "ultraluna", name: "Ultraluna", grupo: "7ª generación", region: "alola", tema: "luna" },
+  // La 7ª se juega en Alola pero se dibuja isla por isla: ver `mapas`
+  { id: "sol", name: "Sol", grupo: "7ª generación", region: "alola", mapas: ISLAS_DE_ALOLA, tema: "sol" },
+  { id: "luna", name: "Luna", grupo: "7ª generación", region: "alola", mapas: ISLAS_DE_ALOLA, tema: "luna" },
+  { id: "ultrasol", name: "Ultrasol", grupo: "7ª generación", region: "alola", mapas: ISLAS_DE_ALOLA, tema: "sol" },
+  { id: "ultraluna", name: "Ultraluna", grupo: "7ª generación", region: "alola", mapas: ISLAS_DE_ALOLA, tema: "luna" },
 
   // Los remakes, aparte pero con la región del original
   { id: "rojo-fuego", name: "Rojo Fuego", grupo: "Remakes", region: "kanto", tema: "rojo" },
@@ -173,16 +207,16 @@ export function regionDelJuego(id: string | null | undefined) {
 }
 
 /**
- * **Todas** las regiones que se juegan en esa edición, la principal primero.
+ * **Todos** los mapas que se juegan en esa edición, el principal primero.
  *
- * Casi siempre es una sola. La 2ª generación y sus remakes son la excepción:
- * después de la Liga de Johto se abre Kanto entero, con sus dieciséis medallas
- * y sus rutas, así que ahí hacen falta los dos mapas.
+ * Casi siempre es uno solo. Hay dos excepciones: la 2ª generación y sus
+ * remakes, que abren Kanto entero después de la Liga de Johto, y la 7ª, que
+ * reparte Alola en sus cuatro islas.
  */
 export function regionesDelJuego(id: string | null | undefined): Region[] {
   const juego = juegoPorId(id);
   if (!juego) return [];
-  return [juego.region, ...(juego.extra ?? [])];
+  return juego.mapas ?? [juego.region, ...(juego.extra ?? [])];
 }
 
 /**
