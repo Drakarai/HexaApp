@@ -12,6 +12,7 @@ import { Nav, type NavEntry, type NavGroup, type NavItem } from "@/components/na
 import { MobileTabBar } from "@/components/mobile-nav";
 import { BotonApuntar, type AtajoDeApunte } from "@/components/boton-apuntar";
 import { MarcarVisto } from "@/components/marcar-visto";
+import { EstadoDeConexion } from "@/components/estado-conexion";
 import { Avatar } from "@/components/ui";
 import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
@@ -321,6 +322,8 @@ export default async function AppLayout({
       </aside>
 
       <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
+
+      <EstadoDeConexion />
 
       <BotonApuntar atajos={atajos} />
 

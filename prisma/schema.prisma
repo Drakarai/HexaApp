@@ -1212,6 +1212,25 @@ model RouletteSpin {
  * se llevaría por delante las copias justo cuando hacen falta. Por eso el autor
  * se guarda como nombre suelto y no como enlace.
  */
+/**
+ * Los apuntes que ya se han subido desde la cola de un móvil sin conexión.
+ *
+ * Solo guarda el identificador que generó el propio móvil: si el mismo apunte
+ * llega dos veces —porque se reintentó, porque se abrió la aplicación en dos
+ * sitios— la segunda se descarta en vez de duplicar la captura. No guarda el
+ * contenido: eso ya está en su tabla de siempre.
+ */
+model ApunteSincronizado {
+  /** El identificador que puso el móvil, no uno nuestro */
+  id        String   @id
+  userId    String
+  /** "captura" | "baja" | "gimnasio" | "nota" */
+  tipo      String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}
+
 model Backup {
   id         String   @id @default(cuid())
   createdAt  DateTime @default(now())

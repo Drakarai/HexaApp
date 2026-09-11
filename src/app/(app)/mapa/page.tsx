@@ -92,7 +92,10 @@ export default async function MapaPage({
               : "Un administrador tiene que rellenarlo desde Administración."
           }
         />
-        <CapturasExtra capturas={capturas.filter((c) => !c.zoneId)} />
+        <CapturasExtra
+          capturas={capturas.filter((c) => !c.zoneId)}
+          competitionId={competition.id}
+        />
       </>
     );
   }
@@ -115,13 +118,17 @@ export default async function MapaPage({
       {pestanas}
       <MapaDeCapturas
         mapa={mapa}
+        competitionId={competition.id}
         capturas={capturas.filter(
           (captura) => captura.zoneId && suyas.has(captura.zoneId),
         )}
         bajas={bajasDeAqui}
         buscarDeEntrada={apuntar === "1"}
       />
-      <CapturasExtra capturas={capturas.filter((captura) => !captura.zoneId)} />
+      <CapturasExtra
+        capturas={capturas.filter((captura) => !captura.zoneId)}
+        competitionId={competition.id}
+      />
     </>
   );
 }

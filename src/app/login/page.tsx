@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { LoginForm } from "./login-form";
+import { OlvidarLoGuardado } from "@/components/service-worker";
 
 export const metadata = { title: "Entrar" };
 
@@ -26,6 +27,8 @@ export default async function LoginPage() {
         </div>
         <div className="card">
           <LoginForm />
+          {/* Aquí se acaba al cerrar sesión: fuera las pantallas guardadas */}
+          <OlvidarLoGuardado />
         </div>
         <p className="mt-6 text-center text-xs text-slate-500">
           ¿No tienes cuenta? Pídesela a un administrador de la competición.

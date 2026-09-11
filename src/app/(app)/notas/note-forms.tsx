@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
   createNoteAction,
   deleteNoteAction,
@@ -10,6 +10,8 @@ import {
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { RichText } from "@/components/rich-text";
+import { Pendientes } from "@/components/pendientes";
+import { conCola } from "@/lib/acciones-sin-conexion";
 
 export function NewNoteForm({
   competitionId,
@@ -20,10 +22,16 @@ export function NewNoteForm({
   subjectId: string;
   subjectLabel: string;
 }) {
-  const [state, formAction] = useActionState<FormState, FormData>(
-    createNoteAction,
-    null,
+  // Una nota se escribe tanto en el sofá como en el metro: si no hay línea,
+  // se queda en el móvil en vez de perderse al dar a guardar
+  const guardar = useMemo(
+    () =>
+      conCola(createNoteAction, "nota", (formData) =>
+        String(formData.get("title") ?? "").trim() || "Nota sin título",
+      ),
+    [],
   );
+  const [state, formAction] = useActionState<FormState, FormData>(guardar, null);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -59,6 +67,8 @@ export function NewNoteForm({
         <FormMessage state={state} />
         <SubmitButton>Guardar nota</SubmitButton>
       </form>
+
+      <Pendientes tipo="nota" />
     </details>
   );
 }

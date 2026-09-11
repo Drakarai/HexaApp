@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useRef, useEffect, useState } from "react";
+import { useActionState, useMemo, useRef, useEffect, useState } from "react";
 import { createDeathAction } from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { SitioPicker } from "@/components/sitio-picker";
 import type { ZonaParaElegir } from "@/lib/mapas";
+import { Pendientes } from "@/components/pendientes";
+import { conCola } from "@/lib/acciones-sin-conexion";
 
 export function NewDeathForm({
   participants,
@@ -24,10 +26,22 @@ export function NewDeathForm({
   /** Llega con el formulario ya desplegado, desde el botón de apuntar */
   abiertoDeEntrada?: boolean;
 }) {
-  const [state, formAction] = useActionState<FormState, FormData>(
-    createDeathAction,
-    null,
+  /**
+   * Una baja se apunta donde se juega, que muchas veces es donde no hay
+   * cobertura. Si el envío no sale, se queda en la cola del móvil.
+   */
+  const registrar = useMemo(
+    () =>
+      conCola(createDeathAction, "baja", (formData) => {
+        const especie = String(formData.get("species") ?? "").trim();
+        const mote = String(formData.get("nickname") ?? "").trim();
+        return [mote || especie || "Un pokémon", mote && especie ? `(${especie})` : ""]
+          .filter(Boolean)
+          .join(" ");
+      }),
+    [],
   );
+  const [state, formAction] = useActionState<FormState, FormData>(registrar, null);
   const formRef = useRef<HTMLFormElement>(null);
   const detallesRef = useRef<HTMLDetailsElement>(null);
   // La clave fuerza a recrear el selector de imagen tras guardar, para que la
@@ -100,6 +114,8 @@ export function NewDeathForm({
         <FormMessage state={state} />
         <SubmitButton>Registrar baja</SubmitButton>
       </form>
+
+      <Pendientes tipo="baja" />
     </details>
   );
 }

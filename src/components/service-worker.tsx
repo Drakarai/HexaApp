@@ -22,3 +22,19 @@ export function ServiceWorkerRegistration() {
 
   return null;
 }
+
+/**
+ * Borra las pantallas guardadas para poder verlas sin conexión.
+ *
+ * Va montado en la pantalla de entrada, que es donde se acaba después de
+ * cerrar sesión: esas copias llevan dentro los datos de quien las vio —su
+ * mapa, sus notas— y en un móvil compartido no tienen por qué quedarse. Las
+ * imágenes no se tocan: son sprites, y los mismos para todo el mundo.
+ */
+export function OlvidarLoGuardado() {
+  useEffect(() => {
+    navigator.serviceWorker?.controller?.postMessage({ tipo: "limpiar" });
+  }, []);
+
+  return null;
+}

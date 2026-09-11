@@ -16,10 +16,9 @@ import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { MatchTeams } from "@/components/match-team";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
-import {
-  deleteLevelCapAction,
-  toggleGymClearAction,
-} from "@/app/actions/level-caps";
+import { deleteLevelCapAction } from "@/app/actions/level-caps";
+import { MarcarGimnasio } from "./marcar-gimnasio";
+import { Pendientes } from "@/components/pendientes";
 import {
   NewLevelCapForm,
   EditLevelCapForm,
@@ -122,6 +121,9 @@ export default async function LevelCapsPage({
       {apuntar === "1" && miProximo ? (
         <Resaltar id={`cap-${miProximo.id}`} />
       ) : null}
+
+      <Pendientes tipo="gimnasio" />
+
 
       {levelCaps.length === 0 ? (
         <div className="card text-center">
@@ -228,52 +230,17 @@ export default async function LevelCapsPage({
                         !retirado && (canManage || participant.userId === user.id);
 
                       return (
-                        <form key={participant.id} action={toggleGymClearAction}>
-                          <input
-                            type="hidden"
-                            name="levelCapId"
-                            value={levelCap.id}
-                          />
-                          <input
-                            type="hidden"
-                            name="participantId"
-                            value={participant.id}
-                          />
-                          <button
-                            type="submit"
-                            disabled={!editable}
-                            title={
-                              retirado
-                                ? `${participant.displayName} se retiró del locke`
-                                : editable
-                                  ? cleared
-                                    ? "Marcar como no superado"
-                                    : "Marcar como superado"
-                                  : "Solo puedes marcar tus propios gimnasios"
-                            }
-                            className={cx(
-                              "chip transition",
-                              retirado
-                                ? "text-slate-500 line-through opacity-50"
-                                : cleared
-                                  ? "border-emerald-400/40 bg-emerald-500/15 text-emerald-200"
-                                  : "opacity-70",
-                              editable
-                                ? "cursor-pointer hover:opacity-100"
-                                : "cursor-not-allowed",
-                            )}
-                          >
-                            <span
-                              className="h-2 w-2 rounded-full"
-                              style={{ background: participant.color }}
-                              aria-hidden
-                            />
-                            {participant.displayName}
-                            <span aria-hidden>
-                              {retirado ? "—" : cleared ? "✓" : "○"}
-                            </span>
-                          </button>
-                        </form>
+                        <MarcarGimnasio
+                          key={participant.id}
+                          levelCapId={levelCap.id}
+                          participantId={participant.id}
+                          nombre={participant.displayName}
+                          color={participant.color}
+                          hito={levelCap.label}
+                          superado={cleared}
+                          editable={editable}
+                          retirado={retirado}
+                        />
                       );
                     })}
                   </div>

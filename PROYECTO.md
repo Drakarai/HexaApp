@@ -7,10 +7,10 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 11 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
-por mapa y la guía de uso rehecha, guardada en `guia/` y accesible desde la
-propia aplicación).
+por mapa, la guía de uso rehecha y accesible desde la propia aplicación, y el
+modo sin conexión con su cola de apuntes).
 
 ---
 
@@ -46,6 +46,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
+| **Sin conexión** | Las pantallas por las que ya se ha pasado **se siguen viendo** sin internet, con un aviso de que son de la última vez. Y lo que se apunta —capturas, bajas, gimnasios y notas— se guarda en el móvil y **se sube solo** al volver la línea, sin duplicarse aunque se reintente. Mientras tanto sale en su pantalla como "sin subir todavía". |
 | **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 20 páginas con fotos de cada pantalla. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
@@ -953,6 +954,38 @@ capturas. Se aprovecha entero el mecanismo de pestañas que ya existía para
 Johto + Kanto: cada isla tiene su imagen, sus zonas y sus cuentas. Alola se
 queda marcada `sinMapa` y por eso no sale en Administración → Mapas.
 
+**Sin conexión se lee lo último y se escribe en una cola.** La aplicación se
+dibuja en el servidor, así que sin línea no había nada que enseñar. Ahora el
+service worker guarda cada pantalla al visitarla y la sirve cuando la petición
+falla —**siempre pide primero al servidor**, así que con cobertura lo que se ve
+sigue estando al día—, y lo que se escribe sin línea va a una cola en el propio
+móvil que se sube sola al volver.
+
+Lo importante de esa cola es lo que **no** hace:
+
+- **No miente.** El mensaje nunca dice "guardado": dice que está pendiente, y
+  el apunte sale listado en su pantalla hasta que sube de verdad.
+- **No duplica.** Cada apunte lleva un identificador que genera el móvil y que
+  el servidor guarda al aplicarlo (`ApunteSincronizado`); si llega dos veces, la
+  segunda se descarta.
+- **No se salta los permisos.** La dirección que los recibe (`/api/sincronizar`)
+  **llama a las mismas server actions** que los formularios de siempre, con sus
+  comprobaciones. No hay una segunda puerta a la base de datos.
+- **No reintenta lo que el servidor rechaza.** Si falla por una regla, se queda
+  en la lista con su explicación para poder tirarlo a mano; solo se reintenta lo
+  que falló por la conexión.
+
+Es una dirección propia y no una server action **porque el identificador
+interno de una server action cambia en cada despliegue**: un apunte que se quedó
+en la cola el martes tiene que poder subirse el jueves aunque la aplicación se
+haya actualizado.
+
+**Solo se encola lo que es de uno.** Capturas, bajas, gimnasios y notas: cada
+uno apunta lo suyo y solo se añade, así que no hay conflicto posible. Los
+resultados, los puntos, la ruleta y los retos se quedan fuera a propósito —los
+toca la organización y son de varios— y sin conexión simplemente no se pueden
+tocar.
+
 **La guía va en `public/` y no en la base de datos.** Es un fichero estático
 de tres megas que se sube con el código: así se abre igual de rápido para
 todos, se puede guardar en el móvil y no hay nada que administrar ni que
@@ -1377,6 +1410,18 @@ Piezas con truco:
   que sigan a la forma, el número y la chapa de bajas se quedan fuera para no
   salir torcidos, y **estirar deshace el giro antes de aplicar el arrastre**,
   porque si no una zona tumbada crecería por donde no toca.
+- `lib/cola.ts` — la cola de apuntes sin subir, en el `localStorage` del móvil.
+  `lib/acciones-sin-conexion.ts` envuelve un formulario para que, si el envío no
+  sale, acabe ahí en vez de perderse; `components/estado-conexion.tsx` es el
+  aviso de abajo y quien la sube (al volver la línea y al abrir la aplicación), y
+  `components/pendientes.tsx` la lista dentro de cada pantalla.
+  `api/sincronizar/route.ts` es la puerta del servidor, que reutiliza las server
+  actions de siempre. **Cuidado al cambiar una de esas acciones**: los apuntes
+  que estén en cola llevan los campos de la versión anterior.
+- `public/sw.js` — el service worker: guarda cada pantalla al visitarla (pidiendo
+  siempre al servidor primero) y los sprites y mapas, que son inmutables. Al
+  cerrar sesión, la pantalla de entrada le manda borrar las pantallas guardadas:
+  llevan dentro los datos de quien las vio.
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
@@ -1637,3 +1682,5 @@ lugar de destruir datos, y hay que avisar antes.
     usar imágenes detalladas sin taparlas.
 43. **La guía de uso, dentro de la aplicación**: el manual en PDF se abre, se
     descarga o se lee en un visor desde "Lo mío", para el que se pierda.
+44. **Sin conexión**: se sigue viendo lo último que se descargó y lo que se
+    apunta se sube solo al volver la línea, sin duplicarse.

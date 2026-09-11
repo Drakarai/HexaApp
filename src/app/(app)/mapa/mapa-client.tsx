@@ -11,6 +11,8 @@ import { Mapa, type CuentaDeZona } from "@/components/mapa";
 import { colorDeZona } from "@/lib/zonas";
 import { SpeciesPicker } from "@/components/species-picker";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
+import { Pendientes } from "@/components/pendientes";
+import { conCola } from "@/lib/acciones-sin-conexion";
 import type { CapturaApuntada, MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx, formatDateTime } from "@/lib/utils";
 
@@ -25,12 +27,19 @@ export function MapaDeCapturas({
   mapa,
   capturas,
   bajas,
+  competitionId,
   buscarDeEntrada = false,
 }: {
   mapa: MapaDeRegion;
   capturas: CapturaApuntada[];
   /** Los pokémon tuyos que han caído en cada zona, para las calaveras */
   bajas: Record<string, number>;
+  /**
+   * En qué edición se está apuntando. Solo hace falta para la cola de
+   * pendientes: un apunte que se queda sin subir tiene que saber a qué locke
+   * vuelve, no sea que entre medias se cambie de edición.
+   */
+  competitionId: string;
   /** Llega con el buscador enfocado, desde el botón de apuntar */
   buscarDeEntrada?: boolean;
 }) {
@@ -242,11 +251,14 @@ export function MapaDeCapturas({
         />
       ) : null}
 
+      <Pendientes tipo="captura" />
+
       {abierta ? (
         <FichaDeZona
           zona={abierta}
           capturas={capturas.filter((c) => c.zoneId === abierta.id)}
           caidos={bajas[abierta.id] ?? 0}
+          competitionId={competitionId}
           onClose={() => setAbierta(null)}
         />
       ) : null}
@@ -424,21 +436,46 @@ function ListaDelGrupo({
   );
 }
 
+/**
+ * Apuntar una captura, aguantando sin conexión: si no hay línea se queda en la
+ * cola del móvil con su resumen —"Sentret en Ruta 29"— y sube sola después.
+ */
+function capturaConCola(competitionId: string, zona: string | null) {
+  return conCola(
+    apuntarCapturaAction,
+    "captura",
+    (formData) => {
+      const especie = String(formData.get("species") ?? "").trim() || "Pokémon";
+      const fallado = formData.get("failed") === "on" ? " (fallado)" : "";
+      return `${especie}${fallado} · ${zona ?? "captura extra"}`;
+    },
+    // La edición no va en el formulario: la acción la saca de la sesión, y al
+    // subirlo más tarde hay que poder comprobar que sigue siendo la misma
+    () => ({ competitionId }),
+  );
+}
+
 /** El panel de una zona: lo que ya tienes ahí y el formulario para añadir. */
 function FichaDeZona({
   zona,
   capturas,
   caidos,
+  competitionId,
   onClose,
 }: {
   zona: ZonaDelMapa;
   capturas: CapturaApuntada[];
   /** Pokémon tuyos que han caído ahí, según el cementerio */
   caidos: number;
+  competitionId: string;
   onClose: () => void;
 }) {
+  const apuntarAunqueNoHayaLinea = useMemo(
+    () => capturaConCola(competitionId, zona.name),
+    [competitionId, zona.name],
+  );
   const [estado, apuntar] = useActionState<FormState, FormData>(
-    apuntarCapturaAction,
+    apuntarAunqueNoHayaLinea,
     null,
   );
   // Vaciar el buscador de especie después de apuntar: lleva estado propio y un
@@ -621,9 +658,19 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
  * intercambio, la captura de premio de un reto. Van aparte porque no tienen
  * sitio donde ponerse.
  */
-export function CapturasExtra({ capturas }: { capturas: CapturaApuntada[] }) {
+export function CapturasExtra({
+  capturas,
+  competitionId,
+}: {
+  capturas: CapturaApuntada[];
+  competitionId: string;
+}) {
+  const apuntarAunqueNoHayaLinea = useMemo(
+    () => capturaConCola(competitionId, null),
+    [competitionId],
+  );
   const [estado, apuntar] = useActionState<FormState, FormData>(
-    apuntarCapturaAction,
+    apuntarAunqueNoHayaLinea,
     null,
   );
   const [vuelta, setVuelta] = useState(0);
