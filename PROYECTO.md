@@ -975,6 +975,22 @@ Lo importante de esa cola es lo que **no** hace:
   en la lista con su explicación para poder tirarlo a mano; solo se reintenta lo
   que falló por la conexión.
 
+**Y sin conexión los enlaces recargan la página entera.** Por dentro Next
+cambia de pantalla sin recargar, pidiendo solo el trozo que cambia, y ese
+trozo no se guarda a propósito: hay peticiones de "adelanto" a medias que,
+servidas como si fueran la pantalla entera, la dejarían rota. La primera
+versión le contestaba un error a esas peticiones y **eso era peor**: Next tiene
+su propio plan B —recargar la página, que sí sabemos servir— y solo lo usa
+cuando la petición falla de verdad, así que contestándole se quedaba sin él y
+no se podía cambiar de pestaña. Ahora esas peticiones no se tocan y, además,
+sin línea cada enlace se convierte en una carga de página entera.
+
+**Las pantallas del menú se guardan de antemano.** Con solo guardar lo que se
+visita, quien abriera la aplicación, mirara la portada y se metiera en el metro
+no tenía nada más. Cada diez minutos como mucho, y de fondo, el service worker
+se trae las pantallas del menú de esa persona; con abrir la aplicación una vez
+al día con cobertura se lleva la aplicación entera encima.
+
 Es una dirección propia y no una server action **porque el identificador
 interno de una server action cambia en cada despliegue**: un apunte que se quedó
 en la cola el martes tiene que poder subirse el jueves aunque la aplicación se

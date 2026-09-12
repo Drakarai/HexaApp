@@ -17,7 +17,7 @@ import { cx } from "@/lib/utils";
  * de volver a abrirla es el que vale; por eso el aviso insiste mientras quede
  * algo dentro.
  */
-export function EstadoDeConexion() {
+export function EstadoDeConexion({ rutas = [] }: { rutas?: string[] }) {
   const router = useRouter();
   const [hayLinea, setHayLinea] = useState(true);
   const [pendientes, setPendientes] = useState(0);
@@ -25,6 +25,25 @@ export function EstadoDeConexion() {
   const [recien, setRecien] = useState(0);
 
   const contar = useCallback(() => setPendientes(leerCola().length), []);
+
+  /**
+   * Deja guardadas las pantallas del menú mientras hay cobertura, para que
+   * sin ella no se vea solo lo que se acabara de abrir. Se hace como mucho
+   * cada diez minutos: son consultas de verdad contra la base de datos.
+   */
+  const precalentar = useCallback(() => {
+    if (!navigator.onLine || !rutas.length) return;
+    try {
+      const ultimo = Number(window.localStorage.getItem(CADA_CUANTO.llave) ?? 0);
+      if (Date.now() - ultimo < CADA_CUANTO.milisegundos) return;
+      window.localStorage.setItem(CADA_CUANTO.llave, String(Date.now()));
+    } catch {
+      // Sin localStorage se precalienta cada vez, que tampoco pasa nada
+    }
+    navigator.serviceWorker?.ready
+      .then((registro) => registro.active?.postMessage({ tipo: "precalentar", rutas }))
+      .catch(() => {});
+  }, [rutas]);
 
   const subir = useCallback(async () => {
     if (!leerCola().length) return;
@@ -47,6 +66,7 @@ export function EstadoDeConexion() {
     const vuelve = () => {
       setHayLinea(true);
       subir();
+      precalentar();
     };
     const se_va = () => setHayLinea(false);
 
@@ -54,15 +74,60 @@ export function EstadoDeConexion() {
     window.addEventListener("offline", se_va);
     const dejarDeEscuchar = alCambiarLaCola(contar);
 
-    // Al abrir la aplicación, lo que quedara de la última vez
-    if (navigator.onLine) subir();
+    // Al abrir la aplicación: lo que quedara pendiente de la última vez, y
+    // dejar guardado el resto de pantallas por si luego no hay cobertura
+    if (navigator.onLine) {
+      subir();
+      const cuando = window.setTimeout(precalentar, 4000);
+      return () => {
+        window.clearTimeout(cuando);
+        window.removeEventListener("online", vuelve);
+        window.removeEventListener("offline", se_va);
+        dejarDeEscuchar();
+      };
+    }
 
     return () => {
       window.removeEventListener("online", vuelve);
       window.removeEventListener("offline", se_va);
       dejarDeEscuchar();
     };
-  }, [contar, subir]);
+  }, [contar, subir, precalentar]);
+
+  /**
+   * Sin conexión, los enlaces se pulsan a lo bruto: recargando la página.
+   *
+   * Por dentro Next cambia de pantalla sin recargar, pidiendo solo el trozo
+   * que cambia, y ese trozo no está guardado. Tiene su propio plan B, pero
+   * depende de cómo falle la petición; esto lo hace seguro: **sin línea, cada
+   * enlace es una carga de página entera**, que es justo lo que el service
+   * worker sabe servir de lo guardado.
+   */
+  useEffect(() => {
+    const alPulsar = (evento: MouseEvent) => {
+      if (navigator.onLine || evento.defaultPrevented) return;
+      if (evento.button !== 0 || evento.metaKey || evento.ctrlKey || evento.shiftKey) return;
+
+      const enlace = (evento.target as Element | null)?.closest?.("a[href]") as
+        | HTMLAnchorElement
+        | null;
+      if (!enlace || enlace.hasAttribute("download")) return;
+      if (enlace.target && enlace.target !== "_self") return;
+
+      const destino = new URL(enlace.href, window.location.href);
+      if (destino.origin !== window.location.origin) return;
+      // Un ancla dentro de la misma pantalla no es navegar
+      if (destino.pathname === window.location.pathname && destino.hash) return;
+
+      evento.preventDefault();
+      evento.stopPropagation();
+      window.location.assign(destino.href);
+    };
+
+    // En captura: hay que adelantarse al que trae Next
+    document.addEventListener("click", alPulsar, true);
+    return () => document.removeEventListener("click", alPulsar, true);
+  }, []);
 
   if (hayLinea && !pendientes && !recien) return null;
 
@@ -120,3 +185,9 @@ export function EstadoDeConexion() {
 function cuantos(n: number) {
   return n === 1 ? "1 apunte" : `${n} apuntes`;
 }
+
+/** Cada cuánto se vuelven a guardar las pantallas del menú. */
+const CADA_CUANTO = {
+  llave: "hexaapp.precalentado",
+  milisegundos: 10 * 60 * 1000,
+};

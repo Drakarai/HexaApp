@@ -246,6 +246,13 @@ export default async function AppLayout({
     ),
   );
 
+  /**
+   * Las pantallas que se dejan guardadas para poder verlas sin cobertura: las
+   * del menú de cada uno, que son las suyas. Sale de aquí y no de una lista
+   * aparte para que una sección nueva entre sola.
+   */
+  const rutasParaGuardar = ["/", ...Object.keys(rutasDeGrupo)];
+
   const switcher = (
     <CompetitionSwitcher
       competitions={competitions.map((competition) => ({
@@ -323,7 +330,7 @@ export default async function AppLayout({
 
       <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
 
-      <EstadoDeConexion />
+      <EstadoDeConexion rutas={rutasParaGuardar} />
 
       <BotonApuntar atajos={atajos} />
 
