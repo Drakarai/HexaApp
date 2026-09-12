@@ -11,9 +11,13 @@
 // si no hay línea, la propia aplicación los mete en su cola (ver lib/cola.ts).
 // Aquí no se reintenta nada a espaldas de nadie.
 
-const PAGINAS = "hexaapp-paginas-v1";
-const IMAGENES = "hexaapp-imagenes-v1";
-const BASICO = "hexaapp-basico-v1";
+// La versión va en el nombre: al subirla, el service worker nuevo tira lo que
+// guardó el anterior y empieza limpio. Se sube **siempre** que cambie la forma
+// de guardar, para no heredar copias hechas con otras reglas.
+const VERSION = "v2";
+const PAGINAS = `hexaapp-paginas-${VERSION}`;
+const IMAGENES = `hexaapp-imagenes-${VERSION}`;
+const BASICO = `hexaapp-basico-${VERSION}`;
 const OFFLINE_URL = "/sin-conexion.html";
 
 const MIOS = [PAGINAS, IMAGENES, BASICO];
@@ -40,6 +44,18 @@ self.addEventListener("activate", (event) => {
  * por qué quedarse ahí. Las imágenes no: son sprites públicos.
  */
 self.addEventListener("message", (event) => {
+  // Un service worker roto es pegajoso: se queda mandando aunque la aplicación
+  // se arregle. Este mensaje es la salida de emergencia (ver Mi perfil).
+  if (event.data?.tipo === "rendirse") {
+    event.waitUntil(
+      caches
+        .keys()
+        .then((claves) => Promise.all(claves.map((clave) => caches.delete(clave))))
+        .then(() => self.registration.unregister()),
+    );
+    return;
+  }
+
   if (event.data?.tipo === "limpiar") {
     event.waitUntil(caches.delete(PAGINAS));
   }

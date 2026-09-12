@@ -985,6 +985,20 @@ cuando la petición falla de verdad, así que contestándole se quedaba sin él 
 no se podía cambiar de pestaña. Ahora esas peticiones no se tocan y, además,
 sin línea cada enlace se convierte en una carga de página entera.
 
+**Un service worker con un fallo es pegajoso, y hay que poder quitárselo.**
+Se quedó uno roto en los móviles —el que contestaba a las peticiones internas
+de Next— y desde el servidor no hay forma de alcanzarlo: manda él hasta que
+otro lo releva. De ahí tres cosas: el nombre de sus cachés lleva **versión**
+(al subirla, tira lo del anterior y empieza limpio), la aplicación pide la
+actualización en cada carga y **se recarga sola cuando uno nuevo releva a
+otro**, y hay un botón de **"Reparar la aplicación"** en Mi perfil que lo
+desinstala todo y deja el navegador como la primera vez.
+
+Ojo con esa recarga: solo vale cuando el nuevo **releva a otro**. En la
+primera instalación también avisa, y recargar ahí se llevaba por delante el
+inicio de sesión, porque la instalación cae justo mientras se escribe la
+contraseña. Tampoco recarga si hay un campo enfocado.
+
 **Las pantallas del menú se guardan de antemano.** Con solo guardar lo que se
 visita, quien abriera la aplicación, mirara la portada y se metiera en el metro
 no tenía nada más. Cada diez minutos como mucho, y de fondo, el service worker

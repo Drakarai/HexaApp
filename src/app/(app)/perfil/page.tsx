@@ -9,6 +9,7 @@ import { firmaDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
+import { RepararLaAplicacion } from "@/components/service-worker";
 import { logoutAction } from "@/app/actions/auth";
 import { ROLES } from "@/lib/constants";
 import { ProfileForms } from "./profile-forms";
@@ -172,6 +173,17 @@ export default async function ProfilePage() {
           </Link>
         </section>
       ) : null}
+
+      <section className="card mt-4">
+        <h2 className="section-title mb-1">Cuando algo va mal</h2>
+        <p className="muted mb-4">
+          La aplicación guarda pantallas en el móvil para poder verlas sin
+          conexión. Si alguna vez se hace un lío —se queda en blanco, no cambia
+          de pantalla o enseña cosas de ayer—, esto lo tira todo y empieza de
+          cero.
+        </p>
+        <RepararLaAplicacion />
+      </section>
 
       <form action={logoutAction} className="mt-6">
         <button type="submit" className="btn-ghost">
