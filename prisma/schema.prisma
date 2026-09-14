@@ -1485,6 +1485,15 @@ model Backup {
    * El volcado entero: JSON comprimido con gzip y pasado a base64
    */
   payload    String
+  /**
+   * Las claves del almacén que necesita esta copia (formato 2).
+   *
+   * La copia **no guarda las imágenes**: ya están en `Imagen`, y guardarlas
+   * otra vez en cada una de las cinco copias multiplicaba por cinco lo que más
+   * pesa. Aquí queda apuntado cuáles hacen falta, para que la limpieza de
+   * huérfanas no tire una imagen que una copia todavía necesita.
+   */
+  imagenes   String[]
 
   @@index([createdAt])
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
+import { copiasSinAligerar } from "@/lib/copias";
 import { MantenimientoDelAlmacen } from "./almacen-client";
 import { cx } from "@/lib/utils";
 
@@ -55,10 +56,11 @@ function leerConexion() {
 export default async function DiagnosticoPage() {
   await requireAdminPage();
 
-  const [ida, conexion, ocupacion] = await Promise.all([
+  const [ida, conexion, ocupacion, copiasPesadas] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
     medirOcupacion(),
+    copiasSinAligerar(),
   ]);
 
   /**
@@ -239,7 +241,7 @@ export default async function DiagnosticoPage() {
             : ". No queda ninguna con la imagen dentro."}
         </p>
 
-        <MantenimientoDelAlmacen />
+        <MantenimientoDelAlmacen copiasPesadas={copiasPesadas} />
       </section>
 
       <section className="card">

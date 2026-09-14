@@ -6,6 +6,7 @@ import {
   deduplicarImagenes,
   tirarImagenesHuerfanas,
 } from "@/lib/deduplicar-imagenes";
+import { aligerarUnaCopia } from "@/lib/copias";
 import { pesar } from "@/lib/ocupacion";
 import type { FormState } from "@/app/actions/auth";
 
@@ -38,6 +39,33 @@ export async function deduplicarAction(): Promise<FormState> {
       `${hecho.filas} filas ahora apuntan al almacén. ` +
       `Ocupaban ${pesar(hecho.antes)} y las imágenes distintas son ${pesar(hecho.ahora)}: ` +
       `${ahorro > 0 ? `${pesar(ahorro)} menos` : "sin repetidas que quitar"}.`,
+  };
+}
+
+/**
+ * Aligera una copia guardada, de una en una: las de antes llevan las imágenes
+ * pegadas dentro y son lo que más ocupa de toda la base de datos.
+ */
+export async function aligerarCopiasAction(): Promise<FormState> {
+  try {
+    await requireAdmin();
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const hecho = await aligerarUnaCopia();
+  revalidatePath("/diagnostico");
+  revalidatePath("/admin");
+
+  if (!hecho) return { success: "Ya no queda ninguna copia con imágenes dentro." };
+  const ahorro = hecho.antes - hecho.despues;
+  return {
+    success:
+      `Una copia aligerada: de ${pesar(hecho.antes)} a ${pesar(hecho.despues)} ` +
+      `(${pesar(ahorro)} menos). ` +
+      (hecho.quedan
+        ? `Quedan ${hecho.quedan}: vuelve a pulsar.`
+        : "Ya están todas."),
   };
 }
 

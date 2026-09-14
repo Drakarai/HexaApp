@@ -13,8 +13,8 @@ por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
 combate por jornada con su Battle Royale, el sorteo de pokémon de préstamo, la
 medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
-una sola vez** y el permiso de **organizador** para que alguien lleve sus
-propios lockes).
+una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
+permiso de **organizador** para que alguien lleve sus propios lockes).
 
 ---
 
@@ -1486,6 +1486,35 @@ Lo que hubo que cuidar al abrir esa puerta, que es donde estaban los líos:
   cuentas que crea son siempre jugadores: repartir permisos de administrador no
   es cosa suya.
 
+**Las copias de seguridad ya no llevan las imágenes dentro.** Eran **147 MB de
+179**: cinco copias guardando cada una todas las imágenes, que ya estaban ahí al
+lado en el almacén. Ahora la copia que vive en la base de datos guarda el texto
+y **la lista de claves** que necesita, y las imágenes se sacan del almacén al
+leerla. Medido en pruebas: de 512 KB a 14 KB por copia.
+
+Tres cosas de esto que no son obvias:
+
+- **El fichero que se descarga sigue llevándolo todo dentro.** Es el único que
+  vive fuera de Neon: si se cae la base de datos entera, una copia con
+  referencias a esa misma base de datos no valdría de nada. `leerCopia` rehace
+  la tabla de imágenes antes de entregarlo, así que descargar y restaurar no se
+  enteran de cómo estaba guardado por dentro.
+- **La limpieza de huérfanas respeta lo que necesita una copia.** Por eso se
+  apunta la lista de claves en `Backup.imagenes`: sin ella, tirar una imagen que
+  ya no usa ninguna fila dejaría coja una copia que sí la necesitaba.
+- **Las copias de antes se aligeran con un botón, y de una en una.** No encogen
+  solas: son un JSON ya escrito. El botón de *Diagnóstico* coge una, le saca las
+  imágenes al almacén y la reescribe. Va de una en una porque una copia
+  descomprimida son decenas de megas en memoria, y hacerlas todas de un tirón se
+  comería el tiempo del servidor.
+
+**Restaurar una copia antigua ya no se cae.** Era un fallo de siempre que
+apareció al añadir una columna: la restauración insertaba **todas** las columnas
+de la tabla, y las que no existían cuando se hizo la copia entraban como nulo. Si
+esa columna no admitía nulo —porque tiene valor por defecto—, la restauración
+entera se caía con un error de PostgreSQL. Ahora se insertan **solo las columnas
+que trae la copia** y cada una de las demás toma su valor por defecto.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -1685,6 +1714,12 @@ Piezas con truco:
   de `notas/page.tsx`.
 - `lib/copias.ts` — el volcado, el restaurado y la poda. `lib/copia-automatica.ts`
   es el disparador del resumen; `admin/backups.tsx`, la pantalla.
+  Dos formas del mismo volcado: **formato 1** lo lleva todo dentro (el fichero
+  que se descarga) y **formato 2** deja las imágenes en el almacén (el que se
+  guarda en la base de datos). `leerCopia` devuelve siempre el 1, así que
+  restaurar y descargar no se enteran de la diferencia. **Al añadir una columna
+  que no admita nulo** no hay nada que hacer: la restauración inserta solo las
+  columnas que trae la copia y las demás toman su valor por defecto.
 - `lib/youtube.ts` — reconoce enlaces de YouTube y saca el identificador para
   incrustar el reproductor. `level-caps/gym-videos.tsx` es la tira de botones y
   el reproductor de los vídeos de gimnasio.
@@ -1908,3 +1943,6 @@ lugar de destruir datos, y hay que avisar antes.
     otra vez y hace que el navegador se baje cada uno una sola vez. Y aparece el
     permiso de **organizador**, para poder dejarle la aplicación a un amigo y
     que lleve sus lockes sin ver los de nadie más.
+48. **Las copias dejan de repetir las imágenes**, que eran 147 MB de los 179 que
+    ocupaba la base de datos. De paso se arregla que restaurar una copia
+    anterior a una columna nueva se caía.

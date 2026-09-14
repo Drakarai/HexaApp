@@ -165,6 +165,12 @@ export async function tirarImagenesHuerfanas() {
       ([tabla, columna]) =>
         `select x as v from "${tabla}", unnest("${columna}") as x where x like 'ref:%'`,
     ),
+    /**
+     * Y las que necesita una copia de seguridad guardada. Las copias ya no
+     * llevan las imágenes dentro —las sacan de aquí al restaurarlas—, así que
+     * tirar una que una copia necesita la dejaría coja para siempre.
+     */
+    `select 'ref:' || x as v from "Backup", unnest("imagenes") as x`,
   ].join(" union ");
 
   return prisma.$executeRawUnsafe(
