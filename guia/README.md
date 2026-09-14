@@ -1,8 +1,11 @@
-# La guía de uso en PDF
+# Las guías en PDF
 
-La guía que se reparte a los jugadores. **Aquí vive el original**: el texto
-está en `guia.html` y el PDF se genera a partir de él con las fotos de la
-aplicación funcionando.
+Las guías que se reparten. **Aquí viven los originales**: el texto está en
+`guia.html` (la de todos) y `guia-admin.html` (la de quien lleva un locke), y
+los PDF se generan a partir de ellos con fotos de la aplicación funcionando.
+
+El estilo lo comparten en `estilo.css`, así que las dos salen idénticas: tocar
+un margen ahí las cambia a la vez.
 
 Está en el repositorio porque una vez se perdió y hubo que rehacerla entera.
 Las fotos (`img/`) **no** se guardan: pesan tres megas y se vuelven a sacar en
@@ -21,8 +24,10 @@ npm run build && npm run start
 
 node guia/datos.mjs      # 1. prepara la partida de ejemplo
 node guia/capturas.mjs   # 2. saca las fotos a guia/img
-node guia/pdf.mjs        # 3. arma public/guia-de-uso.pdf
+node guia/pdf.mjs        # 3. arma los dos PDF de public/
 ```
+
+`pdf.mjs` sin argumentos hace las dos; con `uso` o `admin`, solo esa.
 
 `datos.mjs` **no se puede pasar dos veces**: rellena los mapas, apunta
 capturas, bajas, gimnasios, una nota, un reto, objetos y la primera jornada
@@ -35,7 +40,7 @@ sitio, `PLAYWRIGHT_CHROMIUM=/ruta/al/chromium node guia/…`. Lo mismo con
 
 ## Cómo se cambia el texto
 
-`guia.html` es una hoja por `<section class="pagina">`, con el tamaño de un A4
+Cada guía es una hoja por `<section class="pagina">`, con el tamaño de un A4
 y **lo que sobra se recorta**. Por eso `pdf.mjs` avisa al final de las páginas
 que se han quedado largas: si sale ese aviso, quita un párrafo o baja una foto
 de tamaño, no lo dejes pasar.
@@ -55,8 +60,12 @@ despliega, la aplicación sigue sirviendo el anterior.
 
 ## Al añadir algo a la aplicación
 
-Si la novedad cambia algo que sale en la guía, toca actualizarla también: el
-texto en `guia.html` y, si la pantalla ha cambiado de aspecto, volver a sacar
-las fotos. Y si se añade o se mueve una página, el índice del apartado
-*Guía de uso* (`src/app/(app)/guia/page.tsx`) está escrito a mano y no se
-entera solo.
+Si la novedad cambia algo que sale en una guía, toca actualizarla también: el
+texto en su `.html` y, si la pantalla ha cambiado de aspecto, volver a sacar las
+fotos. Y si se añade o se mueve una página, **el índice y la cuenta de páginas**
+del apartado *Guía de uso* (`src/app/(app)/guia/page.tsx`) están escritos a mano
+y no se enteran solos.
+
+Al decidir en cuál va lo nuevo: si lo hace cualquiera, en la de uso; si es de
+llevar un locke —emparejar, anotar resultados, repartir premios—, en la del
+administrador.

@@ -14,7 +14,7 @@
 // La versión va en el nombre: al subirla, el service worker nuevo tira lo que
 // guardó el anterior y empieza limpio. Se sube **siempre** que cambie la forma
 // de guardar, para no heredar copias hechas con otras reglas.
-const VERSION = "v2";
+const VERSION = "v3";
 const PAGINAS = `hexaapp-paginas-${VERSION}`;
 const IMAGENES = `hexaapp-imagenes-${VERSION}`;
 const BASICO = `hexaapp-basico-${VERSION}`;
@@ -110,7 +110,8 @@ function esInmutable(url) {
   return (
     url.pathname.startsWith("/_next/static/") ||
     url.pathname.startsWith("/api/imagen/") ||
-    url.pathname === "/guia-de-uso.pdf"
+    // Las dos guías: se guardan para poder leerlas sin conexión
+    url.pathname.endsWith(".pdf")
   );
 }
 

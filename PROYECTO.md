@@ -63,6 +63,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
+| **Guía de uso** | El manual en PDF, con fotos de cada pantalla, y una **segunda guía para quien lleva un locke** en su propia pestaña. La del administrador solo se le enseña a quien administra alguna edición o al Creador. |
 | **Diagnóstico** | Pantalla del Creador. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
 | **Organizador** | Un permiso que da el Creador (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
@@ -1854,13 +1855,17 @@ ejemplo, sacan las fotos y arman el PDF. La primera versión no se guardó y se
 perdió con la máquina donde se hizo, así que hubo que rehacerla entera. Las
 fotos no se suben (se rehacen en cinco minutos), pero **el PDF sí**, en
 `public/guia-de-uso.pdf`, porque es el que sirve el apartado *Guía de uso*.
-Instrucciones en `guia/README.md`; el índice de ese apartado está escrito a
-mano y hay que tocarlo si se mueve una página.
+Instrucciones en `guia/README.md`; **el índice y la cuenta de páginas** de ese
+apartado están escritos a mano y hay que tocarlos si se mueve una página.
 
-La guía va **por 22 páginas** y está al día: cuenta el sorteo de préstamos, el
-modo sin conexión y el permiso de organizador. Rehacerla mueve los números de
-página del índice escrito a mano, así que conviene juntar varias novedades y
-hacerlo de una vez.
+**Dónde va lo nuevo**: si lo hace cualquiera, en la guía de uso; si es de llevar
+un locke —emparejar, anotar resultados, repartir premios—, en la del
+administrador.
+
+Hay **dos guías**: la de uso (22 páginas, para todos) y la del administrador
+(13, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
+que salgan idénticas. Rehacerlas mueve los números de página del índice escrito
+a mano, así que conviene juntar varias novedades y hacerlo de una vez.
 
 ---
 
@@ -1998,3 +2003,6 @@ lugar de destruir datos, y hay que avisar antes.
     catálogo, plantillas, copias, cuentas— se queda en el Creador. Y cualquiera
     puede **pedir un locke de 2 o más**, que al aceptarse le deja administrarlo
     y dar de alta a los suyos.
+50. **Una guía para quien lleva un locke**, de trece páginas y con el mismo
+    estilo que la de siempre, en su pestaña dentro de *Guía de uso*. Solo la ve
+    quien administra alguna edición.

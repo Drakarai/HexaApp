@@ -139,6 +139,24 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await pagina.context().setOffline(false);
   await foto(pagina, "admin", "/admin");
+
+  // --- Para la guía de quien lleva un locke
+  await foto(pagina, "bolsas-todos", "/bolsa/todas");
+  await foto(pagina, "jornada-nueva", "/jornadas", async (p) => {
+    const abrir = p.locator("summary", { hasText: /Nueva jornada|Crear jornada/i }).first();
+    if (await abrir.count()) {
+      await abrir.click();
+      await p.waitForTimeout(700);
+    }
+  });
+  await foto(pagina, "resultado", "/jornadas", async (p) => {
+    const anotar = p.locator("button", { hasText: "Anotar resultado" }).first();
+    if (await anotar.count()) {
+      await anotar.click();
+      await p.waitForTimeout(900);
+    }
+  });
+  await foto(pagina, "jugadores", "/competiciones");
   await contexto.close();
 }
 
