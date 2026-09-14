@@ -11,6 +11,8 @@ import { NoCompetition } from "@/components/no-competition";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
+import { ChapaDeFormato } from "@/components/formato";
+import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { cx, formatDate } from "@/lib/utils";
 import { getCatalogo } from "@/lib/bolsa";
 import {
@@ -129,6 +131,7 @@ export default async function RetosPage() {
                     />
                   </div>
                   <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                    <ChapaDeFormato formato={reto.formato} />
                     <ReplayLink url={reto.replayUrl} />
                     {reto.pokemonDiff !== null ? (
                       <span className="chip">dif. {reto.pokemonDiff}</span>
@@ -233,6 +236,8 @@ export default async function RetosPage() {
                   matchId={reto.id}
                   esReto
                   canManage={canManage}
+                  maximo={formatoDeCombate(reto.formato).equipo}
+                  aLaVez={formatoDeCombate(reto.formato).aLaVez}
                   sides={[
                     lado(reto.participantAId, reto.team),
                     lado(reto.participantBId, reto.team),
@@ -246,6 +251,7 @@ export default async function RetosPage() {
                       winnerId: reto.winnerId,
                       pokemonDiff: reto.pokemonDiff,
                       replayUrl: reto.replayUrl,
+                      formato: reto.formato,
                       prize: reto.prize,
                       punishment: reto.punishment,
                       notes: reto.notes,

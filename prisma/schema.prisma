@@ -518,6 +518,7 @@ model Participant {
   bag           BagEntry[]
   bagUses       BagUse[]
   captures      Capture[]
+  royales       RoyalePuesto[]
   equipoDeTipos TypeTeam?
 
   @@unique([competitionId, userId])
@@ -811,6 +812,18 @@ model PointEntry {
   // Si el punto viene de ganar un combate de jornada, se enlaza con él para
   // poder rehacerlo si se corrige el resultado.
   sourceMatchId String?  @unique
+  /**
+   * Y si viene de ganar un Battle Royale, con el royale. Es otro campo y no el
+   * de arriba porque son tablas distintas; la idea es la misma: si se corrige
+   * el orden de llegada, el punto se recoloca en vez de duplicarse.
+   *
+   * **Sin `@unique` a propósito**: añadir una restricción de unicidad hace que
+   * `prisma db push` avise de posible pérdida de datos, y el despliegue de
+   * Vercel corre ese comando sin aceptar avisos, así que el despliegue se
+   * caería. Que no haya dos puntos por el mismo royale lo garantiza el código:
+   * al guardar el orden se borra lo que hubiera y se vuelve a crear.
+   */
+  sourceRoyaleId String?
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
@@ -834,6 +847,18 @@ model Matchday {
   playedAt      DateTime?
   // Puntos que se llevan los ganadores de esta jornada
   pointsForWin  Int       @default(1)
+  /**
+   * Qué tipo de combate se juega ("singles", "dobles", "vgc", "royale"…). Ver
+   * lib/formatos-de-combate.ts, que es donde viven las fichas: aquí solo se
+   * guarda cuál es.
+   */
+  formato       String    @default("singles")
+  /**
+   * Lo que el formato no dice: "monotipo agua", "sin objetos", "nivel 50".
+   * Texto libre a propósito: las variaciones se inventan sobre la marcha y no
+   * hay lista que las cubra.
+   */
+  condiciones   String?
 
   /**
    * Por qué el MVP es el MVP. Lo escribe un administrador; el pokémon en sí no
@@ -854,6 +879,7 @@ model Matchday {
 
   competition Competition   @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   matches     Match[]
+  royales     Royale[]
   mvpVotes    MvpVote[]
   mvpTiebreak MatchPokemon? @relation("MatchdayTiebreak", fields: [mvpTiebreakId], references: [id], onDelete: SetNull)
 
@@ -881,6 +907,11 @@ model Match {
    * guarda para poder enseñarlo distinto, que no parezca una victoria normal.
    */
   porRetirada    Boolean   @default(false)
+  /**
+   * Solo si **este** combate se juega distinto al resto de su jornada. Vacío
+   * significa "el de la jornada", que es lo normal.
+   */
+  formato        String?
 
   matchday     Matchday       @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
   participantA Participant    @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
@@ -914,6 +945,11 @@ model MatchPokemon {
    * desmarcar la casilla por un descuido se llevaría el equipo por delante.
    */
   levelCapId       String?
+  /**
+   * El cuarto sitio del que cuelga un equipo: un Battle Royale, donde no hay
+   * dos bandos sino cuatro jugadores en el mismo combate.
+   */
+  royaleId         String?
   participantId    String
   species          String
   nickname         String?
@@ -930,6 +966,7 @@ model MatchPokemon {
   match          Match?          @relation(fields: [matchId], references: [id], onDelete: Cascade)
   challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
   levelCap       LevelCap?       @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
+  royale         Royale?         @relation(fields: [royaleId], references: [id], onDelete: Cascade)
   participant    Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
   votes          MvpVote[]
   tiebreakOf     Matchday[]      @relation("MatchdayTiebreak")
@@ -937,6 +974,7 @@ model MatchPokemon {
   @@index([matchId])
   @@index([challengeMatchId])
   @@index([levelCapId, participantId])
+  @@index([royaleId, participantId])
   @@index([participantId])
 }
 
@@ -976,6 +1014,8 @@ model ChallengeMatch {
   playedAt       DateTime?
   notes          String?
   createdAt      DateTime  @default(now())
+  /** Qué tipo de combate es. Cada reto lleva el suyo, sin depender de nada */
+  formato        String    @default("singles")
 
   competition  Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   participantA Participant      @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
@@ -1028,6 +1068,73 @@ model MvpVote {
 
   @@unique([matchdayId, voterId])
   @@index([matchPokemonId])
+}
+
+// ---------------------------------------------------------------------------
+// Battle Royale
+// ---------------------------------------------------------------------------
+
+/**
+ * Un **Battle Royale**: un combate con más de dos jugadores dentro de una
+ * jornada.
+ *
+ * Tiene su propia tabla y no cabe en `Match` a propósito. Un combate normal es
+ * "A contra B, gana uno y le quedan tantos pokémon vivos"; un royale es
+ * "entran cuatro y salen en este orden". Meterlo a la fuerza en la tabla de
+ * siempre habría obligado a llenar de excepciones la clasificación, el cara a
+ * cara y el emparejador, y a cambio no habría contado bien ninguna de las dos
+ * cosas.
+ *
+ * Lo que sí comparte con los combates de siempre es el **equipo**: los pokémon
+ * que saca cada uno se apuntan con el mismo editor (`MatchPokemon.royaleId`).
+ */
+model Royale {
+  id         String    @id @default(cuid())
+  matchdayId String
+  /**
+   * Cómo se llama este, cuando la jornada tiene más de uno ("Ronda 1")
+   */
+  label      String?
+  /**
+   * La crónica: qué pasó, contado por quien quiera dejarlo escrito. Es pública
+   * y es media gracia de un royale —lo que se cuenta después—, así que tiene
+   * sitio propio en vez de acabar en las notas privadas de alguien.
+   */
+  cronica    String?
+  replayUrl  String?
+  playedAt   DateTime?
+  position   Int       @default(0)
+  createdAt  DateTime  @default(now())
+
+  matchday Matchday       @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
+  puestos  RoyalePuesto[]
+  equipos  MatchPokemon[]
+
+  @@index([matchdayId, position])
+}
+
+/**
+ * Quién jugó un royale y en qué puesto quedó.
+ *
+ * `puesto` vacío significa "todavía no se sabe": un royale se prepara con sus
+ * jugadores y el orden se rellena al terminar. Los puntos se los lleva el
+ * primero, igual que el ganador de un combate normal.
+ */
+model RoyalePuesto {
+  id            String @id @default(cuid())
+  royaleId      String
+  participantId String
+  /** 1 es el que gana. Vacío mientras no se haya jugado */
+  puesto        Int?
+  /** Cuántos pokémon le quedaban vivos, si se quiere apuntar */
+  vivos         Int?
+  notes         String?
+
+  royale      Royale      @relation(fields: [royaleId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([royaleId, participantId])
+  @@index([participantId])
 }
 
 // ---------------------------------------------------------------------------

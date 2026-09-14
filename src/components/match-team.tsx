@@ -38,7 +38,10 @@ export function MatchTeams({
   canManage,
   esReto = false,
   levelCapId,
+  royaleId,
   rotulo,
+  maximo = 6,
+  aLaVez = 1,
 }: {
   matchId: string;
   /**
@@ -51,8 +54,14 @@ export function MatchTeams({
   esReto?: boolean;
   /** Si viene, el equipo es el de ese gimnasio y no el de un combate */
   levelCapId?: string;
+  /** Y si viene este, el de un Battle Royale */
+  royaleId?: string;
   /** Qué poner en la cabecera del editor */
   rotulo?: string;
+  /** Cuántos pokémon caben, que en VGC son cuatro y no seis */
+  maximo?: number;
+  /** Cuántos salen a la vez: en dobles se marcan los que abren */
+  aLaVez?: number;
 }) {
   const [editing, setEditing] = useState(false);
   const hasTeams = sides.some((side) => side.team.length > 0);
@@ -66,7 +75,7 @@ export function MatchTeams({
           {/* Móvil: una tira de sprites por jugador, que es lo que cabe */}
           <div className="space-y-1.5 lg:hidden">
             {sides.map((side) => (
-              <TeamRow key={side.participantId} side={side} />
+              <TeamRow key={side.participantId} side={side} aLaVez={aLaVez} />
             ))}
           </div>
 
@@ -78,7 +87,7 @@ export function MatchTeams({
             )}
           >
             {sides.map((side) => (
-              <TeamBox key={side.participantId} side={side} />
+              <TeamBox key={side.participantId} side={side} maximo={maximo} aLaVez={aLaVez} />
             ))}
           </div>
         </>
@@ -105,7 +114,10 @@ export function MatchTeams({
           matchId={matchId}
           esReto={esReto}
           levelCapId={levelCapId}
+          royaleId={royaleId}
           rotulo={rotulo}
+          maximo={maximo}
+          aLaVez={aLaVez}
           sides={sides}
           onClose={() => setEditing(false)}
         />
@@ -114,7 +126,7 @@ export function MatchTeams({
   );
 }
 
-function TeamRow({ side }: { side: TeamSide }) {
+function TeamRow({ side, aLaVez = 1 }: { side: TeamSide; aLaVez?: number }) {
   if (!side.team.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -124,20 +136,34 @@ function TeamRow({ side }: { side: TeamSide }) {
         image={side.avatarImage}
         size={18}
       />
-      {side.team.map((pokemon) => (
-        <Sprite key={pokemon.id} pokemon={pokemon} owner={side.displayName} />
+      {side.team.map((pokemon, index) => (
+        <Sprite
+          key={pokemon.id}
+          pokemon={pokemon}
+          owner={side.displayName}
+          abre={aLaVez > 1 && index < aLaVez}
+        />
       ))}
     </div>
   );
 }
 
 /**
- * El equipo como una caja de 3x2, al estilo del equipo de un juego. Los seis
- * huecos están siempre, aunque falten pokémon, para que las dos cajas de un
- * combate midan igual y se lean de un vistazo.
+ * El equipo como una caja, al estilo del equipo de un juego. Los huecos están
+ * siempre, aunque falten pokémon, para que las dos cajas de un combate midan
+ * igual y se lean de un vistazo. Cuántos hay lo dice el formato: seis en
+ * singles, cuatro en VGC.
  */
-function TeamBox({ side }: { side: TeamSide }) {
-  const huecos = Array.from({ length: 6 }, (_, index) => side.team[index] ?? null);
+function TeamBox({
+  side,
+  maximo = 6,
+  aLaVez = 1,
+}: {
+  side: TeamSide;
+  maximo?: number;
+  aLaVez?: number;
+}) {
+  const huecos = Array.from({ length: maximo }, (_, index) => side.team[index] ?? null);
 
   return (
     <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-2">
@@ -152,7 +178,7 @@ function TeamBox({ side }: { side: TeamSide }) {
           {side.displayName}
         </span>
         <span className="ml-auto shrink-0 text-[11px] text-slate-600">
-          {side.team.length}/6
+          {side.team.length}/{maximo}
         </span>
       </div>
 
@@ -161,8 +187,16 @@ function TeamBox({ side }: { side: TeamSide }) {
           pokemon ? (
             <div
               key={pokemon.id}
-              title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species})`}
-              className="min-w-0 rounded-lg border border-white/5 bg-white/[0.04] p-1"
+              title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species})${
+                aLaVez > 1 && index < aLaVez ? " · abre el combate" : ""
+              }`}
+              className={cx(
+                "min-w-0 rounded-lg border bg-white/[0.04] p-1",
+                // En dobles y VGC, los primeros son los que salen al terreno
+                aLaVez > 1 && index < aLaVez
+                  ? "border-brand-400/50 ring-1 ring-brand-400/30"
+                  : "border-white/5",
+              )}
             >
               <div className="flex h-16 items-center justify-center">
                 {pokemon.boxImage ? (
@@ -203,15 +237,23 @@ export function Sprite({
   pokemon,
   owner,
   size = 34,
+  abre = false,
 }: {
   pokemon: TeamPokemon;
   owner: string;
   size?: number;
+  /** Que es de los que salen al terreno al empezar (dobles, VGC) */
+  abre?: boolean;
 }) {
   return (
     <span
-      title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species}) de ${owner}`}
-      className="flex shrink-0 items-center justify-center rounded-lg bg-white/[0.04]"
+      title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species}) de ${owner}${
+        abre ? " · abre el combate" : ""
+      }`}
+      className={cx(
+        "flex shrink-0 items-center justify-center rounded-lg bg-white/[0.04]",
+        abre && "ring-1 ring-brand-400/50",
+      )}
       style={{ width: size, height: size }}
     >
       {pokemon.boxImage ? (
@@ -235,14 +277,20 @@ function TeamEditor({
   matchId,
   esReto,
   levelCapId,
+  royaleId,
   rotulo,
+  maximo,
+  aLaVez,
   sides,
   onClose,
 }: {
   matchId: string;
   esReto: boolean;
   levelCapId?: string;
+  royaleId?: string;
   rotulo?: string;
+  maximo: number;
+  aLaVez: number;
   sides: TeamSide[];
   onClose: () => void;
 }) {
@@ -367,7 +415,7 @@ function TeamEditor({
                   {side.displayName}
                 </span>
                 <span className="ml-auto text-xs text-slate-500">
-                  {side.team.length}/6
+                  {side.team.length}/{maximo}
                 </span>
               </div>
 
@@ -413,6 +461,9 @@ function TeamEditor({
           <input type="hidden" name="matchId" value={matchId} />
           {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
           {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
+          {royaleId ? (
+            <input type="hidden" name="royaleId" value={royaleId} />
+          ) : null}
           {levelCapId ? (
             <input type="hidden" name="levelCapId" value={levelCapId} />
           ) : null}

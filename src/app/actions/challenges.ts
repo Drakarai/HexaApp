@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { requireCompetitionManager } from "@/lib/competition";
 import { devolverPremio, sincronizarPremios } from "@/lib/premios";
 import { enlaceSeguro } from "@/lib/utils";
@@ -42,6 +43,7 @@ export async function createChallengeAction(
       competitionId,
       participantAId,
       participantBId,
+      formato: formatoDeCombate(String(formData.get("formato") ?? "")).id,
       prize: String(formData.get("prize") ?? "").trim() || null,
       punishment: String(formData.get("punishment") ?? "").trim() || null,
     },
@@ -74,6 +76,7 @@ export async function setChallengeResultAction(formData: FormData) {
       winnerId,
       pokemonDiff:
         dif !== null && Number.isFinite(dif) ? Math.abs(Math.trunc(dif)) : null,
+      formato: formatoDeCombate(String(formData.get("formato") ?? "")).id,
       prize: String(formData.get("prize") ?? "").trim() || null,
       punishment: String(formData.get("punishment") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,

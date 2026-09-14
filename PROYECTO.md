@@ -7,10 +7,11 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 14 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha y accesible desde la propia aplicación, y el
-modo sin conexión con su cola de apuntes).
+modo sin conexión con su cola de apuntes, y los tipos de combate por jornada
+con su Battle Royale).
 
 ---
 
@@ -39,8 +40,9 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
-| **Jornadas** | Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
+| **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
+| **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
@@ -954,6 +956,37 @@ capturas. Se aprovecha entero el mecanismo de pestañas que ya existía para
 Johto + Kanto: cada isla tiene su imagen, sus zonas y sus cuentas. Alola se
 queda marcada `sinMapa` y por eso no sale en Administración → Mapas.
 
+**Los tipos de combate son una lista fija en el código, no una tabla.** Un
+formato no es solo un nombre y un color: cambia cómo se comporta la
+aplicación —el editor pide cuatro huecos en VGC y seis en singles, en dobles
+marca los dos que abren, el royale tiene pantalla propia—, y eso no se puede
+rellenar en un formulario de Administración. Para las variaciones que se
+inventan sobre la marcha está el campo **condiciones** de cada jornada, que es
+texto libre. Añadir un formato nuevo es una ficha en
+`lib/formatos-de-combate.ts`.
+
+**La chapa del formato no sale en singles.** Es lo normal, y si saliera en
+todas partes dejaría de querer decir nada; así, que una jornada lleve chapa ya
+significa por sí solo "ojo, que esta es distinta".
+
+**El Battle Royale tiene su propia tabla y no cabe en `Match`.** Un combate de
+siempre es "A contra B, gana uno y le quedan tantos pokémon vivos"; un royale
+es "entran seis y salen en este orden". Meterlo a la fuerza en la tabla de los
+combates habría llenado de excepciones la clasificación, el cara a cara y el
+emparejador, y a cambio no habría contado bien ninguna de las dos cosas. Lo
+que sí comparte es el editor de equipos, que es el mismo dato.
+
+**El orden de llegada se apunta tocando a la gente en orden**, no arrastrando
+filas ni con un desplegable por puesto: arrastrar seis filas con el dedo es un
+suplicio en un móvil y seis desplegables son seis oportunidades de
+equivocarse. Se toca al primero, luego al segundo, y se puede deshacer.
+
+**La crónica es pública y la línea de cada uno es suya.** Contar lo que pasó
+es media gracia de un royale, así que tiene sitio propio en vez de acabar en
+las notas privadas de alguien: la crónica la escribe la organización y cada
+jugador puede dejar su propia línea, con la misma comprobación que usan las
+bajas.
+
 **Sin conexión se lee lo último y se escribe en una cola.** La aplicación se
 dibuja en el servidor, así que sin línea no había nada que enseñar. Ahora el
 service worker guarda cada pantalla al visitarla y la sirve cuando la petición
@@ -1440,6 +1473,14 @@ Piezas con truco:
   que sigan a la forma, el número y la chapa de bajas se quedan fuera para no
   salir torcidos, y **estirar deshace el giro antes de aplicar el arrastre**,
   porque si no una zona tumbada crecería por donde no toca.
+- `lib/formatos-de-combate.ts` — las fichas de los tipos de combate (nombre,
+  icono, color, cuántos pokémon, cuántos salen a la vez).
+  `components/formato.tsx` es la chapa y el desplegable;
+  `jornadas/royale.tsx` la pantalla del Battle Royale y
+  `actions/royales.ts` sus acciones. **Ojo con el formato de un reto**: la
+  acción que anota su resultado guarda el reto entero, así que el formulario
+  lleva también el selector; sin él, anotar el resultado lo devolvería a
+  singles.
 - `lib/cola.ts` — la cola de apuntes sin subir, en el `localStorage` del móvil.
   `lib/acciones-sin-conexion.ts` envuelve un formulario para que, si el envío no
   sale, acabe ahí en vez de perderse; `components/estado-conexion.tsx` es el
@@ -1714,3 +1755,6 @@ lugar de destruir datos, y hay que avisar antes.
     descarga o se lee en un visor desde "Lo mío", para el que se pierda.
 44. **Sin conexión**: se sigue viendo lo último que se descargó y lo que se
     apunta se sube solo al volver la línea, sin duplicarse.
+45. **Jornadas temáticas**: cada jornada y cada reto tienen su tipo de
+    combate, con su chapa y su color, y el Battle Royale trae su propia
+    pantalla con orden de llegada y crónica.

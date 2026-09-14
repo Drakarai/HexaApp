@@ -25,6 +25,10 @@ import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
+import { ChapaDeFormato } from "@/components/formato";
+import { formatoDeCombate } from "@/lib/formatos-de-combate";
+import { Royale } from "./royale";
+import { NuevoRoyale } from "./matchday-forms";
 
 export const metadata = { title: "Jornadas" };
 
@@ -49,6 +53,17 @@ export default async function MatchdaysPage() {
             participantA: { select: { id: true, displayName: true, color: true } },
             participantB: { select: { id: true, displayName: true, color: true } },
             team: { orderBy: { position: "asc" } },
+          },
+        },
+        royales: {
+          orderBy: { position: "asc" },
+          include: {
+            puestos: {
+              include: {
+                participant: { select: { id: true, displayName: true, color: true } },
+              },
+            },
+            equipos: { orderBy: { position: "asc" } },
           },
         },
       },
@@ -78,12 +93,14 @@ export default async function MatchdaysPage() {
   );
 
   // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
-  const sprites = await urlsDeImagen(
-    "equipo",
-    matchdays.flatMap((jornada) =>
+  const sprites = await urlsDeImagen("equipo", [
+    ...matchdays.flatMap((jornada) =>
       jornada.matches.flatMap((combate) => combate.team.map((p) => p.id)),
     ),
-  );
+    ...matchdays.flatMap((jornada) =>
+      jornada.royales.flatMap((royale) => royale.equipos.map((p) => p.id)),
+    ),
+  ]);
 
   const mvpStates = await getMvpStates(
     competition.id,
@@ -124,6 +141,8 @@ export default async function MatchdaysPage() {
             const complete =
               matchday.matches.length > 0 && played === matchday.matches.length;
             const mvpState = mvpStates.get(matchday.id);
+            const formato = formatoDeCombate(matchday.formato);
+            const temática = formato.id !== "singles";
 
             return (
               <section
@@ -132,16 +151,33 @@ export default async function MatchdaysPage() {
                   "card",
                   complete && "border-emerald-500/25 bg-emerald-500/[0.03]",
                 )}
+                /* Una jornada temática va teñida de su color: en una lista de
+                   cinco, la rara se distingue sin leer nada */
+                style={
+                  temática && !complete
+                    ? { borderColor: `${formato.color}59` }
+                    : undefined
+                }
               >
                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     <div>
-                      <h2 className="section-title">{matchday.label}</h2>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h2 className="section-title">{matchday.label}</h2>
+                        <ChapaDeFormato formato={matchday.formato} detalle />
+                      </div>
                       <p className="text-xs text-slate-500">
                         {matchday.milestone ? `${matchday.milestone} · ` : ""}
-                        {played}/{matchday.matches.length} combates jugados ·{" "}
-                        {matchday.pointsForWin} pto/victoria
+                        {formato.multiple
+                          ? `${matchday.royales.length} ${matchday.royales.length === 1 ? "royale" : "royales"}`
+                          : `${played}/${matchday.matches.length} combates jugados`}{" "}
+                        · {matchday.pointsForWin} pto/victoria
                       </p>
+                      {matchday.condiciones ? (
+                        <p className="mt-1 text-xs text-amber-200/80">
+                          📋 {matchday.condiciones}
+                        </p>
+                      ) : null}
                     </div>
                     {mvpState ? (
                       <MvpBadge
@@ -175,7 +211,55 @@ export default async function MatchdaysPage() {
                   ) : null}
                 </div>
 
-                {matchday.matches.length === 0 ? (
+                {matchday.royales.length ? (
+                  <div className="mb-4 space-y-3">
+                    {matchday.royales.map((royale) => (
+                      <Royale
+                        key={royale.id}
+                        canManage={canManage}
+                        miParticipanteId={myParticipant?.id ?? null}
+                        maximo={formato.equipo}
+                        royale={{
+                          id: royale.id,
+                          label: royale.label,
+                          cronica: royale.cronica,
+                          replayUrl: royale.replayUrl,
+                          playedAt: royale.playedAt,
+                          jugadores: royale.puestos
+                            .slice()
+                            .sort((a, b) => (a.puesto ?? 99) - (b.puesto ?? 99))
+                            .map((fila) => ({
+                              puestoId: fila.id,
+                              participantId: fila.participantId,
+                              displayName: fila.participant.displayName,
+                              color: fila.participant.color,
+                              avatarImage:
+                                avatarByParticipant.get(fila.participantId) ?? null,
+                              puesto: fila.puesto,
+                              vivos: fila.vivos,
+                              notes: fila.notes,
+                              equipo: royale.equipos
+                                .filter((p) => p.participantId === fila.participantId)
+                                .map((pokemon) => ({
+                                  id: pokemon.id,
+                                  species: pokemon.species,
+                                  nickname: pokemon.nickname,
+                                  boxImage: sprites(pokemon.id),
+                                })),
+                            })),
+                        }}
+                      />
+                    ))}
+                  </div>
+                ) : null}
+
+                {formato.multiple ? (
+                  canManage ? (
+                    <div className="mt-2">
+                      <NuevoRoyale matchdayId={matchday.id} />
+                    </div>
+                  ) : null
+                ) : matchday.matches.length === 0 ? (
                   <p className="muted">Sin emparejamientos todavía.</p>
                 ) : (
                   <ul className="space-y-2">
@@ -210,6 +294,11 @@ export default async function MatchdaysPage() {
                             />
                           </div>
                           <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                            {/* Solo si este combate se juega distinto al resto
+                                de su jornada; si no, ya lo dice la cabecera */}
+                            {match.formato && match.formato !== matchday.formato ? (
+                              <ChapaDeFormato formato={match.formato} />
+                            ) : null}
                             <ReplayLink url={match.replayUrl} />
                             {/* Bien visible: no es una victoria como las
                                 demás y tiene que verse de un vistazo */}
@@ -265,6 +354,8 @@ export default async function MatchdaysPage() {
                         <MatchTeams
                           matchId={match.id}
                           canManage={canManage}
+                          maximo={formatoDeCombate(match.formato ?? matchday.formato).equipo}
+                          aLaVez={formatoDeCombate(match.formato ?? matchday.formato).aLaVez}
                           sides={[
                             teamSide(
                               match.participantA,
@@ -305,7 +396,7 @@ export default async function MatchdaysPage() {
                   </ul>
                 )}
 
-                {canManage && participantOptions.length >= 2 ? (
+                {canManage && !formato.multiple && participantOptions.length >= 2 ? (
                   <div className="mt-4 border-t border-white/10 pt-4">
                     <AddMatchForm
                       matchdayId={matchday.id}

@@ -9,6 +9,9 @@ import {
 } from "@/app/actions/matchdays";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { ElegirFormato } from "@/components/formato";
+import { crearRoyaleAction } from "@/app/actions/royales";
+import { esRoyale } from "@/lib/formatos-de-combate";
 
 type Option = { id: string; displayName: string };
 
@@ -18,6 +21,13 @@ export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
     null,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  /**
+   * El formato se lleva en estado porque cambia el formulario: un Battle
+   * Royale no se empareja —no hay parejas— así que esa casilla desaparece y en
+   * su sitio se explica lo que va a pasar.
+   */
+  const [formato, setFormato] = useState("singles");
+  const royale = esRoyale(formato);
 
   useEffect(() => {
     if (state?.success) formRef.current?.reset();
@@ -52,21 +62,42 @@ export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
             />
           </div>
         </div>
-        <label className="flex items-start gap-2 text-sm text-slate-300">
-          <input
-            type="checkbox"
-            name="emparejar"
-            defaultChecked
-            className="mt-0.5 accent-indigo-500"
-          />
-          <span>
-            Emparejar sola
-            <span className="block text-xs text-slate-500">
-              Reparte los combates siguiendo la liguilla: nadie repite rival
-              hasta haber jugado contra todos. Se pueden borrar y poner otros.
+        <div className="grid gap-3 sm:grid-cols-2">
+          <ElegirFormato valor={formato} onCambio={setFormato} />
+          <div>
+            <label className="label">Condiciones (opcional)</label>
+            <input
+              name="condiciones"
+              className="input"
+              maxLength={120}
+              placeholder="Monotipo agua, sin objetos…"
+            />
+          </div>
+        </div>
+
+        {royale ? (
+          <p className="rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-xs text-red-200/90">
+            👑 Se creará <strong>un Battle Royale con todos los jugadores</strong>{" "}
+            dentro de la jornada. No hay emparejamientos: al terminar se apunta
+            en qué orden quedaron, y el primero se lleva los puntos.
+          </p>
+        ) : (
+          <label className="flex items-start gap-2 text-sm text-slate-300">
+            <input
+              type="checkbox"
+              name="emparejar"
+              defaultChecked
+              className="mt-0.5 accent-indigo-500"
+            />
+            <span>
+              Emparejar sola
+              <span className="block text-xs text-slate-500">
+                Reparte los combates siguiendo la liguilla: nadie repite rival
+                hasta haber jugado contra todos. Se pueden borrar y poner otros.
+              </span>
             </span>
-          </span>
-        </label>
+          </label>
+        )}
         <FormMessage state={state} />
         <SubmitButton>Crear jornada</SubmitButton>
       </form>
@@ -289,6 +320,26 @@ function FormularioDeRetirada({
           Cancelar
         </button>
       </div>
+    </form>
+  );
+}
+
+/** Otro Battle Royale más en la misma jornada ("Ronda 2"). */
+export function NuevoRoyale({ matchdayId }: { matchdayId: string }) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    crearRoyaleAction,
+    null,
+  );
+
+  return (
+    <form action={formAction} className="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="matchdayId" value={matchdayId} />
+      <div className="min-w-40 flex-1">
+        <label className="label">Otro royale</label>
+        <input name="label" className="input" placeholder="Ronda 2" maxLength={60} />
+      </div>
+      <SubmitButton className="btn-ghost btn-sm">👑 Añadir royale</SubmitButton>
+      <FormMessage state={state} />
     </form>
   );
 }

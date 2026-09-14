@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import type { FormState } from "@/app/actions/auth";
 
 /** Tope de pokémon por jugador y combate, como el equipo de un juego. */
@@ -27,6 +28,10 @@ export async function addMatchPokemonAction(
   const levelCapId = String(formData.get("levelCapId") ?? "");
   if (levelCapId) return anadirAlEquipoDelGimnasio(levelCapId, formData);
 
+  /** Y el cuarto: el equipo que alguien sacó a un Battle Royale. */
+  const royaleId = String(formData.get("royaleId") ?? "");
+  if (royaleId) return anadirAlEquipoDelRoyale(royaleId, formData);
+
   // El mismo editor sirve para los combates de jornada y para los retos
   const esReto = formData.get("esReto") === "1";
   const combateId = String(formData.get("matchId") ?? "");
@@ -35,12 +40,25 @@ export async function addMatchPokemonAction(
     ? await prisma.challengeMatch.findUnique({ where: { id: combateId } })
     : await prisma.match.findUnique({
         where: { id: combateId },
-        include: { matchday: { select: { competitionId: true } } },
+        include: {
+          matchday: { select: { competitionId: true, formato: true } },
+        },
       });
   if (!combate) return { error: "Combate no encontrado." };
 
   const competitionId =
     "matchday" in combate ? combate.matchday.competitionId : combate.competitionId;
+
+  /**
+   * Cuántos caben depende del tipo de combate: en VGC son cuatro y no seis. En
+   * una jornada manda el formato de la jornada, salvo que ese combate lleve la
+   * contraria; en un reto, el suyo.
+   */
+  const formato = formatoDeCombate(
+    "matchday" in combate
+      ? (combate.formato ?? combate.matchday.formato)
+      : combate.formato,
+  );
 
   try {
     await requireCompetitionManager(competitionId);
@@ -66,8 +84,10 @@ export async function addMatchPokemonAction(
   const count = await prisma.matchPokemon.count({
     where: { ...deQuien, participantId },
   });
-  if (count >= MAX_TEAM) {
-    return { error: `Un equipo son ${MAX_TEAM} pokémon como mucho.` };
+  if (count >= formato.equipo) {
+    return {
+      error: `En ${formato.nombre} un equipo son ${formato.equipo} pokémon como mucho.`,
+    };
   }
 
   // Las imágenes las baja el servidor: el navegador solo manda qué pokémon es
@@ -151,6 +171,65 @@ async function anadirAlEquipoDelGimnasio(
   return { success: "Pokémon añadido al equipo." };
 }
 
+/**
+ * El equipo que alguien sacó a un Battle Royale.
+ *
+ * Como en los combates de jornada, lo apunta la organización: es información
+ * del combate, no del jugador.
+ */
+async function anadirAlEquipoDelRoyale(
+  royaleId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const royale = await prisma.royale.findUnique({
+    where: { id: royaleId },
+    include: {
+      matchday: { select: { competitionId: true, formato: true } },
+      puestos: { select: { participantId: true } },
+    },
+  });
+  if (!royale) return { error: "Ese royale ya no está." };
+
+  try {
+    await requireCompetitionManager(royale.matchday.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const participantId = String(formData.get("participantId") ?? "");
+  if (!royale.puestos.some((fila) => fila.participantId === participantId)) {
+    return { error: "Ese jugador no está en este royale." };
+  }
+
+  const species = String(formData.get("species") ?? "").trim();
+  if (!species) return { error: "Elige la especie del pokémon." };
+
+  const formato = formatoDeCombate(royale.matchday.formato);
+  const count = await prisma.matchPokemon.count({
+    where: { royaleId, participantId },
+  });
+  if (count >= formato.equipo) {
+    return { error: `Un equipo son ${formato.equipo} pokémon como mucho.` };
+  }
+
+  const sprites = await spritesDelFormulario(formData);
+
+  await prisma.matchPokemon.create({
+    data: {
+      royaleId,
+      participantId,
+      species,
+      nickname: String(formData.get("nickname") ?? "").trim() || null,
+      boxImage: sprites?.boxImage ?? null,
+      detailImage: sprites?.detailImage ?? null,
+      position: count,
+    },
+  });
+
+  revalidatePath("/jornadas");
+  return { success: "Pokémon añadido al equipo." };
+}
+
 export async function removeMatchPokemonAction(formData: FormData) {
   const id = String(formData.get("matchPokemonId") ?? "");
   const pokemon = await prisma.matchPokemon.findUnique({
@@ -159,15 +238,18 @@ export async function removeMatchPokemonAction(formData: FormData) {
       match: { include: { matchday: { select: { competitionId: true } } } },
       challengeMatch: { select: { competitionId: true } },
       levelCap: { select: { competitionId: true } },
+      royale: { include: { matchday: { select: { competitionId: true } } } },
     },
   });
   if (!pokemon) return;
 
-  // El pokémon cuelga de una jornada, de un reto o de un gimnasio: solo de uno
+  // El pokémon cuelga de una jornada, de un reto, de un gimnasio o de un
+  // royale: siempre de uno solo
   const competitionId =
     pokemon.match?.matchday.competitionId ??
     pokemon.challengeMatch?.competitionId ??
-    pokemon.levelCap?.competitionId;
+    pokemon.levelCap?.competitionId ??
+    pokemon.royale?.matchday.competitionId;
   if (!competitionId) return;
   await requireCompetitionManager(competitionId);
 

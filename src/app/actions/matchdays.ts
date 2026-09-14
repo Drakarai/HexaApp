@@ -7,6 +7,7 @@ import { resolverRetiradas } from "@/lib/retiradas";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { ajustarDesempate } from "@/lib/series";
+import { esRoyale, formatoDeCombate } from "@/lib/formatos-de-combate";
 import { enlaceSeguro } from "@/lib/utils";
 
 /**
@@ -32,6 +33,8 @@ export async function createMatchdayAction(
   if (!label) return { error: "Ponle nombre a la jornada." };
 
   const pointsForWin = Number(formData.get("pointsForWin") ?? 1);
+  // El formato se valida contra la lista: si llega uno raro, singles
+  const formato = formatoDeCombate(String(formData.get("formato") ?? "")).id;
   const last = await prisma.matchday.findFirst({
     where: { competitionId },
     orderBy: { position: "desc" },
@@ -45,6 +48,8 @@ export async function createMatchdayAction(
       label,
       milestone: String(formData.get("milestone") ?? "").trim() || null,
       pointsForWin: Number.isFinite(pointsForWin) ? Math.trunc(pointsForWin) : 1,
+      formato,
+      condiciones: String(formData.get("condiciones") ?? "").trim() || null,
       position,
     },
   });
@@ -56,6 +61,34 @@ export async function createMatchdayAction(
    */
   let propuestos = 0;
   let descansa: string | null = null;
+
+  if (esRoyale(formato)) {
+    /**
+     * Un Battle Royale no se empareja: **no hay parejas**. La jornada nace con
+     * un royale y todos los que siguen jugando dentro, y el orden de llegada se
+     * rellena al terminar.
+     */
+    const jugadores = await prisma.participant.findMany({
+      where: { competitionId, retiredAt: null },
+      orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
+      select: { id: true },
+    });
+    if (jugadores.length >= 2) {
+      await prisma.royale.create({
+        data: {
+          matchdayId: matchday.id,
+          puestos: {
+            create: jugadores.map((jugador) => ({ participantId: jugador.id })),
+          },
+        },
+      });
+    }
+    revalidatePath("/jornadas");
+    return {
+      success: `Jornada creada con un Battle Royale de ${jugadores.length} jugadores.`,
+    };
+  }
+
   if (formData.get("emparejar") === "on") {
     const resultado = await emparejarJornada(competitionId, matchday.id, position);
     propuestos = resultado.propuestos;

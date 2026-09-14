@@ -137,6 +137,8 @@
 
   .duo { display: flex; gap: 7mm; margin-top: 2mm; justify-content: center; }
   .duo figure { width: 56mm; flex: none; }
+  /* Para las páginas que llevan más texto del normal */
+  .duo.compacta figure { width: 42mm; }
 
   .ancha { max-width: 152mm; margin: 0 auto; border: 3px solid #24263f; border-radius: 12px; overflow: hidden; background: #0b1020; }
   .ancha img { width: 100%; display: block; }
@@ -513,7 +515,7 @@
     <li>El punto de la victoria se suma solo. No hay que tocar la clasificación.</li>
   </ol>
 
-  <div class="duo">
+  <div class="duo compacta">
     <figure>
       <div class="movil"><img src="img/equipos.jpg" alt="Apuntar los equipos"></div>
       <figcaption>Los equipos del combate, con sus imágenes.</figcaption>
@@ -526,9 +528,19 @@
 
   <div class="aviso">
     <strong>Si alguien no se presenta</strong>
-    <strong>🏳️ Dar por retirada</strong> le da la victoria al otro con diferencia de 3, sin
-    tener que inventarse un resultado.
+    <strong>🏳️ Dar por retirada</strong> le da la victoria al otro con diferencia de 3.
   </div>
+
+  <h3>Jornadas temáticas</h3>
+  <p>Una jornada puede ser de <strong>Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo
+    o Battle Royale</strong>. Se elige al crearla y se reconoce por su chapa de color; en
+    VGC, por ejemplo, el editor te pide cuatro pokémon en vez de seis. Debajo cabe una
+    línea de <strong>condiciones</strong> para lo que el formato no dice: «monotipo agua»,
+    «sin objetos», «nivel 50». Los <strong>retos</strong> también llevan el suyo.</p>
+  <p>El <strong>Battle Royale</strong> va aparte: no hay parejas, entran todos al mismo
+    combate y al terminar se apunta <strong>el orden de llegada</strong> tocando a cada uno
+    en el puesto que quedó. El primero se lleva los puntos de la jornada, y queda la
+    <strong>crónica</strong> de lo que pasó —más la línea que escribe cada uno de lo suyo.</p>
 
   <div class="pie"><span>HexaApp · Guía de uso</span><span>10</span></div>
 </section>

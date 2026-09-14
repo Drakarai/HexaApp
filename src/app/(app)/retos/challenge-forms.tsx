@@ -9,6 +9,7 @@ import {
 } from "@/app/actions/challenges";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { ElegirFormato } from "@/components/formato";
 
 type Opcion = { id: string; displayName: string };
 
@@ -67,6 +68,8 @@ export function NewChallengeForm({
             </select>
           </div>
         </div>
+        {/* Un reto es entre dos, así que el royale no se ofrece aquí */}
+        <ElegirFormato soloDeDos />
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="label">Premio</label>
@@ -100,6 +103,7 @@ export function ChallengeResultForm({
     winnerId: string | null;
     pokemonDiff: number | null;
     replayUrl: string | null;
+    formato: string;
     prize: string | null;
     punishment: string | null;
     notes: string | null;
@@ -157,6 +161,9 @@ export function ChallengeResultForm({
         <label className="label">Fecha</label>
         <input name="playedAt" type="date" className="input" />
       </div>
+      {/* Va también aquí porque este formulario guarda el reto entero: sin el
+          campo, anotar el resultado le devolvería el formato a singles */}
+      <ElegirFormato soloDeDos valor={reto.formato} />
       <div>
         <label className="label">Premio</label>
         <input
