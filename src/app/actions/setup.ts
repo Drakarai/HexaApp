@@ -50,7 +50,8 @@ export async function createFirstAdminAction(
     data: {
       username,
       displayName,
-      role: ROLES.ADMIN,
+      // La primera cuenta de todas es la de quien monta la aplicación
+      role: ROLES.CREADOR,
       passwordHash: await hashPassword(password),
       avatarColor: PALETTE[0],
     },

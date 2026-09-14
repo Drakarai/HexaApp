@@ -3,7 +3,7 @@ import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { getTitulosEquipados, type TituloPuesto } from "@/lib/titulos";
-import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
+import { getCurrentUser, esCreador, type CurrentUser } from "@/lib/auth";
 import { filtroDeLockesVisibles } from "@/lib/acceso";
 import { firmasDeDosImagenes, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
@@ -160,7 +160,7 @@ export async function canManageCompetition(
   user: CurrentUser | null,
 ) {
   if (!user) return false;
-  if (isAdmin(user)) return true;
+  if (esCreador(user)) return true;
   const participant = await getMyParticipant(competitionId, user.id);
   return Boolean(participant?.isAdmin);
 }

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin, puedeCrearLockes } from "@/lib/auth";
+import { requireUser, esCreador, puedeCrearLockes } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -21,6 +21,7 @@ import {
 import { getMisSolicitudes } from "@/lib/solicitudes";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { NewUserForm } from "../admin/user-forms";
+import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
 import {
   LockeEnSolitarioForm,
   MisSolicitudes,
@@ -37,7 +38,7 @@ export const metadata = { title: "Competiciones" };
 
 export default async function CompetitionsPage() {
   const user = await requireUser();
-  const admin = isAdmin(user);
+  const admin = esCreador(user);
   // Un organizador monta sus lockes y da de alta a su gente, sin ser admin
   const organiza = puedeCrearLockes(user);
   const [competitions, active] = await Promise.all([
@@ -85,6 +86,24 @@ export default async function CompetitionsPage() {
         })
       : Promise.resolve([]),
   ]);
+
+  /**
+   * De qué lockes es administrador quien mira. Archivar y borrar dejaron de ser
+   * cosa del Creador: son de quien lleva esa edición. El Creador los lleva
+   * todos, así que para él la lista sobra.
+   */
+  const mando = admin
+    ? null
+    : new Set(
+        (
+          await prisma.participant.findMany({
+            where: { userId: user.id, isAdmin: true },
+            select: { competitionId: true },
+          })
+        ).map((ficha) => ficha.competitionId),
+      );
+  const mandoEn = (competitionId: string) =>
+    admin || Boolean(mando?.has(competitionId));
 
   // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
   const avatares = await urlsDeImagen(
@@ -328,6 +347,21 @@ export default async function CompetitionsPage() {
                   jornadasPrevistas: active.jornadasPrevistas,
                 }}
               />
+
+              {/**
+               * Este ajuste vivía en Administración, que es del Creador, pero
+               * es de la edición: lo decide quien lleva el locke.
+               */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                <p className="mb-2 text-xs uppercase tracking-wide text-slate-500">
+                  Ajustes de {active.name}
+                </p>
+                <ChallengeDiffToggle
+                  competitionId={active.id}
+                  competitionName={active.name}
+                  activo={active.challengeDiffCounts}
+                />
+              </div>
             </div>
           ) : null}
         </section>
@@ -378,7 +412,7 @@ export default async function CompetitionsPage() {
                   </button>
                 </form>
 
-                {admin ? (
+                {mandoEn(competition.id) ? (
                   <>
                     <form action={setCompetitionStatusAction}>
                       <input

@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, isAdmin, type CurrentUser } from "@/lib/auth";
+import { getCurrentUser, esCreador, type CurrentUser } from "@/lib/auth";
 
 /**
  * Quién puede abrir un locke y quién puede tocarlo.
@@ -38,7 +38,7 @@ export function filtroDeLockesVisibles(
 ): Prisma.CompetitionWhereInput {
   if (!user) return { id: { in: [] } };
   // Un administrador global los ve todos: no hace falta filtrar nada
-  if (isAdmin(user)) return {};
+  if (esCreador(user)) return {};
   return {
     OR: [
       { participants: { some: { userId: user.id } } },
@@ -55,7 +55,7 @@ export function filtroDeLockesVisibles(
 export const getAcceso = cache(async (competitionId: string): Promise<Acceso> => {
   const user = await getCurrentUser();
   if (!user) return "NADA";
-  if (isAdmin(user)) return "ADMIN";
+  if (esCreador(user)) return "ADMIN";
 
   const [participante, espectador] = await Promise.all([
     prisma.participant.count({

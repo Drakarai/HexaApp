@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
-import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import { requireUser, esCreador } from "@/lib/auth";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getMyParticipant,
+} from "@/lib/competition";
 import { getBolsa, getCatalogo } from "@/lib/bolsa";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -14,10 +18,11 @@ export const metadata = { title: "Bolsa" };
 export default async function BolsaPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const participant = await getMyParticipant(competition.id, user.id);
-  const admin = isAdmin(user);
+  // Repartir objetos es de quien administra el locke, no solo del Creador
+  const admin = await canManageCompetition(competition.id, user);
 
   if (!participant) {
     return (
@@ -58,7 +63,7 @@ export default async function BolsaPage() {
       ) : (
         <EmptyState
           title="La bolsa está vacía"
-          hint="Los objetos los apunta un administrador. Píderselos."
+          hint="Los objetos los reparte quien administra el locke. Píderselos."
         />
       )}
 
@@ -93,7 +98,7 @@ function Cabecera({ admin }: { admin: boolean }) {
   return (
     <PageHeader
       title="Bolsa"
-      subtitle="Lo que llevas encima. Solo lo ves tú y los administradores, que son los que la llenan."
+      subtitle="Lo que llevas encima. Solo lo ves tú y quien administra el locke, que es quien la llena."
       actions={
         admin ? (
           <Link href="/bolsa/todas" className="btn-ghost btn-sm">

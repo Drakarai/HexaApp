@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -26,7 +26,7 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default async function HallOfFamePage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const state = await getFinalFourState(competition.id);
   // El final del locke no siempre se llama igual: ver lib/formatos-finales.ts

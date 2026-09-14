@@ -5,7 +5,11 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { juegoPorId } from "@/lib/juegos";
-import { isAdmin, requireAdmin, requireOrganizador, requireUser } from "@/lib/auth";
+import {
+  esCreador,
+  requireOrganizador,
+  requireUser,
+} from "@/lib/auth";
 import {
   COMPETITION_COOKIE,
   requireCompetitionManager,
@@ -63,7 +67,7 @@ export async function createCompetitionAction(
    * le ha dado permiso para llevar sus propios lockes.
    */
   const admin = await requireOrganizador();
-  const esAdminGlobal = isAdmin(admin);
+  const esAdminGlobal = esCreador(admin);
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a la competición." };
@@ -273,9 +277,13 @@ export async function updateCompetitionAction(
   return { success: "Competición actualizada." };
 }
 
+/**
+ * Archivar o reabrir un locke lo hace **quien lo administra**, no quien lleva
+ * la aplicación: es su edición y decide él cuándo se acaba.
+ */
 export async function setCompetitionStatusAction(formData: FormData) {
-  await requireAdmin();
   const competitionId = String(formData.get("competitionId") ?? "");
+  await requireCompetitionManager(competitionId);
   const status = String(formData.get("status") ?? "");
   if (
     status !== COMPETITION_STATUS.ACTIVE &&
@@ -295,9 +303,10 @@ export async function setCompetitionStatusAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/** Y borrarlo, igual: es suyo. Se lleva por delante todo lo que tenga dentro. */
 export async function deleteCompetitionAction(formData: FormData) {
-  await requireAdmin();
   const competitionId = String(formData.get("competitionId") ?? "");
+  await requireCompetitionManager(competitionId);
   await prisma.competition.delete({ where: { id: competitionId } });
   revalidatePath("/", "layout");
   redirect("/competiciones");

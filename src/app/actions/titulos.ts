@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, requireAdmin } from "@/lib/auth";
+import { esCreador, getCurrentUser, requireCreador } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 import type { FormState } from "@/app/actions/auth";
 
@@ -23,7 +23,7 @@ export async function crearTituloAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "El título necesita un nombre." };
@@ -44,7 +44,7 @@ export async function crearTituloAction(
 }
 
 export async function editarTituloAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("titleId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;
@@ -63,7 +63,7 @@ export async function editarTituloAction(formData: FormData) {
 
 /** Borra el título y, en cascada, todas sus concesiones. */
 export async function borrarTituloAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("titleId") ?? "");
   if (id) await prisma.title.delete({ where: { id } });
   refrescar();
@@ -73,7 +73,7 @@ export async function concederTituloAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
 
   const titleId = String(formData.get("titleId") ?? "");
   const userId = String(formData.get("userId") ?? "");
@@ -106,7 +106,7 @@ export async function concederTituloAction(
 }
 
 export async function revocarTituloAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("awardId") ?? "");
   if (id) await prisma.titleAward.delete({ where: { id } });
   refrescar();
@@ -138,7 +138,7 @@ export async function equiparTituloAction(formData: FormData) {
     : userId;
   if (!dueno) return;
 
-  const puede = dueno === usuario.id || usuario.role === ROLES.ADMIN;
+  const puede = dueno === usuario.id || esCreador(usuario);
   if (!puede) return;
 
   await prisma.$transaction([

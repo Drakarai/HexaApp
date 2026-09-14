@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -34,7 +34,7 @@ export default async function DeathsPage({
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { jugador, ver, apuntar } = await searchParams;
   // Con tope, para que nadie se cargue la página poniendo ?ver=999999 a mano

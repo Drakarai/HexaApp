@@ -213,7 +213,8 @@ export async function setChallengeDiffCountsAction(formData: FormData) {
     data: { challengeDiffCounts: formData.get("cuenta") === "on" },
   });
 
-  revalidatePath("/admin");
+  // Vive en Competiciones desde que dejó de ser cosa del Creador
+  revalidatePath("/competiciones");
   revalidatePath("/puntos");
   revalidatePath("/");
 }

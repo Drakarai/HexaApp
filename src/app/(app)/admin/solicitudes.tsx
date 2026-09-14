@@ -22,6 +22,7 @@ export function SolicitudesPendientes({
     id: string;
     name: string;
     gameId: string | null;
+    maxPlayers: number;
     modality: string | null;
     description: string | null;
     createdAt: Date;
@@ -64,6 +65,9 @@ export function SolicitudesPendientes({
                     ? ` · ${nombreDelJuego(solicitud.gameId, null)}`
                     : ""}
                   {solicitud.modality ? ` · ${solicitud.modality}` : ""}
+                  {solicitud.maxPlayers > 1
+                    ? ` · para ${solicitud.maxPlayers} jugadores`
+                    : " · en solitario"}
                 </p>
               </div>
             </div>

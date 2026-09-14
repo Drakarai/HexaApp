@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import { getActiveCompetition, getParticipants } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -22,7 +22,7 @@ export default async function NotesPage({
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { sobre } = await searchParams;
   const participants = await getParticipants(competition.id);

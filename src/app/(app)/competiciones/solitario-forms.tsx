@@ -34,16 +34,27 @@ export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto:
     <details className="card group">
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
-        🎮 {puedeCrearDirecto ? "Crear mi locke en solitario" : "Pedir un locke en solitario"}
+        🎮 {puedeCrearDirecto ? "Crear mi locke en solitario" : "Pedir un locke"}
       </summary>
 
       <p className="muted mt-3">
-        Una partida para ti solo: sin jornadas, sin clasificación y sin final,
-        pero con tu caja, tu mapa de capturas, tus level caps, tu bolsa y tus
-        notas. El locke se gana <strong>pasándote la Liga</strong>.
-        {puedeCrearDirecto
-          ? " Se crea al momento y no archiva las ediciones que estén en curso."
-          : " Se lo pides a la organización y te contestan por aquí."}
+        {puedeCrearDirecto ? (
+          <>
+            Una partida para ti solo: sin jornadas, sin clasificación y sin
+            final, pero con tu caja, tu mapa de capturas, tus level caps, tu
+            bolsa y tus notas. El locke se gana{" "}
+            <strong>pasándote la Liga</strong>. Se crea al momento y no archiva
+            las ediciones que estén en curso.
+          </>
+        ) : (
+          <>
+            Para ti solo o para jugarlo con tus amigos. Se lo pides a quien
+            lleva la aplicación y te contestan por aquí; si te dicen que sí,{" "}
+            <strong>el locke es tuyo</strong> y lo administras tú. Pidiéndolo
+            para dos o más, además podrás{" "}
+            <strong>dar de alta a los tuyos</strong>.
+          </>
+        )}
       </p>
 
       <form ref={formRef} action={formAction} className="mt-4 space-y-3">
@@ -64,6 +75,20 @@ export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto:
           <div className="sm:col-span-2">
             <JuegoPicker />
           </div>
+          {/* Solo al pedirlo: el de crear directo es siempre en solitario */}
+          {puedeCrearDirecto ? null : (
+            <div>
+              <label className="label">Cuántos vais a jugar</label>
+              <select name="maxPlayers" className="input" defaultValue="1">
+                <option value="1">Yo solo</option>
+                {[2, 3, 4, 5, 6, 7, 8].map((cuantos) => (
+                  <option key={cuantos} value={cuantos}>
+                    {cuantos} jugadores
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <div>
           <label className="label">

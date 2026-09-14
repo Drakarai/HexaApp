@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/auth";
-import { getActiveCompetition } from "@/lib/competition";
-import { ChallengeDiffToggle } from "./challenge-diff-toggle";
+import { esCreador, requireCreadorPage } from "@/lib/auth";
 import { urlsDeImagen } from "@/lib/imagenes";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
@@ -32,14 +30,12 @@ export const metadata = { title: "Administración" };
 export const maxDuration = 60;
 
 export default async function AdminPage() {
-  const me = await requireAdminPage();
+  const me = await requireCreadorPage();
 
   const users = await prisma.user.findMany({
     orderBy: [{ role: "asc" }, { displayName: "asc" }],
     include: { _count: { select: { participations: true } } },
   });
-
-  const competition = await getActiveCompetition();
 
   // Las peticiones de locke en solitario que esperan respuesta
   const solicitudes = await getSolicitudesPendientes();
@@ -139,20 +135,6 @@ export default async function AdminPage() {
         </Link>
       </section>
 
-      {competition ? (
-        <section className="card mb-6">
-          <h2 className="section-title mb-1">Ajustes de la edición</h2>
-          <p className="muted mb-4">
-            Afectan solo a {competition.name}.
-          </p>
-          <ChallengeDiffToggle
-            competitionId={competition.id}
-            competitionName={competition.name}
-            activo={competition.challengeDiffCounts}
-          />
-        </section>
-      ) : null}
-
       <section className="card mb-6">
         <h2 className="section-title mb-4">Usuarios ({users.length})</h2>
         <ul className="space-y-2">
@@ -191,15 +173,23 @@ export default async function AdminPage() {
                   <input
                     type="hidden"
                     name="role"
-                    value={user.role === ROLES.ADMIN ? ROLES.PLAYER : ROLES.ADMIN}
+                    value={esCreador(user) ? ROLES.PLAYER : ROLES.CREADOR}
                   />
-                  <button type="submit" className="btn-ghost btn-sm">
-                    {user.role === ROLES.ADMIN ? "⭐ Admin" : "Jugador"}
+                  <button
+                    type="submit"
+                    className="btn-ghost btn-sm"
+                    title={
+                      esCreador(user)
+                        ? "Lo ve y lo toca todo en la aplicación"
+                        : "Hacerle Creador: le da acceso a todo"
+                    }
+                  >
+                    {esCreador(user) ? "👑 Creador" : "Jugador"}
                   </button>
                 </form>
 
-                {/* La llave de montar lockes propios. Un admin ya la tiene */}
-                {user.role === ROLES.ADMIN ? null : (
+                {/* La llave de montar lockes propios. El Creador ya la tiene */}
+                {esCreador(user) ? null : (
                   <form action={cambiarPermisoDeLockesAction}>
                     <input type="hidden" name="userId" value={user.id} />
                     <button

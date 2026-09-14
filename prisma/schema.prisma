@@ -670,6 +670,13 @@ model LockeRequest {
   modality      String?
   description   String?
   /**
+   * Para cuánta gente se pide el locke. **1 es el de uno mismo**, que es para
+   * lo único que valía esto al principio; de 2 en adelante es un locke de
+   * grupo, y quien lo pide se lleva además el permiso de organizador para dar
+   * de alta a sus amigos.
+   */
+  maxPlayers    Int       @default(1)
+  /**
    * "PENDIENTE" | "ACEPTADA" | "RECHAZADA"
    */
   estado        String    @default("PENDIENTE")

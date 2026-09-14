@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { urlDeYouTube, videoDeYouTube } from "@/lib/youtube";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import {
@@ -131,7 +131,7 @@ async function puedoTocarLoDe(participantId: string) {
   });
   if (!participant) return null;
 
-  if (participant.userId !== me.id && !isAdmin(me)) {
+  if (participant.userId !== me.id && !esCreador(me)) {
     const myParticipant = await prisma.participant.findUnique({
       where: {
         competitionId_userId: {

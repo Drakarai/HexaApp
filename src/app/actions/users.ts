@@ -4,8 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import {
   hashPassword,
-  isAdmin,
-  requireAdmin,
+  esCreador,
+  requireCreador,
   requireOrganizador,
   type CurrentUser,
 } from "@/lib/auth";
@@ -17,23 +17,23 @@ import type { FormState } from "@/app/actions/auth";
  *
  * Hay dos niveles y conviene no mezclarlos:
  *
- * - Un **administrador global** hace lo que quiera con cualquier cuenta.
+ * - El **Creador** hace lo que quiera con cualquier cuenta.
  * - Un **organizador** da de alta a la gente que juega con él y puede
  *   arreglarles la contraseña o borrar una cuenta que creó mal. Solo las
- *   **suyas** (`creadoPorId`), y siempre como jugadores: repartir permisos de
- *   administrador no es cosa suya.
+ *   **suyas** (`creadoPorId`), y siempre como jugadores: repartir el papel de
+ *   Creador no es cosa suya.
  */
 
-/** ¿Puede este usuario tocar esa cuenta? Un admin sí; un organizador, la suya. */
+/** ¿Puede este usuario tocar esa cuenta? El Creador sí; un organizador, la suya. */
 async function puedeTocarLaCuenta(quien: CurrentUser, userId: string) {
-  if (isAdmin(quien)) return true;
+  if (esCreador(quien)) return true;
   const cuenta = await prisma.user.findUnique({
     where: { id: userId },
     select: { creadoPorId: true, role: true },
   });
   if (!cuenta) return false;
-  // Una cuenta de administrador no la toca un organizador ni habiéndola creado
-  return cuenta.role !== ROLES.ADMIN && cuenta.creadoPorId === quien.id;
+  // La cuenta del Creador no la toca un organizador ni habiéndola creado
+  return !esCreador(cuenta) && cuenta.creadoPorId === quien.id;
 }
 
 export async function createUserAction(
@@ -41,17 +41,18 @@ export async function createUserAction(
   formData: FormData,
 ): Promise<FormState> {
   const quien = await requireOrganizador();
-  const esAdminGlobal = isAdmin(quien);
+  const mandaEnTodo = esCreador(quien);
 
   const username = String(formData.get("username") ?? "")
     .trim()
     .toLowerCase();
   const displayName = String(formData.get("displayName") ?? "").trim();
   const password = String(formData.get("password") ?? "");
-  // Un organizador da de alta jugadores, no administradores
+  // Un organizador da de alta jugadores, y nada más
   const role =
-    esAdminGlobal && String(formData.get("role") ?? ROLES.PLAYER) === ROLES.ADMIN
-      ? ROLES.ADMIN
+    mandaEnTodo &&
+    String(formData.get("role") ?? ROLES.PLAYER) === ROLES.CREADOR
+      ? ROLES.CREADOR
       : ROLES.PLAYER;
 
   if (!/^[a-z0-9._-]{3,20}$/.test(username)) {
@@ -76,7 +77,7 @@ export async function createUserAction(
       passwordHash: await hashPassword(password),
       avatarColor: String(formData.get("avatarColor") ?? "").trim() || "#6366f1",
       // Queda apuntado para que su organizador pueda arreglarle la contraseña
-      creadoPorId: esAdminGlobal ? null : quien.id,
+      creadoPorId: mandaEnTodo ? null : quien.id,
     },
   });
 
@@ -111,33 +112,42 @@ export async function resetUserPasswordAction(
   return { success: `Contraseña de ${user.username} restablecida.` };
 }
 
+/** Hace o deshace un Creador. Solo otro Creador. */
 export async function updateUserRoleAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const quien = await requireCreador();
   const userId = String(formData.get("userId") ?? "");
   const role =
-    String(formData.get("role") ?? ROLES.PLAYER) === ROLES.ADMIN
-      ? ROLES.ADMIN
+    String(formData.get("role") ?? ROLES.PLAYER) === ROLES.CREADOR
+      ? ROLES.CREADOR
       : ROLES.PLAYER;
 
-  // Evita quedarse sin ningún administrador
-  if (userId === admin.id && role !== ROLES.ADMIN) {
-    const otherAdmins = await prisma.user.count({
-      where: { role: ROLES.ADMIN, id: { not: admin.id } },
+  /**
+   * Nadie puede dejar la aplicación sin Creador, ni siquiera quitándose el
+   * papel a sí mismo: no quedaría nadie que pudiera devolvérselo a nadie.
+   */
+  if (role !== ROLES.CREADOR) {
+    const otros = await prisma.user.count({
+      where: {
+        id: { not: userId },
+        role: { in: [ROLES.CREADOR, ROLES.ADMIN_ANTIGUO] },
+      },
     });
-    if (otherAdmins === 0) return;
+    if (otros === 0) return;
   }
+  // Y tampoco se puede quitar a otro si quien lo intenta no manda en todo
+  if (!esCreador(quien)) return;
 
   await prisma.user.update({ where: { id: userId }, data: { role } });
   revalidatePath("/admin");
 }
 
 /**
- * Dar o quitar el permiso de organizador. **Solo un administrador global**: es
- * justo la puerta que decide quién puede montar lockes, así que no puede
- * abrirla quien ya la ha cruzado.
+ * Dar o quitar el permiso de organizador. **Solo el Creador**: es justo la
+ * puerta que decide quién puede montar lockes, así que no puede abrirla quien
+ * ya la ha cruzado.
  */
 export async function cambiarPermisoDeLockesAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const userId = String(formData.get("userId") ?? "");
   const usuario = await prisma.user.findUnique({
     where: { id: userId },

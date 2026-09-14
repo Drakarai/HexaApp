@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdminPage } from "@/lib/auth";
+import { requireCreadorPage } from "@/lib/auth";
 import { getMapa, getResumenDeMapas } from "@/lib/mapas";
 import { REGIONES_DE_MAPA } from "@/lib/juegos";
 import {
@@ -32,7 +32,7 @@ export default async function MapasPage({
 }: {
   searchParams: Promise<{ region?: string }>;
 }) {
-  await requireAdminPage();
+  await requireCreadorPage();
 
   const { region: pedida } = await searchParams;
   const resumen = await getResumenDeMapas();

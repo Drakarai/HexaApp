@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -30,7 +30,7 @@ export const metadata = { title: "Retos" };
 export default async function RetosPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   // Antes que lo demás: el catálogo solo se pide si esa persona puede tocarlo
   const canManage = await canManageCompetition(competition.id, user);

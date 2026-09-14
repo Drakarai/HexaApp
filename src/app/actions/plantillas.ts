@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireCreador } from "@/lib/auth";
 import { requireCompetitionManager } from "@/lib/competition";
 import {
   grupoDePlantillaDeJuego,
@@ -64,7 +64,7 @@ function refrescar() {
  * algo que pase solo.
  */
 export async function rellenarPlantillaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const grupo = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
   if (!grupo) return;
@@ -103,7 +103,7 @@ export async function anadirItemPlantillaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const grupo = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
   if (!grupo) return { error: "Ese grupo de juegos no está en la lista." };
@@ -138,7 +138,7 @@ export async function anadirItemPlantillaAction(
 }
 
 export async function editarItemPlantillaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const id = String(formData.get("itemId") ?? "");
   const item = await prisma.levelCapTemplateItem.findUnique({
@@ -167,7 +167,7 @@ export async function editarItemPlantillaAction(formData: FormData) {
 }
 
 export async function borrarItemPlantillaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("itemId") ?? "");
   await prisma.levelCapTemplateItem.deleteMany({ where: { id } });
   refrescar();
@@ -175,7 +175,7 @@ export async function borrarItemPlantillaAction(formData: FormData) {
 
 /** Sube o baja un hito de la plantilla, intercambiándolo con su vecino. */
 export async function moverItemPlantillaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const id = String(formData.get("itemId") ?? "");
   const haciaArriba = String(formData.get("hacia") ?? "") === "arriba";
@@ -292,7 +292,7 @@ export async function copiarDeOtraPlantillaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const destino = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
   const origen = grupoDePlantillaPorId(String(formData.get("origenId") ?? ""));

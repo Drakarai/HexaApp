@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -35,7 +35,7 @@ export const metadata = { title: "Jornadas" };
 export default async function MatchdaysPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const [canManage, myParticipant, participants, matchdays, esperando, marcador] = await Promise.all([
     canManageCompetition(competition.id, user),

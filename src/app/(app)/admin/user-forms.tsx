@@ -57,7 +57,7 @@ export function NewUserForm({ puedeElegirRol = true }: { puedeElegirRol?: boolea
                 <label className="label">Rol</label>
                 <select name="role" className="input" defaultValue={ROLES.PLAYER}>
                   <option value={ROLES.PLAYER}>Jugador</option>
-                  <option value={ROLES.ADMIN}>Administrador</option>
+                  <option value={ROLES.CREADOR}>Creador</option>
                 </select>
               </div>
             ) : null}

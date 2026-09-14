@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { getMapa, getMisBajasPorZona, getMisCapturas } from "@/lib/mapas";
 import { nombreDeRegion, regionesDelJuego } from "@/lib/juegos";
@@ -32,7 +32,7 @@ export default async function MapaPage({
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { apuntar, region: pedida } = await searchParams;
   const participant = await getMyParticipant(competition.id, user.id);
@@ -59,7 +59,7 @@ export default async function MapaPage({
         <EmptyState
           title="Esta edición no tiene juego elegido"
           hint={
-            isAdmin(user)
+            esCreador(user)
               ? "Elige el juego en Ediciones y aparecerá el mapa de su región."
               : "Pídele a un administrador que elija el juego en Ediciones."
           }
@@ -82,12 +82,12 @@ export default async function MapaPage({
   if (!mapa?.zones.length) {
     return (
       <>
-        <Cabecera region={region} admin={isAdmin(user)} />
+        <Cabecera region={region} admin={esCreador(user)} />
         {pestanas}
         <EmptyState
           title={`El mapa de ${nombreDeRegion(region)} está vacío`}
           hint={
-            isAdmin(user)
+            esCreador(user)
               ? "Rellénalo desde Administración → Mapas."
               : "Un administrador tiene que rellenarlo desde Administración."
           }
@@ -114,7 +114,7 @@ export default async function MapaPage({
 
   return (
     <>
-      <Cabecera region={region} admin={isAdmin(user)} />
+      <Cabecera region={region} admin={esCreador(user)} />
       {pestanas}
       <MapaDeCapturas
         mapa={mapa}

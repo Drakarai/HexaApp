@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -114,7 +114,7 @@ export default async function AppLayout({
           userId: user.id,
           competitionId: active.id,
           participantId: yo?.id ?? null,
-          esAdmin: isAdmin(user),
+          esAdmin: esCreador(user),
         }),
       ])
     : [false, {} as Record<string, boolean>];
@@ -205,7 +205,7 @@ export default async function AppLayout({
                 ),
               ...(perfil.enSolitario ? [S.hall] : []),
               S.ediciones,
-              ...(isAdmin(user) ? [S.admin] : []),
+              ...(esCreador(user) ? [S.admin] : []),
             ],
           },
         ]
@@ -231,7 +231,7 @@ export default async function AppLayout({
    * una cuenta normal que solo tiene acceso de mirar es "Espectador" aquí
    * aunque su rol sea el de jugador de siempre.
    */
-  const comoEstoyAqui = isAdmin(user)
+  const comoEstoyAqui = esCreador(user)
     ? "Administrador"
     : active && !yo
     ? "Espectador"

@@ -1,6 +1,24 @@
+/**
+ * El papel de una **cuenta** en toda la aplicación. Solo hay dos.
+ *
+ * - **CREADOR**: quien lleva la aplicación. Lo ve y lo toca todo: los mapas,
+ *   las plantillas, el catálogo de objetos, las copias, las cuentas y todos los
+ *   lockes.
+ * - **PLAYER**: todos los demás.
+ *
+ * **Administrador ya no es un papel de cuenta, sino de locke**: se es
+ * administrador *de una edición concreta* (`Participant.isAdmin`), y eso da
+ * mando dentro de ella y en nada más. Ver `lib/auth.ts`.
+ */
 export const ROLES = {
-  ADMIN: "ADMIN",
+  CREADOR: "CREADOR",
   PLAYER: "PLAYER",
+  /**
+   * Como se llamaba el Creador antes. Las cuentas que ya estaban lo tienen
+   * escrito así y se sigue leyendo igual, para no dejar a nadie fuera de su
+   * propia aplicación por un cambio de nombre.
+   */
+  ADMIN_ANTIGUO: "ADMIN",
 } as const;
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 

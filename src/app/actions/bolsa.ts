@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, requireAdmin, isAdmin } from "@/lib/auth";
+import { getCurrentUser, requireCreador, esCreador } from "@/lib/auth";
+import {
+  canManageCompetition,
+  requireCompetitionManager,
+} from "@/lib/competition";
 import { imagenEditada, sanitizeImageValue } from "@/lib/image";
 import { objetoPorSlug } from "@/lib/objetos";
 import { descargarSpriteDeObjeto } from "@/lib/sprites-servidor";
@@ -51,7 +55,7 @@ export async function crearObjetoAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const apiSlug = slugDelFormulario(formData);
   const esGrupo = formData.get("tipo") === "grupo";
@@ -88,7 +92,7 @@ export async function crearObjetoAction(
 }
 
 export async function editarObjetoAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("itemId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
   if (!id || !name) return;
@@ -106,7 +110,7 @@ export async function editarObjetoAction(formData: FormData) {
 
 /** Borra el objeto, sus opciones y lo saca de todas las bolsas. */
 export async function borrarObjetoAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("itemId") ?? "");
   if (id) await prisma.item.delete({ where: { id } });
   refrescar();
@@ -120,7 +124,7 @@ export async function anadirOpcionAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const itemId = String(formData.get("itemId") ?? "");
   if (!itemId) return { error: "No sé a qué grupo añadirlo." };
@@ -155,7 +159,7 @@ export async function anadirOpcionAction(
 }
 
 export async function borrarOpcionAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("optionId") ?? "");
   if (id) await prisma.itemOption.delete({ where: { id } });
   refrescar();
@@ -165,15 +169,29 @@ export async function borrarOpcionAction(formData: FormData) {
 // Las bolsas: quién tiene qué
 // ---------------------------------------------------------------------------
 
+/**
+ * Dar un objeto es **cosa del locke**, no de la aplicación: lo hace quien
+ * administra la edición en la que juega esa persona. El catálogo de objetos, en
+ * cambio, es de toda la casa y lo lleva el Creador.
+ */
 export async function darObjetoAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
-
   const participantId = String(formData.get("participantId") ?? "");
   const itemId = String(formData.get("itemId") ?? "");
   if (!participantId || !itemId) return { error: "Elige el objeto." };
+
+  const deQuien = await prisma.participant.findUnique({
+    where: { id: participantId },
+    select: { competitionId: true },
+  });
+  if (!deQuien) return { error: "Ese jugador ya no está." };
+  try {
+    await requireCompetitionManager(deQuien.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
 
   const cantidad = Number(String(formData.get("quantity") ?? "1"));
   if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 99) {
@@ -207,14 +225,17 @@ export async function darObjetoAction(
 
 /** Quita una unidad, o la fila entera si se pide. No cuenta como usarlo. */
 export async function quitarObjetoAction(formData: FormData) {
-  await requireAdmin();
-
   const entryId = String(formData.get("entryId") ?? "");
   if (!entryId) return;
   const todo = formData.get("todo") === "1";
 
-  const entrada = await prisma.bagEntry.findUnique({ where: { id: entryId } });
+  const entrada = await prisma.bagEntry.findUnique({
+    where: { id: entryId },
+    include: { participant: { select: { competitionId: true } } },
+  });
   if (!entrada) return;
+  // Igual que al darlo: manda quien administra ese locke
+  await requireCompetitionManager(entrada.participant.competitionId);
 
   if (todo || entrada.quantity <= 1) {
     await prisma.bagEntry.delete({ where: { id: entryId } });
@@ -249,7 +270,9 @@ export async function usarObjetoAction(
   const entrada = await prisma.bagEntry.findUnique({
     where: { id: entryId },
     include: {
-      participant: { select: { userId: true, displayName: true } },
+      participant: {
+        select: { userId: true, displayName: true, competitionId: true },
+      },
       item: {
         select: {
           id: true,
@@ -262,9 +285,12 @@ export async function usarObjetoAction(
   });
   if (!entrada) return { error: "Ese objeto ya no está en la bolsa." };
 
-  // El dueño, o un administrador que lo gasta por él
+  // El dueño, o quien administra ese locke gastándolo por él
   const suyo = entrada.participant.userId === usuario.id;
-  if (!suyo && !isAdmin(usuario)) {
+  if (
+    !suyo &&
+    !(await canManageCompetition(entrada.participant.competitionId, usuario))
+  ) {
     return { error: "Esa bolsa no es tuya." };
   }
 

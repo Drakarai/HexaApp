@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -33,7 +33,7 @@ export default async function DashboardPage() {
   // La copia del día, si toca. Va después de mandar la página: nadie espera.
   copiarSiTocaDeFondo();
 
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   /**
    * En un locke de dos, la portada no enseña una clasificación sino el

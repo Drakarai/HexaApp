@@ -14,7 +14,8 @@ propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
 combate por jornada con su Battle Royale, el sorteo de pokémon de préstamo, la
 medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
 una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
-permiso de **organizador** para que alguien lleve sus propios lockes).
+permiso de **organizador** para que alguien lleve sus propios lockes, y el
+reparto de papeles en **Creador / administrador de locke / jugador**).
 
 ---
 
@@ -62,17 +63,18 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
-| **Diagnóstico** | Pantalla de administrador global. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
-| **Organizador** | Un permiso que da un administrador global (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
+| **Diagnóstico** | Pantalla del Creador. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
+| **Organizador** | Un permiso que da el Creador (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
 
-Roles: **administrador global** (crea competiciones y usuarios, y ve todos los
-lockes), **administrador de competición** (participante con permisos en esa
-edición), **jugador** (registra sus muertes, marca sus gimnasios, escribe sus
-notas) y **espectador** (mira una edición concreta entera y no puede tocar
-nada). Los tres primeros son el papel de la cuenta; el de espectador es **por
-locke**, no una marca del usuario.
+Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
+**administrador de locke** (participante con mando en *esa* edición y en nada
+más), **organizador** (puede montar sus propios lockes y dar de alta a su
+gente), **jugador** (registra sus muertes, marca sus gimnasios, escribe sus
+notas) y **espectador** (mira una edición entera y no toca nada). Solo Creador
+y jugador son el papel de la cuenta; administrador y espectador son **por
+locke**, y organizador es un permiso suelto que da el Creador.
 
 ---
 
@@ -1520,6 +1522,41 @@ esa columna no admitía nulo —porque tiene valor por defecto—, la restauraci
 entera se caía con un error de PostgreSQL. Ahora se insertan **solo las columnas
 que trae la copia** y cada una de las demás toma su valor por defecto.
 
+**Administrador dejó de ser un papel de cuenta.** Antes había un
+«administrador global» que lo era de todo, y un `Participant.isAdmin` que mandaba
+dentro de una edición; las dos cosas se llamaban igual y se mezclaban. Ahora:
+
+- **Creador**: quien lleva la aplicación. Los mapas, las plantillas de level
+  caps, el catálogo de objetos, las copias, el almacén de imágenes, las cuentas,
+  el diagnóstico y todos los lockes.
+- **Administrador de locke**: manda dentro de *su* edición —jornadas, retos,
+  puntos, level caps, reglas, ruleta, jugadores, repartir objetos, archivarla y
+  borrarla— y en nada más. No entra en Administración ni toca nada que valga
+  para toda la casa.
+
+**El `"ADMIN"` de antes se sigue leyendo como Creador.** Cambiar el nombre del
+papel sin esto habría dejado a quien lleva la aplicación fuera de su propia
+aplicación en el mismo despliegue en que se cambia. Por eso `esCreador` acepta
+los dos, y no hace falta tocar ninguna fila al publicar.
+
+**Lo que se movió de sitio al repartir:**
+
+- **Dar y quitar objetos de una bolsa** pasa a los administradores del locke. El
+  **catálogo** de objetos no: lo que existe es de toda la casa. Las dos cosas
+  viven en la misma pantalla, así que la de *Bolsas de todos* se abre a los
+  administradores del locke y **la parte del catálogo se enseña solo al
+  Creador**.
+- **Archivar y borrar un locke** pasa a quien lo administra: es su edición y
+  decide él cuándo se acaba.
+- **Los ajustes de la edición** se fueron de Administración —que es del
+  Creador— a *Competiciones*, que es donde llega quien lleva el locke.
+
+**Se puede pedir un locke de cualquier tamaño, no solo en solitario.** La
+petición lleva para cuánta gente es, y al aceptarla quien la pidió entra como
+**administrador de esa edición**. Si es de dos o más se lleva además el permiso
+de organizador, porque un locke de grupo no sirve de nada si no puede dar de
+alta a sus amigos.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -1638,6 +1675,11 @@ Piezas con truco:
   `actions/sorteos.ts` son las acciones y `(app)/sorteo/` la pantalla; el
   reparto es un Fisher-Yates y una vuelta por turnos, y lo que sobra se queda
   con `tocaAId` a null, que es lo que la pantalla enseña como "en el bote".
+- `lib/auth.ts` — quién es quien mira. `esCreador` es el papel de la cuenta y
+  `canManageCompetition` (en `lib/competition.ts`) el del locke: **no son lo
+  mismo y conviene no confundirlos**. Al añadir una acción, la pregunta es si lo
+  que toca vale para toda la casa (`requireCreador`) o solo para una edición
+  (`requireCompetitionManager`).
 - `lib/almacen-de-imagenes.ts` — guardar una imagen una sola vez y resolver la
   referencia. `lib/deduplicar-imagenes.ts` pasa al almacén lo que ya estaba
   escrito (**en SQL**: traerse las imágenes a Node serían cientos de megas de ida
@@ -1951,3 +1993,8 @@ lugar de destruir datos, y hay que avisar antes.
 48. **Las copias dejan de repetir las imágenes**, que eran 147 MB de los 179 que
     ocupaba la base de datos. De paso se arregla que restaurar una copia
     anterior a una columna nueva se caía.
+49. **Creador, administrador de locke y jugador**: administrador deja de ser un
+    papel de cuenta y pasa a ser de edición, y lo de la aplicación —mapas,
+    catálogo, plantillas, copias, cuentas— se queda en el Creador. Y cualquiera
+    puede **pedir un locke de 2 o más**, que al aceptarse le deja administrarlo
+    y dar de alta a los suyos.

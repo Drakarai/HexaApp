@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdmin } from "@/lib/auth";
+import { requireCreador } from "@/lib/auth";
 import {
   crearCopia,
   esVolcadoValido,
@@ -18,7 +18,7 @@ const PALABRA = "RESTAURAR";
 const MAXIMO_FICHERO = 60 * 1024 * 1024;
 
 export async function crearCopiaAction(): Promise<FormState> {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
   const copia = await crearCopia("manual", admin.displayName);
   revalidatePath("/admin");
   if (!copia) return { error: "Justo ahora se estaba haciendo otra copia." };
@@ -28,7 +28,7 @@ export async function crearCopiaAction(): Promise<FormState> {
 }
 
 export async function borrarCopiaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("copiaId") ?? "");
   if (id) await prisma.backup.delete({ where: { id } });
   revalidatePath("/admin");
@@ -42,7 +42,7 @@ export async function restaurarCopiaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
 
   if (String(formData.get("confirmacion") ?? "").trim() !== PALABRA) {
     return { error: `Para restaurar hay que escribir ${PALABRA} en la casilla.` };
@@ -77,7 +77,7 @@ export async function restaurarFicheroAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
 
   if (String(formData.get("confirmacion") ?? "").trim() !== PALABRA) {
     return { error: `Para restaurar hay que escribir ${PALABRA} en la casilla.` };

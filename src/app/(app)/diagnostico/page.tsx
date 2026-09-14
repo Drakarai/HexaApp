@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireAdminPage } from "@/lib/auth";
+import { requireCreadorPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
 import { copiasSinAligerar } from "@/lib/copias";
@@ -54,7 +54,7 @@ function leerConexion() {
 }
 
 export default async function DiagnosticoPage() {
-  await requireAdminPage();
+  await requireCreadorPage();
 
   const [ida, conexion, ocupacion, copiasPesadas] = await Promise.all([
     medirIdaYVuelta(),

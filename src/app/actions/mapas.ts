@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireCreador, requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
 import {
@@ -67,7 +67,7 @@ async function asegurarRegion(slug: string) {
  * automático).
  */
 export async function rellenarRegionAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const slug = String(formData.get("slug") ?? "");
   const deFabrica = MAPAS_DE_FABRICA[slug as Region];
@@ -103,7 +103,7 @@ export async function anadirZonaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const slug = String(formData.get("slug") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -138,7 +138,7 @@ export async function anadirZonaAction(
 }
 
 export async function editarZonaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const id = String(formData.get("zoneId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -184,7 +184,7 @@ export async function editarZonaAction(formData: FormData) {
  * capturarse ella misma: al tocarla salen las de dentro.
  */
 export async function anidarZonaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
 
   const id = String(formData.get("zoneId") ?? "");
   const parentIdBruto = String(formData.get("parentId") ?? "").trim();
@@ -215,7 +215,7 @@ export async function detectarZonasAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const slug = String(formData.get("slug") ?? "");
   // Aquí sí hacen falta los bytes del fondo: se pide a propósito
@@ -265,7 +265,7 @@ export async function detectarZonasAction(
 }
 
 export async function borrarZonaAction(formData: FormData) {
-  await requireAdmin();
+  await requireCreador();
   const id = String(formData.get("zoneId") ?? "");
   if (id) await prisma.mapZone.delete({ where: { id } });
   refrescarMapa();
@@ -282,7 +282,7 @@ export async function moverZonasAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   let sitios: {
     id: string;
@@ -333,7 +333,7 @@ export async function guardarFondoAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireAdmin();
+  await requireCreador();
 
   const slug = String(formData.get("slug") ?? "");
   const region = await asegurarRegion(slug);

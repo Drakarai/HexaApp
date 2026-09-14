@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth";
+import { requireCreador } from "@/lib/auth";
 import {
   deduplicarImagenes,
   tirarImagenesHuerfanas,
@@ -20,7 +20,7 @@ import type { FormState } from "@/app/actions/auth";
 
 export async function deduplicarAction(): Promise<FormState> {
   try {
-    await requireAdmin();
+    await requireCreador();
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -48,7 +48,7 @@ export async function deduplicarAction(): Promise<FormState> {
  */
 export async function aligerarCopiasAction(): Promise<FormState> {
   try {
-    await requireAdmin();
+    await requireCreador();
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -71,7 +71,7 @@ export async function aligerarCopiasAction(): Promise<FormState> {
 
 export async function limpiarHuerfanasAction(): Promise<FormState> {
   try {
-    await requireAdmin();
+    await requireCreador();
   } catch (error) {
     return { error: (error as Error).message };
   }

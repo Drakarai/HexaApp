@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { esCreador, getCurrentUser } from "@/lib/auth";
 import { leerCopia } from "@/lib/copias";
 import { ROLES } from "@/lib/constants";
 
@@ -18,7 +18,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const usuario = await getCurrentUser();
-  if (!usuario || usuario.role !== ROLES.ADMIN) {
+  if (!esCreador(usuario)) {
     return new NextResponse("No autorizado", {
       status: 401,
       headers: { "Cache-Control": "private, no-store" },

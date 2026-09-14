@@ -1,6 +1,11 @@
 import Link from "next/link";
-import { requireAdminPage } from "@/lib/auth";
-import { getActiveCompetition, getParticipants } from "@/lib/competition";
+import { redirect } from "next/navigation";
+import { esCreador, requireUser } from "@/lib/auth";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getParticipants,
+} from "@/lib/competition";
 import { getBolsas, getCatalogo } from "@/lib/bolsa";
 import {
   borrarObjetoAction,
@@ -30,10 +35,17 @@ export const metadata = { title: "Bolsas de todos" };
  * dueño, y quitarlo de aquí es corregir un apunte, no anunciar nada en el muro.
  */
 export default async function BolsasPage() {
-  await requireAdminPage();
-
+  const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
+
+  /**
+   * Repartir objetos es cosa del locke, así que entra quien lo administre.
+   * **El catálogo no**: lo que existe es de toda la casa y lo lleva el
+   * Creador, así que esa parte de la página se enseña solo a él.
+   */
+  if (!(await canManageCompetition(competition.id, user))) redirect("/bolsa");
+  const mandaEnTodo = esCreador(user);
 
   const [participantes, catalogo] = await Promise.all([
     getParticipants(competition.id),
@@ -145,6 +157,7 @@ export default async function BolsasPage() {
         })}
       </div>
 
+      {mandaEnTodo ? (
       <section className="mt-8">
         <h2 className="mb-1 text-lg font-bold text-white">Catálogo</h2>
         <p className="mb-4 max-w-2xl text-sm text-slate-400">
@@ -303,6 +316,7 @@ export default async function BolsasPage() {
           />
         )}
       </section>
+      ) : null}
     </>
   );
 }

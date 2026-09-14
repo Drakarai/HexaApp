@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
 import {
   getFinalFourState,
@@ -19,7 +19,7 @@ export const metadata = { title: "Final Four" };
 export default async function FinalFourPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const [canManage, state] = await Promise.all([
     canManageCompetition(competition.id, user),

@@ -1,4 +1,4 @@
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, esCreador } from "@/lib/auth";
 import { getActiveCompetition } from "@/lib/competition";
 import { getActivity } from "@/lib/activity";
 import { PageHeader } from "@/components/page-header";
@@ -10,7 +10,7 @@ export const metadata = { title: "Actividad" };
 export default async function ActivityPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
-  if (!competition) return <NoCompetition canCreate={isAdmin(user)} />;
+  if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const entries = await getActivity(competition.id, 80);
 

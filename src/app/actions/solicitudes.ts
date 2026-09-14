@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { requireCreador, requireUser } from "@/lib/auth";
 import { COMPETITION_COOKIE } from "@/lib/competition";
 import { juegoPorId } from "@/lib/juegos";
 import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
@@ -12,13 +12,21 @@ import { slugify } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
 /**
- * Pedir, aceptar y rechazar lockes en solitario.
+ * Pedir, aceptar y rechazar lockes.
  *
- * El locke que sale de aquí es **de una persona**: `maxPlayers` 1, y quien lo
- * pidió entra como su único jugador **y como administrador de esa edición**,
- * porque es su partida y tiene que poder apañarse con sus level caps y sus
- * reglas sin ir preguntando.
+ * Quien lo pide entra siempre **como administrador de esa edición**, porque es
+ * su locke y tiene que poder apañarse con sus level caps y sus reglas sin ir
+ * preguntando.
+ *
+ * Dos tamaños y una diferencia que importa:
+ * - **Para uno** (`maxPlayers` 1): su partida en solitario, y de ahí sale su
+ *   perfil de locke (`lib/perfiles-de-locke.ts`).
+ * - **Para varios**: además se lleva el **permiso de organizador**, porque un
+ *   locke de grupo no sirve de nada si no puede dar de alta a sus amigos.
  */
+
+/** De dos a ocho, que es lo que admite un locke. */
+const MAXIMO_DE_JUGADORES = 8;
 
 function refrescar() {
   revalidatePath("/competiciones");
@@ -60,11 +68,17 @@ export async function pedirLockeAction(
   }
 
   const gameIdBruto = String(formData.get("gameId") ?? "").trim();
+  // Sin el campo, uno: es como funcionaba esto cuando solo había lockes de uno
+  const pedidos = Number(formData.get("maxPlayers") ?? 1);
+  const maxPlayers = Number.isFinite(pedidos)
+    ? Math.min(MAXIMO_DE_JUGADORES, Math.max(1, Math.trunc(pedidos)))
+    : 1;
 
   await prisma.lockeRequest.create({
     data: {
       userId: user.id,
       name,
+      maxPlayers,
       gameId: juegoPorId(gameIdBruto) ? gameIdBruto : null,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
@@ -97,7 +111,7 @@ export async function retirarSolicitudAction(formData: FormData) {
  * partida en solitario sería un destrozo.
  */
 export async function aceptarSolicitudAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
   const id = String(formData.get("solicitudId") ?? "");
 
   const solicitud = await prisma.lockeRequest.findUnique({
@@ -115,8 +129,7 @@ export async function aceptarSolicitudAction(formData: FormData) {
       game: juego?.name ?? null,
       modality: solicitud.modality,
       description: solicitud.description,
-      // Un locke de una persona: de aquí sale su perfil (lib/perfiles-de-locke.ts)
-      maxPlayers: 1,
+      maxPlayers: solicitud.maxPlayers,
       createdById: admin.id,
       participants: {
         create: {
@@ -129,6 +142,18 @@ export async function aceptarSolicitudAction(formData: FormData) {
       },
     },
   });
+
+  /**
+   * Un locke de grupo no sirve de nada si no puede meter a nadie, así que al
+   * aceptarlo se lleva el permiso de organizador: da de alta a sus amigos y
+   * puede montar más lockes suyos. Uno en solitario no lo necesita.
+   */
+  if (solicitud.maxPlayers > 1) {
+    await prisma.user.update({
+      where: { id: solicitud.userId },
+      data: { puedeCrearLockes: true },
+    });
+  }
 
   await prisma.lockeRequest.update({
     where: { id },
@@ -146,7 +171,7 @@ export async function aceptarSolicitudAction(formData: FormData) {
 
 /** Rechazarla, a poder ser diciendo por qué. */
 export async function rechazarSolicitudAction(formData: FormData) {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
   const id = String(formData.get("solicitudId") ?? "");
 
   await prisma.lockeRequest.updateMany({
@@ -170,7 +195,7 @@ export async function crearLockeEnSolitarioAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireAdmin();
+  const admin = await requireCreador();
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a tu locke." };

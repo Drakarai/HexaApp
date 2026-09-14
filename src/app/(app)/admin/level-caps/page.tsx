@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdminPage } from "@/lib/auth";
+import { requireCreadorPage } from "@/lib/auth";
 import {
   deFabricaParaGrupo,
   getPlantilla,
@@ -31,7 +31,7 @@ export default async function PlantillasPage({
 }: {
   searchParams: Promise<{ grupo?: string }>;
 }) {
-  await requireAdminPage();
+  await requireCreadorPage();
 
   const { grupo: pedido } = await searchParams;
   const resumen = await getResumenDePlantillas();

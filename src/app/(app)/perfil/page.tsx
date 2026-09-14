@@ -1,4 +1,4 @@
-import { requireUser } from "@/lib/auth";
+import { esCreador, requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
@@ -84,7 +84,7 @@ export default async function ProfilePage() {
           ) : null}
           <p className="muted mt-0.5">
             @{user.username} ·{" "}
-            {user.role === ROLES.ADMIN ? "Administrador" : "Jugador"}
+            {esCreador(user) ? "Creador" : "Jugador"}
           </p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default async function ProfilePage() {
         <ThemePicker current={user.theme} />
       </section>
 
-      {user.role === ROLES.ADMIN ? (
+      {esCreador(user) ? (
         <section className="card mt-4">
           <h2 className="section-title mb-1">Diagnóstico</h2>
           <p className="muted mb-4">

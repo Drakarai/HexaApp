@@ -60,32 +60,44 @@ export async function requireUser(): Promise<CurrentUser> {
 }
 
 /**
- * Para las **acciones**: lanza, y quien la llama enseña el mensaje en su
- * formulario. En una página no vale, porque un error a medio pintar sale como
- * pantalla de fallo: para eso está `requireAdminPage`.
+ * Para las **acciones** que son de la aplicación entera: lanza, y quien la
+ * llama enseña el mensaje en su formulario. En una página no vale, porque un
+ * error a medio pintar sale como pantalla de fallo: para eso está
+ * `requireCreadorPage`.
  */
-export async function requireAdmin(): Promise<CurrentUser> {
+export async function requireCreador(): Promise<CurrentUser> {
   const user = await requireUser();
-  if (user.role !== ROLES.ADMIN) {
-    throw new Error("Necesitas permisos de administrador para hacer esto.");
+  if (!esCreador(user)) {
+    throw new Error("Esto solo lo puede hacer quien lleva la aplicación.");
   }
   return user;
 }
 
 /**
- * Para las **páginas** de solo administradores: al que no lo sea se le devuelve
- * al resumen. Antes esto lanzaba un error y Next lo convertía en una pantalla
- * de fallo, en inglés y sin la barra de navegación, en vez de llevarte a un
- * sitio con sentido.
+ * Para las **páginas** que son solo del Creador: al que no lo sea se le
+ * devuelve al resumen. Antes esto lanzaba un error y Next lo convertía en una
+ * pantalla de fallo, en inglés y sin la barra de navegación, en vez de llevarte
+ * a un sitio con sentido.
  */
-export async function requireAdminPage(): Promise<CurrentUser> {
+export async function requireCreadorPage(): Promise<CurrentUser> {
   const user = await requireUser();
-  if (user.role !== ROLES.ADMIN) redirect("/");
+  if (!esCreador(user)) redirect("/");
   return user;
 }
 
-export function isAdmin(user: { role: string } | null | undefined) {
-  return user?.role === ROLES.ADMIN;
+/**
+ * Quien lleva la aplicación: lo ve y lo toca todo.
+ *
+ * **No confundir con ser administrador de un locke**, que es otra cosa y vive
+ * en `Participant.isAdmin`: manda dentro de su edición y en nada más. Para eso
+ * está `canManageCompetition`.
+ *
+ * Se acepta también el `"ADMIN"` de antes, que es como estaba escrito el papel
+ * cuando el Creador se llamaba administrador global. Sin esto, el cambio de
+ * nombre dejaría a quien lleva la aplicación fuera de su propia aplicación.
+ */
+export function esCreador(user: { role: string } | null | undefined) {
+  return user?.role === ROLES.CREADOR || user?.role === ROLES.ADMIN_ANTIGUO;
 }
 
 /**
@@ -102,7 +114,7 @@ export function puedeCrearLockes(
   user: { role: string; puedeCrearLockes?: boolean } | null | undefined,
 ) {
   if (!user) return false;
-  return isAdmin(user) || user.puedeCrearLockes === true;
+  return esCreador(user) || user.puedeCrearLockes === true;
 }
 
 /** Para las acciones que montan un locke o dan de alta a quien lo juega. */
