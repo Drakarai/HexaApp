@@ -126,6 +126,19 @@ export default async function AdminPage() {
         </Link>
       </section>
 
+      {/* Vive también en el perfil, pero aquí es donde se viene a buscarlo */}
+      <section className="card mb-6">
+        <h2 className="section-title mb-1">Diagnóstico</h2>
+        <p className="muted mb-4">
+          Cuánto ocupa la base de datos, en qué se va y cuántos lockes cabrían,
+          más lo que tarda en contestar cuando la aplicación va lenta. Desde
+          ahí se guarda también cada imagen una sola vez.
+        </p>
+        <Link href="/diagnostico" className="btn-ghost btn-sm">
+          🩺 Ver el diagnóstico
+        </Link>
+      </section>
+
       {competition ? (
         <section className="card mb-6">
           <h2 className="section-title mb-1">Ajustes de la edición</h2>
@@ -155,7 +168,12 @@ export default async function AdminPage() {
                   image={avatares(user.id)}
                   size={32}
                 />
-                <div className="min-w-0 flex-1">
+                {/**
+                 * `min-w-44` y no `min-w-0`: con tres botones al lado, en un
+                 * móvil el nombre se quedaba en "A..". Con un ancho mínimo, lo
+                 * que se va a la línea de abajo son los botones.
+                 */}
+                <div className="min-w-44 flex-1">
                   <p className="truncate font-medium text-white">
                     {user.displayName}
                     {user.id === me.id ? (

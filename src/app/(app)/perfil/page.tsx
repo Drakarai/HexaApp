@@ -164,9 +164,10 @@ export default async function ProfilePage() {
         <section className="card mt-4">
           <h2 className="section-title mb-1">Diagnóstico</h2>
           <p className="muted mb-4">
-            Mide lo que tarda la aplicación en hablar con la base de datos. Es
-            para mirarlo cuando algo va lento, no todos los días, así que vive
-            aquí en vez de ocupar sitio en el menú.
+            Cuánto ocupa la base de datos y cuántos lockes cabrían, y lo que
+            tarda la aplicación en hablar con ella cuando va lenta. Es para
+            mirarlo de vez en cuando, no todos los días, así que vive aquí y en
+            Administración en vez de ocupar sitio en el menú.
           </p>
           <Link href="/diagnostico" className="btn-ghost">
             🩺 Ver el diagnóstico
