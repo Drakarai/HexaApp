@@ -20,6 +20,11 @@ const SIN_IMAGENES = {
   favoritePokemon: { image: true },
   levelCap: { images: true, image: true },
   levelCapTemplateItem: { images: true },
+  // Se quedaron fuera de la lista al añadirlas y se colaban enteras en su
+  // página: el mapa con 60 capturas eran 800 KB, y el fondo de una isla, 300
+  capture: { image: true },
+  mapRegion: { image: true },
+  sorteoPokemon: { boxImage: true },
   // No es una imagen, pero pesa como todas juntas: el volcado de una copia son
   // varios megas y no puede colarse en un listado por descuido
   backup: { payload: true },

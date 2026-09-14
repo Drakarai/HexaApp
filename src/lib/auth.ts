@@ -16,6 +16,8 @@ export type CurrentUser = {
   /** Dirección de la foto de perfil, no la foto: ver lib/imagen-url.ts */
   avatarImage: string | null;
   theme: string;
+  /** Permiso de organizador: puede montar sus propios lockes */
+  puedeCrearLockes: boolean;
 };
 
 /**
@@ -33,7 +35,12 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
     (Omit<CurrentUser, "avatarImage"> & { firma: string | null })[]
   >`
     select "id", "username", "displayName", "role", "avatarColor", "theme",
-           substr(md5("avatarImage"), 1, 10) as firma
+           "puedeCrearLockes",
+           case
+             when nullif("avatarImage", '') is null then null
+             when "avatarImage" like 'ref:%' then "avatarImage"
+             else substr(md5("avatarImage"), 1, 10)
+           end as firma
     from "User"
     where "id" = ${session.userId}
   `;
@@ -79,6 +86,32 @@ export async function requireAdminPage(): Promise<CurrentUser> {
 
 export function isAdmin(user: { role: string } | null | undefined) {
   return user?.role === ROLES.ADMIN;
+}
+
+/**
+ * ¿Puede montar lockes? Los administradores globales siempre; los demás, si un
+ * administrador les ha dado el permiso de organizador.
+ *
+ * Un organizador **no es medio administrador**: con esto solo puede crear sus
+ * lockes y dar de alta a la gente que juega con él. Los mapas, el catálogo de
+ * objetos, las plantillas y las copias de seguridad siguen siendo de los
+ * administradores globales, y los lockes de los demás no los ve, porque eso lo
+ * decide `filtroDeLockesVisibles` y no este permiso.
+ */
+export function puedeCrearLockes(
+  user: { role: string; puedeCrearLockes?: boolean } | null | undefined,
+) {
+  if (!user) return false;
+  return isAdmin(user) || user.puedeCrearLockes === true;
+}
+
+/** Para las acciones que montan un locke o dan de alta a quien lo juega. */
+export async function requireOrganizador(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!puedeCrearLockes(user)) {
+    throw new Error("No tienes permiso para crear lockes.");
+  }
+  return user;
 }
 
 export async function hashPassword(plain: string) {

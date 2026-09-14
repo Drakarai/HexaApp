@@ -43,7 +43,7 @@ export default async function GuiaPage() {
             ⬇️ Guardarla en el móvil
           </a>
           <span className="text-xs text-slate-500">
-            20 páginas · PDF · se puede leer sin conexión una vez guardada
+            22 páginas · PDF · se puede leer sin conexión una vez guardada
           </span>
         </div>
       </section>
@@ -106,12 +106,14 @@ const CONTENIDO: [number, string][] = [
   [10, "Las jornadas"],
   [11, "MVP y puntos"],
   [12, "Retos"],
-  [13, "Ruleta y bolsa"],
-  [14, "Notas y cobertura de tipos"],
-  [15, "Tu perfil y la actividad"],
-  [16, "El final del locke"],
-  [17, "Otras formas de jugar"],
-  [18, "Para el que organiza"],
-  [19, "Los mapas por dentro"],
-  [20, "Dudas rápidas"],
+  [13, "El sorteo de préstamos"],
+  [14, "Ruleta y bolsa"],
+  [15, "Notas y cobertura de tipos"],
+  [16, "Cuando se va la línea"],
+  [17, "Tu perfil y la actividad"],
+  [18, "El final del locke"],
+  [19, "Otras formas de jugar"],
+  [20, "Para el que organiza"],
+  [21, "Los mapas por dentro"],
+  [22, "Dudas rápidas"],
 ];

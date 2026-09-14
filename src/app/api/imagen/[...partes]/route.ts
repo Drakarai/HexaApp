@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { FUENTES, type TipoConsultable } from "@/lib/imagenes";
+import { resolverImagen } from "@/lib/almacen-de-imagenes";
 import { effectiveImages } from "@/lib/image";
 
 /**
@@ -67,6 +68,18 @@ async function buscarValor(
   id: string,
   indice: string | undefined,
 ): Promise<string | null> {
+  /**
+   * `/api/imagen/c/<clave>`: la imagen del almacén, directa. No hace falta
+   * pasar por ninguna fila, y por eso la comparten todas las que la usen.
+   */
+  if (tipo === "c") {
+    const imagen = await prisma.imagen.findUnique({
+      where: { clave: decodeURIComponent(id) },
+      select: { datos: true },
+    });
+    return imagen?.datos ?? null;
+  }
+
   if (tipo === "medalla") {
     const cap = await prisma.levelCap.findUnique({
       where: { id },
@@ -115,7 +128,8 @@ export async function GET(
   const [tipo, id, indice] = partes;
   if (!tipo || !id) return sinCache("No encontrada", 404);
 
-  const valor = await buscarValor(tipo, id, indice);
+  // Una fila puede apuntar al almacén en vez de llevar la imagen dentro
+  const valor = await resolverImagen(await buscarValor(tipo, id, indice));
   if (!valor) return sinCache("No encontrada", 404);
 
   return respuestaDeImagen(valor);

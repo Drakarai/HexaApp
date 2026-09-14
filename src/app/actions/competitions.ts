@@ -5,12 +5,12 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { juegoPorId } from "@/lib/juegos";
-import { requireAdmin, requireUser } from "@/lib/auth";
+import { isAdmin, requireAdmin, requireOrganizador, requireUser } from "@/lib/auth";
 import {
   COMPETITION_COOKIE,
   requireCompetitionManager,
 } from "@/lib/competition";
-import { puedeVerLocke } from "@/lib/acceso";
+import { filtroDeLockesVisibles, puedeVerLocke } from "@/lib/acceso";
 import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { slugify } from "@/lib/utils";
@@ -58,7 +58,12 @@ export async function createCompetitionAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireAdmin();
+  /**
+   * Lo monta un administrador global **o un organizador**: alguien a quien se
+   * le ha dado permiso para llevar sus propios lockes.
+   */
+  const admin = await requireOrganizador();
+  const esAdminGlobal = isAdmin(admin);
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a la competición." };
@@ -97,18 +102,55 @@ export async function createCompetitionAction(
     },
   });
 
+  /**
+   * Quien lo crea entra dentro como administrador de ese locke. Si no, un
+   * organizador acabaría de montar el suyo y no podría ni abrirlo: no es
+   * administrador global, así que solo ve los lockes en los que tiene ficha.
+   */
+  if (!esAdminGlobal) {
+    await prisma.participant.create({
+      data: {
+        competitionId: created.id,
+        userId: admin.id,
+        displayName: admin.displayName,
+        isAdmin: true,
+      },
+    });
+  }
+
   // Las competiciones anteriores se conservan enteras: sólo se marcan como
   // archivadas para que la nueva sea la activa.
   if (archivePrevious) {
     await prisma.competition.updateMany({
-      where: { id: { not: created.id }, status: COMPETITION_STATUS.ACTIVE },
+      where: {
+        id: { not: created.id },
+        status: COMPETITION_STATUS.ACTIVE,
+        /**
+         * Un organizador archiva **los que lleva él**, no los que juega.
+         * Ojo con la diferencia: si valiera con verlos, montar su primer locke
+         * archivaría de paso el de la casa en el que juega, que no es suyo.
+         */
+        ...(esAdminGlobal
+          ? {}
+          : {
+              OR: [
+                { createdById: admin.id },
+                {
+                  participants: {
+                    some: { userId: admin.id, isAdmin: true },
+                  },
+                },
+              ],
+            }),
+      },
       data: { status: COMPETITION_STATUS.ARCHIVED, endedAt: new Date() },
     });
   }
 
   if (copyFromId) {
-    const source = await prisma.competition.findUnique({
-      where: { id: copyFromId },
+    const source = await prisma.competition.findFirst({
+      // Copiar de un locke es leerlo entero: solo de los que pueda abrir
+      where: { id: copyFromId, ...filtroDeLockesVisibles(admin) },
       include: {
         rules: { orderBy: { position: "asc" } },
         levelCaps: { orderBy: { position: "asc" } },
@@ -147,6 +189,11 @@ export async function createCompetitionAction(
       if (copyParticipants && source.participants.length) {
         await prisma.participant.createMany({
           data: source.participants
+            // El organizador ya tiene su ficha de arriba: copiarla la duplicaría
+            .filter(
+              (participant) =>
+                esAdminGlobal || participant.userId !== admin.id,
+            )
             .slice(0, created.maxPlayers)
             .map((participant) => ({
               competitionId: created.id,

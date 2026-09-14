@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
+import { MantenimientoDelAlmacen } from "./almacen-client";
 import { cx } from "@/lib/utils";
 
 export const metadata = { title: "Diagnóstico" };
@@ -175,6 +176,18 @@ export default async function DiagnosticoPage() {
           En qué se va
         </h3>
         <ul className="space-y-1 text-sm">
+          {/* El almacén primero: ahí está ahora el peso de verdad */}
+          {ocupacion.almacen.cuantas ? (
+            <li className="flex items-baseline gap-2 border-b border-white/5 py-1">
+              <span className="text-slate-300">Almacén de imágenes</span>
+              <span className="ml-auto shrink-0 text-xs text-slate-500 tabular-nums">
+                {ocupacion.almacen.cuantas} distintas
+              </span>
+              <span className="w-20 shrink-0 text-right font-semibold tabular-nums text-slate-200">
+                {pesar(ocupacion.almacen.bytes)}
+              </span>
+            </li>
+          ) : null}
           {ocupacion.imagenes.map((fila) => (
             <li
               key={fila.que}
@@ -213,6 +226,20 @@ export default async function DiagnosticoPage() {
             .map((tabla) => `${tabla.nombre} (${pesar(tabla.bytes)})`)
             .join(" · ")}
         </p>
+
+        <h3 className="mt-4 mb-2 text-xs uppercase tracking-wide text-slate-500">
+          El almacén de imágenes
+        </h3>
+        <p className="text-sm text-slate-400">
+          {ocupacion.almacen.cuantas} imágenes distintas guardadas (
+          {pesar(ocupacion.almacen.bytes)}).{" "}
+          {ocupacion.referencias.apuntan} filas apuntan a ellas
+          {ocupacion.referencias.sueltas
+            ? `, y ${ocupacion.referencias.sueltas} llevan todavía la imagen dentro.`
+            : ". No queda ninguna con la imagen dentro."}
+        </p>
+
+        <MantenimientoDelAlmacen />
       </section>
 
       <section className="card">

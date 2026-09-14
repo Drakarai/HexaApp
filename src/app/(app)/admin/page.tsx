@@ -7,8 +7,12 @@ import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
-import { deleteUserAction, updateUserRoleAction } from "@/app/actions/users";
+import { cx, formatDate } from "@/lib/utils";
+import {
+  cambiarPermisoDeLockesAction,
+  deleteUserAction,
+  updateUserRoleAction,
+} from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
 import { Backups, type CopiaView } from "./backups";
 import { Titles, type TituloAdmin } from "./titles";
@@ -175,6 +179,27 @@ export default async function AdminPage() {
                     {user.role === ROLES.ADMIN ? "⭐ Admin" : "Jugador"}
                   </button>
                 </form>
+
+                {/* La llave de montar lockes propios. Un admin ya la tiene */}
+                {user.role === ROLES.ADMIN ? null : (
+                  <form action={cambiarPermisoDeLockesAction}>
+                    <input type="hidden" name="userId" value={user.id} />
+                    <button
+                      type="submit"
+                      className={cx(
+                        "btn-ghost btn-sm",
+                        user.puedeCrearLockes && "text-emerald-300",
+                      )}
+                      title={
+                        user.puedeCrearLockes
+                          ? "Puede montar sus propios lockes y dar de alta a su gente"
+                          : "Darle permiso para montar sus propios lockes"
+                      }
+                    >
+                      {user.puedeCrearLockes ? "🎪 Organiza" : "🎪 No organiza"}
+                    </button>
+                  </form>
+                )}
 
                 {user.id === me.id ? null : (
                   <form action={deleteUserAction}>

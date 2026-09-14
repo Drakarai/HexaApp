@@ -42,6 +42,27 @@ export type TipoConsultable = keyof typeof FUENTES;
  * vuelven 10 caracteres por fila en vez de los 13-44 KB de la imagen. Con eso
  * sabemos a la vez si hay imagen y qué versión es.
  */
+/**
+ * La firma de una columna, en SQL.
+ *
+ * Si la fila apunta al almacén (`ref:...`) **la firma es la propia referencia**,
+ * y de ahí sale una dirección por imagen en vez de una por fila. Si todavía
+ * lleva la imagen entera —lo de antes—, se resume con md5 como siempre.
+ *
+ * De paso se ahorra el md5: resumir 35 KB por fila y por visita costaba lo suyo,
+ * y sobre `ref:pkm-445-detail` no cuesta nada.
+ */
+function firmaSql(columna: string) {
+  const col = `"${columna}"`;
+  return Prisma.raw(
+    `case
+       when nullif(${col}, '') is null then null
+       when ${col} like 'ref:%' then ${col}
+       else substr(md5(${col}), 1, 10)
+     end`,
+  );
+}
+
 export async function firmasDeImagen(
   tipo: TipoConsultable,
   ids: string[],
@@ -52,7 +73,7 @@ export async function firmasDeImagen(
 
   const { tabla, columna } = FUENTES[tipo];
   const filas = await prisma.$queryRaw<{ id: string; v: string }[]>`
-    select "id", substr(md5(${Prisma.raw(`"${columna}"`)}), 1, 10) as v
+    select "id", ${firmaSql(columna)} as v
     from ${Prisma.raw(`"${tabla}"`)}
     where "id" in (${Prisma.join(unicos)})
       and ${Prisma.raw(`"${columna}"`)} is not null
@@ -94,8 +115,8 @@ export async function firmasDeDosImagenes(
     { id: string; va: string | null; vb: string | null }[]
   >`
     select "id",
-           substr(md5(nullif(${Prisma.raw(`"${fuenteA.columna}"`)}, '')), 1, 10) as va,
-           substr(md5(nullif(${Prisma.raw(`"${fuenteB.columna}"`)}, '')), 1, 10) as vb
+           ${firmaSql(fuenteA.columna)} as va,
+           ${firmaSql(fuenteB.columna)} as vb
     from ${Prisma.raw(`"${fuenteA.tabla}"`)}
     where "id" in (${Prisma.join(unicos)})
   `;
@@ -121,7 +142,7 @@ export async function firmasDeMedallas(
 
   const filas = await prisma.$queryRaw<{ id: string; v: string[] }[]>`
     select "id", array(
-      select substr(md5(x), 1, 10)
+      select case when x like 'ref:%' then x else substr(md5(x), 1, 10) end
       from unnest(
         case when coalesce(array_length("images", 1), 0) = 0
           then array_remove(array["image"], null)
@@ -159,7 +180,8 @@ export async function firmasDeMedallasDePlantilla(
 
   const filas = await prisma.$queryRaw<{ id: string; v: string[] }[]>`
     select "id", array(
-      select substr(md5(x), 1, 10) from unnest("images") as x
+      select case when x like 'ref:%' then x else substr(md5(x), 1, 10) end
+      from unnest("images") as x
     ) as v
     from "LevelCapTemplateItem"
     where "id" in (${Prisma.join(unicos)})

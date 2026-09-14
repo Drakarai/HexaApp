@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { verifyPassword, hashPassword, requireUser } from "@/lib/auth";
 import { createSession, destroySession } from "@/lib/session";
 import { imagenEditada } from "@/lib/image";
+import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import { getTheme, isThemeId } from "@/lib/themes";
 
 export type FormState = { error?: string; success?: string } | null;
@@ -93,7 +94,10 @@ export async function updateMyProfileAction(
     where: { id: me.id },
     data: {
       displayName,
-      avatarImage: imagenEditada(formData.get("avatarImage")),
+      // Al almacén como todo lo demás: una foto repetida se guarda una vez
+      avatarImage: await guardarPorContenido(
+        imagenEditada(formData.get("avatarImage")),
+      ),
       ...(/^#[0-9a-fA-F]{6}$/.test(avatarColor) ? { avatarColor } : {}),
     },
   });

@@ -9,7 +9,12 @@ import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
 
-export function NewUserForm() {
+/**
+ * Alta de una cuenta. El desplegable de rol **solo lo ve un administrador
+ * global**: un organizador da de alta a su gente como jugadores, y el
+ * servidor lo comprueba igual aunque el desplegable aparezca.
+ */
+export function NewUserForm({ puedeElegirRol = true }: { puedeElegirRol?: boolean }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     createUserAction,
     null,
@@ -47,13 +52,15 @@ export function NewUserForm() {
             <input name="password" type="text" className="input" required />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Rol</label>
-              <select name="role" className="input" defaultValue={ROLES.PLAYER}>
-                <option value={ROLES.PLAYER}>Jugador</option>
-                <option value={ROLES.ADMIN}>Administrador</option>
-              </select>
-            </div>
+            {puedeElegirRol ? (
+              <div>
+                <label className="label">Rol</label>
+                <select name="role" className="input" defaultValue={ROLES.PLAYER}>
+                  <option value={ROLES.PLAYER}>Jugador</option>
+                  <option value={ROLES.ADMIN}>Administrador</option>
+                </select>
+              </div>
+            ) : null}
             <div>
               <label className="label">Color</label>
               <input

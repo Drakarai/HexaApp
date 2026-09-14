@@ -27,13 +27,26 @@ export type Ocupacion = {
   totalImagenes: number;
   /** Cuántas competiciones hay guardadas ahora mismo */
   lockes: number;
+  /** El almacén: cuántas imágenes distintas hay y lo que ocupan */
+  almacen: { cuantas: number; bytes: number };
+  /** Cuántas filas apuntan al almacén y cuántas llevan todavía la imagen dentro */
+  referencias: { apuntan: number; sueltas: number };
 };
 
 /**
- * Las columnas que guardan imágenes. Va a mano y no leyendo el esquema porque
- * son cuatro y así se ve de un vistazo cuáles son las que engordan.
+ * Las columnas que guardan imágenes, y si entran en el almacén. Va a mano y no
+ * leyendo el esquema para que se vea de un vistazo cuáles engordan.
+ *
+ * Los dibujos de objetos se quedan fuera a propósito: hay uno por objeto del
+ * catálogo, no uno por uso, así que no hay nada repetido que quitar, y la bolsa
+ * los pinta directamente desde la fila.
  */
-const COLUMNAS: [tabla: string, columna: string, nombre: string][] = [
+export const COLUMNAS: [
+  tabla: string,
+  columna: string,
+  nombre: string,
+  fuera?: true,
+][] = [
   ["MatchPokemon", "boxImage", "Equipos de combate · sprite"],
   ["MatchPokemon", "detailImage", "Equipos de combate · ilustración"],
   ["Death", "boxImage", "Cementerio · sprite"],
@@ -47,8 +60,8 @@ const COLUMNAS: [tabla: string, columna: string, nombre: string][] = [
   ["HallOfFameEntry", "image", "Hall de la fama"],
   ["FavoritePokemon", "image", "Favoritos"],
   ["User", "avatarImage", "Fotos de perfil"],
-  ["Item", "image", "Objetos"],
-  ["ItemOption", "image", "Objetos · variantes"],
+  ["Item", "image", "Objetos", true],
+  ["ItemOption", "image", "Objetos · variantes", true],
 ];
 
 export async function medirOcupacion(): Promise<Ocupacion> {
@@ -60,18 +73,31 @@ export async function medirOcupacion(): Promise<Ocupacion> {
   `;
 
   const medidas: Ocupacion["imagenes"] = [];
-  for (const [tabla, columna, nombre] of COLUMNAS) {
+  let apuntan = 0;
+  let sueltas = 0;
+  for (const [tabla, columna, nombre, fuera] of COLUMNAS) {
     // Una consulta por columna: son pocas y así una tabla que falte no tira el resto
     try {
       const fila = await prisma.$queryRawUnsafe<
-        { filas: bigint; media: number; total: bigint }[]
+        {
+          filas: bigint;
+          media: number;
+          total: bigint;
+          refs: bigint;
+          dentro: bigint;
+        }[]
       >(
         `SELECT count("${columna}") AS filas,
                 coalesce(avg(length("${columna}")), 0)::int AS media,
-                coalesce(sum(length("${columna}")), 0)::bigint AS total
+                coalesce(sum(length("${columna}")), 0)::bigint AS total,
+                count(*) FILTER (WHERE "${columna}" LIKE 'ref:%') AS refs,
+                count(*) FILTER (WHERE "${columna}" LIKE 'data:%') AS dentro
          FROM "${tabla}"`,
       );
       const filas = Number(fila[0]?.filas ?? 0);
+      apuntan += Number(fila[0]?.refs ?? 0);
+      // Las que no entran en el almacén no cuentan como pendientes
+      if (!fuera) sueltas += Number(fila[0]?.dentro ?? 0);
       if (filas) {
         medidas.push({
           que: nombre,
@@ -86,6 +112,11 @@ export async function medirOcupacion(): Promise<Ocupacion> {
   }
   medidas.sort((a, b) => b.total - a.total);
 
+  const [almacen] = await prisma.$queryRaw<{ n: bigint; bytes: bigint }[]>`
+    select count(*)::bigint as n, coalesce(sum("bytes"), 0)::bigint as bytes
+    from "Imagen"
+  `;
+
   const lista = tablas.map((t) => ({ nombre: t.nombre, bytes: Number(t.bytes) }));
   const total = lista.reduce((suma, t) => suma + t.bytes, 0);
   const copias = lista.find((t) => t.nombre === "Backup")?.bytes ?? 0;
@@ -96,8 +127,20 @@ export async function medirOcupacion(): Promise<Ocupacion> {
     sinCopias: total - copias,
     tablas: lista.filter((t) => t.bytes > 0).slice(0, 8),
     imagenes: medidas,
-    totalImagenes: medidas.reduce((suma, m) => suma + m.total, 0),
+    /**
+     * Lo que ocupan las imágenes de verdad: lo que sigue metido en las filas
+     * más el almacén. Sumar solo las columnas contaría las referencias —veinte
+     * caracteres— y se perdería de vista lo que hay guardado de verdad.
+     */
+    totalImagenes:
+      medidas.reduce((suma, m) => suma + m.total, 0) +
+      Number(almacen?.bytes ?? 0),
     lockes: await prisma.competition.count(),
+    almacen: {
+      cuantas: Number(almacen?.n ?? 0),
+      bytes: Number(almacen?.bytes ?? 0),
+    },
+    referencias: { apuntan, sueltas },
   };
 }
 

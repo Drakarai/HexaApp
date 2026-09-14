@@ -206,5 +206,37 @@ for (const [entrenador, especie, mote] of equipos) {
   console.log("equipo:", entrenador, especie);
 }
 
+// --- Un sorteo de préstamos con su bote, para la página que lo explica
+await p.goto(BASE + "/sorteo", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(1400);
+await p.locator("summary", { hasText: "Nuevo sorteo" }).click();
+await p.waitForTimeout(400);
+await p.fill('input[name="label"]', "Jornada 4 · préstamos");
+await p.locator('button[type="submit"]', { hasText: "Crear" }).click();
+await p.waitForTimeout(2000);
+
+for (const especie of ["Lapras", "Arcanine", "Snorlax", "Gengar", "Ampharos", "Scizor"]) {
+  const caja = p.locator("details", {
+    has: p.locator("summary", { hasText: "Echar un pokémon al bote" }),
+  }).first();
+  if (!(await caja.evaluate((d) => d.open))) {
+    await caja.locator("summary").click();
+    await p.waitForTimeout(300);
+  }
+  const campo = caja.locator('input[name="species"]');
+  await campo.fill(especie);
+  await p.waitForTimeout(900);
+  await campo.press("Enter");
+  await p.waitForTimeout(300);
+  await caja.locator("button", { hasText: "Al bote" }).click();
+  await p.waitForTimeout(2400);
+  console.log("al bote:", especie);
+}
+
+// Se reparte para que la foto enseñe el reparto y no un bote a medias
+await p.locator("button", { hasText: "Repartir" }).first().click();
+await p.waitForTimeout(2500);
+console.log("sorteo repartido");
+
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");

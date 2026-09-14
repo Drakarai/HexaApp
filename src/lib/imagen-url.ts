@@ -40,7 +40,20 @@ export function urlDeImagen(
   firma: string | null | undefined,
 ): string | null {
   if (!firma) return null;
-  return `/api/imagen/${tipo}/${id}?v=${firma}`;
+  return urlDeContenido(firma) ?? `/api/imagen/${tipo}/${id}?v=${firma}`;
+}
+
+/**
+ * Si la firma es una referencia al almacén, la dirección es **la de la imagen**
+ * y no la de la fila. Eso quiere decir que el sprite de Garchomp tiene una sola
+ * dirección en toda la aplicación: el navegador se lo baja una vez y lo reusa
+ * en el cementerio, en los equipos y en el bote, en vez de una copia por fila.
+ *
+ * No lleva `?v=`: la clave manda en el contenido y el contenido no cambia.
+ */
+export function urlDeContenido(firma: string): string | null {
+  if (!firma.startsWith("ref:")) return null;
+  return `/api/imagen/c/${encodeURIComponent(firma.slice("ref:".length))}`;
 }
 
 /** Igual, para las medallas de un level cap, que son una lista. */
@@ -50,7 +63,7 @@ export function urlDeMedalla(
   firma: string | null | undefined,
 ): string | null {
   if (!firma) return null;
-  return `/api/imagen/medalla/${id}/${indice}?v=${firma}`;
+  return urlDeContenido(firma) ?? `/api/imagen/medalla/${id}/${indice}?v=${firma}`;
 }
 
 /** Y las de un hito de plantilla, que son la misma lista pero de la base. */
@@ -60,5 +73,8 @@ export function urlDeMedallaDePlantilla(
   firma: string | null | undefined,
 ): string | null {
   if (!firma) return null;
-  return `/api/imagen/medalla-plantilla/${id}/${indice}?v=${firma}`;
+  return (
+    urlDeContenido(firma) ??
+    `/api/imagen/medalla-plantilla/${id}/${indice}?v=${firma}`
+  );
 }

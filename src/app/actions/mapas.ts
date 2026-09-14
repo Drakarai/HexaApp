@@ -5,6 +5,10 @@ import { prisma } from "@/lib/db";
 import { requireAdmin, requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
+import {
+  guardarPorContenido,
+  resolverImagen,
+} from "@/lib/almacen-de-imagenes";
 import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
@@ -214,13 +218,21 @@ export async function detectarZonasAction(
   await requireAdmin();
 
   const slug = String(formData.get("slug") ?? "");
-  const region = await prisma.mapRegion.findUnique({ where: { slug } });
+  // Aquí sí hacen falta los bytes del fondo: se pide a propósito
+  const region = await prisma.mapRegion.findUnique({
+    where: { slug },
+    select: { id: true, image: true, width: true, height: true },
+  });
   if (!region) return { error: "Esa región no existe." };
   if (!region.image) {
     return { error: "Primero ponle al mapa la imagen de fondo." };
   }
 
-  const encontradas = await detectarZonas(region.image, {
+  // El fondo puede estar en el almacén: aquí hacen falta los píxeles de verdad
+  const fondo = await resolverImagen(region.image);
+  if (!fondo) return { error: "No encuentro la imagen de fondo del mapa." };
+
+  const encontradas = await detectarZonas(fondo, {
     width: region.width,
     height: region.height,
   });
@@ -340,7 +352,7 @@ export async function guardarFondoAction(
   await prisma.mapRegion.update({
     where: { id: region.id },
     data: {
-      image: imagenEditada(formData.get("image")),
+      image: await guardarPorContenido(imagenEditada(formData.get("image"))),
       width: Math.round(ancho),
       height: Math.round(alto),
       relleno: Math.min(100, Math.max(10, Math.round(relleno) || 100)),

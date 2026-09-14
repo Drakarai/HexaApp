@@ -3,6 +3,12 @@ import sharp from "sharp";
 import { spriteCandidates } from "@/lib/pokedex";
 import { spriteDeObjeto } from "@/lib/objetos";
 import { IMAGE_SIZES } from "@/lib/image";
+import {
+  claveDeSprite,
+  guardar,
+  referenciaA,
+  yaGuardada,
+} from "@/lib/almacen-de-imagenes";
 
 /**
  * Descarga y reduce los sprites de un pokémon **en el servidor**.
@@ -59,17 +65,42 @@ export async function descargarSprites(
   pokemonId: number,
   shiny: boolean,
 ): Promise<SpritesDescargados> {
-  const [caja, ficha] = await Promise.all([
-    bajarPrimeraQueExista(spriteCandidates(pokemonId, shiny, "box")),
-    bajarPrimeraQueExista(spriteCandidates(pokemonId, shiny, "detail")),
-  ]);
-
   const [boxImage, detailImage] = await Promise.all([
-    caja ? aWebp(caja, IMAGE_SIZES.box) : null,
-    ficha ? aWebp(ficha, IMAGE_SIZES.detail) : null,
+    spriteDeEspecie(pokemonId, shiny, "box"),
+    spriteDeEspecie(pokemonId, shiny, "detail"),
   ]);
 
   return { boxImage, detailImage };
+}
+
+/**
+ * Un sprite de una especie, **descargado como mucho una vez en la vida de la
+ * aplicación**.
+ *
+ * El sprite de Garchomp es el mismo para todo el mundo y no cambia nunca, así
+ * que la segunda vez que alguien lo apunta no hay que volver a cruzar hasta
+ * GitHub ni volver a pasarlo por sharp: ya está en el almacén y lo que se
+ * devuelve es la referencia. Apuntar un equipo de seis pasa de seis descargas
+ * a ninguna en cuanto el grupo lleva un rato jugando.
+ */
+async function spriteDeEspecie(
+  pokemonId: number,
+  shiny: boolean,
+  tipo: "box" | "detail",
+): Promise<string | null> {
+  const clave = claveDeSprite(pokemonId, shiny, tipo);
+  if (await yaGuardada(clave)) return referenciaA(clave);
+
+  const original = await bajarPrimeraQueExista(
+    spriteCandidates(pokemonId, shiny, tipo),
+  );
+  if (!original) return null;
+
+  const dataUrl = await aWebp(
+    original,
+    tipo === "box" ? IMAGE_SIZES.box : IMAGE_SIZES.detail,
+  );
+  return guardar(clave, dataUrl);
 }
 
 /**
@@ -79,6 +110,11 @@ export async function descargarSprites(
  * un kilobyte cada uno y así la bolsa se pinta aunque GitHub esté caído. Si no
  * se puede bajar se guarda sin dibujo, que es mejor que no dejar crear el
  * objeto.
+ */
+/**
+ * No pasa por el almacén: del dibujo de un objeto ya hay **uno por objeto del
+ * catálogo**, no uno por uso, así que no hay nada que deduplicar. Y la bolsa lo
+ * pinta directamente desde la fila, sin pasar por `/api/imagen`.
  */
 export async function descargarSpriteDeObjeto(slug: string) {
   const original = await bajarPrimeraQueExista([spriteDeObjeto(slug)]);

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
+import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
@@ -107,9 +108,12 @@ export async function updateDeathAction(
   // baja el servidor; el modo manual las manda él. Si no llega ninguna de las
   // dos cosas, se quedan las que ya tuviera.
   const sprites = await spritesDelFormulario(formData);
-  const boxImage = sprites?.boxImage ?? imagenEditada(formData.get("boxImage"));
+  const boxImage =
+    sprites?.boxImage ??
+    (await guardarPorContenido(imagenEditada(formData.get("boxImage"))));
   const detailImage =
-    sprites?.detailImage ?? imagenEditada(formData.get("detailImage"));
+    sprites?.detailImage ??
+    (await guardarPorContenido(imagenEditada(formData.get("detailImage"))));
   const sitio = await sitioDelFormulario(formData, death.participantId);
 
   await prisma.death.update({

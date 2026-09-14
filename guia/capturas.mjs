@@ -130,6 +130,14 @@ async function foto(pagina, nombre, ruta, prepara) {
   await foto(pagina, "final", "/final-four");
   await foto(pagina, "hall", "/hall-de-la-fama");
   await foto(pagina, "competiciones", "/competiciones");
+  await foto(pagina, "sorteo", "/sorteo");
+  await foto(pagina, "sin-conexion", "/", async (p) => {
+    // El aviso de abajo, tal y como se ve cuando se va la línea
+    await p.context().setOffline(true);
+    await p.reload({ waitUntil: "domcontentloaded" }).catch(() => {});
+    await p.waitForTimeout(2500);
+  });
+  await pagina.context().setOffline(false);
   await foto(pagina, "admin", "/admin");
   await contexto.close();
 }

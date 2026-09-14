@@ -28,6 +28,27 @@ model User {
   passwordHash String
   // "ADMIN" | "PLAYER". Los admin globales pueden crear competiciones y usuarios.
   role         String   @default("PLAYER")
+  /**
+   * Permiso de **organizador**: puede montar sus propios lockes y dar de alta a
+   * la gente que juega con él, sin ver los lockes de los demás.
+   *
+   * Es una marca aparte y no un rol nuevo a propósito: un organizador no es
+   * medio administrador global —no toca el catálogo de objetos, ni los mapas,
+   * ni las copias de seguridad, ni ve un locke en el que no juega—, solo se le
+   * levanta la puerta de "crear". Lo da y lo quita un administrador global.
+   */
+  puedeCrearLockes Boolean @default(false)
+  /**
+   * Quién dio de alta esta cuenta, si la dio un organizador.
+   *
+   * Hace falta para que un organizador pueda arreglar lo suyo —cambiarle la
+   * contraseña a alguien de su grupo, borrar una cuenta que creó mal— sin poder
+   * tocar las cuentas del resto de la casa. En las cuentas que creó un
+   * administrador global va vacío.
+   */
+  creadoPorId  String?
+  creadoPor    User?    @relation("CuentasCreadas", fields: [creadoPorId], references: [id], onDelete: SetNull)
+  cuentasCreadas User[] @relation("CuentasCreadas")
   avatarColor  String   @default("#6366f1")
   // Foto de perfil: URL externa o imagen subida (data URL ya redimensionada)
   avatarImage  String?
@@ -1402,6 +1423,34 @@ model RouletteSpin {
  * sitios— la segunda se descarta en vez de duplicar la captura. No guarda el
  * contenido: eso ya está en su tabla de siempre.
  */
+/**
+ * El almacén de imágenes: **cada una guardada una sola vez**.
+ *
+ * Antes, el sprite de Garchomp se guardaba entero en cada combate, en cada baja
+ * y en cada bote: la misma imagen de 18 KB repetida decenas de veces. Aquí se
+ * guarda una vez y las filas apuntan a ella con `ref:<clave>` en la columna de
+ * siempre, que son 20 caracteres en vez de 18 KB.
+ *
+ * La **clave dice de dónde salió**, y por eso no hay que descargar nada que ya
+ * se tenga:
+ * - `pkm-6-box`, `pkm-6-detail-shiny`… el sprite de una especie. Nunca cambian.
+ * - `obj-poke-ball` el dibujo de un objeto.
+ * - `h-<md5>` una imagen cualquiera, guardada por su contenido. Es la que sale
+ *   al deduplicar lo que ya estaba escrito.
+ *
+ * Como la clave manda en el contenido y el contenido no cambia nunca, la
+ * dirección `/api/imagen/c/<clave>` se puede cachear para siempre **y la
+ * comparten todas las filas**: el navegador se baja un Garchomp, no doce.
+ */
+model Imagen {
+  clave     String   @id
+  /** La imagen como data URL, igual que se guardaba antes en cada fila */
+  datos     String
+  /** Lo que ocupa, para poder enseñarlo sin leer la imagen entera */
+  bytes     Int
+  createdAt DateTime @default(now())
+}
+
 model ApunteSincronizado {
   /** El identificador que puso el móvil, no uno nuestro */
   id        String   @id

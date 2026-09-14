@@ -9,10 +9,12 @@
 
 Última actualización: 14 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
-por mapa, la guía de uso rehecha y accesible desde la propia aplicación, el
-modo sin conexión con su cola de apuntes, los tipos de combate por jornada
-con su Battle Royale, el sorteo de pokémon de préstamo y la medida de lo que
-ocupa la base de datos en Diagnóstico).
+por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
+propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
+combate por jornada con su Battle Royale, el sorteo de pokémon de préstamo, la
+medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
+una sola vez** y el permiso de **organizador** para que alguien lleve sus
+propios lockes).
 
 ---
 
@@ -60,7 +62,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
-| **Diagnóstico** | Pantalla de administrador global. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. |
+| **Diagnóstico** | Pantalla de administrador global. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
+| **Organizador** | Un permiso que da un administrador global (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
 
@@ -1423,6 +1426,66 @@ Dos cosas que salen de ahí y conviene tener presentes:
   cada sprite **una sola vez por especie** y apuntar a él es lo que multiplica
   el sitio disponible, y es un cambio de tabla, no de pantallas.
 
+**Cada imagen se guarda una sola vez, y las filas apuntan a ella.** Era lo que
+más pesaba con diferencia: el sprite de Garchomp se guardaba entero en cada
+combate, en cada baja y en cada bote, y la misma imagen de 18 KB estaba repetida
+decenas de veces. Ahora vive en la tabla `Imagen` y la columna de siempre lleva
+`ref:<clave>`, veinte caracteres. Medido: 306 filas de equipo con las mismas seis
+especies ocupan **208 KB en vez de 16,5 MB**.
+
+Tres cosas que salieron gratis con el mismo cambio:
+
+- **No se vuelve a descargar un sprite que ya se tiene.** La clave dice de dónde
+  salió (`pkm-445-box`), así que apuntar un pokémon que ya está guardado no cruza
+  hasta GitHub ni pasa por sharp: se apunta la referencia y ya.
+- **El navegador se baja un Garchomp, no doce.** La dirección pasa a ser la de la
+  imagen (`/api/imagen/c/<clave>`) y no la de la fila, así que la comparten todas
+  las pantallas y todas las filas que la usen.
+- **Las firmas dejan de resumir 35 KB por fila y por visita.** El `md5` que
+  calculaba PostgreSQL para saber qué versión era ahora cae sobre veinte
+  caracteres.
+
+**Convive con lo de antes a propósito.** Una columna puede llevar todavía la
+imagen entera y se sirve igual: así el despliegue no depende de haber migrado
+nada. El botón de *Diagnóstico* pasa lo que quede, y se puede pulsar las veces
+que haga falta porque solo toca lo que empieza por `data:`.
+
+**Y hace `VACUUM FULL` al terminar.** Sin eso el cambio no se nota: PostgreSQL
+marca como libre lo que ocupaban las filas viejas pero no encoge el fichero, así
+que la tabla seguiría midiendo lo mismo y la cuenta de cuántos lockes caben
+saldría igual de mala.
+
+**Los dibujos de objetos se quedan fuera.** Hay uno por objeto del catálogo, no
+uno por uso, así que no hay nada repetido que quitar, y la bolsa los pinta
+directamente desde la fila en vez de pedirlos a `/api/imagen`.
+
+**Tirar una imagen huérfana es un botón aparte y no pasa al borrar una fila.**
+Al borrar una baja no se puede borrar su imagen: puede que la estén usando otras
+diez. Así que se recorren todas las columnas al revés y se tira lo que no aparece
+en ninguna, cuando uno quiere.
+
+**El permiso de organizador es una marca, no un rol nuevo.** Alguien con
+`puedeCrearLockes` puede montar sus lockes y dar de alta a su gente, y nada más:
+no ve los lockes en los que no juega —eso lo decide `filtroDeLockesVisibles`, que
+no cambió—, ni entra en Administración, ni toca los mapas, el catálogo, las
+plantillas o las copias. Un rol nuevo habría obligado a repasar todas las
+comprobaciones de la aplicación para decidir de qué lado cae; una marca solo
+levanta la puerta de "crear".
+
+Lo que hubo que cuidar al abrir esa puerta, que es donde estaban los líos:
+
+- **Quien crea un locke entra dentro como administrador de esa edición.** Si no,
+  un organizador montaría el suyo y no podría ni abrirlo.
+- **"Archivar las anteriores" solo archiva las que lleva él**, no las que juega.
+  Con el filtro de "las que puede ver", montar su primer locke habría archivado
+  de paso el de la casa en el que juega.
+- **Copiar de otro locke solo se puede desde los que puede abrir.** Copiar es
+  leerlo entero.
+- **Solo ve las cuentas que él dio de alta** (`creadoPorId`) y la suya, así que
+  puede armar su locke con su gente sin ver la lista entera de la casa. Y las
+  cuentas que crea son siempre jugadores: repartir permisos de administrador no
+  es cosa suya.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -1541,6 +1604,13 @@ Piezas con truco:
   `actions/sorteos.ts` son las acciones y `(app)/sorteo/` la pantalla; el
   reparto es un Fisher-Yates y una vuelta por turnos, y lo que sobra se queda
   con `tocaAId` a null, que es lo que la pantalla enseña como "en el bote".
+- `lib/almacen-de-imagenes.ts` — guardar una imagen una sola vez y resolver la
+  referencia. `lib/deduplicar-imagenes.ts` pasa al almacén lo que ya estaba
+  escrito (**en SQL**: traerse las imágenes a Node serían cientos de megas de ida
+  y vuelta) y tira las huérfanas; `actions/almacen.ts` son los dos botones de
+  *Diagnóstico*. **Al añadir una columna que guarde una imagen** hay que
+  apuntarla en las tres listas: `COLUMNAS` de `deduplicar-imagenes.ts`, la de
+  `ocupacion.ts` y `FUENTES` de `imagenes.ts`.
 - `lib/ocupacion.ts` — mide lo que ocupa la base de datos y en qué se va,
   columna de imágenes a columna de imágenes. Lo enseña `/diagnostico`. Si se
   añade una columna que guarde una imagen, hay que apuntarla en su lista
@@ -1694,13 +1764,6 @@ Ideas comentadas y no hechas:
   que son para restaurar y no para enseñar.)
 - **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
   sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
-- **Guardar cada sprite una sola vez por especie** en vez de una copia por
-  fila. Hoy el mismo Garchomp se guarda entero en cada combate, cada baja y cada
-  bote. Mientras sea un locke no molesta; si se comparte la aplicación con
-  amigos para que hagan los suyos, es lo que multiplica el sitio disponible.
-  Es una tabla nueva de sprites por especie y cambiar las columnas por una
-  referencia: no toca ninguna pantalla, porque las imágenes ya se sirven por
-  dirección (`/api/imagen/...`) y no van dentro de la página.
 
 Hay una **guía de uso en PDF** hecha con capturas de la aplicación (20
 páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
@@ -1712,10 +1775,10 @@ fotos no se suben (se rehacen en cinco minutos), pero **el PDF sí**, en
 Instrucciones en `guia/README.md`; el índice de ese apartado está escrito a
 mano y hay que tocarlo si se mueve una página.
 
-**La guía va por detrás desde los tipos de combate.** No cuenta las jornadas
-temáticas, el Battle Royale ni el sorteo de préstamos. Rehacerla es correr los
-tres scripts otra vez, pero mueve los números de página del índice, así que
-conviene juntar varias novedades y hacerlo de una vez.
+La guía va **por 22 páginas** y está al día: cuenta el sorteo de préstamos, el
+modo sin conexión y el permiso de organizador. Rehacerla mueve los números de
+página del índice escrito a mano, así que conviene juntar varias novedades y
+hacerlo de una vez.
 
 ---
 
@@ -1840,3 +1903,8 @@ lugar de destruir datos, y hay que avisar antes.
     dejando en el bote lo que sobre. Y `/diagnostico` pasa a medir **cuánto
     ocupa la base de datos** y cuántos lockes caben, que era la duda de fondo
     al pensar en compartir la aplicación con amigos.
+47. **Una imagen, una copia**: los sprites dejan de guardarse una vez por fila y
+    pasan a un almacén con su dirección propia, que además ahorra descargarlos
+    otra vez y hace que el navegador se baje cada uno una sola vez. Y aparece el
+    permiso de **organizador**, para poder dejarle la aplicación a un amigo y
+    que lleve sus lockes sin ver los de nadie más.

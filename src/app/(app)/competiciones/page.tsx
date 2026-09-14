@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import { requireUser, isAdmin } from "@/lib/auth";
+import { requireUser, isAdmin, puedeCrearLockes } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
@@ -19,6 +19,8 @@ import {
   setCompetitionStatusAction,
 } from "@/app/actions/competitions";
 import { getMisSolicitudes } from "@/lib/solicitudes";
+import { urlsDeImagen } from "@/lib/imagenes";
+import { NewUserForm } from "../admin/user-forms";
 import {
   LockeEnSolitarioForm,
   MisSolicitudes,
@@ -36,6 +38,8 @@ export const metadata = { title: "Competiciones" };
 export default async function CompetitionsPage() {
   const user = await requireUser();
   const admin = isAdmin(user);
+  // Un organizador monta sus lockes y da de alta a su gente, sin ser admin
+  const organiza = puedeCrearLockes(user);
   const [competitions, active] = await Promise.all([
     listCompetitions(),
     getActiveCompetition(),
@@ -51,13 +55,21 @@ export default async function CompetitionsPage() {
           where: { competitionId: active.id },
           orderBy: { displayName: "asc" },
           include: {
-            user: { select: { username: true, avatarImage: true } },
+            user: { select: { id: true, username: true } },
             _count: { select: { deaths: true } },
           },
         })
       : Promise.resolve([]),
-    admin
+    organiza
       ? prisma.user.findMany({
+          /**
+           * Un organizador solo ve **las cuentas que él dio de alta** y la suya:
+           * la lista entera de la casa no es asunto suyo, y con esto puede
+           * montar su locke con su gente sin ver a nadie más.
+           */
+          where: admin
+            ? {}
+            : { OR: [{ creadoPorId: user.id }, { id: user.id }] },
           orderBy: { displayName: "asc" },
           select: { id: true, displayName: true, username: true },
         })
@@ -73,6 +85,12 @@ export default async function CompetitionsPage() {
         })
       : Promise.resolve([]),
   ]);
+
+  // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
+  const avatares = await urlsDeImagen(
+    "avatar",
+    participants.map((participant) => participant.user.id),
+  );
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
@@ -129,7 +147,7 @@ export default async function CompetitionsPage() {
                     <Avatar
                       name={participant.displayName}
                       color={participant.color}
-                      image={participant.user.avatarImage}
+                      image={avatares(participant.user.id)}
                       size={32}
                     />
                     <div className="min-w-0 flex-1">
@@ -270,7 +288,7 @@ export default async function CompetitionsPage() {
                 </ul>
               ) : null}
 
-              {canManageActive && admin ? (
+              {canManageActive && organiza ? (
                 <AddEspectadorForm
                   competitionId={active.id}
                   users={puedenMirar}
@@ -282,14 +300,14 @@ export default async function CompetitionsPage() {
           {canManageActive ? (
             <div className="mt-5 space-y-4 border-t border-white/10 pt-4">
               {participants.length < active.maxPlayers ? (
-                availableUsers.length || !admin ? (
+                availableUsers.length || !organiza ? (
                   <AddParticipantForm
                     competitionId={active.id}
                     users={availableUsers}
                   />
                 ) : (
                   <p className="muted">
-                    No quedan usuarios libres. Crea uno nuevo en Administración.
+                    No quedan cuentas libres. Crea una aquí abajo.
                   </p>
                 )
               ) : (
@@ -407,16 +425,24 @@ export default async function CompetitionsPage() {
 
       {/* Un locke para uno mismo: el admin lo crea y el resto lo pide */}
       <div className="mb-6">
-        <LockeEnSolitarioForm puedeCrearDirecto={admin} />
+        <LockeEnSolitarioForm puedeCrearDirecto={organiza} />
       </div>
 
-      {admin ? (
-        <NewCompetitionForm
-          competitions={competitions.map((competition) => ({
-            id: competition.id,
-            name: competition.name,
-          }))}
-        />
+      {organiza ? (
+        <div className="space-y-4">
+          <NewCompetitionForm
+            competitions={competitions.map((competition) => ({
+              id: competition.id,
+              name: competition.name,
+            }))}
+          />
+          {/**
+           * El alta de cuentas vive aquí y no en Administración porque un
+           * organizador no entra en Administración: es de administradores
+           * globales, y esto es justo lo que sí necesita para montar su locke.
+           */}
+          {admin ? null : <NewUserForm puedeElegirRol={false} />}
+        </div>
       ) : null}
     </>
   );
