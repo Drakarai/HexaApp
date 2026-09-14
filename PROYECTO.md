@@ -1506,7 +1506,12 @@ Tres cosas de esto que no son obvias:
   solas: son un JSON ya escrito. El botón de *Diagnóstico* coge una, le saca las
   imágenes al almacén y la reescribe. Va de una en una porque una copia
   descomprimida son decenas de megas en memoria, y hacerlas todas de un tirón se
-  comería el tiempo del servidor.
+  comería el tiempo del servidor. **Es cosa de una vez**: las copias nuevas
+  nacen ya ligeras, la del día incluida.
+- **Ligera o no lo dice una columna (`Backup.formato`), no la lista de claves.**
+  Una copia puede necesitar cero imágenes —una base de datos recién puesta— y
+  entonces parecería para siempre una copia por aligerar: un aviso que no se iría
+  nunca y un botón que no haría nada.
 
 **Restaurar una copia antigua ya no se cae.** Era un fallo de siempre que
 apareció al añadir una columna: la restauración insertaba **todas** las columnas

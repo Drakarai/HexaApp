@@ -324,6 +324,7 @@ export async function crearCopia(
         summary: resumir(volcado),
         rawSize: Buffer.byteLength(json, "utf8"),
         payload: comprimido,
+        formato: 2,
         imagenes: claves,
       },
       select: { id: true, createdAt: true, rawSize: true },
@@ -401,16 +402,11 @@ export async function aligerarUnaCopia(): Promise<{
   antes: number;
   despues: number;
 } | null> {
-  /**
-   * En SQL y no con `imagenes: { isEmpty: true }`: a las copias que ya estaban
-   * cuando se añadió la columna, PostgreSQL les puso **NULL**, y para Prisma
-   * eso no es una lista vacía, así que no las encontraba ninguna.
-   */
-  const pendientes = await prisma.$queryRaw<{ id: string }[]>`
-    select "id" from "Backup"
-    where "rawSize" > 0 and coalesce(array_length("imagenes", 1), 0) = 0
-    order by "createdAt" desc
-  `;
+  const pendientes = await prisma.backup.findMany({
+    where: { ...COPIAS_HECHAS, formato: { lt: 2 } },
+    orderBy: { createdAt: "desc" },
+    select: { id: true },
+  });
   if (!pendientes.length) return null;
 
   const id = pendientes[0].id;
@@ -450,6 +446,7 @@ export async function aligerarUnaCopia(): Promise<{
     data: {
       payload: comprimido,
       rawSize: Buffer.byteLength(json, "utf8"),
+      formato: 2,
       imagenes: claves,
     },
   });
@@ -466,12 +463,9 @@ export async function aligerarUnaCopia(): Promise<{
 
 /** Cuántas copias guardadas llevan todavía las imágenes dentro. */
 export async function copiasSinAligerar() {
-  // Mismo motivo que arriba: las de antes tienen la columna a NULL
-  const [fila] = await prisma.$queryRaw<{ n: bigint }[]>`
-    select count(*)::bigint as n from "Backup"
-    where "rawSize" > 0 and coalesce(array_length("imagenes", 1), 0) = 0
-  `;
-  return Number(fila?.n ?? 0);
+  return prisma.backup.count({
+    where: { ...COPIAS_HECHAS, formato: { lt: 2 } },
+  });
 }
 
 /** Comprueba que lo que llega es un volcado de los nuestros antes de tocar nada. */

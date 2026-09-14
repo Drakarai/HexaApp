@@ -1486,6 +1486,17 @@ model Backup {
    */
   payload    String
   /**
+   * Cómo está guardado el volcado. **1**: lo lleva todo dentro, imágenes
+   * incluidas, que es como se guardaban antes del almacén. **2**: las imágenes
+   * se sacan del almacén al leerla.
+   *
+   * Es una columna y no se deduce de `imagenes` porque una copia puede
+   * necesitar cero imágenes —una base de datos recién puesta— y entonces
+   * parecería para siempre una copia por aligerar, con un aviso que no se iría
+   * nunca y un botón que no haría nada.
+   */
+  formato    Int      @default(1)
+  /**
    * Las claves del almacén que necesita esta copia (formato 2).
    *
    * La copia **no guarda las imágenes**: ya están en `Imagen`, y guardarlas
