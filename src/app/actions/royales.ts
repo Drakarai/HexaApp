@@ -37,6 +37,7 @@ async function royaleCon(id: string) {
 function refrescar() {
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
 }
 

@@ -44,6 +44,7 @@ export async function adjustPointsAction(
   });
 
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
   return {
     success: `${Math.trunc(delta) > 0 ? "+" : ""}${Math.trunc(delta)} a ${participant.displayName}.`,
@@ -75,6 +76,7 @@ export async function quickAdjustPointsAction(formData: FormData) {
   });
 
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
 }
 
@@ -115,6 +117,7 @@ export async function adjustAllPointsAction(
   });
 
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
   return {
     success: `Aplicado a los ${participants.length} jugadores.`,
@@ -129,5 +132,6 @@ export async function deletePointEntryAction(formData: FormData) {
 
   await prisma.pointEntry.delete({ where: { id } });
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
 }

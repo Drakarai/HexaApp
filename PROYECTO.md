@@ -1558,6 +1558,29 @@ petición lleva para cuánta gente es, y al aceptarla quien la pidió entra como
 de organizador, porque un locke de grupo no sirve de nada si no puede dar de
 alta a sus amigos.
 
+**Al cambiar algo hay que refrescar todas las pantallas donde sale, no solo la
+suya.** Next guarda lo ya pintado, así que una pantalla que no se refresca
+sigue enseñando el número de antes aunque la base de datos ya esté bien. Pasó
+con las bajas: borrar una dejaba el cementerio en 10 y la clasificación en 12,
+porque las acciones de bajas refrescaban `/muertes`, `/mapa` y la portada pero
+no `/puntos` ni los perfiles.
+
+Una baja **no sale solo en el cementerio**: cuenta para la clasificación —es el
+primer desempate—, y sale en el perfil de cada jugador, en el hall de la fama y
+en el muro. Por eso ahora hay un `refrescarBajas()` con la lista entera en vez
+de repetirla a mano en cada acción: si mañana el número aparece en otra
+pantalla, se añade una vez y valen las tres.
+
+Lo mismo con los puntos, las jornadas y los royales, que cambiaban la
+clasificación y dejaban el perfil de cada jugador con lo de antes. Los perfiles
+son una ruta con identificador, así que se refrescan con
+`revalidatePath("/jugador", "layout")`, que los coge todos.
+
+**Ojo al probarlo en local**: ahí no se reproduce. Esas pantallas leen la cookie
+de la edición, así que el servidor de desarrollo las trata como dinámicas y se
+refrescan solas; el número viejo se ve en el navegador de quien lo usa. Que no
+pase en `npm run start` no quiere decir que no pase.
+
 ---
 
 ## 4. Reglas del locke que están implementadas

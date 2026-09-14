@@ -161,6 +161,7 @@ export async function deleteMatchdayAction(formData: FormData) {
   await prisma.matchday.delete({ where: { id } });
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
 }
 
 export async function addMatchAction(
@@ -290,6 +291,7 @@ export async function setMatchResultAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
 }
 
@@ -368,6 +370,7 @@ export async function darPorRetiradaAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
   revalidatePath("/");
 }
 
@@ -389,4 +392,5 @@ export async function deleteMatchAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
 }

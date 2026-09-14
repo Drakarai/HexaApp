@@ -38,6 +38,29 @@ async function sitioDelFormulario(
 }
 
 /**
+ * Todo lo que cambia cuando cambia una baja.
+ *
+ * Una baja no sale solo en el cementerio: **cuenta para la clasificación** —es
+ * el primer desempate— y sale en el perfil de cada jugador, en el hall de la
+ * fama y en el muro. Estaba puesto a mano en cada acción y se habían quedado
+ * fuera la clasificación y los perfiles, así que al borrar una baja el
+ * cementerio se ponía al día y la tabla seguía enseñando el número de antes.
+ *
+ * Va en una lista y no suelto por cada acción justo por eso: si mañana el
+ * número aparece en otra pantalla, se añade aquí una vez y valen las tres.
+ */
+function refrescarBajas() {
+  revalidatePath("/muertes");
+  revalidatePath("/mapa");
+  revalidatePath("/puntos");
+  revalidatePath("/hall-de-la-fama");
+  revalidatePath("/actividad");
+  // Los perfiles son una ruta con identificador: hay que refrescarlos todos
+  revalidatePath("/jugador", "layout");
+  revalidatePath("/");
+}
+
+/**
  * Alta de una baja. El formulario del cementerio pide lo mínimo: jugador,
  * mote, especie y, si se quiere, la causa y el sprite de la caja. El resto de
  * datos se pueden rellenar luego desde el panel de detalle.
@@ -76,9 +99,7 @@ export async function createDeathAction(
     },
   });
 
-  revalidatePath("/muertes");
-  revalidatePath("/mapa");
-  revalidatePath("/");
+  refrescarBajas();
   return { success: `F por ${nickname || species}.` };
 }
 
@@ -132,9 +153,7 @@ export async function updateDeathAction(
     },
   });
 
-  revalidatePath("/muertes");
-  revalidatePath("/mapa");
-  revalidatePath("/");
+  refrescarBajas();
   return { success: "Ficha actualizada." };
 }
 
@@ -146,7 +165,5 @@ export async function deleteDeathAction(formData: FormData) {
   await assertCanActForParticipant(death.participantId);
 
   await prisma.death.delete({ where: { id } });
-  revalidatePath("/muertes");
-  revalidatePath("/mapa");
-  revalidatePath("/");
+  refrescarBajas();
 }
