@@ -26,6 +26,7 @@ export type TipoImagen =
   | "objeto-opcion"
   | "mapa"
   | "captura"
+  | "sorteo"
   | "medalla"
   | "medalla-plantilla";
 

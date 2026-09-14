@@ -9,9 +9,10 @@
 
 Última actualización: 14 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
-por mapa, la guía de uso rehecha y accesible desde la propia aplicación, y el
-modo sin conexión con su cola de apuntes, y los tipos de combate por jornada
-con su Battle Royale).
+por mapa, la guía de uso rehecha y accesible desde la propia aplicación, el
+modo sin conexión con su cola de apuntes, los tipos de combate por jornada
+con su Battle Royale, el sorteo de pokémon de préstamo y la medida de lo que
+ocupa la base de datos en Diagnóstico).
 
 ---
 
@@ -43,6 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
+| **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
@@ -58,6 +60,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
+| **Diagnóstico** | Pantalla de administrador global. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
 
@@ -987,6 +990,36 @@ las notas privadas de alguien: la crónica la escribe la organización y cada
 jugador puede dejar su propia línea, con la misma comprobación que usan las
 bajas.
 
+**El sorteo de préstamos es una pantalla aparte y no cuelga de la jornada.**
+Nació para las jornadas de *Pokémon de Préstamo*, pero atarlo a una jornada lo
+habría dejado inservible para todo lo demás —repartir bichos para un pique
+suelto, para probar equipos, para lo que se invente— y habría obligado a crear
+una jornada antes de poder repartir nada. Un sorteo es un bote y una lista de
+gente; dónde se usa lo que sale es cosa de quien lo use.
+
+**Al bote echa cualquiera que juegue; repartir es de la organización.** La
+gracia es que cada uno ponga los suyos, así que pedir que los eche un
+administrador lo convertiría en un recado. Queda apuntado **quién puso cada
+uno**, porque en un préstamo importa de quién era el bicho, y quitarlo del bote
+lo puede hacer quien lo puso o un administrador.
+
+**Lo que sobra se queda en el bote, no se tira ni se avisa.** Si hay más
+pokémon que huecos —seis por persona— los que sobran simplemente no le tocan a
+nadie y salen en su apartado. Cualquier otra cosa (negarse a repartir, avisar
+con un error, elegir cuáles descartar) sería inventarse una regla que nadie ha
+pedido para algo que no es un problema.
+
+**Se baraja con Fisher-Yates.** Ordenar por `Math.random()` parece que baraja,
+pero no reparte parejo, y aquí lo único que hay que hacer bien es justo eso.
+Repartir otra vez vuelve a barajar desde cero, así que no quedan restos del
+reparto anterior.
+
+**Las constantes del sorteo viven en `lib/sorteo.ts` y no en la server action.**
+Un fichero `"use server"` **solo puede exportar funciones**: en cuanto exporta
+una constante, Next se queda sin exportaciones y la pantalla entera deja de
+compilar, con un error que no dice eso en ningún momento. Vale para cualquier
+otro fichero de acciones.
+
 **Sin conexión se lee lo último y se escribe en una cola.** La aplicación se
 dibuja en el servidor, así que sin línea no había nada que enseñar. Ahora el
 service worker guarda cada pantalla al visitarla y la sirve cuando la petición
@@ -1370,6 +1403,26 @@ de verdad. Tres detalles pensados:
 La excepción es el MVP por votar: ese no se va por mirar la pestaña, porque no
 es algo que ver sino algo que hacer. Se apaga al votar.
 
+**Lo que ocupa la base de datos se mide, no se calcula de cabeza.** La pregunta
+de cuántos lockes caben no tiene respuesta de memoria: casi todo el peso son
+**imágenes guardadas como data URL** dentro de la propia base —sprites,
+ilustraciones y fondos de mapa—, y eso depende de cuánto haya apuntado la gente,
+no del número de tablas. Por eso `/diagnostico` lo mide sobre la base de datos
+de verdad (`lib/ocupacion.ts`), y lo mide donde está desplegada, que es donde
+importa.
+
+Dos cosas que salen de ahí y conviene tener presentes:
+
+- **El esqueleto se paga una vez.** Las tablas, los índices y el texto ocupan
+  unos megas estén llenos o vacíos, y valen para todos los lockes. Lo que crece
+  con cada locke son las imágenes, así que el "por locke" se mide con ellas; si
+  se repartiera el total, saldría inflado por algo que ya estaba pagado.
+- **El mismo sprite se guarda una vez por fila.** Si dos personas usan Garchomp
+  en dos combates, son cuatro copias de la misma imagen. Mientras sea un locke
+  da igual; si algún día se comparte la aplicación con gente de fuera, guardar
+  cada sprite **una sola vez por especie** y apuntar a él es lo que multiplica
+  el sitio disponible, y es un cambio de tabla, no de pantallas.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -1481,6 +1534,18 @@ Piezas con truco:
   acción que anota su resultado guarda el reto entero, así que el formulario
   lleva también el selector; sin él, anotar el resultado lo devolvería a
   singles.
+- `lib/sorteo.ts` — los números del sorteo de préstamos (seis por persona, de
+  dos a seis personas). Están sueltos y no dentro de `actions/sorteos.ts`
+  porque **un fichero `"use server"` solo puede exportar funciones**: si exporta
+  una constante, el módulo se queda sin exportaciones y la pantalla no compila.
+  `actions/sorteos.ts` son las acciones y `(app)/sorteo/` la pantalla; el
+  reparto es un Fisher-Yates y una vuelta por turnos, y lo que sobra se queda
+  con `tocaAId` a null, que es lo que la pantalla enseña como "en el bote".
+- `lib/ocupacion.ts` — mide lo que ocupa la base de datos y en qué se va,
+  columna de imágenes a columna de imágenes. Lo enseña `/diagnostico`. Si se
+  añade una columna que guarde una imagen, hay que apuntarla en su lista
+  `COLUMNAS`; si no, no se contará y la cuenta de "cuántos lockes caben" saldrá
+  optimista.
 - `lib/cola.ts` — la cola de apuntes sin subir, en el `localStorage` del móvil.
   `lib/acciones-sin-conexion.ts` envuelve un formulario para que, si el envío no
   sale, acabe ahí en vez de perderse; `components/estado-conexion.tsx` es el
@@ -1629,6 +1694,13 @@ Ideas comentadas y no hechas:
   que son para restaurar y no para enseñar.)
 - **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
   sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
+- **Guardar cada sprite una sola vez por especie** en vez de una copia por
+  fila. Hoy el mismo Garchomp se guarda entero en cada combate, cada baja y cada
+  bote. Mientras sea un locke no molesta; si se comparte la aplicación con
+  amigos para que hagan los suyos, es lo que multiplica el sitio disponible.
+  Es una tabla nueva de sprites por especie y cambiar las columnas por una
+  referencia: no toca ninguna pantalla, porque las imágenes ya se sirven por
+  dirección (`/api/imagen/...`) y no van dentro de la página.
 
 Hay una **guía de uso en PDF** hecha con capturas de la aplicación (20
 páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
@@ -1639,6 +1711,11 @@ fotos no se suben (se rehacen en cinco minutos), pero **el PDF sí**, en
 `public/guia-de-uso.pdf`, porque es el que sirve el apartado *Guía de uso*.
 Instrucciones en `guia/README.md`; el índice de ese apartado está escrito a
 mano y hay que tocarlo si se mueve una página.
+
+**La guía va por detrás desde los tipos de combate.** No cuenta las jornadas
+temáticas, el Battle Royale ni el sorteo de préstamos. Rehacerla es correr los
+tres scripts otra vez, pero mueve los números de página del índice, así que
+conviene juntar varias novedades y hacerlo de una vez.
 
 ---
 
@@ -1758,3 +1835,8 @@ lugar de destruir datos, y hay que avisar antes.
 45. **Jornadas temáticas**: cada jornada y cada reto tienen su tipo de
     combate, con su chapa y su color, y el Battle Royale trae su propia
     pantalla con orden de llegada y crónica.
+46. **Sorteo de préstamos**: un bote al que echa pokémon cualquiera que juegue
+    y que la aplicación reparte al azar entre los que entren, seis por cabeza,
+    dejando en el bote lo que sobre. Y `/diagnostico` pasa a medir **cuánto
+    ocupa la base de datos** y cuántos lockes caben, que era la duda de fondo
+    al pensar en compartir la aplicación con amigos.

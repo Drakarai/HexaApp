@@ -34,6 +34,7 @@ const S = {
   ruleta: { href: "/ruleta", label: "Ruleta", icon: "🎡" },
   jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
   retos: { href: "/retos", label: "Retos", icon: "🔥" },
+  sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
   actividad: { href: "/actividad", label: "Actividad", icon: "📰" },
@@ -63,7 +64,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "Combates",
     icon: "⚔️",
-    children: [S.jornadas, S.retos, S.ruleta, S.finalFour, S.hall],
+    children: [S.jornadas, S.retos, S.sorteo, S.ruleta, S.finalFour, S.hall],
   },
   {
     label: "La edición",

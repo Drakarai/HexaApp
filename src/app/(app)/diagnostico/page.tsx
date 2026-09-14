@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { requireAdminPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
+import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
 import { cx } from "@/lib/utils";
 
 export const metadata = { title: "Diagnóstico" };
@@ -53,10 +54,28 @@ function leerConexion() {
 export default async function DiagnosticoPage() {
   await requireAdminPage();
 
-  const [ida, conexion] = await Promise.all([
+  const [ida, conexion, ocupacion] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
+    medirOcupacion(),
   ]);
+
+  /**
+   * Lo que crece con cada locke son **las imágenes**: las tablas, los índices y
+   * el texto se pagan casi una vez y se quedan ahí. Por eso el «por locke» se
+   * mide con las imágenes y no repartiendo el total, que saldría inflado por un
+   * esqueleto que ya está pagado.
+   */
+  const esqueleto = Math.max(0, ocupacion.sinCopias - ocupacion.totalImagenes);
+  const porLocke = ocupacion.lockes
+    ? ocupacion.totalImagenes / ocupacion.lockes
+    : 0;
+  /**
+   * Se reserva un 40%: las copias de seguridad guardan el conjunto entero —son
+   * cinco— y el texto también sube algo según se juega.
+   */
+  const hueco = PLAN_GRATIS * 0.6 - esqueleto;
+  const cabrian = porLocke > 0 ? Math.max(0, Math.floor(hueco / porLocke)) : 0;
 
   const regionServidor =
     process.env.VERCEL_REGION ?? process.env.FLY_REGION ?? null;
@@ -110,6 +129,89 @@ export default async function DiagnosticoPage() {
           {ida.mediana < 15
             ? "Está bien: la base de datos está al lado del servidor."
             : "Es mucho: la base de datos está lejos del servidor, y eso es lo que se nota."}
+        </p>
+      </section>
+
+      <section className="card mb-4">
+        <h2 className="section-title mb-1">Lo que ocupa</h2>
+        <p className="muted mb-4">
+          Casi todo el peso son imágenes: los sprites y las ilustraciones se
+          guardan dentro de la base de datos, no en un servidor de fotos aparte.
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
+          <Cifra
+            valor={pesar(ocupacion.total)}
+            etiqueta="Todo junto"
+            tono={
+              ocupacion.total > PLAN_GRATIS * 0.8
+                ? "mal"
+                : ocupacion.total > PLAN_GRATIS * 0.5
+                  ? "regular"
+                  : "bien"
+            }
+          />
+          <Cifra
+            valor={pesar(porLocke)}
+            etiqueta={`Imágenes por locke (hay ${ocupacion.lockes})`}
+            tono="bien"
+          />
+          <Cifra
+            valor={cabrian ? `~${cabrian}` : "—"}
+            etiqueta="Lockes que cabrían"
+            tono={cabrian >= 5 ? "bien" : cabrian >= 2 ? "regular" : "mal"}
+          />
+        </div>
+
+        <p className="mt-3 text-xs text-slate-500">
+          El plan gratis de Neon da {pesar(PLAN_GRATIS)}. Lo que crece con cada
+          locke son las imágenes; las tablas y el texto ({pesar(esqueleto)}) se
+          pagan una vez y valen para todos. La cuenta deja además un 40% libre
+          para las copias de seguridad y para lo que engorde cada locke según se
+          juega, así que es prudente a propósito.
+        </p>
+
+        <h3 className="mt-4 mb-2 text-xs uppercase tracking-wide text-slate-500">
+          En qué se va
+        </h3>
+        <ul className="space-y-1 text-sm">
+          {ocupacion.imagenes.map((fila) => (
+            <li
+              key={fila.que}
+              className="flex items-baseline gap-2 border-b border-white/5 py-1 last:border-0"
+            >
+              <span className="text-slate-300">{fila.que}</span>
+              <span className="ml-auto shrink-0 text-xs text-slate-500 tabular-nums">
+                {fila.filas} × {pesar(fila.media)}
+              </span>
+              <span className="w-20 shrink-0 text-right font-semibold tabular-nums text-slate-200">
+                {pesar(fila.total)}
+              </span>
+            </li>
+          ))}
+          <li className="flex items-baseline gap-2 pt-1 text-sm">
+            <span className="text-slate-400">Copias de seguridad guardadas</span>
+            <span className="ml-auto w-20 shrink-0 text-right font-semibold tabular-nums text-slate-200">
+              {pesar(ocupacion.copias)}
+            </span>
+          </li>
+          <li className="flex items-baseline gap-2 text-sm">
+            <span className="text-slate-400">
+              Texto, índices y tablas vacías
+            </span>
+            <span className="ml-auto w-20 shrink-0 text-right font-semibold tabular-nums text-slate-200">
+              {pesar(esqueleto)}
+            </span>
+          </li>
+        </ul>
+
+        <h3 className="mt-4 mb-2 text-xs uppercase tracking-wide text-slate-500">
+          Las tablas más gordas
+        </h3>
+        <p className="text-sm text-slate-400">
+          {ocupacion.tablas
+            .map((tabla) => `${tabla.nombre} (${pesar(tabla.bytes)})`)
+            .join(" · ")}
         </p>
       </section>
 

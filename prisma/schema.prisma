@@ -441,6 +441,7 @@ model Competition {
   challenges   ChallengeMatch[]
   visitas      TabSeen[]
   espectadores Spectator[]
+  sorteos      Sorteo[]
 }
 
 /**
@@ -519,6 +520,9 @@ model Participant {
   bagUses       BagUse[]
   captures      Capture[]
   royales       RoyalePuesto[]
+  sorteos       SorteoParticipante[]
+  aportadosASorteos SorteoPokemon[]  @relation("SorteoAportadoPor")
+  tocadosEnSorteos  SorteoPokemon[]  @relation("SorteoTocaA")
   equipoDeTipos TypeTeam?
 
   @@unique([competitionId, userId])
@@ -1068,6 +1072,77 @@ model MvpVote {
 
   @@unique([matchdayId, voterId])
   @@index([matchPokemonId])
+}
+
+// ---------------------------------------------------------------------------
+// Sorteo de pokémon de préstamo
+// ---------------------------------------------------------------------------
+
+/**
+ * Un **bote de pokémon que se reparte al azar** entre unas cuantas personas.
+ *
+ * Es lo que hace falta para jugar una jornada de "Pokémon de Préstamo": entre
+ * todos se echan bichos al bote y la aplicación reparte, sin que nadie tenga
+ * que hacer papelitos. Vive por su cuenta y no cuelga de una jornada: se puede
+ * sortear para lo que sea, y lo que salga se usa donde se quiera.
+ */
+model Sorteo {
+  id            String    @id @default(cuid())
+  competitionId String
+  label         String?
+  /** Cuándo se repartió. Vacío mientras el bote se está llenando */
+  repartidoAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  competition   Competition          @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  pokemon       SorteoPokemon[]
+  participantes SorteoParticipante[]
+
+  @@index([competitionId, createdAt])
+}
+
+/** Quién entra en el reparto. De dos a seis, que es lo que cabe en un equipo. */
+model SorteoParticipante {
+  id            String @id @default(cuid())
+  sorteoId      String
+  participantId String
+
+  sorteo      Sorteo      @relation(fields: [sorteoId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([sorteoId, participantId])
+  @@index([participantId])
+}
+
+/**
+ * Un pokémon del bote.
+ *
+ * `tocaAId` vacío significa una de dos cosas según el momento: que todavía no
+ * se ha repartido, o que **se quedó fuera** porque había más pokémon que
+ * huecos. Un equipo son seis como mucho, así que con seis personas entran 36 y
+ * lo que sobre se queda en el bote para otra vez.
+ */
+model SorteoPokemon {
+  id          String   @id @default(cuid())
+  sorteoId    String
+  species     String
+  nickname    String?
+  /** Sprite de caja, descargado al guardar como en el resto de la aplicación */
+  boxImage    String?
+  /** Quién lo echó al bote */
+  aportadoPor String?
+  /** A quién le ha tocado */
+  tocaAId     String?
+  /** Su sitio dentro del equipo de quien le tocó */
+  position    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  sorteo   Sorteo       @relation(fields: [sorteoId], references: [id], onDelete: Cascade)
+  aportado Participant? @relation("SorteoAportadoPor", fields: [aportadoPor], references: [id], onDelete: SetNull)
+  tocaA    Participant? @relation("SorteoTocaA", fields: [tocaAId], references: [id], onDelete: SetNull)
+
+  @@index([sorteoId])
+  @@index([tocaAId])
 }
 
 // ---------------------------------------------------------------------------

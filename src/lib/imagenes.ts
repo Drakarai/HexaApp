@@ -27,6 +27,7 @@ export const FUENTES = {
   "objeto-opcion": { tabla: "ItemOption", columna: "image" },
   mapa: { tabla: "MapRegion", columna: "image" },
   captura: { tabla: "Capture", columna: "image" },
+  sorteo: { tabla: "SorteoPokemon", columna: "boxImage" },
 } as const satisfies Record<
   Exclude<TipoImagen, "medalla" | "medalla-plantilla">,
   { tabla: string; columna: string }
