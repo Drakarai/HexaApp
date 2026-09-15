@@ -164,7 +164,12 @@ export default async function CompetitionsPage() {
                   key={participant.id}
                   className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
                 >
-                  <div className="flex flex-wrap items-center gap-3">
+                  {/**
+                   * Los datos arriba y los botones debajo, no todo en la misma
+                   * línea: con cuatro controles al lado, en un móvil el nombre
+                   * se quedaba en una letra y el usuario en una arroba suelta.
+                   */}
+                  <div className="flex items-center gap-3">
                     <Avatar
                       name={participant.displayName}
                       color={participant.color}
@@ -172,13 +177,16 @@ export default async function CompetitionsPage() {
                       size={32}
                     />
                     <div className="min-w-0 flex-1">
-                      <p
-                        className={cx(
-                          "truncate font-medium text-white",
-                          participant.retiredAt && "text-slate-400 line-through",
-                        )}
-                      >
-                        {participant.displayName}
+                      <p className="truncate font-medium text-white">
+                        {/* El tachado es del nombre; las chapas se leen enteras */}
+                        <span
+                          className={cx(
+                            participant.retiredAt &&
+                              "text-slate-400 line-through",
+                          )}
+                        >
+                          {participant.displayName}
+                        </span>
                         {participant.isAdmin ? (
                           <span className="ml-2 text-xs text-amber-400">
                             admin
@@ -204,7 +212,16 @@ export default async function CompetitionsPage() {
                         {` · ${participant._count.deaths} bajas`}
                       </p>
                     </div>
-                    {canManageActive ? (
+                  </div>
+
+                  {canManageActive ? (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      {/**
+                       * Cuando está fuera por wipeo manda el botón de abajo:
+                       * los dos lo devolverían al locke, y dos botones que
+                       * hacen lo mismo con nombres distintos solo confunden.
+                       */}
+                      {participant.motivoDeSalida !== MOTIVOS_DE_SALIDA.WIPEO ? (
                       <form action={retirarParticipanteAction}>
                         <input
                           type="hidden"
@@ -227,16 +244,16 @@ export default async function CompetitionsPage() {
                           </ConfirmSubmit>
                         )}
                       </form>
-                    ) : null}
-                    {/**
-                     * Perder el locke va aparte de retirarse: para la
-                     * competición es lo mismo, pero no es lo mismo dejarlo que
-                     * que te barran. Solo sale si no está ya fuera por lo otro.
-                     */}
-                    {canManageActive &&
-                    (!participant.retiredAt ||
-                      participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO) ? (
-                      <form action={perderElLockeAction}>
+                      ) : null}
+                      {/**
+                       * Perder el locke va aparte de retirarse: para la
+                       * competición es lo mismo, pero no es lo mismo dejarlo
+                       * que que te barran. Solo sale si no está ya fuera por lo
+                       * otro.
+                       */}
+                      {!participant.retiredAt ||
+                      participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO ? (
+                        <form action={perderElLockeAction}>
                         <input
                           type="hidden"
                           name="participantId"
@@ -256,10 +273,9 @@ export default async function CompetitionsPage() {
                           >
                             💥 Perdió el locke
                           </ConfirmSubmit>
-                        )}
-                      </form>
-                    ) : null}
-                    {canManageActive ? (
+                          )}
+                        </form>
+                      ) : null}
                       <form action={removeParticipantAction}>
                         <input
                           type="hidden"
@@ -272,8 +288,8 @@ export default async function CompetitionsPage() {
                           ✕
                         </ConfirmSubmit>
                       </form>
-                    ) : null}
-                  </div>
+                    </div>
+                  ) : null}
 
                   {canManageActive ? (
                     <EditParticipantForm

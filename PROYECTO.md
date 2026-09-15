@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 14 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 15 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -16,7 +16,8 @@ medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
 una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
 permiso de **organizador** para que alguien lleve sus propios lockes, y el
 reparto de papeles en **Creador / administrador de locke / jugador**, y los
-wipeos con su estado de locke perdido).
+wipeos con su estado de locke perdido, y la lista de participantes arreglada
+para el móvil).
 
 ---
 
@@ -1620,6 +1621,19 @@ participante y la marca de administrador, **nunca `retiredAt`**. Queda dicho en
 `canManageCompetition` porque es fácil romperlo sin querer: bastaría con filtrar
 ahí por "los que siguen jugando".
 
+**La ficha de participante pone los datos arriba y los botones debajo.** Estaban
+todos en la misma línea y con el botón de perder el locke ya eran cuatro: en un
+móvil el nombre se quedaba en una letra —"A", "D"— y el usuario en una arroba
+suelta. Ahora el avatar con el nombre ocupan su línea entera y los botones van
+en otra, que se parte sola si no caben. Comprobado a 360, 390 y 430 píxeles.
+
+De paso se quitaron dos cosas que sobraban ahí. **Un solo botón para devolver a
+alguien al locke**: cuando está fuera por un wipeo se esconde *Readmitir*,
+porque *Devolverle el locke* hace lo mismo y dos botones con nombres distintos
+para lo mismo solo confunden. Y **el tachado es del nombre**, no de la línea: lo
+lleva un `<span>` suyo, que si no las chapas de *admin* y *💥 locke perdido*
+salían tachadas y no se leían.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -2076,3 +2090,5 @@ lugar de destruir datos, y hay que avisar antes.
 51. **Wipeos**: se cuentan las veces que a alguien le barren el equipo, sin que
     eso le cueste el locke, y aparece un estado de **locke perdido** aparte de
     la retirada para cuando sí se lo cuesta.
+52. **La lista de participantes, legible en el móvil**: los datos en una línea y
+    los botones en otra, con un solo botón para devolver a alguien al locke.
