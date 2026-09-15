@@ -988,6 +988,16 @@ model Match {
    * significa "el de la jornada", que es lo normal.
    */
   formato        String?
+  /**
+   * Alguien que está fuera del locke lo juega igual, porque la organización
+   * lo ha permitido. Es la excepción a la norma: se pone sola al montar a
+   * mano un combate con alguien retirado o con el locke perdido.
+   *
+   * **Sin esto el combate se daría por ganado al rival.** `lib/retiradas.ts`
+   * reparte los combates pendientes de los que están fuera, y este hay que
+   * dejarlo en paz para que lo jueguen.
+   */
+  excepcion      Boolean   @default(false)
 
   matchday     Matchday       @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
   participantA Participant    @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)

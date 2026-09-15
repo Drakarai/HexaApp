@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
@@ -20,10 +21,14 @@ import { DeathBox, type BoxDeath } from "./death-box";
 export const metadata = { title: "Cementerio" };
 
 /**
- * Cuántas casillas se pintan de una tanda. La caja no se trae entera: cada baja
- * arrastra su ficha (mote, causa, notas, dos direcciones de imagen…) hasta el
- * navegador, y con la edición avanzada eso era una página que crecía sola sin
- * tope. Se piden de 60 en 60.
+ * Cuántas casillas se pintan de una tanda **por jugador**. La caja no se trae
+ * entera: cada baja arrastra su ficha (mote, causa, notas, dos direcciones de
+ * imagen…) hasta el navegador, y con la edición avanzada eso era una página que
+ * crecía sola sin tope. Se piden de 60 en 60.
+ *
+ * Por jugador y no en total **a propósito**: cuando el tope era global, las 60
+ * más recientes de todo el locke se repartían como cayera y al que más bajas
+ * llevaba le faltaban casillas al final de su caja, sin avisar.
  */
 const POR_TANDA = 60;
 
@@ -63,16 +68,20 @@ export default async function DeathsPage({
     },
   };
 
-  const [recientes, counts] = await Promise.all([
-    // Sin `include` del participante: los 6 jugadores ya están cargados arriba
-    // y repetirlos en cada baja multiplicaba el peso de la página.
-    //
-    // Se piden **las últimas**, no las primeras: lo que acaba de pasar es lo
-    // que se quiere ver al entrar. Una de más para saber si queda alguna fuera.
+  // De las más nuevas a las más viejas, que es el orden en el que se corta la
+  // tanda: lo que acaba de pasar es lo que se quiere ver al entrar.
+  const deLaMasNueva: Prisma.DeathOrderByWithRelationInput[] = [
+    { diedAt: "desc" },
+    { createdAt: "desc" },
+  ];
+
+  const [orden, counts] = await Promise.all([
+    // Primero solo quién y cuándo, que pesa nada, para saber **qué** casillas
+    // entran en la tanda de cada uno. La ficha entera se pide después.
     prisma.death.findMany({
       where: deathsWhere,
-      orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
-      take: cuantas + 1,
+      orderBy: deLaMasNueva,
+      select: { id: true, participantId: true },
     }),
     prisma.death.groupBy({
       by: ["participantId"],
@@ -81,10 +90,32 @@ export default async function DeathsPage({
     }),
   ]);
 
-  const quedanMas = recientes.length > cuantas;
-  // Y se les da la vuelta: la caja se sigue leyendo de la más antigua a la más
-  // nueva, como siempre
-  const deaths = recientes.slice(0, cuantas).reverse();
+  // La tanda se corta por jugador: cada caja se llena hasta el tope con las
+  // suyas, sin que las bajas de uno le quiten sitio a las de otro.
+  const llevaPuestas = new Map<string, number>();
+  const losDeLaTanda = orden
+    .filter((baja) => {
+      const van = llevaPuestas.get(baja.participantId) ?? 0;
+      llevaPuestas.set(baja.participantId, van + 1);
+      return van < cuantas;
+    })
+    .map((baja) => baja.id);
+
+  const quedanMas = counts.some((row) => {
+    if (selected && row.participantId !== selected.id) return false;
+    return row._count._all > cuantas;
+  });
+
+  // Sin `include` del participante: los 6 jugadores ya están cargados arriba
+  // y repetirlos en cada baja multiplicaba el peso de la página.
+  //
+  // Y se leen de la más antigua a la más nueva, como siempre.
+  const deaths = (
+    await prisma.death.findMany({
+      where: { id: { in: losDeLaTanda } },
+      orderBy: deLaMasNueva,
+    })
+  ).reverse();
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
   const ids = deaths.map((death) => death.id);
@@ -101,8 +132,11 @@ export default async function DeathsPage({
   const countFor = (participantId: string) =>
     counts.find((row) => row.participantId === participantId)?._count._all ?? 0;
   const total = counts.reduce((sum, row) => sum + row._count._all, 0);
-  /** Las que hay de lo que se está mirando: la caja entera o la de un jugador */
-  const enTotal = selected ? countFor(selected.id) : total;
+  /** Cuántas quedan sin pintar, sumando lo que le falta a cada caja */
+  const faltan = counts.reduce((sum, row) => {
+    if (selected && row.participantId !== selected.id) return sum;
+    return sum + Math.max(0, row._count._all - cuantas);
+  }, 0);
 
   const esMio = (participantId: string) =>
     canManage || porId.get(participantId)?.userId === user.id;
@@ -114,6 +148,9 @@ export default async function DeathsPage({
       displayName: jugador.displayName,
       color: jugador.color,
       avatarImage: jugador.user.avatarImage,
+      // Las que lleva **de verdad**, no las que caben en la tanda: la chapa
+      // contaba las casillas pintadas y decía 10 cuando eran 12
+      bajas: countFor(jugador.id),
       ace: {
         species: jugador.aceSpecies,
         nickname: jugador.aceNickname,
@@ -226,7 +263,7 @@ export default async function DeathsPage({
             scroll={false}
           >
             Ver {POR_TANDA} más antiguas
-            {enTotal > cuantas ? ` · quedan ${enTotal - cuantas}` : ""}
+            {faltan ? ` · quedan ${faltan}` : ""}
           </Link>
         </div>
       ) : null}

@@ -16,8 +16,8 @@ medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
 una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
 permiso de **organizador** para que alguien lleve sus propios lockes, y el
 reparto de papeles en **Creador / administrador de locke / jugador**, y los
-wipeos con su estado de locke perdido, y la lista de participantes arreglada
-para el móvil).
+wipeos con su estado de locke perdido, la lista de participantes arreglada
+para el móvil, y los **combates con permiso** para quien está fuera del locke).
 
 ---
 
@@ -52,6 +52,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
 | **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
+| **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
@@ -538,14 +539,27 @@ jugador que abriera `/admin` veía un error 500. Ahora las páginas usan
 `requireAdminPage()`, que devuelve al resumen. Son dos funciones y no una porque
 lo que hay que hacer es distinto según desde dónde se llame.
 
-**El cementerio se trae de 60 en 60.** Cada baja arrastra su ficha entera hasta
-el navegador (mote, causa, notas, nivel, dos direcciones de imagen), así que la
-página crecía sola con cada muerte y sin tope. Se piden **las últimas** 60, no
-las primeras —lo que acaba de pasar es lo que se quiere ver al entrar— y se les
-da la vuelta al pintarlas, para que la caja se siga leyendo de la más antigua a
-la más nueva. Se trae una de más para saber si queda alguna fuera y enseñar el
-botón solo cuando hace falta. El `?ver=` de la dirección tiene tope, para que
-nadie se cargue la página poniendo un número enorme a mano.
+**El cementerio se trae de 60 en 60, y el corte es por jugador.** Cada baja
+arrastra su ficha entera hasta el navegador (mote, causa, notas, nivel, dos
+direcciones de imagen), así que la página crecía sola con cada muerte y sin
+tope. Se piden **las últimas**, no las primeras —lo que acaba de pasar es lo que
+se quiere ver al entrar— y se les da la vuelta al pintarlas, para que la caja se
+siga leyendo de la más antigua a la más nueva. El `?ver=` de la dirección tiene
+tope, para que nadie se cargue la página poniendo un número enorme a mano.
+
+Que sea **por jugador** viene de un fallo. Con el tope global, las 60 más
+recientes del locke se repartían como cayera: en un locke de 66 bajas, las seis
+más viejas se quedaban fuera y al que le tocaba le faltaban casillas al final
+de su caja. Encima la chapa de su caja contaba las **pintadas**, así que decía
+10 donde la clasificación decía 12, y no había manera de saber que era un corte
+y no unas bajas perdidas. Ahora la caja de cada uno se llena hasta el tope con
+las suyas, la chapa lleva el número de verdad y, si de verdad se ha quedado
+corta, lo dice: "60 de 70".
+
+Cuesta una consulta más —primero los identificadores, que no pesan nada, para
+saber cuáles entran; luego las fichas de esos— y compensa: el corte tenía que
+hacerse en la base de datos por jugador y en Prisma eso es una ventana de SQL
+a mano.
 
 **Cada jugador tiene su página, y se llega tocando su foto.** En
 `/jugador/[id]`: sus cifras (puntos, caídos, victorias-derrotas, gimnasios), su
@@ -1621,6 +1635,31 @@ participante y la marca de administrador, **nunca `retiredAt`**. Queda dicho en
 `canManageCompetition` porque es fácil romperlo sin querer: bastaría con filtrar
 ahí por "los que siguen jugando".
 
+**El permiso para jugar estando fuera se da por combate, no por persona.** La
+norma es que quien está fuera no juega, y se quería poder saltársela de vez en
+cuando. Hacerlo con una marca en el participante —"este puede seguir
+combatiendo"— habría sido levantar la norma entera y sin fecha de caducidad;
+darlo combate a combate es exactamente lo que se pide y se ve dónde se ha
+usado. Lo lleva `Match.excepcion`.
+
+Montar el combate a mano con alguien que está fuera **es el permiso**: no hay
+casilla que marcar. La organización es la única que puede montarlo, así que
+elegirle del desplegable ya es decidirlo, y la respuesta lo dice con todas las
+letras. En el desplegable salen los últimos y con su etiqueta —"Rodri (locke
+perdido)"— para que no se cuele sin querer.
+
+Aparte hay un botón de dar y quitar el permiso en cada combate, y **no sobra**:
+lo normal es que el wipeo llegue con el combate ya puesto. Sin él habría que
+borrar el combate y volver a montarlo, perdiendo las notas y el equipo
+apuntado. Si ya se había dado por retirada, darle el permiso lo deshace —le
+quita el ganador y el punto— y vuelve a estar pendiente.
+
+Lo que hay que respetar al tocar `lib/retiradas.ts`: un combate con permiso
+**no se da por ganado al rival**, pero sí cuenta como algo que falta por jugar.
+Son las dos mitades de lo mismo y es fácil quedarse en una: si solo se excluye
+del reparto, el resto de combates por retirada de esa jornada se darían por
+ganados creyendo que ya no falta nadie.
+
 **La ficha de participante pone los datos arriba y los botones debajo.** Estaban
 todos en la misma línea y con el botón de perder el locke ya eran cuatro: en un
 móvil el nombre se quedaba en una letra —"A", "D"— y el usuario en una arroba
@@ -1762,6 +1801,14 @@ Piezas con truco:
   la sección del perfil. **Al mirar si alguien sigue jugando se pregunta por
   `retiredAt`**, que vale para los dos casos; `motivoDeSalida` es solo para
   enseñarlo.
+- `lib/retiradas.ts` — quién tiene combates pendientes por estar fuera y cuándo
+  se le dan al rival. **`Match.excepcion` es lo que le dice que no toque uno**:
+  un combate con permiso ni se reparte ni sale como "pendiente por retirada",
+  pero **sí cuenta como algo que falta por jugar**, porque lo van a jugar. Las
+  dos cosas van juntas; con solo la primera, los demás combates por retirada de
+  esa jornada se darían por ganados antes de tiempo. El permiso se pone solo al
+  montar el combate a mano (`addMatchAction`) y se da y se quita después con
+  `permitirCombateAction`.
 - `lib/almacen-de-imagenes.ts` — guardar una imagen una sola vez y resolver la
   referencia. `lib/deduplicar-imagenes.ts` pasa al almacén lo que ya estaba
   escrito (**en SQL**: traerse las imágenes a Node serían cientos de megas de ida
@@ -2092,3 +2139,6 @@ lugar de destruir datos, y hay que avisar antes.
     la retirada para cuando sí se lo cuesta.
 52. **La lista de participantes, legible en el móvil**: los datos en una línea y
     los botones en otra, con un solo botón para devolver a alguien al locke.
+53. **Excepciones a la norma**: la organización puede dejar que alguien que está
+    fuera del locke juegue un combate suelto de jornada o un reto, y el
+    cementerio deja de comerse casillas al que más bajas lleva.

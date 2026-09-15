@@ -52,7 +52,13 @@ export async function resolverRetiradas(
     const seRetiraronLosDos = (combate: (typeof sinJugar)[number]) =>
       retirados.has(combate.participantAId) && retirados.has(combate.participantBId);
 
-    const porRetirada = sinJugar.filter(seRetiroUno);
+    /**
+     * Los de la excepción no se dan por ganados: la organización ha dicho que
+     * ese se juega, aunque uno de los dos esté fuera del locke.
+     */
+    const porRetirada = sinJugar.filter(
+      (combate) => !combate.excepcion && seRetiroUno(combate),
+    );
     if (!porRetirada.length) continue;
 
     /**
@@ -61,7 +67,10 @@ export async function resolverRetiradas(
      * para siempre. Ese se queda sin ganador, que es lo justo.
      */
     const faltanDeVerdad = sinJugar.filter(
-      (combate) => !seRetiroUno(combate) && !seRetiraronLosDos(combate),
+      (combate) =>
+        // Uno con permiso sí falta de verdad: lo van a jugar
+        combate.excepcion ||
+        (!seRetiroUno(combate) && !seRetiraronLosDos(combate)),
     ).length;
     if (faltanDeVerdad > 0) continue;
 
@@ -132,7 +141,8 @@ export async function combatesEsperandoRetirada(
   if (!retirados.size) return new Set();
 
   const combates = await prisma.match.findMany({
-    where: { winnerId: null, matchday: { competitionId } },
+    // Los de la excepción no esperan nada: se juegan
+    where: { winnerId: null, excepcion: false, matchday: { competitionId } },
     select: { id: true, participantAId: true, participantBId: true },
   });
 

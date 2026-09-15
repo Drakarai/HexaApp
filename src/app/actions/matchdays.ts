@@ -190,13 +190,25 @@ export async function addMatchAction(
     return { error: "Un jugador no puede combatir contra sí mismo." };
   }
 
-  const both = await prisma.participant.count({
+  const losDos = await prisma.participant.findMany({
     where: {
       id: { in: [participantAId, participantBId] },
       competitionId: matchday.competitionId,
     },
+    select: { id: true, displayName: true, retiredAt: true },
   });
-  if (both !== 2) return { error: "Esos jugadores no son de esta competición." };
+  if (losDos.length !== 2) {
+    return { error: "Esos jugadores no son de esta competición." };
+  }
+
+  /**
+   * La excepción a la norma. El emparejador automático sigue sin contar con
+   * quien está fuera del locke, pero montando el combate a mano la
+   * organización puede dejarle jugar: **eso es el permiso**, no hace falta
+   * nada más. Marcarlo es lo que evita que `lib/retiradas.ts` se lo dé por
+   * ganado al rival antes de que lo jueguen.
+   */
+  const fuera = losDos.filter((jugador) => jugador.retiredAt !== null);
 
   await prisma.match.create({
     data: {
@@ -204,11 +216,19 @@ export async function addMatchAction(
       participantAId,
       participantBId,
       position: matchday._count.matches,
+      excepcion: fuera.length > 0,
     },
   });
 
   revalidatePath("/jornadas");
-  return { success: "Emparejamiento añadido." };
+  if (!fuera.length) return { success: "Emparejamiento añadido." };
+  return {
+    success: `Emparejamiento añadido. ${fuera
+      .map((jugador) => jugador.displayName)
+      .join(" y ")} ${fuera.length === 1 ? "está fuera" : "están fuera"} del locke y lo ${
+      fuera.length === 1 ? "juega" : "juegan"
+    } con permiso: el combate no se dará por retirada.`,
+  };
 }
 
 /**
@@ -365,6 +385,56 @@ export async function darPorRetiradaAction(formData: FormData) {
   }
 
   // Puede haber completado la jornada y desbloquear otras retiradas
+  await resolverRetiradas(match.matchday.competitionId, manager.id);
+  await ajustarDesempate(match.matchdayId);
+
+  revalidatePath("/jornadas");
+  revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
+  revalidatePath("/");
+}
+
+/**
+ * Dar o quitar el permiso para que un combate se juegue aunque uno de los dos
+ * esté fuera del locke.
+ *
+ * Existe porque la norma casi siempre se rompe **a medias**: el combate ya
+ * estaba puesto y el wipeo llega después. Sin esto habría que borrar el
+ * combate y volver a montarlo, que es lo mismo pero perdiendo las notas y el
+ * equipo apuntado.
+ *
+ * Si ya se había dado por retirada, darle el permiso lo deshace: se le quita
+ * el ganador y el punto, y vuelve a estar pendiente para que lo jueguen.
+ */
+export async function permitirCombateAction(formData: FormData) {
+  const matchId = String(formData.get("matchId") ?? "");
+  const match = await prisma.match.findUnique({
+    where: { id: matchId },
+    include: { matchday: true },
+  });
+  if (!match) return;
+  const manager = await requireCompetitionManager(match.matchday.competitionId);
+
+  const permitir = !match.excepcion;
+
+  await prisma.match.update({
+    where: { id: matchId },
+    data: {
+      excepcion: permitir,
+      // Al permitirlo se deshace lo que hubiera hecho la retirada; un
+      // resultado jugado de verdad no se toca
+      ...(permitir && match.porRetirada
+        ? { winnerId: null, porRetirada: false, playedAt: null }
+        : {}),
+    },
+  });
+
+  if (permitir && match.porRetirada) {
+    await prisma.pointEntry.deleteMany({ where: { sourceMatchId: matchId } });
+  }
+
+  // Quitar el permiso lo devuelve a la cola de las retiradas, y puede tocarle
+  // ya si su jornada está terminada
   await resolverRetiradas(match.matchday.competitionId, manager.id);
   await ajustarDesempate(match.matchdayId);
 

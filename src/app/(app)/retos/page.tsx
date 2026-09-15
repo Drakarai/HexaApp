@@ -5,6 +5,7 @@ import {
   getActiveCompetition,
   getParticipants,
 } from "@/lib/competition";
+import { comoEstaFuera } from "@/lib/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -56,10 +57,24 @@ export default async function RetosPage() {
   );
 
   const porId = new Map(participants.map((jugador) => [jugador.id, jugador]));
-  const opciones = participants.map((jugador) => ({
-    id: jugador.id,
-    displayName: jugador.displayName,
-  }));
+  /**
+   * Un reto lo monta la organización, así que aquí también se puede hacer la
+   * excepción con alguien que está fuera del locke. Se ofrece, pero marcado y
+   * el último: que se vea lo que se está haciendo.
+   */
+  const comoOpcion = (jugador: (typeof participants)[number]) => {
+    const salida = comoEstaFuera(jugador);
+    return {
+      id: jugador.id,
+      displayName: salida
+        ? `${jugador.displayName} (${salida.etiqueta})`
+        : jugador.displayName,
+    };
+  };
+  const opciones = [
+    ...participants.filter((jugador) => !jugador.retiredAt).map(comoOpcion),
+    ...participants.filter((jugador) => jugador.retiredAt).map(comoOpcion),
+  ];
 
   // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
   const sprites = await urlsDeImagen(

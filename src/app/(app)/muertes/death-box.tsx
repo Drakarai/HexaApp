@@ -48,6 +48,8 @@ export type BoxDeath = {
     displayName: string;
     color: string;
     avatarImage: string | null;
+    /** Las que lleva en total, que pueden ser más de las que hay pintadas */
+    bajas: number;
     ace: AceSummary;
   };
 };
@@ -105,7 +107,16 @@ export function DeathBox({
                     ...group.participant.ace,
                   }}
                 />
-                <span className="chip ml-auto">{group.items.length}</span>
+                {/**
+                 * El número de la chapa es el de verdad. Si la tanda se ha
+                 * quedado corta se dice —"10 de 12"— en vez de enseñar 10 a
+                 * secas, que era lo que no cuadraba con la clasificación.
+                 */}
+                <span className="chip ml-auto">
+                  {group.items.length < group.participant.bajas
+                    ? `${group.items.length} de ${group.participant.bajas}`
+                    : group.participant.bajas}
+                </span>
               </div>
             ) : null}
 

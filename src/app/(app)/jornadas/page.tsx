@@ -9,6 +9,7 @@ import {
 } from "@/lib/competition";
 import { getMvpStates } from "@/lib/mvp";
 import { combatesEsperandoRetirada } from "@/lib/retiradas";
+import { comoEstaFuera } from "@/lib/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -20,6 +21,7 @@ import { cx, formatDate } from "@/lib/utils";
 import {
   deleteMatchAction,
   deleteMatchdayAction,
+  permitirCombateAction,
 } from "@/app/actions/matchdays";
 import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
@@ -76,14 +78,29 @@ export default async function MatchdaysPage() {
   ]);
 
   /**
-   * Para emparejar solo se ofrecen los que siguen jugando: montar un combate
-   * nuevo contra alguien que se retiró no tiene sentido. Los combates ya
-   * jugados contra él se siguen viendo, con su nombre y todo.
+   * Para emparejar mandan los que siguen jugando, pero los que están fuera
+   * también se ofrecen, al final y marcados: es la **excepción a la norma**.
+   * El emparejador automático sigue sin contar con ellos, y si la
+   * organización monta el combate a mano es porque le ha dado permiso.
    */
-  const participantOptions = soloActivos(participants).map((participant) => ({
-    id: participant.id,
-    displayName: participant.displayName,
-  }));
+  const comoOpcion = (participant: (typeof participants)[number]) => {
+    const salida = comoEstaFuera(participant);
+    return {
+      id: participant.id,
+      displayName: salida
+        ? `${participant.displayName} (${salida.etiqueta})`
+        : participant.displayName,
+    };
+  };
+  const participantOptions = [
+    ...soloActivos(participants).map(comoOpcion),
+    ...participants.filter((p) => p.retiredAt).map(comoOpcion),
+  ];
+
+  /** Quiénes están fuera, para saber en qué combates cabe la excepción */
+  const estaFuera = new Set(
+    participants.filter((p) => p.retiredAt).map((p) => p.id),
+  );
 
   const avatarByParticipant = new Map(
     participants.map((participant) => [
@@ -310,6 +327,16 @@ export default async function MatchdaysPage() {
                                   : match.participantA.displayName}
                               </span>
                             ) : null}
+                            {/* La excepción: alguien que está fuera lo juega
+                                igual porque la organización lo ha permitido */}
+                            {match.excepcion ? (
+                              <span
+                                className="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-200/90"
+                                title="Uno de los dos está fuera del locke y lo juega con permiso de la organización. No se dará por retirada."
+                              >
+                                🤝 Con permiso
+                              </span>
+                            ) : null}
                             {/* Esperando a que acabe el resto de la jornada
                                 para darse por ganado: ver lib/retiradas.ts */}
                             {esperando.has(match.id) ? (
@@ -330,6 +357,35 @@ export default async function MatchdaysPage() {
                             ) : esperando.has(match.id) ? null : (
                               <span className="text-amber-400/80">Pendiente</span>
                             )}
+                            {/**
+                             * El permiso se da y se quita aquí porque lo
+                             * normal es que el wipeo llegue con el combate ya
+                             * puesto. Solo sale si hace falta: si los dos
+                             * siguen jugando no hay nada que permitir.
+                             */}
+                            {canManage &&
+                            (estaFuera.has(match.participantAId) ||
+                              estaFuera.has(match.participantBId)) ? (
+                              <form action={permitirCombateAction}>
+                                <input
+                                  type="hidden"
+                                  name="matchId"
+                                  value={match.id}
+                                />
+                                <ConfirmSubmit
+                                  className="btn-ghost btn-sm text-sky-300/80"
+                                  message={
+                                    match.excepcion
+                                      ? "¿Quitar el permiso? El combate volverá a darse por retirada cuando acabe la jornada."
+                                      : "¿Dejar que lo jueguen? Uno de los dos está fuera del locke: el combate no se dará por retirada y contará como cualquier otro."
+                                  }
+                                >
+                                  {match.excepcion
+                                    ? "Quitar el permiso"
+                                    : "🤝 Dejar que lo jueguen"}
+                                </ConfirmSubmit>
+                              </form>
+                            ) : null}
                             {canManage ? (
                               <form action={deleteMatchAction}>
                                 <input
