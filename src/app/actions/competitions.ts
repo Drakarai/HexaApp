@@ -17,6 +17,7 @@ import {
 import { filtroDeLockesVisibles, puedeVerLocke } from "@/lib/acceso";
 import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
+import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { slugify } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
@@ -412,7 +413,7 @@ export async function retirarParticipanteAction(formData: FormData) {
   if (participant.retiredAt) {
     await prisma.participant.update({
       where: { id: participantId },
-      data: { retiredAt: null },
+      data: { retiredAt: null, motivoDeSalida: null },
     });
     revalidatePath("/", "layout");
     return;
@@ -420,7 +421,8 @@ export async function retirarParticipanteAction(formData: FormData) {
 
   await prisma.participant.update({
     where: { id: participantId },
-    data: { retiredAt: new Date() },
+    // Queda escrito por qué está fuera: lo dejó, no perdió el locke
+    data: { retiredAt: new Date(), motivoDeSalida: MOTIVOS_DE_SALIDA.RETIRADA },
   });
 
   /**

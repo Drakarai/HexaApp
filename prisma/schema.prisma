@@ -505,8 +505,25 @@ model Participant {
    * pendientes se dan por perdidos.
    * Es reversible: si vuelve, se le quita la marca. Los combates que ya se
    * hayan dado por retirada no se deshacen solos.
+   *
+   * **Ojo**: esta fecha significa "cuándo dejó de competir", no solo "cuándo se
+   * retiró". Un locke perdido por wipeo también la lleva; lo que los distingue
+   * es `motivoDeSalida`.
    */
   retiredAt     DateTime?
+  /**
+   * Por qué está fuera: `"retirada"` si lo dejó, `"wipeo"` si perdió el locke.
+   * Vacío mientras siga jugando.
+   *
+   * Se hace así, y no con una segunda fecha, **a propósito**: para el locke las
+   * dos salidas son la misma cosa —deja de entrar en emparejamientos, no cuenta
+   * para el MVP ni para el formato del final, y sus combates pendientes los gana
+   * el rival—, y toda esa maquinaria ya pregunta por `retiredAt`. Con una fecha
+   * aparte habría que repasar quince consultas y bastaría olvidarse de una para
+   * que alguien que perdió el locke siguiera emparejándose. Aquí la diferencia
+   * es solo cómo se cuenta, que es justo lo que se quería distinguir.
+   */
+  motivoDeSalida String?
 
   // Pokémon as: el representante del jugador en esta edición. Va aquí y no en
   // User para que cada competición conserve el suyo cuando se archiva.
@@ -521,6 +538,7 @@ model Participant {
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   deaths        Death[]
+  wipeos        Wipeo[]
   pointEntries  PointEntry[]
   gymClears     GymClear[]
   gymVideos     GymVideo[]
@@ -780,6 +798,32 @@ model Death {
 // ---------------------------------------------------------------------------
 // Notas privadas (solo visibles para su autor)
 // ---------------------------------------------------------------------------
+
+/**
+ * Un **wipeo**: que en un combate del juego te tumben el equipo entero.
+ *
+ * Por las reglas de siempre un wipeo es perder el locke, pero eso es muy duro
+ * si pasa en la primera ruta, así que aquí es **solo una marca que se cuenta**.
+ * Se ponen las que haga falta y se quitan si se apuntó una por error. Que
+ * alguien quede fuera del locke es otra cosa y se decide aparte, en
+ * `Participant.motivoDeSalida`.
+ */
+model Wipeo {
+  id            String   @id @default(cuid())
+  participantId String
+  /** Cuándo pasó. Por defecto hoy, y se puede corregir. */
+  ocurridoAt    DateTime @default(now())
+  /** Contra qué o quién: "Bruno", "la Ruta 34", "un Onix con Rugido". */
+  contra        String?
+  notas         String?
+  /** Quién lo apuntó: el propio jugador o quien administre el locke */
+  autorId       String?
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId, ocurridoAt])
+}
 
 model Note {
   id            String   @id @default(cuid())

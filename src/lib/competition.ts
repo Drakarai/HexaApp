@@ -29,6 +29,10 @@ export type StandingRow = {
   };
   points: number;
   deaths: number;
+  /** Cuántas veces le han barrido el equipo */
+  wipeos: number;
+  /** Por qué está fuera, si lo está: ver lib/wipeos.ts */
+  motivoDeSalida: string | null;
   wins: number;
   losses: number;
   played: number;
@@ -239,7 +243,7 @@ export async function getStandings(
   });
   const startingPoints = competition?.startingPoints ?? 0;
 
-  const [participants, pointSums, deathCounts, matches, challenges] =
+  const [participants, pointSums, deathCounts, wipeoCounts, matches, challenges] =
     await Promise.all([
       getParticipants(competitionId),
       prisma.pointEntry.groupBy({
@@ -248,6 +252,11 @@ export async function getStandings(
         _sum: { delta: true },
       }),
       prisma.death.groupBy({
+        by: ["participantId"],
+        where: { participant: { competitionId } },
+        _count: { _all: true },
+      }),
+      prisma.wipeo.groupBy({
         by: ["participantId"],
         where: { participant: { competitionId } },
         _count: { _all: true },
@@ -277,6 +286,9 @@ export async function getStandings(
   );
   const deathsByParticipant = new Map(
     deathCounts.map((row) => [row.participantId, row._count._all]),
+  );
+  const wipeosPorParticipante = new Map(
+    wipeoCounts.map((row) => [row.participantId, row._count._all]),
   );
 
   const stats = new Map<
@@ -358,6 +370,8 @@ export async function getStandings(
       pokemonDiff: stat.diff,
       position: 0,
       retirado: participant.retiredAt !== null,
+      motivoDeSalida: participant.motivoDeSalida,
+      wipeos: wipeosPorParticipante.get(participant.id) ?? 0,
       title: titulos.get(participant.userId) ?? null,
     };
   });

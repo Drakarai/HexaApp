@@ -18,6 +18,8 @@ import { getResumenDeCombates } from "@/lib/cara-a-cara";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
+import { comoEstaFuera } from "@/lib/wipeos";
+import { Wipeos } from "./wipeos-client";
 import { cx, formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Jugador" };
@@ -48,7 +50,7 @@ export default async function PlayerPage({
   if (!(await puedeVerLocke(participant.competitionId))) notFound();
 
   const competitionId = participant.competitionId;
-  const [canManage, standings, deaths, clears, capsTotales, favoritos] =
+  const [canManage, standings, deaths, clears, capsTotales, favoritos, wipeos] =
     await Promise.all([
       canManageCompetition(competitionId, user),
       getStandings(competitionId),
@@ -61,6 +63,10 @@ export default async function PlayerPage({
       prisma.favoritePokemon.findMany({
         where: { participantId: id },
         orderBy: { position: "asc" },
+      }),
+      prisma.wipeo.findMany({
+        where: { participantId: id },
+        orderBy: [{ ocurridoAt: "desc" }, { createdAt: "desc" }],
       }),
     ]);
 
@@ -119,7 +125,21 @@ export default async function PlayerPage({
             size={72}
           />
           <div className="min-w-0 flex-1">
-            <h2 className="section-title">{participant.displayName}</h2>
+            <h2 className="section-title">
+              {participant.displayName}
+              {comoEstaFuera(participant) ? (
+                <span
+                  className={cx(
+                    "ml-2 align-middle text-xs font-semibold uppercase tracking-wide",
+                    comoEstaFuera(participant)!.color,
+                  )}
+                  title={comoEstaFuera(participant)!.largo}
+                >
+                  {comoEstaFuera(participant)!.icono}{" "}
+                  {comoEstaFuera(participant)!.etiqueta}
+                </span>
+              ) : null}
+            </h2>
             {tituloPuesto ? (
               <p className="mt-0.5">
                 <TitleBadge titulo={tituloPuesto} />
@@ -170,6 +190,18 @@ export default async function PlayerPage({
           />
         </div>
       </section>
+
+      <Wipeos
+        participantId={id}
+        nombre={participant.displayName}
+        editable={editable}
+        wipeos={wipeos.map((wipeo) => ({
+          id: wipeo.id,
+          ocurridoAt: formatDate(wipeo.ocurridoAt),
+          contra: wipeo.contra,
+          notas: wipeo.notas,
+        }))}
+      />
 
       <section className="card mb-4">
         <h2 className="section-title mb-1">Pokémon favoritos</h2>

@@ -2,6 +2,7 @@ import type { StandingRow } from "@/lib/competition";
 import { AceBadge } from "@/components/ace-badge";
 import { Avatar } from "@/components/ui";
 import { TitleBadge } from "@/components/title-badge";
+import { comoEstaFuera } from "@/lib/wipeos";
 import { cx } from "@/lib/utils";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -82,16 +83,39 @@ function Puesto({
   position: number;
   qualifiedSlots: number;
 }) {
-  if (position === 0) return <span title="Se retiró del locke">—</span>;
+  if (position === 0) return <span title="Está fuera del locke">—</span>;
   if (position > qualifiedSlots) return <>{position}</>;
   return <span title="Clasificado directo">{MEDALS[position - 1] ?? position}</span>;
 }
 
-/** La chapa de "este se fue", para no tener que adivinarlo por el tachado. */
-function Retirado() {
+/**
+ * La chapa de quien está fuera. Dice **por qué**: no es lo mismo dejarlo que
+ * que te barran el equipo y perder el locke.
+ */
+function Fuera({ motivo }: { motivo: string | null }) {
+  const salida = comoEstaFuera({ retiredAt: new Date(), motivoDeSalida: motivo })!;
   return (
-    <span className="ml-2 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-      Retirado
+    <span
+      className={cx(
+        "ml-2 rounded bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+        salida.color,
+      )}
+      title={salida.largo}
+    >
+      {salida.etiqueta}
+    </span>
+  );
+}
+
+/** Cuántas veces le han barrido el equipo, si ha pasado alguna. */
+function Wipeos({ cuantos }: { cuantos: number }) {
+  if (!cuantos) return null;
+  return (
+    <span
+      className="ml-2 text-[11px] font-semibold text-red-400/90"
+      title={`${cuantos} ${cuantos === 1 ? "wipeo" : "wipeos"}`}
+    >
+      💥{cuantos}
     </span>
   );
 }
@@ -197,7 +221,8 @@ function Ficha({
         >
           {row.displayName}
         </p>
-        {row.retirado ? <Retirado /> : null}
+        {row.retirado ? <Fuera motivo={row.motivoDeSalida} /> : null}
+        <Wipeos cuantos={row.wipeos} />
       </div>
 
       {/* El título, en su propia línea y a todo el ancho de la ficha: aquí sí
@@ -298,7 +323,8 @@ function Fila({
             >
               {row.displayName}
             </p>
-            {row.retirado ? <Retirado /> : null}
+            {row.retirado ? <Fuera motivo={row.motivoDeSalida} /> : null}
+        <Wipeos cuantos={row.wipeos} />
             {compact ? null : row.title ? (
               // Con tope de ancho y hasta dos líneas: un título largo se lee
               // entero sin estirar la columna del nombre

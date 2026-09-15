@@ -15,7 +15,8 @@ combate por jornada con su Battle Royale, el sorteo de pokémon de préstamo, la
 medida de lo que ocupa la base de datos, **el almacén que guarda cada imagen
 una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
 permiso de **organizador** para que alguien lleve sus propios lockes, y el
-reparto de papeles en **Creador / administrador de locke / jugador**).
+reparto de papeles en **Creador / administrador de locke / jugador**, y los
+wipeos con su estado de locke perdido).
 
 ---
 
@@ -48,6 +49,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
+| **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
+| **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
@@ -1581,6 +1584,33 @@ de la edición, así que el servidor de desarrollo las trata como dinámicas y s
 refrescan solas; el número viejo se ve en el navegador de quien lo usa. Que no
 pase en `npm run start` no quiere decir que no pase.
 
+**Un wipeo es una marca, no una expulsión.** Por las reglas de siempre que te
+barran el equipo es perder el locke, pero eso es muy duro si pasa en la primera
+ruta. Así que se cuentan —**sin límite, y se quitan si se apuntó una por
+error**— y que alguien quede fuera se decide aparte. Son dos cosas distintas y
+por eso viven en sitios distintos: `Wipeo` es una fila más, y quedarse fuera es
+una marca en el participante.
+
+Un wipeo lo apunta **el propio jugador o quien administre el locke**, igual que
+una baja: es su partida y lo sabe él. Dejar a alguien fuera es solo de la
+organización.
+
+**"Perdió el locke" y "se retiró" son el mismo estado con distinto motivo.** Para
+la competición son idénticos —deja de emparejarse, no cuenta para el MVP ni para
+el formato del final, y sus combates pendientes los gana el rival—, y toda esa
+maquinaria ya preguntaba por `Participant.retiredAt`. Así que un locke perdido
+también rellena esa fecha, y lo que los distingue es `motivoDeSalida`.
+
+Se hace así **a propósito**. Con una segunda fecha habría que repasar quince
+consultas —emparejamientos, MVP, el formato del final, las retiradas
+pendientes— y bastaría olvidarse de una para que alguien que perdió el locke
+siguiera emparejándose. Reutilizando la columna, lo único que cambia es cómo se
+cuenta, que es justo lo que se quería distinguir: en rojo y con su nombre.
+
+Comprobado que de verdad queda fuera: con seis jugadores y uno con el locke
+perdido, la jornada siguiente empareja a cuatro y deja descansando a uno, sin
+contar con él.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -1704,6 +1734,11 @@ Piezas con truco:
   mismo y conviene no confundirlos**. Al añadir una acción, la pregunta es si lo
   que toca vale para toda la casa (`requireCreador`) o solo para una edición
   (`requireCompetitionManager`).
+- `lib/wipeos.ts` — los dos motivos de estar fuera y cómo se cuenta cada uno.
+  `actions/wipeos.ts` son las marcas y el estado; `jugador/[id]/wipeos-client.tsx`
+  la sección del perfil. **Al mirar si alguien sigue jugando se pregunta por
+  `retiredAt`**, que vale para los dos casos; `motivoDeSalida` es solo para
+  enseñarlo.
 - `lib/almacen-de-imagenes.ts` — guardar una imagen una sola vez y resolver la
   referencia. `lib/deduplicar-imagenes.ts` pasa al almacén lo que ya estaba
   escrito (**en SQL**: traerse las imágenes a Node serían cientos de megas de ida
@@ -2029,3 +2064,6 @@ lugar de destruir datos, y hay que avisar antes.
 50. **Una guía para quien lleva un locke**, de trece páginas y con el mismo
     estilo que la de siempre, en su pestaña dentro de *Guía de uso*. Solo la ve
     quien administra alguna edición.
+51. **Wipeos**: se cuentan las veces que a alguien le barren el equipo, sin que
+    eso le cueste el locke, y aparece un estado de **locke perdido** aparte de
+    la retirada para cuando sí se lo cuesta.

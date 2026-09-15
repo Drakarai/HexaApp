@@ -19,6 +19,8 @@ import {
   setCompetitionStatusAction,
 } from "@/app/actions/competitions";
 import { getMisSolicitudes } from "@/lib/solicitudes";
+import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { perderElLockeAction } from "@/app/actions/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { NewUserForm } from "../admin/user-forms";
 import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
@@ -182,9 +184,15 @@ export default async function CompetitionsPage() {
                             admin
                           </span>
                         ) : null}
-                        {participant.retiredAt ? (
-                          <span className="ml-2 text-xs text-slate-500">
-                            retirado
+                        {comoEstaFuera(participant) ? (
+                          <span
+                            className={cx(
+                              "ml-2 text-xs",
+                              comoEstaFuera(participant)!.color,
+                            )}
+                          >
+                            {comoEstaFuera(participant)!.icono}{" "}
+                            {comoEstaFuera(participant)!.etiqueta}
                           </span>
                         ) : null}
                       </p>
@@ -216,6 +224,37 @@ export default async function CompetitionsPage() {
                             message={`¿Retirar a ${participant.displayName} del locke? No se borra nada suyo, pero deja de contar para los gimnasios y el MVP, y sus combates de jornada sin jugar los ganará el rival por retirada.`}
                           >
                             Retirar
+                          </ConfirmSubmit>
+                        )}
+                      </form>
+                    ) : null}
+                    {/**
+                     * Perder el locke va aparte de retirarse: para la
+                     * competición es lo mismo, pero no es lo mismo dejarlo que
+                     * que te barran. Solo sale si no está ya fuera por lo otro.
+                     */}
+                    {canManageActive &&
+                    (!participant.retiredAt ||
+                      participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO) ? (
+                      <form action={perderElLockeAction}>
+                        <input
+                          type="hidden"
+                          name="participantId"
+                          value={participant.id}
+                        />
+                        {participant.retiredAt ? (
+                          <ConfirmSubmit
+                            className="btn-ghost btn-sm"
+                            message={`¿${participant.displayName} recupera el locke? Los combates que ya se dieron por perdidos se quedan como están.`}
+                          >
+                            Devolverle el locke
+                          </ConfirmSubmit>
+                        ) : (
+                          <ConfirmSubmit
+                            className="btn-ghost btn-sm text-red-300"
+                            message={`¿${participant.displayName} pierde el locke? Queda fuera igual que quien se retira —sus combates sin jugar los gana el rival— pero se enseña como locke perdido, no como retirada. Se puede deshacer.`}
+                          >
+                            💥 Perdió el locke
                           </ConfirmSubmit>
                         )}
                       </form>
