@@ -22,6 +22,7 @@ export const FUENTES = {
   equipo: { tabla: "MatchPokemon", columna: "boxImage" },
   "equipo-ficha": { tabla: "MatchPokemon", columna: "detailImage" },
   salon: { tabla: "HallOfFameEntry", columna: "image" },
+  "salon-ficha": { tabla: "HallOfFameEntry", columna: "detailImage" },
   favorito: { tabla: "FavoritePokemon", columna: "image" },
   objeto: { tabla: "Item", columna: "image" },
   "objeto-opcion": { tabla: "ItemOption", columna: "image" },

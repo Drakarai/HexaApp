@@ -39,12 +39,16 @@ export async function addHallPokemonAction(
     return { error: `El equipo ya tiene sus ${TEAM_SIZE} pokémon.` };
   }
 
+  // Las dos: el sprite de la casilla y la ilustración de la ficha en grande
+  const sprites = await spritesDelFormulario(formData);
+
   await prisma.hallOfFameEntry.create({
     data: {
       participantId,
       species,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
-      image: (await spritesDelFormulario(formData))?.boxImage ?? null,
+      image: sprites?.boxImage ?? null,
+      detailImage: sprites?.detailImage ?? null,
       position: count,
     },
   });

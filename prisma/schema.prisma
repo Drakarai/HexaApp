@@ -1354,7 +1354,14 @@ model HallOfFameEntry {
   participantId String
   species       String
   nickname      String?
+  // Sprite pequeño, el de la casilla del equipo
   image         String?
+  /**
+   * Ilustración grande, para verlo en grande al tocarlo. Los equipos
+   * apuntados antes de que existiera no la tienen, así que la ficha se
+   * apaña con el sprite pequeño agrandado.
+   */
+  detailImage   String?
   position      Int      @default(0)
   createdAt     DateTime @default(now())
 

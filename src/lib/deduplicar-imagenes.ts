@@ -26,6 +26,7 @@ const COLUMNAS: [tabla: string, columna: string][] = [
   ["Participant", "aceImage"],
   ["Participant", "aceDetailImage"],
   ["HallOfFameEntry", "image"],
+  ["HallOfFameEntry", "detailImage"],
   ["FavoritePokemon", "image"],
   ["LevelCap", "image"],
   ["MapRegion", "image"],

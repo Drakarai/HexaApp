@@ -13,10 +13,13 @@ import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import { getCampeonesDeLiga } from "@/lib/liga";
+import { getResumenDelLocke } from "@/lib/resumen-del-locke";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getProgresoEnSolitario } from "@/lib/solitario";
 import { CampeonesDeLiga } from "@/components/marcador-dual";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
+import { Podio, type EnElPodio } from "./podio";
+import { ResumenDelLocke } from "./resumen";
 
 export const metadata = { title: "Hall de la fama" };
 
@@ -97,21 +100,24 @@ export default async function HallOfFamePage() {
    */
   const elFinal = state.status === "TERMINADA" ? state : null;
 
-  const [canManage, standings, entries, campeonesDeLiga] = await Promise.all([
-    canManageCompetition(competition.id, user),
-    getStandings(competition.id),
-    prisma.hallOfFameEntry.findMany({
-      where: { participant: { competitionId: competition.id } },
-      orderBy: { position: "asc" },
-    }),
-    getCampeonesDeLiga(competition.id),
-  ]);
+  const [canManage, standings, entries, campeonesDeLiga, resumen] =
+    await Promise.all([
+      canManageCompetition(competition.id, user),
+      getStandings(competition.id),
+      prisma.hallOfFameEntry.findMany({
+        where: { participant: { competitionId: competition.id } },
+        orderBy: { position: "asc" },
+      }),
+      getCampeonesDeLiga(competition.id),
+      getResumenDelLocke(competition.id),
+    ]);
 
   // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
-  const sprites = await urlsDeImagen(
-    "salon",
-    entries.map((entry) => entry.id),
-  );
+  const ids = entries.map((entry) => entry.id);
+  const [sprites, fichas] = await Promise.all([
+    urlsDeImagen("salon", ids),
+    urlsDeImagen("salon-ficha", ids),
+  ]);
 
   const teamOf = (participantId: string) =>
     entries
@@ -121,6 +127,7 @@ export default async function HallOfFamePage() {
         species: entry.species,
         nickname: entry.nickname,
         image: sprites(entry.id),
+        detailImage: fichas(entry.id),
       }));
 
   // Primero el campeón, después el subcampeón, y el resto por clasificación
@@ -132,6 +139,68 @@ export default async function HallOfFamePage() {
       (orden.get(a.participantId) ?? a.position) -
       (orden.get(b.participantId) ?? b.position),
   );
+
+  /**
+   * Cómo se ganó el locke, con nombres: "Draka ganó a Pablo por 2 pokémon". Sale
+   * de la propia final, que según el formato es una llave o una serie al mejor
+   * de tres (ver `lib/formatos-finales.ts`).
+   */
+  const comoLoGano = (() => {
+    if (!elFinal?.champion) return "";
+    const campeon = elFinal.champion.displayName;
+    const rival = elFinal.runnerUp?.displayName;
+    const decide = elFinal.formato.campeon;
+
+    if (decide.tipo === "serie") {
+      const ganadas = (quien: string | undefined) =>
+        elFinal.matches.filter(
+          (combate) =>
+            decide.keys.includes(combate.key) &&
+            combate.winnerId ===
+              (quien === campeon
+                ? elFinal.champion!.participantId
+                : elFinal.runnerUp?.participantId),
+        ).length;
+      return rival
+        ? `${campeon} ganó la serie a ${rival} por ${ganadas(campeon)}-${ganadas(rival)}.`
+        : `${campeon} ganó la serie.`;
+    }
+
+    const laFinal = elFinal.matches.find((combate) => combate.key === decide.key);
+    const diferencia = laFinal?.pokemonDiff
+      ? ` por ${laFinal.pokemonDiff} pokémon`
+      : "";
+    return rival
+      ? `${campeon} ganó la final a ${rival}${diferencia}.`
+      : `${campeon} ganó la final${diferencia}.`;
+  })();
+
+  /**
+   * El podio, **solo con quien llegó a la final**. El 1º y el 2º salen de la
+   * final; el 3º sale de la tabla, que no es lo mismo y por eso se dice: en el
+   * cuadro no se juega un combate por el tercer puesto.
+   *
+   * Lo de mirar la siembra no sobra: sin ella, en un locke de dos se colaba de
+   * tercero el siguiente de la clasificación, que era alguien que estaba fuera
+   * del locke y no jugó la final.
+   */
+  const sembrados = new Set(
+    elFinal?.seeds.map((jugador) => jugador.participantId) ?? [],
+  );
+  const podio: EnElPodio[] = elFinal?.champion
+    ? jugadores
+        .filter((row) => sembrados.has(row.participantId))
+        .slice(0, 3)
+        .map((row, index) => ({
+          participantId: row.participantId,
+          displayName: row.displayName,
+          color: row.color,
+          avatarImage: row.avatarImage,
+          puesto: index + 1,
+          titulo: ["Campeón", "Subcampeón", "Tercero en la tabla"][index],
+          comoLoGano,
+        }))
+    : [];
 
   return (
     <>
@@ -147,28 +216,7 @@ export default async function HallOfFamePage() {
       {/* El podio solo tiene sentido si hubo final. En solitario lo que cierra
           el locke es la Liga, y eso se cuenta en el bloque de abajo. */}
       {elFinal?.champion ? (
-        <section className="card mb-6 text-center">
-          <p className="text-5xl" aria-hidden>
-            🏆
-          </p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
-            Campeón
-          </p>
-          <div className="mt-3 flex items-center justify-center gap-3">
-            <Avatar
-              name={elFinal.champion.displayName}
-              color={elFinal.champion.color}
-              image={elFinal.champion.avatarImage}
-              size={48}
-            />
-            <p className="text-3xl font-black text-white">
-              {elFinal.champion.displayName}
-            </p>
-          </div>
-          <p className="mt-2 text-xs text-slate-500">
-            {competition.name} · {formatDate(competition.startedAt)}
-          </p>
-        </section>
+        <Podio podio={podio} />
       ) : (
         <section className="card mb-6 text-center">
           <p className="text-5xl" aria-hidden>
@@ -187,6 +235,8 @@ export default async function HallOfFamePage() {
         </section>
       )}
 
+      <ResumenDelLocke resumen={resumen} />
+
       {/* La otra victoria: pasarse la Liga es ganar el locke del juego, y la
           puede tener alguien que no ganó ni un combate */}
       <div className="mb-6">
@@ -199,15 +249,29 @@ export default async function HallOfFamePage() {
           const editable = canManage || row.userId === user.id;
           const esCampeon = elFinal?.champion?.participantId === row.participantId;
 
+          /**
+           * Sin equipo apuntado la tarjeta se queda en una línea. Antes se
+           * pintaban igual los seis huecos vacíos, y hasta que no los rellenaba
+           * todo el mundo la página era medio ladrillo en blanco. Quien puede
+           * rellenarlo sigue viendo su formulario; el resto, solo el aviso.
+           */
+          const vacia = team.length === 0;
+
           return (
             <section
               key={row.participantId}
               className={cx(
                 "card",
                 esCampeon && "border-amber-400/30 bg-amber-400/[0.04]",
+                vacia && !editable && "py-3 opacity-60",
               )}
             >
-              <div className="mb-4 flex flex-wrap items-center gap-3">
+              <div
+                className={cx(
+                  "flex flex-wrap items-center gap-3",
+                  vacia ? "mb-0" : "mb-4",
+                )}
+              >
                 <span className="w-6 text-center text-lg">
                   {MEDALS[index] ?? (
                     <span className="text-sm text-slate-500">{index + 1}º</span>
@@ -218,22 +282,36 @@ export default async function HallOfFamePage() {
                   color={row.color}
                   image={row.avatarImage}
                   size={34}
+                  participantId={row.participantId}
                 />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <h2 className="truncate font-semibold text-white">
                     {row.displayName}
                   </h2>
-                  <p className="text-xs text-slate-500">
-                    {row.points} puntos · {row.deaths} caídos
-                    {row.gameVersion ? ` · ${row.gameVersion}` : ""}
+                  <p className="truncate text-xs text-slate-500">
+                    {vacia
+                      ? "Todavía no ha apuntado su equipo"
+                      : `${row.points} puntos · ${row.deaths} caídos${
+                          row.gameVersion ? ` · ${row.gameVersion}` : ""
+                        }`}
                   </p>
                 </div>
-                <span className="ml-auto chip">
-                  {team.length}/{TEAM_SIZE}
-                </span>
+                {vacia ? null : (
+                  <span className="chip shrink-0">
+                    {team.length}/{TEAM_SIZE}
+                  </span>
+                )}
               </div>
 
-              <TeamSlots team={team} editable={editable} teamSize={TEAM_SIZE} />
+              {vacia ? null : (
+                <TeamSlots
+                  team={team}
+                  editable={editable}
+                  teamSize={TEAM_SIZE}
+                  destacado={esCampeon}
+                  duenoName={row.displayName}
+                />
+              )}
 
               {editable ? (
                 <AddPokemonForm

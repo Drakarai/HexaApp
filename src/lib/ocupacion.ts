@@ -58,6 +58,7 @@ export const COLUMNAS: [
   ["Participant", "aceDetailImage", "Ases · ilustración"],
   ["LevelCap", "image", "Medallas y líderes"],
   ["HallOfFameEntry", "image", "Hall de la fama"],
+  ["HallOfFameEntry", "detailImage", "Hall de la fama"],
   ["FavoritePokemon", "image", "Favoritos"],
   ["User", "avatarImage", "Fotos de perfil"],
   ["Item", "image", "Objetos", true],

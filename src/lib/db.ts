@@ -16,7 +16,7 @@ const SIN_IMAGENES = {
   participant: { aceImage: true, aceDetailImage: true },
   death: { boxImage: true, detailImage: true },
   matchPokemon: { boxImage: true, detailImage: true },
-  hallOfFameEntry: { image: true },
+  hallOfFameEntry: { image: true, detailImage: true },
   favoritePokemon: { image: true },
   levelCap: { images: true, image: true },
   levelCapTemplateItem: { images: true },

@@ -17,7 +17,8 @@ una sola vez**, las copias de seguridad que ya no repiten las imágenes, y el
 permiso de **organizador** para que alguien lleve sus propios lockes, y el
 reparto de papeles en **Creador / administrador de locke / jugador**, y los
 wipeos con su estado de locke perdido, la lista de participantes arreglada
-para el móvil, y los **combates con permiso** para quien está fuera del locke).
+para el móvil, los **combates con permiso** para quien está fuera del locke, y
+el **hall de la fama** con su podio y las cifras del locke).
 
 ---
 
@@ -64,7 +65,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
-| **Hall de la fama** | Equipo de 6 pokémon por jugador, disponible cuando el final del locke ya tiene campeón. |
+| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -949,6 +950,33 @@ Con uno solo no hay nada que jugar y la pantalla lo dice.
 equipo de 6 con el que terminó, con el mismo buscador de especie, y se ordena
 como una clasificación final: campeón, subcampeón y el resto por puntos. Se
 comprueba en el servidor que la Final Four esté decidida antes de admitir nada.
+
+Es **el cierre del locke**, así que cuenta cómo fue:
+
+- **El podio solo lo pisa quien jugó la final.** El 1º y el 2º salen de ella; el
+  3º sale de la tabla y se dice —"Tercero en la tabla"—, porque en el cuadro no
+  se juega un combate por el tercer puesto. Quién puede estar sale de
+  `FinalFour.seeds`, **no de la clasificación entera**: mirando la tabla, en un
+  locke de dos se colaba de tercero alguien que estaba fuera del locke y no
+  había jugado la final. Con dos, el podio es de dos.
+- **Cómo se ganó, con nombres**: "Draka ganó la final a Pablo por 2 pokémon", o
+  "ganó la serie por 2-1" si el formato era al mejor de tres. Sale del propio
+  cuadro, así que vale para los cinco formatos sin escribir ninguno a mano.
+- **Las cifras del locke no se guardan, se cuentan al mirarlas**
+  (`lib/resumen-del-locke.ts`): cuánto duró, cuántas jornadas y combates, los
+  caídos con su ruta más mortífera, los wipeos, quién perdió más y quién menos,
+  y quién se llevó más MVPs. Los MVPs **no están guardados** —se calculan de los
+  votos, ver `lib/mvp.ts`—, así que hay que pedir el estado de todas las
+  jornadas. Es caro y se hace **solo aquí**: el hall se abre una vez, al final.
+  No vale para la portada.
+- **Sin equipo apuntado, la tarjeta se queda en una línea.** Antes se pintaban
+  igual los seis huecos vacíos y, hasta que no lo rellenaba todo el mundo, la
+  página era medio ladrillo en blanco.
+- **El equipo del campeón se pinta en dorado**, que es de lo que va la página.
+- Cada pokémon se abre en grande con su ilustración. Por eso
+  `HallOfFameEntry.detailImage`: antes solo se guardaba el sprite de la casilla.
+  Los equipos apuntados antes de que existiera no la tienen y la ficha se apaña
+  con el sprite pequeño, así que **no hay que rellenar nada hacia atrás**.
 
 **El muro de actividad no guarda eventos propios.** Consulta cada fuente
 (muertes, puntos, gimnasios superados, giros, combates) y las mezcla por fecha.
@@ -2154,3 +2182,5 @@ lugar de destruir datos, y hay que avisar antes.
 53. **Excepciones a la norma**: la organización puede dejar que alguien que está
     fuera del locke juegue un combate suelto de jornada o un reto, y el
     cementerio deja de comerse casillas al que más bajas lleva.
+54. **El hall de la fama, hecho un cierre de verdad**: podio, las cifras del
+    locke entero y las fichas de cada pokémon en grande.
