@@ -1666,6 +1666,11 @@ móvil el nombre se quedaba en una letra —"A", "D"— y el usuario en una arro
 suelta. Ahora el avatar con el nombre ocupan su línea entera y los botones van
 en otra, que se parte sola si no caben. Comprobado a 360, 390 y 430 píxeles.
 
+El mismo apretón estaba en la lista con la que se siembra la Final Four: al
+lado de "Juega la primera ronda" los nombres se quedaban en dos letras. Ahí la
+chapa se baja a su propia línea en el móvil (`w-full sm:w-auto`) y en el
+ordenador se queda donde estaba.
+
 De paso se quitaron dos cosas que sobraban ahí. **Un solo botón para devolver a
 alguien al locke**: cuando está fuera por un wipeo se esconde *Readmitir*,
 porque *Devolverle el locke* hace lo mismo y dos botones con nombres distintos

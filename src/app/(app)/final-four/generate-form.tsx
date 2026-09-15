@@ -51,19 +51,27 @@ export function GenerateBracketForm({
         {standings.map((row, index) => (
           <li
             key={row.participantId}
-            className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm"
           >
-            <span className="w-5 font-bold text-slate-500">{index + 1}º</span>
+            <span className="w-5 shrink-0 font-bold text-slate-500">
+              {index + 1}º
+            </span>
             <span className="min-w-0 flex-1 truncate text-white">
               {row.displayName}
             </span>
-            <span className="text-xs text-slate-500">
+            <span className="shrink-0 text-xs text-slate-500">
               {row.points} pts · {row.deaths} 💀
             </span>
-            {/* A dónde entra cada uno depende del formato: con seis esperan
-                dos, con cinco o tres espera el primero, y con cuatro o dos
-                empiezan todos jugando */}
-            <span className="chip">
+            {/**
+             * A dónde entra cada uno depende del formato: con seis esperan
+             * dos, con cinco o tres espera el primero, y con cuatro o dos
+             * empiezan todos jugando.
+             *
+             * En el móvil se baja a su propia línea (`w-full`): al lado del
+             * nombre, "Juega la primera ronda" es tan largo que dejaba los
+             * nombres en dos letras.
+             */}
+            <span className="chip w-full justify-center sm:w-auto sm:justify-start">
               {index < esperan ? "Espera turno" : "Juega la primera ronda"}
             </span>
           </li>
