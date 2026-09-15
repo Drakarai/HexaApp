@@ -157,7 +157,14 @@ export const getMyParticipant = cache(
 );
 
 /**
- * Puede gestionar quien sea admin global o admin de esa competición concreta.
+ * Puede gestionar quien sea Creador o administrador de esa competición.
+ *
+ * **Estar fuera del locke no quita el mando**, ni por retirarse ni por perderlo
+ * en un wipeo: se mira la ficha de participante y su marca de administrador, y
+ * no `retiredAt`. Es a propósito —quien organiza suele jugar, y que un wipeo le
+ * dejara sin poder emparejar la jornada siguiente sería absurdo—, así que si
+ * algún día se filtra por "los que siguen jugando" aquí o en
+ * `getMyParticipant`, esto se rompe sin que salte nada.
  */
 export async function canManageCompetition(
   competitionId: string,

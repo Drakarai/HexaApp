@@ -1611,6 +1611,15 @@ Comprobado que de verdad queda fuera: con seis jugadores y uno con el locke
 perdido, la jornada siguiente empareja a cuatro y deja descansando a uno, sin
 contar con él.
 
+**Pero estar fuera no quita el mando.** Quien administra el locke lo sigue
+administrando aunque se retire o pierda el locke: quien organiza suele jugar, y
+que un wipeo le dejara sin poder emparejar la jornada siguiente sería absurdo.
+Sale gratis porque los porteros —`canManageCompetition`, `getAcceso`,
+`assertPuedeTocarLocke`, `assertCanActForParticipant`— miran la ficha de
+participante y la marca de administrador, **nunca `retiredAt`**. Queda dicho en
+`canManageCompetition` porque es fácil romperlo sin querer: bastaría con filtrar
+ahí por "los que siguen jugando".
+
 ---
 
 ## 4. Reglas del locke que están implementadas
