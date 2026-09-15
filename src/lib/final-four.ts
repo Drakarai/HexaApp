@@ -2,8 +2,11 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { getStandings, type StandingRow } from "@/lib/competition";
 import {
+  combatesDeLaLlave,
+  comoVaLaSerie,
   formatoParaJugadores,
   MINIMO_DE_JUGADORES,
+  PARA_GANAR_LA_LLAVE,
   type FormatoFinal,
 } from "@/lib/formatos-finales";
 
@@ -15,6 +18,9 @@ import {
  * jugadores **activos** —los retirados no cuentan—, y este módulo solo lo
  * rellena con quién va ganando. Los emparejamientos no se guardan: se deducen
  * de la siembra y de los resultados, así que no pueden quedar incoherentes.
+ *
+ * **Cada llave es una serie al mejor de tres**, así que lo que se pinta son
+ * llaves con sus tres combates dentro, no combates sueltos.
  */
 
 export type BracketPlayer = {
@@ -26,7 +32,22 @@ export type BracketPlayer = {
   seed: number;
 };
 
-export type BracketMatch = {
+/** Uno de los tres combates de una llave. */
+export type CombateDeLaLlave = {
+  /** "SEMI_A#2" */
+  key: string;
+  /** 1, 2 o 3 */
+  numero: number;
+  winnerId: string | null;
+  pokemonDiff: number | null;
+  playedAt: Date | null;
+  notes: string | null;
+  replayUrl: string | null;
+  /** Ya no hace falta jugarlo: la serie está decidida antes de llegar aquí */
+  sobra: boolean;
+};
+
+export type LlaveDelCuadro = {
   key: string;
   round: string;
   title: string;
@@ -35,14 +56,14 @@ export type BracketMatch = {
   /** Texto para el hueco que todavía no se sabe quién ocupará */
   aPending?: string;
   bPending?: string;
+  /** Quién se llevó la llave, si ya está decidida */
   winnerId: string | null;
-  pokemonDiff: number | null;
-  playedAt: Date | null;
-  notes: string | null;
+  /** Cuántos combates lleva ganados cada lado */
+  ganadasA: number;
+  ganadasB: number;
+  combates: CombateDeLaLlave[];
   /** Se puede anotar resultado: ya se conocen los dos contendientes */
   ready: boolean;
-  /** El tercero del mejor de tres cuando ya no hace falta jugarlo */
-  sobra?: boolean;
 };
 
 export type FinalFourState =
@@ -53,7 +74,7 @@ export type FinalFourState =
   | {
       status: "EN_JUEGO" | "TERMINADA";
       formato: FormatoFinal;
-      matches: BracketMatch[];
+      llaves: LlaveDelCuadro[];
       seeds: BracketPlayer[];
       champion: BracketPlayer | null;
       runnerUp: BracketPlayer | null;
@@ -113,44 +134,32 @@ export async function getFinalFourState(
     .filter((player): player is BracketPlayer => player !== null);
 
   const guardados = new Map(finalFour.matches.map((match) => [match.key, match]));
-  const ganadorDe = (key: string) => {
-    const winnerId = guardados.get(key)?.winnerId;
-    return winnerId
-      ? (seeds.find((jugador) => jugador.participantId === winnerId) ?? null)
+
+  /**
+   * Quién ganó una llave. Se calcula de sus tres combates, no de una fila
+   * "ganador de la llave" que habría que mantener a mano y podría mentir.
+   */
+  const serieDe = (llave: string) =>
+    comoVaLaSerie(
+      combatesDeLaLlave(llave).map(
+        (clave) => guardados.get(clave)?.winnerId ?? null,
+      ),
+    );
+  const ganadorDe = (llave: string) => {
+    const { ganador } = serieDe(llave);
+    return ganador
+      ? (seeds.find((jugador) => jugador.participantId === ganador) ?? null)
       : null;
   };
 
-  // En una variable aparte para que TypeScript pueda distinguir los dos casos
-  const comoSeDecide = formato.campeon;
-
-  /** Cuántos combates de la serie lleva ganados cada uno, para el mejor de tres */
-  const victoriasEnSerie = new Map<string, number>();
-  if (comoSeDecide.tipo === "serie") {
-    for (const key of comoSeDecide.keys) {
-      const winnerId = guardados.get(key)?.winnerId;
-      if (winnerId) {
-        victoriasEnSerie.set(winnerId, (victoriasEnSerie.get(winnerId) ?? 0) + 1);
-      }
-    }
-  }
-  const serieDecidida =
-    comoSeDecide.tipo === "serie" &&
-    [...victoriasEnSerie.values()].some(
-      (ganados) => ganados >= comoSeDecide.hacenFalta,
-    );
-
-  const bracket: BracketMatch[] = formato.combates.map((plantilla) => {
+  const llaves: LlaveDelCuadro[] = formato.llaves.map((plantilla) => {
     const lado = (posicion: "a" | "b") => {
       const desde = plantilla[posicion];
       return "puesto" in desde ? (seeds[desde.puesto] ?? null) : ganadorDe(desde.ganadorDe);
     };
     const a = lado("a");
     const b = lado("b");
-    const guardado = guardados.get(plantilla.key);
-
-    // El tercero del mejor de tres sobra en cuanto alguien gana los dos
-    // primeros: se enseña apagado en vez de invitando a jugarlo
-    const sobra = Boolean(plantilla.soloSiEmpate && serieDecidida);
+    const { ganadas, sobra, ganador } = serieDe(plantilla.key);
 
     return {
       key: plantilla.key,
@@ -160,46 +169,38 @@ export async function getFinalFourState(
       b,
       aPending: a ? undefined : plantilla.aPendiente,
       bPending: b ? undefined : plantilla.bPendiente,
-      winnerId: guardado?.winnerId ?? null,
-      pokemonDiff: guardado?.pokemonDiff ?? null,
-      playedAt: guardado?.playedAt ?? null,
-      notes: guardado?.notes ?? null,
-      ready: Boolean(a && b) && !sobra,
-      sobra: sobra || undefined,
+      winnerId: ganador,
+      ganadasA: a ? (ganadas.get(a.participantId) ?? 0) : 0,
+      ganadasB: b ? (ganadas.get(b.participantId) ?? 0) : 0,
+      combates: combatesDeLaLlave(plantilla.key).map((clave, indice) => {
+        const guardado = guardados.get(clave);
+        return {
+          key: clave,
+          numero: indice + 1,
+          winnerId: guardado?.winnerId ?? null,
+          pokemonDiff: guardado?.pokemonDiff ?? null,
+          playedAt: guardado?.playedAt ?? null,
+          notes: guardado?.notes ?? null,
+          replayUrl: guardado?.replayUrl ?? null,
+          sobra: sobra[indice] ?? false,
+        };
+      }),
+      ready: Boolean(a && b),
     };
   });
 
-  let champion: BracketPlayer | null = null;
-  let runnerUp: BracketPlayer | null = null;
-
-  if (comoSeDecide.tipo === "llave") {
-    const laLlave = comoSeDecide.key;
-    champion = ganadorDe(laLlave);
-    const laFinal = bracket.find((combate) => combate.key === laLlave);
-    runnerUp = champion
-      ? ([laFinal?.a ?? null, laFinal?.b ?? null].find(
-          (jugador) => jugador && jugador.participantId !== champion!.participantId,
-        ) ?? null)
-      : null;
-  } else {
-    const [ganadorId] =
-      [...victoriasEnSerie.entries()].find(
-        ([, ganados]) => ganados >= comoSeDecide.hacenFalta,
-      ) ?? [];
-    champion = ganadorId
-      ? (seeds.find((jugador) => jugador.participantId === ganadorId) ?? null)
-      : null;
-    runnerUp = champion
-      ? (seeds.find(
-          (jugador) => jugador.participantId !== champion!.participantId,
-        ) ?? null)
-      : null;
-  }
+  const laFinal = llaves.find((llave) => llave.key === formato.campeon);
+  const champion = ganadorDe(formato.campeon);
+  const runnerUp = champion
+    ? ([laFinal?.a ?? null, laFinal?.b ?? null].find(
+        (jugador) => jugador && jugador.participantId !== champion.participantId,
+      ) ?? null)
+    : null;
 
   return {
     status: champion ? "TERMINADA" : "EN_JUEGO",
     formato,
-    matches: bracket,
+    llaves,
     seeds,
     champion,
     runnerUp,

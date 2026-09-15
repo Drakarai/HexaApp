@@ -7,6 +7,11 @@
  * formato acordado, y el resto de la aplicación se limita a dibujar lo que diga
  * esta tabla.
  *
+ * **Todas las llaves se juegan al mejor de tres**, de los cruces a la final.
+ * Por eso lo que hay aquí son *llaves* y no combates sueltos: cada una son tres
+ * filas de `FinalMatch` (`SEMI_A#1`, `SEMI_A#2`, `SEMI_A#3`) y la gana quien se
+ * lleve dos. El tercero solo se juega si hace falta.
+ *
  * **El formato se congela al generar el cuadro** (`FinalFour.jugadores`): si
  * alguien se retira con la final ya empezada, el cuadro no se rehace solo.
  *
@@ -14,29 +19,30 @@
  * servidor —para sembrar y validar— como la pantalla que lo pinta.
  */
 
-/** De dónde sale cada lado de un combate. */
+/** Cuántos combates tiene una llave como mucho. */
+export const AL_MEJOR_DE = 3;
+
+/** Y cuántos hay que ganar para llevársela. */
+export const PARA_GANAR_LA_LLAVE = Math.floor(AL_MEJOR_DE / 2) + 1;
+
+/** De dónde sale cada lado de una llave. */
 export type LadoDelCombate =
   /** El que quedó en ese puesto de la clasificación (0 = el primero) */
   | { puesto: number }
   /** El que gane otra llave del cuadro */
   | { ganadorDe: string };
 
-export type PlantillaDeCombate = {
+export type PlantillaDeLlave = {
   key: string;
   /** La columna en la que sale */
   ronda: string;
-  /** El rótulo del combate: "3º contra 6º" */
+  /** El rótulo de la llave: "3º contra 6º" */
   titulo: string;
   a: LadoDelCombate;
   b: LadoDelCombate;
   /** Texto del hueco mientras no se sepa quién lo ocupa */
   aPendiente?: string;
   bPendiente?: string;
-  /**
-   * Solo se juega si hace falta: el tercero del mejor de tres, que sobra si
-   * alguien gana los dos primeros.
-   */
-  soloSiEmpate?: boolean;
 };
 
 export type FormatoFinal = {
@@ -48,19 +54,14 @@ export type FormatoFinal = {
   explicacion: string;
   /** Las columnas, en orden */
   rondas: string[];
-  combates: PlantillaDeCombate[];
+  llaves: PlantillaDeLlave[];
   /**
    * Cuántos esperan sin jugar la primera ronda. Es lo que se marca con medalla
    * en la clasificación: los que ya tienen plaza sin pelearla.
    */
   esperan: number;
-  /**
-   * Cómo se decide el campeón: quien gane una llave, o quien gane más
-   * combates de una serie.
-   */
-  campeon:
-    | { tipo: "llave"; key: string }
-    | { tipo: "serie"; keys: string[]; hacenFalta: number };
+  /** La llave que decide el locke: quien la gane es el campeón. */
+  campeon: string;
 };
 
 /** El de siempre: los dos primeros esperan en semifinales. */
@@ -68,10 +69,10 @@ const SEIS: FormatoFinal = {
   jugadores: 6,
   nombre: "Final Four",
   explicacion:
-    "Los dos primeros esperan en semifinales. Del 3º al 6º se juegan las otras dos plazas. Quien gane la final es el campeón oficial del locke.",
+    "Los dos primeros esperan en semifinales. Del 3º al 6º se juegan las otras dos plazas. Cada llave es al mejor de tres, y quien gane la final es el campeón oficial del locke.",
   rondas: ["Cruces", "Semifinales", "Final"],
   esperan: 2,
-  combates: [
+  llaves: [
     { key: "CROSS_A", ronda: "Cruces", titulo: "3º contra 6º", a: { puesto: 2 }, b: { puesto: 5 } },
     { key: "CROSS_B", ronda: "Cruces", titulo: "4º contra 5º", a: { puesto: 3 }, b: { puesto: 4 } },
     {
@@ -100,7 +101,7 @@ const SEIS: FormatoFinal = {
       bPendiente: "Ganador de la 2ª semifinal",
     },
   ],
-  campeon: { tipo: "llave", key: "FINAL" },
+  campeon: "FINAL",
 };
 
 /**
@@ -112,10 +113,10 @@ const CINCO: FormatoFinal = {
   jugadores: 5,
   nombre: "Final Four",
   explicacion:
-    "El primero espera directamente en la final. Del 2º al 5º se juegan la otra plaza: primero los cruces y luego la semifinal entre los que ganen.",
+    "El primero espera directamente en la final. Del 2º al 5º se juegan la otra plaza: primero los cruces y luego la semifinal entre los que ganen. Cada llave, al mejor de tres.",
   rondas: ["Cruces", "Semifinal", "Final"],
   esperan: 1,
-  combates: [
+  llaves: [
     { key: "CROSS_A", ronda: "Cruces", titulo: "2º contra 5º", a: { puesto: 1 }, b: { puesto: 4 } },
     { key: "CROSS_B", ronda: "Cruces", titulo: "3º contra 4º", a: { puesto: 2 }, b: { puesto: 3 } },
     {
@@ -136,7 +137,7 @@ const CINCO: FormatoFinal = {
       bPendiente: "Ganador de la semifinal",
     },
   ],
-  campeon: { tipo: "llave", key: "FINAL" },
+  campeon: "FINAL",
 };
 
 /** Con cuatro, torneo normal entre ellos: nadie espera. */
@@ -144,10 +145,10 @@ const CUATRO: FormatoFinal = {
   jugadores: 4,
   nombre: "Final Four",
   explicacion:
-    "Torneo entre los cuatro: el 1º contra el 4º y el 2º contra el 3º. Quien gane la final es el campeón oficial del locke.",
+    "Torneo entre los cuatro: el 1º contra el 4º y el 2º contra el 3º. Cada llave es al mejor de tres, y quien gane la final es el campeón oficial del locke.",
   rondas: ["Semifinales", "Final"],
   esperan: 0,
-  combates: [
+  llaves: [
     { key: "SEMI_A", ronda: "Semifinales", titulo: "1º contra 4º", a: { puesto: 0 }, b: { puesto: 3 } },
     { key: "SEMI_B", ronda: "Semifinales", titulo: "2º contra 3º", a: { puesto: 1 }, b: { puesto: 2 } },
     {
@@ -160,7 +161,7 @@ const CUATRO: FormatoFinal = {
       bPendiente: "Ganador de 2º-3º",
     },
   ],
-  campeon: { tipo: "llave", key: "FINAL" },
+  campeon: "FINAL",
 };
 
 /** Con tres ya no hay cuadro que valga: el primero espera y los otros dos se lo juegan. */
@@ -168,10 +169,10 @@ const TRES: FormatoFinal = {
   jugadores: 3,
   nombre: "Jornada Final",
   explicacion:
-    "El primero pasa directo a la final. El 2º y el 3º se juegan la otra plaza.",
+    "El primero pasa directo a la final. El 2º y el 3º se juegan la otra plaza. Las dos llaves, al mejor de tres.",
   rondas: ["Semifinal", "Final"],
   esperan: 1,
-  combates: [
+  llaves: [
     { key: "SEMI_A", ronda: "Semifinal", titulo: "2º contra 3º", a: { puesto: 1 }, b: { puesto: 2 } },
     {
       key: "FINAL",
@@ -182,33 +183,30 @@ const TRES: FormatoFinal = {
       bPendiente: "Ganador de 2º-3º",
     },
   ],
-  campeon: { tipo: "llave", key: "FINAL" },
+  campeon: "FINAL",
 };
 
 /**
- * Con dos no hay a quién eliminar: se juegan el locke al mejor de tres. El
- * tercero solo se juega si hace falta.
+ * Con dos no hay a quién eliminar: se juegan el locke cara a cara. Es una llave
+ * y ya está, al mejor de tres como todas las demás.
  */
 const DOS: FormatoFinal = {
   jugadores: 2,
   nombre: "Jornada Final",
   explicacion:
     "Cara a cara al mejor de tres. Gana el locke el primero que se lleve dos combates; el tercero solo se juega si hace falta.",
-  rondas: ["Al mejor de tres"],
+  rondas: ["Final"],
   esperan: 0,
-  combates: [
-    { key: "BO3_1", ronda: "Al mejor de tres", titulo: "Primer combate", a: { puesto: 0 }, b: { puesto: 1 } },
-    { key: "BO3_2", ronda: "Al mejor de tres", titulo: "Segundo combate", a: { puesto: 0 }, b: { puesto: 1 } },
+  llaves: [
     {
-      key: "BO3_3",
-      ronda: "Al mejor de tres",
-      titulo: "Tercero, si hace falta",
+      key: "FINAL",
+      ronda: "Final",
+      titulo: "Por el locke",
       a: { puesto: 0 },
       b: { puesto: 1 },
-      soloSiEmpate: true,
     },
   ],
-  campeon: { tipo: "serie", keys: ["BO3_1", "BO3_2", "BO3_3"], hacenFalta: 2 },
+  campeon: "FINAL",
 };
 
 const FORMATOS = [DOS, TRES, CUATRO, CINCO, SEIS];
@@ -226,9 +224,21 @@ export function formatoParaJugadores(jugadores: number): FormatoFinal | null {
   return FORMATOS.find((formato) => formato.jugadores === jugadores) ?? SEIS;
 }
 
-/** Todas las llaves de un formato, para crearlas al sembrar el cuadro. */
+/** Cómo se llama en la base de datos el combate `numero` de una llave. */
+export function claveDelCombate(llave: string, numero: number) {
+  return `${llave}#${numero}`;
+}
+
+/** Las claves de los tres combates de una llave, en orden. */
+export function combatesDeLaLlave(llave: string) {
+  return Array.from({ length: AL_MEJOR_DE }, (_, indice) =>
+    claveDelCombate(llave, indice + 1),
+  );
+}
+
+/** Todas las claves de un formato, para crearlas al sembrar el cuadro. */
 export function clavesDelFormato(formato: FormatoFinal) {
-  return formato.combates.map((combate) => combate.key);
+  return formato.llaves.flatMap((llave) => combatesDeLaLlave(llave.key));
 }
 
 /**
@@ -242,22 +252,45 @@ export function llavesPosteriores(formato: FormatoFinal, key: string): string[] 
 
   while (cambio) {
     cambio = false;
-    for (const combate of formato.combates) {
-      if (afectadas.has(combate.key)) continue;
-      const depende = [combate.a, combate.b].some(
+    for (const llave of formato.llaves) {
+      if (afectadas.has(llave.key)) continue;
+      const depende = [llave.a, llave.b].some(
         (lado) =>
           "ganadorDe" in lado &&
           (lado.ganadorDe === key || afectadas.has(lado.ganadorDe)),
       );
       if (depende) {
-        afectadas.add(combate.key);
+        afectadas.add(llave.key);
         cambio = true;
       }
     }
   }
 
-  // En una serie al mejor de tres no hay dependencias, pero cambiar un
-  // resultado sí puede sobrar el tercero: se deja como está y lo decide la
-  // pantalla, que sabe si sigue haciendo falta.
   return [...afectadas];
+}
+
+/**
+ * Cómo va una serie: cuántos lleva cada uno y cuáles de los tres combates
+ * sobran ya.
+ *
+ * Los combates se cuentan **en orden y hasta que alguien llega a dos**. Así, si
+ * se corrige el primero y el tercero deja de hacer falta, su resultado viejo no
+ * cuenta para nada en vez de tener que ir borrándolo: lo que decide la llave es
+ * siempre lo que se jugó de verdad hasta decidirla.
+ */
+export function comoVaLaSerie(ganadores: (string | null)[]) {
+  const ganadas = new Map<string, number>();
+  const sobra: boolean[] = [];
+  let decidida: string | null = null;
+
+  for (const ganador of ganadores) {
+    sobra.push(decidida !== null);
+    if (decidida !== null) continue;
+    if (!ganador) continue;
+    const llevaba = (ganadas.get(ganador) ?? 0) + 1;
+    ganadas.set(ganador, llevaba);
+    if (llevaba >= PARA_GANAR_LA_LLAVE) decidida = ganador;
+  }
+
+  return { ganadas, sobra, ganador: decidida };
 }

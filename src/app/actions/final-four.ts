@@ -5,9 +5,11 @@ import { prisma } from "@/lib/db";
 import { getStandings, requireCompetitionManager } from "@/lib/competition";
 import {
   clavesDelFormato,
+  combatesDeLaLlave,
   formatoParaJugadores,
   llavesPosteriores,
 } from "@/lib/formatos-finales";
+import { enlaceSeguro } from "@/lib/utils";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -85,6 +87,7 @@ export async function setFinalMatchResultAction(formData: FormData) {
   const formato = formatoParaJugadores(finalFour.jugadores);
   if (!formato) return;
 
+  // La clave es la de un combate concreto: "SEMI_A#2"
   const key = String(formData.get("key") ?? "");
   if (!clavesDelFormato(formato).includes(key)) return;
 
@@ -103,16 +106,33 @@ export async function setFinalMatchResultAction(formData: FormData) {
         diff !== null && Number.isFinite(diff) ? Math.abs(Math.trunc(diff)) : null,
       playedAt: playedAtRaw ? new Date(playedAtRaw) : winnerId ? new Date() : null,
       notes: String(formData.get("notes") ?? "").trim() || null,
+      // Saneado antes de guardarlo: acaba en un href de la pantalla de todos
+      replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
     },
   });
 
-  // Si se cambia un resultado anterior, las rondas que dependían de él dejan
-  // de valer. Se sacan del propio formato, sin lista escrita a mano.
-  const afectadas = llavesPosteriores(formato, key);
+  /**
+   * Si se cambia un resultado anterior, las rondas que dependían de él dejan
+   * de valer. Se sacan del propio formato, sin lista escrita a mano, y se
+   * borran **los tres combates** de cada llave afectada.
+   *
+   * De la propia llave no se borra nada: los combates que dejen de hacer falta
+   * los descarta `comoVaLaSerie` al contarlos, así que corregir el primero no
+   * tira a la basura lo que ya se había apuntado del tercero.
+   */
+  const afectadas = llavesPosteriores(formato, key.split("#")[0]).flatMap(
+    combatesDeLaLlave,
+  );
   if (afectadas.length) {
     await prisma.finalMatch.updateMany({
       where: { finalFourId: finalFour.id, key: { in: afectadas } },
-      data: { winnerId: null, pokemonDiff: null, playedAt: null },
+      data: {
+        winnerId: null,
+        pokemonDiff: null,
+        playedAt: null,
+        notes: null,
+        replayUrl: null,
+      },
     });
   }
 

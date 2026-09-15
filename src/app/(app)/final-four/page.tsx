@@ -154,12 +154,12 @@ export default async function FinalFourPage() {
                   {round}
                 </h2>
                 <div className="space-y-3">
-                  {state.matches
-                    .filter((match) => match.round === round)
-                    .map((match) => (
+                  {state.llaves
+                    .filter((llave) => llave.round === round)
+                    .map((llave) => (
                       <BracketCard
-                        key={match.key}
-                        match={match}
+                        key={llave.key}
+                        llave={llave}
                         competitionId={competition.id}
                         canManage={canManage}
                       />

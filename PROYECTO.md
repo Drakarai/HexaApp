@@ -18,7 +18,8 @@ permiso de **organizador** para que alguien lleve sus propios lockes, y el
 reparto de papeles en **Creador / administrador de locke / jugador**, y los
 wipeos con su estado de locke perdido, la lista de participantes arreglada
 para el móvil, los **combates con permiso** para quien está fuera del locke, y
-el **hall de la fama** con su podio y las cifras del locke).
+el **hall de la fama** con su podio y las cifras del locke, y **todo el cuadro
+final al mejor de tres** con repetición en cada combate).
 
 ---
 
@@ -64,7 +65,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
-| **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (al mejor de tres). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. |
+| **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
@@ -848,7 +849,11 @@ pantallas preguntan al perfil en vez de saberse los casos.
 **Pasarse la Liga Pokémon es la otra forma de ganar.** Ganar los combates y
 ganarse el juego son cosas distintas —se puede terminar la Liga habiendo perdido
 todas las jornadas, y al revés— y la pueden conseguir **varios**, así que no es
-un puesto sino una lista. Sale en la clasificación y en el hall de la fama.
+un puesto sino una lista. Sale en la clasificación.
+
+Estaba también en el hall de la fama y **se quitó a petición del usuario**: el
+hall cierra el locke de combates y allí la Liga era un bloque que casi siempre
+decía "todavía no la ha superado nadie".
 
 **No se guarda en ningún sitio nuevo**: se deduce de tener marcado el level cap
 de tipo `CHAMPION`, que es el que ya representa la Liga. Un dato calculado no se
@@ -939,10 +944,22 @@ Con uno solo no hay nada que jugar y la pantalla lo dice.
   lo que decide a quién le pone la medallita la clasificación: con seis son dos,
   con cinco o tres es uno, y con cuatro o dos no es ninguno, porque juegan todos
   desde el principio.
-- **El mejor de tres se cuenta por victorias, no por llaves.** El campeón es el
-  primero que gana dos, así que el tercer combate solo se juega si hay empate a
-  uno: si alguien gana los dos primeros, ese tercero se enseña apagado con un
-  "no hace falta" en vez de invitando a jugarlo.
+- **Todas las llaves son al mejor de tres**, de los cruces a la final. Por eso lo
+  que hay en el formato son *llaves* y no combates sueltos: cada una son tres
+  filas de `FinalMatch` con la clave `LLAVE#n` —`SEMI_A#2`— y se la lleva quien
+  gane dos. Las tres se crean al sembrar el cuadro, aunque el tercero casi nunca
+  se juegue: así no hay que crear filas a mitad de una serie.
+- **La serie se cuenta en orden y hasta que alguien llega a dos**
+  (`comoVaLaSerie`). Eso es lo que hace que corregir un combate no obligue a
+  borrar los siguientes de su llave: si se arregla el primero y la serie pasa a
+  decidirse en el segundo, lo que se apuntó del tercero **deja de contar solo**,
+  y la pantalla lo enseña apagado con un "no cuenta". Sin esa regla, el marcador
+  diría 2 con tres coronas debajo.
+- **Corregir un combate limpia las rondas siguientes, no la suya.** `llavesPosteriores`
+  trabaja con llaves y la acción expande cada una a sus tres claves.
+- **Cada combate lleva su enlace a la repetición**, igual que los de jornada
+  (`FinalMatch.replayUrl`, saneado con `enlaceSeguro`). Es por combate y no por
+  llave porque una serie son tres partidas con tres repeticiones distintas.
 - Añadir mañana un formato distinto es escribir una entrada más en esa tabla:
   ni la pantalla, ni las acciones, ni la clasificación hay que tocarlas.
 
@@ -2184,3 +2201,5 @@ lugar de destruir datos, y hay que avisar antes.
     cementerio deja de comerse casillas al que más bajas lleva.
 54. **El hall de la fama, hecho un cierre de verdad**: podio, las cifras del
     locke entero y las fichas de cada pokémon en grande.
+55. **Todo el cuadro final, al mejor de tres**, con su enlace a la repetición en
+    cada combate.

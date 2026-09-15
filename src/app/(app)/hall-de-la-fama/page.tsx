@@ -12,11 +12,9 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
-import { getCampeonesDeLiga } from "@/lib/liga";
 import { getResumenDelLocke } from "@/lib/resumen-del-locke";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getProgresoEnSolitario } from "@/lib/solitario";
-import { CampeonesDeLiga } from "@/components/marcador-dual";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
 import { Podio, type EnElPodio } from "./podio";
 import { ResumenDelLocke } from "./resumen";
@@ -100,17 +98,15 @@ export default async function HallOfFamePage() {
    */
   const elFinal = state.status === "TERMINADA" ? state : null;
 
-  const [canManage, standings, entries, campeonesDeLiga, resumen] =
-    await Promise.all([
-      canManageCompetition(competition.id, user),
-      getStandings(competition.id),
-      prisma.hallOfFameEntry.findMany({
-        where: { participant: { competitionId: competition.id } },
-        orderBy: { position: "asc" },
-      }),
-      getCampeonesDeLiga(competition.id),
-      getResumenDelLocke(competition.id),
-    ]);
+  const [canManage, standings, entries, resumen] = await Promise.all([
+    canManageCompetition(competition.id, user),
+    getStandings(competition.id),
+    prisma.hallOfFameEntry.findMany({
+      where: { participant: { competitionId: competition.id } },
+      orderBy: { position: "asc" },
+    }),
+    getResumenDelLocke(competition.id),
+  ]);
 
   // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
   const ids = entries.map((entry) => entry.id);
@@ -141,38 +137,24 @@ export default async function HallOfFamePage() {
   );
 
   /**
-   * Cómo se ganó el locke, con nombres: "Draka ganó a Pablo por 2 pokémon". Sale
-   * de la propia final, que según el formato es una llave o una serie al mejor
-   * de tres (ver `lib/formatos-finales.ts`).
+   * Cómo se ganó el locke, con nombres: "Draka ganó la final a Pablo por 2-1".
+   * Todas las llaves del cuadro son al mejor de tres, así que el marcador de la
+   * serie ya está contado en la propia llave (ver `lib/formatos-finales.ts`).
    */
   const comoLoGano = (() => {
     if (!elFinal?.champion) return "";
     const campeon = elFinal.champion.displayName;
     const rival = elFinal.runnerUp?.displayName;
-    const decide = elFinal.formato.campeon;
+    const laFinal = elFinal.llaves.find(
+      (llave) => llave.key === elFinal.formato.campeon,
+    );
+    if (!laFinal || !rival) return `${campeon} ganó la final.`;
 
-    if (decide.tipo === "serie") {
-      const ganadas = (quien: string | undefined) =>
-        elFinal.matches.filter(
-          (combate) =>
-            decide.keys.includes(combate.key) &&
-            combate.winnerId ===
-              (quien === campeon
-                ? elFinal.champion!.participantId
-                : elFinal.runnerUp?.participantId),
-        ).length;
-      return rival
-        ? `${campeon} ganó la serie a ${rival} por ${ganadas(campeon)}-${ganadas(rival)}.`
-        : `${campeon} ganó la serie.`;
-    }
-
-    const laFinal = elFinal.matches.find((combate) => combate.key === decide.key);
-    const diferencia = laFinal?.pokemonDiff
-      ? ` por ${laFinal.pokemonDiff} pokémon`
-      : "";
-    return rival
-      ? `${campeon} ganó la final a ${rival}${diferencia}.`
-      : `${campeon} ganó la final${diferencia}.`;
+    const [ganadas, perdidas] =
+      laFinal.a?.participantId === elFinal.champion.participantId
+        ? [laFinal.ganadasA, laFinal.ganadasB]
+        : [laFinal.ganadasB, laFinal.ganadasA];
+    return `${campeon} ganó la final a ${rival} por ${ganadas}-${perdidas}.`;
   })();
 
   /**
@@ -213,8 +195,8 @@ export default async function HallOfFamePage() {
         }
       />
 
-      {/* El podio solo tiene sentido si hubo final. En solitario lo que cierra
-          el locke es la Liga, y eso se cuenta en el bloque de abajo. */}
+      {/* El podio solo tiene sentido si hubo final. En solitario no hay a
+          quién ganar y lo que cierra el locke es pasarse la Liga. */}
       {elFinal?.champion ? (
         <Podio podio={podio} />
       ) : (
@@ -236,12 +218,6 @@ export default async function HallOfFamePage() {
       )}
 
       <ResumenDelLocke resumen={resumen} />
-
-      {/* La otra victoria: pasarse la Liga es ganar el locke del juego, y la
-          puede tener alguien que no ganó ni un combate */}
-      <div className="mb-6">
-        <CampeonesDeLiga campeones={campeonesDeLiga} />
-      </div>
 
       <div className="space-y-4">
         {jugadores.map((row, index) => {

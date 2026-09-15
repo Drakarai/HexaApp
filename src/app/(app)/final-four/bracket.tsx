@@ -2,169 +2,261 @@
 
 import { useState } from "react";
 import { setFinalMatchResultAction } from "@/app/actions/final-four";
-import type { BracketMatch } from "@/lib/final-four";
+import type { CombateDeLaLlave, LlaveDelCuadro } from "@/lib/final-four";
+import { AL_MEJOR_DE } from "@/lib/formatos-finales";
 import { Avatar, SubmitButton } from "@/components/ui";
+import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
 
-/** Una llave del cuadro: los dos contendientes y, si toca, quién ganó. */
+/**
+ * Una llave del cuadro: los dos contendientes, cómo va la serie y sus tres
+ * combates. Todas las llaves se juegan **al mejor de tres** (ver
+ * `lib/formatos-finales.ts`), así que la tarjeta es la serie entera.
+ */
 export function BracketCard({
-  match,
+  llave,
   competitionId,
   canManage,
 }: {
-  match: BracketMatch;
+  llave: LlaveDelCuadro;
   competitionId: string;
   canManage: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
-  const decided = Boolean(match.winnerId);
+  const decidida = Boolean(llave.winnerId);
 
   return (
     <article
       className={cx(
         "rounded-xl border p-3 transition",
-        // El tercero del mejor de tres, cuando la serie ya está decidida, se
-        // apaga del todo: no invita a jugar algo que ya no hace falta
-        match.sobra
-          ? "border-dashed border-white/5 bg-white/[0.01] opacity-50"
-          : decided
-            ? "border-emerald-500/25 bg-emerald-500/[0.04]"
-            : match.ready
-              ? "border-white/10 bg-white/[0.04]"
-              : "border-dashed border-white/10 bg-white/[0.02]",
+        decidida
+          ? "border-emerald-500/25 bg-emerald-500/[0.04]"
+          : llave.ready
+            ? "border-white/10 bg-white/[0.04]"
+            : "border-dashed border-white/10 bg-white/[0.02]",
       )}
     >
-      <p className="mb-2 text-[11px] font-bold uppercase tracking-widest text-slate-500">
-        {match.title}
-      </p>
-
-      {match.sobra ? (
-        <p className="mb-2 text-[11px] text-slate-500">
-          No hace falta: la serie ya está decidida.
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+          {llave.title}
         </p>
-      ) : null}
+        <p className="shrink-0 text-[11px] text-slate-500">
+          Al mejor de {AL_MEJOR_DE}
+        </p>
+      </div>
 
       <div className="space-y-1.5">
         <Side
-          player={match.a}
-          pending={match.aPending}
-          winner={match.winnerId === match.a?.participantId}
-          decided={decided}
+          player={llave.a}
+          pending={llave.aPending}
+          ganadas={llave.ganadasA}
+          winner={llave.winnerId === llave.a?.participantId}
+          decided={decidida}
         />
         <Side
-          player={match.b}
-          pending={match.bPending}
-          winner={match.winnerId === match.b?.participantId}
-          decided={decided}
+          player={llave.b}
+          pending={llave.bPending}
+          ganadas={llave.ganadasB}
+          winner={llave.winnerId === llave.b?.participantId}
+          decided={decidida}
         />
       </div>
 
-      {match.pokemonDiff !== null || match.playedAt ? (
-        <p className="mt-2 text-[11px] text-slate-500">
-          {match.pokemonDiff !== null
-            ? `Diferencia de ${match.pokemonDiff}`
-            : null}
-          {match.pokemonDiff !== null && match.playedAt ? " · " : null}
-          {match.playedAt ? formatDate(match.playedAt) : null}
-        </p>
-      ) : null}
-
-      {match.notes ? (
-        <p className="mt-1 text-[11px] text-slate-500">{match.notes}</p>
-      ) : null}
-
-      {canManage && match.ready ? (
-        editing ? (
-          <form
-            action={async (formData) => {
-              await setFinalMatchResultAction(formData);
-              setEditing(false);
-            }}
-            className="mt-3 space-y-2 border-t border-white/10 pt-3"
-          >
-            <input type="hidden" name="competitionId" value={competitionId} />
-            <input type="hidden" name="key" value={match.key} />
-            <div>
-              <label className="label">Ganador</label>
-              <select
-                name="winnerId"
-                className="input"
-                defaultValue={match.winnerId ?? ""}
-              >
-                <option value="">Sin resultado</option>
-                {match.a ? (
-                  <option value={match.a.participantId}>
-                    {match.a.displayName}
-                  </option>
-                ) : null}
-                {match.b ? (
-                  <option value={match.b.participantId}>
-                    {match.b.displayName}
-                  </option>
-                ) : null}
-              </select>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="label">Dif. pokémon</label>
-                <input
-                  name="pokemonDiff"
-                  type="number"
-                  min={0}
-                  max={6}
-                  className="input"
-                  defaultValue={match.pokemonDiff ?? ""}
-                />
-              </div>
-              <div>
-                <label className="label">Fecha</label>
-                <input name="playedAt" type="date" className="input" />
-              </div>
-            </div>
-            <div>
-              <label className="label">Notas</label>
-              <input
-                name="notes"
-                className="input"
-                defaultValue={match.notes ?? ""}
-              />
-            </div>
-            <div className="flex gap-2">
-              <SubmitButton className="btn-primary btn-sm">Guardar</SubmitButton>
-              <button
-                type="button"
-                className="btn-ghost btn-sm"
-                onClick={() => setEditing(false)}
-              >
-                Cancelar
-              </button>
-            </div>
-            <p className="text-[11px] text-slate-500">
-              Cambiar este resultado borra los de las rondas siguientes.
-            </p>
-          </form>
-        ) : (
-          <button
-            type="button"
-            className="btn-ghost btn-sm mt-3"
-            onClick={() => setEditing(true)}
-          >
-            {decided ? "✎ Cambiar resultado" : "✓ Anotar resultado"}
-          </button>
-        )
+      {llave.ready ? (
+        <ol className="mt-3 space-y-1.5 border-t border-white/10 pt-3">
+          {llave.combates.map((combate) => (
+            <Combate
+              key={combate.key}
+              combate={combate}
+              llave={llave}
+              competitionId={competitionId}
+              canManage={canManage}
+            />
+          ))}
+        </ol>
       ) : null}
     </article>
+  );
+}
+
+/** Uno de los tres combates de la llave, con su resultado y su repetición. */
+function Combate({
+  combate,
+  llave,
+  competitionId,
+  canManage,
+}: {
+  combate: CombateDeLaLlave;
+  llave: LlaveDelCuadro;
+  competitionId: string;
+  canManage: boolean;
+}) {
+  const [editing, setEditing] = useState(false);
+  const jugado = Boolean(combate.winnerId);
+  const ganador =
+    combate.winnerId === llave.a?.participantId
+      ? llave.a
+      : combate.winnerId === llave.b?.participantId
+        ? llave.b
+        : null;
+
+  return (
+    <li
+      className={cx(
+        "rounded-lg px-2 py-1.5",
+        /**
+         * El que ya no hace falta se apaga, **haya resultado o no**. Puede
+         * tenerlo de antes: si se corrige un combate anterior y la serie pasa a
+         * decidirse en el segundo, lo que se apuntó del tercero deja de contar
+         * (`comoVaLaSerie` lo descarta). Enseñarlo como jugado sin más haría
+         * que el marcador dijera 2 con tres coronas debajo.
+         */
+        combate.sobra
+          ? "opacity-40"
+          : jugado
+            ? "bg-white/[0.04]"
+            : "bg-white/[0.02]",
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+        <span className="w-4 shrink-0 font-bold text-slate-600">
+          {combate.numero}
+        </span>
+        <span className="min-w-0 flex-1 truncate text-slate-300">
+          {combate.sobra ? (
+            <span className="italic text-slate-500">
+              {ganador
+                ? `No cuenta (ganó ${ganador.displayName})`
+                : "No hace falta"}
+            </span>
+          ) : ganador ? (
+            <>
+              <span aria-hidden>👑</span> {ganador.displayName}
+            </>
+          ) : (
+            <span className="italic text-slate-500">Sin jugar</span>
+          )}
+        </span>
+        {!combate.sobra && combate.pokemonDiff !== null ? (
+          <span className="shrink-0 text-slate-500">
+            dif. {combate.pokemonDiff}
+          </span>
+        ) : null}
+        {!combate.sobra && combate.playedAt ? (
+          <span className="shrink-0 text-slate-500">
+            {formatDate(combate.playedAt)}
+          </span>
+        ) : null}
+        {combate.sobra ? null : <ReplayLink url={combate.replayUrl} />}
+        {canManage && !editing ? (
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0 px-1.5 py-0"
+            onClick={() => setEditing(true)}
+            title={jugado ? "Cambiar resultado" : "Anotar resultado"}
+          >
+            {jugado ? "✎" : "✓"}
+          </button>
+        ) : null}
+      </div>
+
+      {combate.notes ? (
+        <p className="mt-0.5 pl-6 text-[11px] text-slate-500">{combate.notes}</p>
+      ) : null}
+
+      {canManage && editing ? (
+        <form
+          action={async (formData) => {
+            await setFinalMatchResultAction(formData);
+            setEditing(false);
+          }}
+          className="mt-2 space-y-2 border-t border-white/10 pt-2"
+        >
+          <input type="hidden" name="competitionId" value={competitionId} />
+          <input type="hidden" name="key" value={combate.key} />
+          <div>
+            <label className="label">Ganador del {combate.numero}º</label>
+            <select
+              name="winnerId"
+              className="input"
+              defaultValue={combate.winnerId ?? ""}
+            >
+              <option value="">Sin resultado</option>
+              {llave.a ? (
+                <option value={llave.a.participantId}>
+                  {llave.a.displayName}
+                </option>
+              ) : null}
+              {llave.b ? (
+                <option value={llave.b.participantId}>
+                  {llave.b.displayName}
+                </option>
+              ) : null}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="label">Dif. pokémon</label>
+              <input
+                name="pokemonDiff"
+                type="number"
+                min={0}
+                max={6}
+                className="input"
+                defaultValue={combate.pokemonDiff ?? ""}
+              />
+            </div>
+            <div>
+              <label className="label">Fecha</label>
+              <input name="playedAt" type="date" className="input" />
+            </div>
+          </div>
+          <div>
+            <label className="label">Repetición</label>
+            <input
+              name="replayUrl"
+              type="url"
+              className="input"
+              placeholder="https://replay.pokemonshowdown.com/…"
+              defaultValue={combate.replayUrl ?? ""}
+            />
+          </div>
+          <div>
+            <label className="label">Notas</label>
+            <input
+              name="notes"
+              className="input"
+              defaultValue={combate.notes ?? ""}
+            />
+          </div>
+          <div className="flex gap-2">
+            <SubmitButton className="btn-primary btn-sm">Guardar</SubmitButton>
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => setEditing(false)}
+            >
+              Cancelar
+            </button>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Cambiar este resultado borra los de las rondas siguientes.
+          </p>
+        </form>
+      ) : null}
+    </li>
   );
 }
 
 function Side({
   player,
   pending,
+  ganadas,
   winner,
   decided,
 }: {
-  player: BracketMatch["a"];
+  player: LlaveDelCuadro["a"];
   pending?: string;
+  ganadas: number;
   winner: boolean;
   decided: boolean;
 }) {
@@ -202,6 +294,15 @@ function Side({
       />
       <span className="min-w-0 flex-1 truncate">{player.displayName}</span>
       {winner ? <span aria-hidden>👑</span> : null}
+      {/* Cómo va la serie: el marcador manda sobre todo lo demás */}
+      <span
+        className={cx(
+          "w-5 shrink-0 text-center text-base font-black",
+          winner ? "text-emerald-200" : "text-slate-400",
+        )}
+      >
+        {ganadas}
+      </span>
     </div>
   );
 }

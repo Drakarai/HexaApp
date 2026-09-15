@@ -80,7 +80,8 @@ export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
           detalle: `${resumen.masMvps.cuantas}`,
         }
       : null,
-    resumen.masBajas
+    // Si no cayó nadie, "el que más perdió · 0 caídos" no es una mención
+    resumen.masBajas && resumen.masBajas.cuantas > 0
       ? {
           emoji: "🪦",
           rotulo: "El que más perdió",
