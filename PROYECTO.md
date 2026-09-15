@@ -1666,6 +1666,13 @@ móvil el nombre se quedaba en una letra —"A", "D"— y el usuario en una arro
 suelta. Ahora el avatar con el nombre ocupan su línea entera y los botones van
 en otra, que se parte sola si no caben. Comprobado a 360, 390 y 430 píxeles.
 
+**Lo que solo sale al pasar el ratón por encima no existe en un móvil.** La ✕
+de quitar un pokémon del equipo del hall de la fama estaba con opacidad 0 y se
+descubría con `group-hover`: en una pantalla táctil eso no pasa nunca, así que
+desde el teléfono no había forma de corregir un equipo. Ahora se ve siempre y
+el descubrirla se deja para el ordenador (`sm:opacity-0 sm:group-hover:…`). Si
+aparece otro botón escondido así, mismo cuidado.
+
 El mismo apretón estaba en la lista con la que se siembra la Final Four: al
 lado de "Juega la primera ronda" los nombres se quedaban en dos letras. Ahí la
 chapa se baja a su propia línea en el móvil (`w-full sm:w-auto`) y en el

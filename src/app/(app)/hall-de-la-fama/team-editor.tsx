@@ -57,10 +57,16 @@ export function TeamSlots({
             {pokemon.species}
           </p>
 
+          {/**
+           * En el móvil la ✕ se ve siempre. Salía solo al pasar el ratón por
+           * encima, y en una pantalla táctil eso no pasa nunca: el botón
+           * estaba ahí con opacidad 0 y no había forma de quitar un pokémon
+           * del equipo desde el teléfono.
+           */}
           {editable ? (
             <form
               action={removeHallPokemonAction}
-              className="absolute right-1 top-1 opacity-0 transition group-hover:opacity-100 focus-within:opacity-100"
+              className="absolute right-1 top-1 transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100"
             >
               <input type="hidden" name="entryId" value={pokemon.id} />
               <ConfirmSubmit
