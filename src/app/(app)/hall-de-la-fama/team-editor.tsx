@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import {
   addHallPokemonAction,
   removeHallPokemonAction,
+  traerUltimoEquipoAction,
 } from "@/app/actions/hall";
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
@@ -218,13 +219,43 @@ function FichaEnGrande({
   );
 }
 
+/**
+ * El atajo: traerse el equipo del último combate de jornada en vez de teclear
+ * seis pokémon que la aplicación ya conoce. Solo sale con el equipo vacío.
+ */
+function TraerUltimoEquipo({
+  participantId,
+  deDonde,
+}: {
+  participantId: string;
+  deDonde: string;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    traerUltimoEquipoAction,
+    null,
+  );
+
+  return (
+    <form action={formAction} className="mt-3">
+      <input type="hidden" name="participantId" value={participantId} />
+      <SubmitButton className="btn-ghost btn-sm">
+        ⤵ Traer el equipo de {deDonde}
+      </SubmitButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
 /** Formulario para ir metiendo los pokémon del equipo. */
 export function AddPokemonForm({
   participantId,
   remaining,
+  ultimoEquipoDe,
 }: {
   participantId: string;
   remaining: number;
+  /** De qué jornada se puede traer el equipo, si hay alguno y está vacío */
+  ultimoEquipoDe?: string | null;
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     addHallPokemonAction,
@@ -245,6 +276,13 @@ export function AddPokemonForm({
   }
 
   return (
+    <>
+    {ultimoEquipoDe ? (
+      <TraerUltimoEquipo
+        participantId={participantId}
+        deDonde={ultimoEquipoDe}
+      />
+    ) : null}
     <details className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         ▸ Añadir pokémon ({remaining} {remaining === 1 ? "hueco" : "huecos"})
@@ -260,5 +298,6 @@ export function AddPokemonForm({
         <SubmitButton>Añadir al equipo</SubmitButton>
       </form>
     </details>
+    </>
   );
 }

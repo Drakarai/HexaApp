@@ -13,6 +13,7 @@ import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import { getResumenDelLocke } from "@/lib/resumen-del-locke";
+import { getUltimoEquipo } from "@/lib/ultimo-equipo";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getProgresoEnSolitario } from "@/lib/solitario";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
@@ -114,6 +115,23 @@ export default async function HallOfFamePage() {
     urlsDeImagen("salon", ids),
     urlsDeImagen("salon-ficha", ids),
   ]);
+
+  /**
+   * De qué jornada se le puede traer el equipo a cada uno. Solo se mira para
+   * los que lo tienen vacío: para los demás el atajo no se ofrece, así que
+   * preguntarlo sería una consulta tirada.
+   */
+  const sinEquipo = standings
+    .map((row) => row.participantId)
+    .filter((id) => !entries.some((entry) => entry.participantId === id));
+  const ultimosEquipos = new Map(
+    await Promise.all(
+      sinEquipo.map(async (id) => {
+        const equipo = await getUltimoEquipo(id, competition.id);
+        return [id, equipo?.deDonde ?? null] as const;
+      }),
+    ),
+  );
 
   const teamOf = (participantId: string) =>
     entries
@@ -293,6 +311,9 @@ export default async function HallOfFamePage() {
                 <AddPokemonForm
                   participantId={row.participantId}
                   remaining={TEAM_SIZE - team.length}
+                  ultimoEquipoDe={
+                    vacia ? ultimosEquipos.get(row.participantId) : null
+                  }
                 />
               ) : null}
             </section>

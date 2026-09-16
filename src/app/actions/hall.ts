@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { isLockeFinished } from "@/lib/final-four";
+import { getUltimoEquipo } from "@/lib/ultimo-equipo";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 
@@ -55,6 +56,58 @@ export async function addHallPokemonAction(
 
   revalidatePath("/hall-de-la-fama");
   return { success: `${species} añadido al equipo.` };
+}
+
+/**
+ * Rellena el equipo del hall con el del último combate de jornada.
+ *
+ * Es un atajo, no una regla: **solo se ofrece cuando el equipo está vacío** y
+ * lo que deja se puede quitar y cambiar como si se hubiera escrito a mano. El
+ * equipo con el que se termina el locke suele ser el del último combate, y
+ * volver a teclear seis pokémon que la aplicación ya conoce no tenía sentido.
+ */
+export async function traerUltimoEquipoAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const participantId = String(formData.get("participantId") ?? "");
+
+  let participant;
+  try {
+    ({ participant } = await assertCanActForParticipant(participantId));
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  if (!(await isLockeFinished(participant.competitionId))) {
+    return { error: "El hall de la fama se abre al terminar la Final Four." };
+  }
+
+  const cuantos = await prisma.hallOfFameEntry.count({ where: { participantId } });
+  if (cuantos > 0) {
+    return { error: "Este equipo ya tiene pokémon: quítalos antes de traerlo." };
+  }
+
+  const equipo = await getUltimoEquipo(participantId, participant.competitionId);
+  if (!equipo) {
+    return { error: "No hay ningún equipo apuntado en las jornadas." };
+  }
+
+  await prisma.hallOfFameEntry.createMany({
+    data: equipo.pokemon.slice(0, TEAM_SIZE).map((pokemon, posicion) => ({
+      participantId,
+      species: pokemon.species,
+      nickname: pokemon.nickname,
+      image: pokemon.boxImage,
+      detailImage: pokemon.detailImage,
+      position: posicion,
+    })),
+  });
+
+  revalidatePath("/hall-de-la-fama");
+  return {
+    success: `Traído el equipo de ${equipo.deDonde}. Cámbialo si no es el bueno.`,
+  };
 }
 
 export async function removeHallPokemonAction(formData: FormData) {

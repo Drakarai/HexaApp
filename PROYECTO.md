@@ -66,7 +66,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
-| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración. |
+| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -990,6 +990,18 @@ Es **el cierre del locke**, así que cuenta cómo fue:
   igual los seis huecos vacíos y, hasta que no lo rellenaba todo el mundo, la
   página era medio ladrillo en blanco.
 - **El equipo del campeón se pinta en dorado**, que es de lo que va la página.
+- **El equipo se puede traer del último combate** en vez de teclearlo
+  (`lib/ultimo-equipo.ts`). El que termina el locke suele ser el del último
+  combate de jornada, y volver a escribir seis pokémon que la aplicación ya
+  conoce no tenía sentido. Mira los combates de jornada **y los Battle Royale**,
+  que son los dos sitios donde un equipo cuelga de una jornada, y se queda con
+  el de la jornada más avanzada.
+  - **Copiar las imágenes no cuesta nada**: desde que existe el almacén, la
+    columna guarda una referencia (`ref:pkm-157-box`), así que copiar la cadena
+    apunta a la misma imagen sin duplicar bytes ni volver a bajarla.
+  - Solo se ofrece **con el equipo vacío**, y lo que deja se cambia como si se
+    hubiera escrito a mano: es un atajo, no una regla. Por eso tampoco se
+    pregunta por los que ya tienen equipo, que sería una consulta tirada.
 - Cada pokémon se abre en grande con su ilustración. Por eso
   `HallOfFameEntry.detailImage`: antes solo se guardaba el sprite de la casilla.
   Los equipos apuntados antes de que existiera no la tienen y la ficha se apaña
