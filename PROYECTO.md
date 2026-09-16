@@ -2130,7 +2130,7 @@ Ideas comentadas y no hechas:
 - **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
   sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
 
-Hay una **guía de uso en PDF** hecha con capturas de la aplicación (20
+Hay una **guía de uso en PDF** hecha con capturas de la aplicación (23
 páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
 `guia/`: el texto en `guia.html` y tres scripts que preparan la partida de
 ejemplo, sacan las fotos y arman el PDF. La primera versión no se guardó y se
@@ -2144,7 +2144,13 @@ apartado están escritos a mano y hay que tocarlos si se mueve una página.
 un locke —emparejar, anotar resultados, repartir premios—, en la del
 administrador.
 
-Hay **dos guías**: la de uso (22 páginas, para todos) y la del administrador
+**El índice de la guía de uso estaba mal desde antes** y se ha rehecho: le
+faltaban dos páginas —el sorteo de préstamos y el modo sin conexión— y de ahí
+para abajo los números no cuadraban con los pies. Va a mano, así que **hay que
+mirarlo cada vez que se mueve una página**; ahora hay 21 entradas y la última es
+la 23.
+
+Hay **dos guías**: la de uso (23 páginas, para todos) y la del administrador
 (13, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
 que salgan idénticas. Rehacerlas mueve los números de página del índice escrito
 a mano, así que conviene juntar varias novedades y hacerlo de una vez.

@@ -129,6 +129,7 @@ async function foto(pagina, nombre, ruta, prepara) {
   await foto(pagina, "perfil", "/perfil");
   await foto(pagina, "final", "/final-four");
   await foto(pagina, "hall", "/hall-de-la-fama");
+  await foto(pagina, "palmares", "/palmares");
   await foto(pagina, "competiciones", "/competiciones");
   await foto(pagina, "sorteo", "/sorteo");
   await foto(pagina, "sin-conexion", "/", async (p) => {
