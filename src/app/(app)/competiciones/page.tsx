@@ -34,6 +34,7 @@ import {
   AddEspectadorForm,
   AddParticipantForm,
   EditParticipantForm,
+  CopiarDeOtraEdicionForm,
 } from "./competition-forms";
 
 export const metadata = { title: "Competiciones" };
@@ -401,6 +402,18 @@ export default async function CompetitionsPage() {
                   startingPoints: active.startingPoints,
                   jornadasPrevistas: active.jornadasPrevistas,
                 }}
+              />
+
+              <CopiarDeOtraEdicionForm
+                destinoId={active.id}
+                destinoNombre={active.name}
+                otras={competitions
+                  .filter((otra) => otra.id !== active.id)
+                  .map((otra) => ({
+                    id: otra.id,
+                    name: otra.name,
+                    mismoJuego: otra.gameId === active.gameId,
+                  }))}
               />
 
               {/**

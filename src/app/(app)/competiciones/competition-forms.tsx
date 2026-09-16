@@ -8,6 +8,7 @@ import {
   updateCompetitionAction,
   updateParticipantAction,
 } from "@/app/actions/competitions";
+import { copiarDeOtraEdicionAction } from "@/app/actions/copiar-edicion";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
@@ -419,5 +420,116 @@ export function AddEspectadorForm({
       </div>
       <FormMessage state={state} />
     </form>
+  );
+}
+
+/**
+ * Copiar la configuración de otra edición: reglas, level caps y ajustes.
+ *
+ * Lo que más se agradece al montar el locke siguiente, y lo que le ahorra la
+ * parte aburrida a quien monta el suyo por primera vez.
+ */
+export function CopiarDeOtraEdicionForm({
+  destinoId,
+  destinoNombre,
+  otras,
+}: {
+  destinoId: string;
+  destinoNombre: string;
+  /** Las demás ediciones que esa persona puede abrir */
+  otras: Array<{ id: string; name: string; mismoJuego: boolean }>;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    copiarDeOtraEdicionAction,
+    null,
+  );
+  const [origenId, setOrigenId] = useState(otras[0]?.id ?? "");
+
+  if (!otras.length) return null;
+
+  const origen = otras.find((otra) => otra.id === origenId);
+
+  return (
+    <details className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+      <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
+        ▸ Copiar configuración de otra edición
+      </summary>
+
+      <form action={formAction} className="mt-3 space-y-3">
+        <input type="hidden" name="destinoId" value={destinoId} />
+
+        <div>
+          <label className="label">Copiar de</label>
+          <select
+            name="origenId"
+            className="input"
+            value={origenId}
+            onChange={(event) => setOrigenId(event.target.value)}
+          >
+            {otras.map((otra) => (
+              <option key={otra.id} value={otra.id}>
+                {otra.name}
+                {otra.mismoJuego ? "" : " (otro juego)"}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <fieldset className="space-y-2">
+          <legend className="label">Qué copiar a {destinoNombre}</legend>
+          <Marca valor="reglas" etiqueta="Las reglas" />
+          <Marca
+            valor="levelCaps"
+            etiqueta="Los level caps"
+            aviso={
+              origen && !origen.mismoJuego
+                ? "Son de otro juego: los líderes no serán los de esta región."
+                : null
+            }
+          />
+          <Marca
+            valor="ajustes"
+            etiqueta="Los ajustes"
+            aviso="Puntos de inicio, jornadas previstas y si los retos cuentan para la diferencia."
+          />
+        </fieldset>
+
+        <p className="text-[11px] text-slate-500">
+          No se copian jugadores, jornadas, puntos ni bajas: eso es lo que pasó
+          en esa edición, no su configuración.
+        </p>
+
+        <FormMessage state={state} />
+        <SubmitButton className="btn-ghost btn-sm">Copiar</SubmitButton>
+      </form>
+    </details>
+  );
+}
+
+function Marca({
+  valor,
+  etiqueta,
+  aviso,
+}: {
+  valor: string;
+  etiqueta: string;
+  aviso?: string | null;
+}) {
+  return (
+    <label className="flex items-start gap-2 text-sm text-slate-200">
+      <input
+        type="checkbox"
+        name="que"
+        value={valor}
+        className="mt-0.5"
+        defaultChecked
+      />
+      <span className="min-w-0">
+        {etiqueta}
+        {aviso ? (
+          <span className="block text-[11px] text-amber-300/80">{aviso}</span>
+        ) : null}
+      </span>
+    </label>
   );
 }

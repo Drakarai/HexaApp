@@ -54,6 +54,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
 | **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
+| **Copiar de otra edición** | Al montar el locke siguiente, traerse de otro las **reglas**, los **level caps** y los **ajustes** (puntos de inicio, jornadas previstas, si los retos cuentan para la diferencia) en vez de reescribirlos. **Vale entre juegos distintos**, avisando de que unos level caps de otra región tienen los líderes que no son. No se copian jugadores, jornadas, puntos ni bajas. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
@@ -963,6 +964,24 @@ Con uno solo no hay nada que jugar y la pantalla lo dice.
   llave porque una serie son tres partidas con tres repeticiones distintas.
 - Añadir mañana un formato distinto es escribir una entrada más en esa tabla:
   ni la pantalla, ni las acciones, ni la clasificación hay que tocarlas.
+
+**Copiar una edición copia la configuración, no lo que pasó.** Reglas, level
+caps y ajustes; ni jugadores, ni jornadas, ni puntos, ni bajas. Y tampoco
+`maxPlayers`, que se decide al crear el locke y cambia cómo se comporta entero
+(`lib/perfiles-de-locke.ts`).
+
+- **Si ya hay reglas o level caps, no se copia: se avisa.** Mezclar dos juegos
+  de reglas es peor que no copiar, y deshacerlo a mano sería un suplicio. Los
+  ajustes sí se pueden copiar las veces que haga falta, porque se sobrescriben.
+- **Entre juegos distintos se deja, pero se dice.** El usuario lo pidió así, y
+  las reglas valen igual; lo que no valen son los level caps, que llevan los
+  líderes de otra región. Se avisa en la casilla antes de copiar y otra vez en
+  la respuesta, y se recuerda que están los de fábrica en *Level caps*.
+- Del **origen basta con poder abrirlo**; del **destino hay que administrarlo**.
+  Las dos cosas se comprueban en el servidor: lo que elige el desplegable lo
+  manda el navegador.
+- Copiar las imágenes de los level caps no cuesta nada, por lo mismo que en el
+  hall: lo que guarda la columna es una referencia al almacén.
 
 **El palmarés junta todas las ediciones, y solo las que puedes abrir.** Sale de
 `listCompetitions`, que ya lleva el filtro de visibilidad; comprobado con una
@@ -2257,5 +2276,6 @@ lugar de destruir datos, y hay que avisar antes.
     locke entero y las fichas de cada pokémon en grande.
 55. **Todo el cuadro final, al mejor de tres**, con su enlace a la repetición en
     cada combate.
-56. **Palmarés** de todas las ediciones juntas, y el equipo del hall se puede
-    traer del último combate en vez de teclearlo.
+56. **Palmarés** de todas las ediciones juntas, el equipo del hall se puede
+    traer del último combate en vez de teclearlo, y la configuración de un
+    locke se copia a otro aunque sean de juegos distintos.
