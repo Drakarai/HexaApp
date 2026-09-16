@@ -5,6 +5,11 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logoutAction } from "@/app/actions/auth";
 import type { NavGroup, NavItem } from "@/components/nav";
+import {
+  HUECO_DEL_BOTON,
+  seVeElBotonApuntar,
+  type AtajoDeApunte,
+} from "@/components/boton-apuntar";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
 
@@ -30,12 +35,18 @@ export function MobileTabBar({
   groups,
   user,
   avisos = {},
+  atajos = [],
 }: {
   primary: NavItem[];
   groups: NavGroup[];
   user: MobileUser;
   /** Qué grupos tienen algo nuevo desde tu última visita */
   avisos?: Record<string, boolean>;
+  /**
+   * Los mismos que lleva el botón de apuntar. La barra no los pinta: los
+   * necesita para saber **si tiene que dejarle el hueco del centro**.
+   */
+  atajos?: AtajoDeApunte[];
 }) {
   const pathname = usePathname();
   /** El nombre del grupo abierto, o null si no hay hoja */
@@ -65,6 +76,15 @@ export function MobileTabBar({
     grupo.children.some((item) => activo(item.href));
 
   const hoja = groups.find((grupo) => grupo.label === abierto) ?? null;
+
+  /**
+   * Cuántas pestañas van a la izquierda del botón. Con las cuatro de siempre
+   * son dos y dos; si algún día son tres —en un locke en solitario se cae
+   * "Combates"—, el reparto se ajusta solo en vez de quedar descentrado.
+   */
+  const pestanas = [...primary, ...groups];
+  const hayBoton = seVeElBotonApuntar(atajos, pathname);
+  const mitad = Math.ceil(pestanas.length / 2);
 
   return (
     <>
@@ -168,8 +188,16 @@ export function MobileTabBar({
       <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-ink-900/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden">
         <div
           className="grid"
+          /**
+           * Las pestañas se reparten el ancho por igual y, si hay botón de
+           * apuntar, se le deja un **hueco fijo en el centro** para que se
+           * monte encima sin taparlas. El hueco se calcula con las columnas y
+           * no con un margen: así los rótulos siguen centrados en lo suyo.
+           */
           style={{
-            gridTemplateColumns: `repeat(${primary.length + groups.length}, minmax(0, 1fr))`,
+            gridTemplateColumns: hayBoton
+              ? `repeat(${mitad}, minmax(0, 1fr)) ${HUECO_DEL_BOTON} repeat(${pestanas.length - mitad}, minmax(0, 1fr))`
+              : `repeat(${pestanas.length}, minmax(0, 1fr))`,
           }}
         >
           {primary.map((item) => (
@@ -178,7 +206,9 @@ export function MobileTabBar({
               <Rotulo encendido={activo(item.href)}>{item.label}</Rotulo>
             </Link>
           ))}
-          {groups.map((grupo) => {
+          {/* El hueco: un hermano vacío, para que caiga justo en el medio */}
+          {hayBoton && mitad === primary.length ? <span aria-hidden /> : null}
+          {groups.map((grupo, posicion) => {
             const encendida = abierto === grupo.label || dentroDe(grupo);
             return (
               <button
@@ -201,7 +231,11 @@ export function MobileTabBar({
                 <Rotulo encendido={encendida}>{grupo.label}</Rotulo>
               </button>
             );
-          })}
+          }).flatMap((pestana, posicion) =>
+            hayBoton && primary.length + posicion + 1 === mitad
+              ? [pestana, <span key="hueco" aria-hidden />]
+              : [pestana],
+          )}
         </div>
       </nav>
     </>

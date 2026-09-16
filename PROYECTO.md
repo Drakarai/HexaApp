@@ -871,6 +871,27 @@ final de "La edición" la dejaban en **ocho entradas**, y lo de todos los días
 compartir sitio con lo de montar el tinglado. Con eso "La edición" se queda en
 seis, igual para quien administra y para quien solo juega.
 
+**El botón de apuntar va en el centro, montado sobre la barra.** Vivía en la
+esquina de abajo a la derecha y **tapaba contenido**: una tarjeta del palmarés,
+un sprite del hall. En medio cae en el hueco que le deja la barra y no pisa
+nada.
+
+- Se lee como **acción y no como pestaña** porque es un círculo de color, más
+  grande y levantado, con un **aro del color de la barra** que lo despega. Plano
+  y del tamaño de los demás, la gente esperaría que llevara a una pantalla.
+- **El hueco y el botón se deciden en el mismo sitio** (`seVeElBotonApuntar` y
+  `HUECO_DEL_BOTON`, en `boton-apuntar.tsx`). Si cada uno mirara sus propias
+  reglas, bastaría tocar una para dejar un agujero en medio de la barra sin nada
+  dentro: en Administración, por ejemplo, el botón no sale y la barra vuelve a
+  repartirse a partes iguales.
+- El reparto de pestañas a cada lado sale de cuántas hay, no de un dos escrito a
+  mano: en un locke en solitario se cae "Combates" y quedan tres, y el botón
+  sigue centrado.
+- En el ordenador no hay barra que pisar, así que se queda en su esquina como
+  siempre.
+- El hueco de abajo de la página pasa de `pb-24` a `pb-32`: con el botón
+  asomando por encima de la barra, el de antes dejaba la última fila debajo.
+
 **Las cuatro pestañas de abajo no se tocan**: el usuario lo pidió así, y son lo
 que la gente ya tiene aprendido. Si mañana hace falta otra pantalla de
 gestionar, el sitio es ese bloque de *Mi perfil*, no una pestaña nueva.

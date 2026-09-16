@@ -344,7 +344,12 @@ export default async function AppLayout({
         </div>
       </aside>
 
-      <main className="min-w-0 flex-1 pb-24 lg:pb-16">{children}</main>
+      {/**
+       * El hueco de abajo cuenta con la barra de pestañas **y con el botón de
+       * apuntar**, que sobresale por encima de ella: con el `pb-24` de antes
+       * el botón se comía la última fila de la pantalla.
+       */}
+      <main className="min-w-0 flex-1 pb-32 lg:pb-16">{children}</main>
 
       <EstadoDeConexion rutas={rutasParaGuardar} />
 
@@ -354,6 +359,7 @@ export default async function AppLayout({
         primary={PRIMARY_ITEMS}
         groups={grupos}
         avisos={avisos}
+        atajos={atajos}
         user={{
           displayName: user.displayName,
           avatarColor: user.avatarColor,
