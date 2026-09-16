@@ -59,6 +59,19 @@ export async function selectCompetitionAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Lo mismo, pero **llevando a la portada de esa edición**.
+ *
+ * El selector de arriba cambia de locke sin moverte de donde estás, que es lo
+ * que se quiere allí. Desde el palmarés no: si tocas una edición es para
+ * abrirla. Reutiliza la de arriba para no repetir la comprobación de quién
+ * puede abrir qué.
+ */
+export async function abrirCompeticionAction(formData: FormData) {
+  await selectCompetitionAction(formData);
+  redirect("/");
+}
+
 export async function createCompetitionAction(
   _prev: FormState,
   formData: FormData,

@@ -37,6 +37,9 @@ const S = {
   sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
+  // Va con las ediciones y no con los combates: no es de este locke, es de
+  // todos los que esa persona puede abrir
+  palmares: { href: "/palmares", label: "Palmarés", icon: "👑" },
   actividad: { href: "/actividad", label: "Actividad", icon: "📰" },
   reglas: { href: "/reglas", label: "Reglas", icon: "📜" },
   levelCaps: { href: "/level-caps", label: "Level caps", icon: "🎯" },
@@ -69,7 +72,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "La edición",
     icon: "📚",
-    children: [S.puntos, S.caja, S.actividad, S.levelCaps, S.reglas],
+    children: [S.puntos, S.caja, S.actividad, S.levelCaps, S.reglas, S.palmares],
   },
   {
     label: "Lo mío",

@@ -54,6 +54,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
 | **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
+| **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
@@ -962,6 +963,24 @@ Con uno solo no hay nada que jugar y la pantalla lo dice.
   llave porque una serie son tres partidas con tres repeticiones distintas.
 - Añadir mañana un formato distinto es escribir una entrada más en esa tabla:
   ni la pantalla, ni las acciones, ni la clasificación hay que tocarlas.
+
+**El palmarés junta todas las ediciones, y solo las que puedes abrir.** Sale de
+`listCompetitions`, que ya lleva el filtro de visibilidad; comprobado con una
+cuenta que solo juega una edición, que no ve ni el nombre ni las cifras de la
+otra. Las cuentas van **por cuenta de usuario y no por participante**, porque el
+mote cambia de una edición a otra y la persona es la misma.
+
+Son **cinco consultas para todas las ediciones a la vez**, no cinco por edición:
+todo se pide con `in`. El campeón de cada una se saca de su cuadro
+(`campeonYSubcampeon`) en vez de llamar a `getFinalFourState` por edición, que
+se traería la clasificación entera de cada una.
+
+**Los cuadros de antes del mejor de tres siguen contando.** Los que se sembraron
+cuando cada llave era un combate tienen la clave pelada (`FINAL` en vez de
+`FINAL#1`), y `ganadoresDeLaLlave` los reconoce: ese combate **era la llave
+entera**, así que su ganador cuenta como si hubiera ganado los dos primeros. Sin
+eso, una edición archivada aparecería como "en marcha" y sin campeón para
+siempre, justo en la pantalla que va de celebrarlos.
 
 **El hall de la fama se abre al haber campeón.** Cada jugador registra el
 equipo de 6 con el que terminó, con el mismo buscador de especie, y se ordena
@@ -2238,3 +2257,5 @@ lugar de destruir datos, y hay que avisar antes.
     locke entero y las fichas de cada pokémon en grande.
 55. **Todo el cuadro final, al mejor de tres**, con su enlace a la repetición en
     cada combate.
+56. **Palmarés** de todas las ediciones juntas, y el equipo del hall se puede
+    traer del último combate en vez de teclearlo.

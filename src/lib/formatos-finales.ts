@@ -270,6 +270,65 @@ export function llavesPosteriores(formato: FormatoFinal, key: string): string[] 
 }
 
 /**
+ * Los ganadores de los tres combates de una llave, en orden.
+ *
+ * **Aguanta los cuadros de antes del mejor de tres.** Los que se sembraron
+ * cuando cada llave era un combate tienen la clave pelada (`FINAL` en vez de
+ * `FINAL#1`), y sin esto una edición archivada se quedaría sin campeón. Si no
+ * hay ninguna clave nueva de esa llave, la vieja se cuenta como el primero.
+ */
+export function ganadoresDeLaLlave(
+  llave: string,
+  ganadorPorClave: Map<string, string | null>,
+) {
+  const claves = combatesDeLaLlave(llave);
+  if (claves.some((clave) => ganadorPorClave.has(clave))) {
+    return claves.map((clave) => ganadorPorClave.get(clave) ?? null);
+  }
+
+  /**
+   * En un cuadro viejo ese único combate **era la llave entera**, así que su
+   * ganador la ganó. Se devuelve como si hubiera ganado los dos primeros: si se
+   * contara como uno solo no llegaría a los dos que hacen falta y una edición
+   * archivada se quedaría sin campeón, que es justo lo que se quiere evitar.
+   */
+  const deAntes = ganadorPorClave.get(llave) ?? null;
+  return deAntes ? [deAntes, deAntes, null] : [null, null, null];
+}
+
+/**
+ * Quién ganó y quién perdió la final de un cuadro ya jugado.
+ *
+ * Se resuelve el cuadro entero de atrás hacia delante —cada llave la gana quien
+ * se lleve su serie— y de la última salen los dos finalistas. Hace falta
+ * recorrerlo porque **el subcampeón puede no haber ganado ni un combate**: si la
+ * final acaba 2-0 no aparece en ningún resultado, pero la jugó.
+ */
+export function campeonYSubcampeon(
+  formato: FormatoFinal,
+  seeds: string[],
+  ganadorPorClave: Map<string, string | null>,
+): { campeon: string | null; subcampeon: string | null } {
+  const ganadorDe = (llave: string): string | null =>
+    comoVaLaSerie(ganadoresDeLaLlave(llave, ganadorPorClave)).ganador;
+
+  const quienEs = (lado: LadoDelCombate): string | null =>
+    "puesto" in lado ? (seeds[lado.puesto] ?? null) : ganadorDe(lado.ganadorDe);
+
+  const laFinal = formato.llaves.find((llave) => llave.key === formato.campeon);
+  if (!laFinal) return { campeon: null, subcampeon: null };
+
+  const campeon = ganadorDe(formato.campeon);
+  if (!campeon) return { campeon: null, subcampeon: null };
+
+  const subcampeon =
+    [quienEs(laFinal.a), quienEs(laFinal.b)].find(
+      (quien) => quien && quien !== campeon,
+    ) ?? null;
+  return { campeon, subcampeon };
+}
+
+/**
  * Cómo va una serie: cuántos lleva cada uno y cuáles de los tres combates
  * sobran ya.
  *

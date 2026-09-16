@@ -5,6 +5,7 @@ import { getStandings, type StandingRow } from "@/lib/competition";
 import {
   combatesDeLaLlave,
   comoVaLaSerie,
+  ganadoresDeLaLlave,
   formatoParaJugadores,
   MINIMO_DE_JUGADORES,
   PARA_GANAR_LA_LLAVE,
@@ -140,12 +141,11 @@ export async function getFinalFourState(
    * Quién ganó una llave. Se calcula de sus tres combates, no de una fila
    * "ganador de la llave" que habría que mantener a mano y podría mentir.
    */
+  const ganadorPorClave = new Map(
+    finalFour.matches.map((match) => [match.key, match.winnerId]),
+  );
   const serieDe = (llave: string) =>
-    comoVaLaSerie(
-      combatesDeLaLlave(llave).map(
-        (clave) => guardados.get(clave)?.winnerId ?? null,
-      ),
-    );
+    comoVaLaSerie(ganadoresDeLaLlave(llave, ganadorPorClave));
   const ganadorDe = (llave: string) => {
     const { ganador } = serieDe(llave);
     return ganador
