@@ -983,6 +983,13 @@ caps y ajustes; ni jugadores, ni jornadas, ni puntos, ni bajas. Y tampoco
 - Copiar las imágenes de los level caps no cuesta nada, por lo mismo que en el
   hall: lo que guarda la columna es una referencia al almacén.
 
+**Las fotos de perfil se piden como dirección, nunca con un `select`.** El
+cliente de Prisma descarta las columnas de imagen por defecto (`SIN_IMAGENES` en
+`lib/db.ts`) justo para que no se cuelen enteras en el HTML, así que pedir
+`user.avatarImage` a pelo devuelve vacío y la foto no sale. Pasó en el palmarés
+recién hecho. Lo que hace falta es `urlsDeImagen("avatar", userIds)`, como en
+`getParticipants`.
+
 **El palmarés junta todas las ediciones, y solo las que puedes abrir.** Sale de
 `listCompetitions`, que ya lleva el filtro de visibilidad; comprobado con una
 cuenta que solo juega una edición, que no ve ni el nombre ni las cifras de la

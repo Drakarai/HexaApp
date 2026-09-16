@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { listCompetitions } from "@/lib/competition";
+import { urlsDeImagen } from "@/lib/imagenes";
 import {
   campeonYSubcampeon,
   formatoParaJugadores,
@@ -64,7 +65,6 @@ export async function getPalmares(): Promise<Palmares> {
         competitionId: true,
         displayName: true,
         color: true,
-        user: { select: { avatarImage: true } },
       },
     }),
     prisma.finalFour.findMany({
@@ -87,6 +87,18 @@ export async function getPalmares(): Promise<Palmares> {
     }),
   ]);
 
+  /**
+   * Las fotos de perfil, como **dirección** y no como imagen. Se pidieron mal
+   * la primera vez —con un `select` de `avatarImage`— y salían vacías: el
+   * cliente de Prisma descarta las columnas de imagen por defecto (ver
+   * `lib/db.ts`), justo para que no se cuelen enteras en el HTML. Lo que hace
+   * falta es la dirección, y eso lo da `urlsDeImagen`.
+   */
+  const avatares = await urlsDeImagen(
+    "avatar",
+    participantes.map((p) => p.userId),
+  );
+
   const porParticipante = new Map(participantes.map((p) => [p.id, p]));
   const bajasPorParticipante = new Map(
     bajas.map((fila) => [fila.participantId, fila._count._all]),
@@ -103,7 +115,7 @@ export async function getPalmares(): Promise<Palmares> {
       ? {
           displayName: p.displayName,
           color: p.color,
-          avatarImage: p.user.avatarImage,
+          avatarImage: avatares(p.userId),
         }
       : null;
   };
@@ -149,7 +161,7 @@ export async function getPalmares(): Promise<Palmares> {
         userId,
         displayName: p.displayName,
         color: p.color,
-        avatarImage: p.user.avatarImage,
+        avatarImage: avatares(p.userId),
         lockes: 0,
         ganados: 0,
         victorias: 0,
