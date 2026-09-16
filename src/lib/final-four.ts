@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getStandings, type StandingRow } from "@/lib/competition";
 import {
@@ -211,8 +212,12 @@ export async function getFinalFourState(
  * Cómo se llama el final de este locke y cuántos esperan sin jugar la primera
  * ronda, para la clasificación y el menú. Es una consulta chica a propósito:
  * la usa el layout, que corre en cada página.
+ *
+ * Va con `cache()` porque **la piden el layout y la página a la vez** —la
+ * portada y `/puntos` la necesitan igual—, y sin esto eran dos viajes a la
+ * base de datos por cada visita para traerse lo mismo.
  */
-export async function getFormatoFinal(competitionId: string) {
+export const getFormatoFinal = cache(async (competitionId: string) => {
   const [finalFour, activos] = await Promise.all([
     prisma.finalFour.findUnique({
       where: { competitionId },
@@ -221,7 +226,7 @@ export async function getFormatoFinal(competitionId: string) {
     prisma.participant.count({ where: { competitionId, retiredAt: null } }),
   ]);
   return formatoParaJugadores(finalFour?.jugadores ?? activos);
-}
+});
 
 /** El nombre que le toca al final del locke, para rótulos y menús. */
 export const NOMBRE_POR_DEFECTO = "Final Four";

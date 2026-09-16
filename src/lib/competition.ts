@@ -240,10 +240,15 @@ export async function assertCanActForParticipant(participantId: string) {
  * Clasificación completa. Desempates según las reglas del locke:
  * 1) más puntos, 2) menos pokémon muertos, 3) mejor diferencia de pokémon
  * en los combates de jornada.
+ *
+ * Va con `cache()` porque **hay pantallas que la piden dos veces**: la del
+ * final y el hall de la fama la usan ellas y además la pide por dentro
+ * `getFinalFourState`. Son seis consultas cada vez, así que repetirla contra
+ * una base de datos que está en internet se nota.
  */
-export async function getStandings(
+export const getStandings = cache(async (
   competitionId: string,
-): Promise<StandingRow[]> {
+): Promise<StandingRow[]> => {
   const competition = await prisma.competition.findUnique({
     where: { id: competitionId },
     select: { startingPoints: true, challengeDiffCounts: true },
@@ -402,4 +407,4 @@ export async function getStandings(
     ...row,
     position: row.retirado ? 0 : ++puesto,
   }));
-}
+});

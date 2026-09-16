@@ -995,6 +995,29 @@ Es **el cierre del locke**, así que cuenta cómo fue:
   Los equipos apuntados antes de que existiera no la tienen y la ficha se apaña
   con el sprite pequeño, así que **no hay que rellenar nada hacia atrás**.
 
+**Lo caro no son los milisegundos, son los viajes a la base de datos.** En el
+ordenador Postgres está al lado y todo va en 20-70 ms; en producción está en
+Neon, por internet, y lo que se paga es **cuántas consultas hace cada página**.
+Medido con `CONTAR_CONSULTAS=1` sobre `next start` (en desarrollo los tiempos
+mienten), un locke de seis con 66 bajas y seis jornadas jugadas: la portada 40,
+`/jornadas` 30, `/puntos` 30, y de ahí para abajo.
+
+De eso, lo que sobraba eran **consultas repetidas dentro de la misma página**:
+el layout y la página pedían lo mismo por su cuenta. Se arregla envolviendo el
+ayudante en `cache()` de React, que recuerda el resultado **dentro de una misma
+visita** —`getActiveCompetition`, `getParticipants` y `getMyParticipant` ya lo
+llevaban—, y así cayeron `getFormatoFinal` y `getStandings`: portada de 40 a 37
+y `/puntos` de 30 a 28. Si mañana se añade un ayudante que pidan el layout y la
+página a la vez, el sitio es ese.
+
+Lo que **no** se tocó, porque no era desperdicio: el muro de actividad consulta
+cada fuente por separado a propósito (abajo), y el aviso de novedades ya estaba
+resuelto en una sola consulta con `EXISTS`.
+
+Lo que sigue pesando es **el HTML de `/jornadas`: 353 KB**, porque lleva los
+seis pokémon de cada lado de cada combate de todas las jornadas. No es lento,
+pero es lo que más datos móviles gasta de toda la aplicación.
+
 **El muro de actividad no guarda eventos propios.** Consulta cada fuente
 (muertes, puntos, gimnasios superados, giros, combates) y las mezcla por fecha.
 Así no hay una tabla de eventos que pueda desincronizarse de los datos reales,

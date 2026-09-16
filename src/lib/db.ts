@@ -30,9 +30,25 @@ const SIN_IMAGENES = {
   backup: { payload: true },
 } as const;
 
+/**
+ * Con `CONTAR_CONSULTAS=1` se escriben en pantalla todas las consultas que
+ * hace cada página.
+ *
+ * Sirve para lo que de verdad cuesta caro aquí: **cuántos viajes a la base de
+ * datos** hace una pantalla. En el ordenador no se nota —Postgres está al
+ * lado—, pero en producción está en Neon, por internet, y cada viaje se paga.
+ * Así se encontró que el formato del final se pedía dos veces por visita.
+ *
+ * Se enciende a mano y no se queda encendido: los registros sacan el SQL
+ * entero, y eso ni hace falta ni conviene en producción.
+ */
 const crearCliente = () =>
   new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["warn", "error"] : ["error"],
+    log: process.env.CONTAR_CONSULTAS
+      ? ["query"]
+      : process.env.NODE_ENV === "development"
+        ? ["warn", "error"]
+        : ["error"],
     omit: SIN_IMAGENES,
   });
 
