@@ -149,7 +149,10 @@ export default async function LevelCapsPage({
           ) : null}
         </div>
       ) : (
-        <div className="space-y-3">
+        /* En pantalla ancha, de dos en dos: una tarjeta de gimnasio no llega ni
+           a media pantalla de ancha y en fila de una sola la página medía casi
+           tres mil píxeles. En el móvil siguen una debajo de otra. */
+        <div className="grid gap-3 xl:grid-cols-2">
           {levelCaps.map((levelCap) => {
             /**
              * Solo cuentan los que siguen jugando: si un retirado tuviera que
@@ -278,6 +281,7 @@ export default async function LevelCapsPage({
                   levelCapId={levelCap.id}
                   label={levelCap.label}
                   jugadores={videosDe(levelCap)}
+                  mio={yo?.id ?? null}
                 />
 
                 {canManage ? (

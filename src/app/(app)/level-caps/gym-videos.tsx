@@ -30,13 +30,17 @@ export function GymVideos({
   levelCapId,
   label,
   jugadores,
+  mio = null,
 }: {
   levelCapId: string;
   /** El nombre del gimnasio, para el título del reproductor */
   label: string;
   jugadores: VideoDeGimnasio[];
+  /** Cuál de ellos eres tú, si juegas */
+  mio?: string | null;
 }) {
   const [abierto, setAbierto] = useState<string | null>(null);
+  const [verLosDemas, setVerLosDemas] = useState(false);
 
   const conVideo = jugadores.filter((jugador) => jugador.url);
   const puedenPoner = jugadores.filter(
@@ -45,6 +49,17 @@ export function GymVideos({
 
   // Ni vídeos ni nada que puedas añadir: no se enseña la fila
   if (!conVideo.length && !puedenPoner.length) return null;
+
+  /**
+   * De los que faltan solo se ofrece el tuyo. A la organización le salían los
+   * seis, así que cada gimnasio sin vídeos arrastraba seis pastillas vacías:
+   * ocho gimnasios eran cuarenta y ocho botones para no ver ningún vídeo. Los
+   * de los demás siguen estando, detrás del "y los demás".
+   */
+  const porPoner = verLosDemas
+    ? puedenPoner
+    : puedenPoner.filter((jugador) => jugador.participantId === mio);
+  const escondidos = puedenPoner.length - porPoner.length;
 
   const elegido = jugadores.find(
     (jugador) => jugador.participantId === abierto,
@@ -77,7 +92,7 @@ export function GymVideos({
           </button>
         ))}
 
-        {puedenPoner.map((jugador) => (
+        {porPoner.map((jugador) => (
           <button
             key={jugador.participantId}
             type="button"
@@ -87,6 +102,16 @@ export function GymVideos({
             ＋ {jugador.displayName}
           </button>
         ))}
+
+        {escondidos ? (
+          <button
+            type="button"
+            onClick={() => setVerLosDemas(true)}
+            className="chip cursor-pointer border-dashed text-slate-600 transition hover:text-slate-400"
+          >
+            ＋ el de otro ({escondidos})
+          </button>
+        ) : null}
       </div>
 
       {elegido ? (

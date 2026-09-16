@@ -66,6 +66,17 @@ export function MatchTeams({
   const [editing, setEditing] = useState(false);
   const hasTeams = sides.some((side) => side.team.length > 0);
 
+  /**
+   * Cuántas casillas se pintan. No son siempre las del formato: se pintan las
+   * del equipo **más largo de este combate**. Así las dos cajas siguen midiendo
+   * igual —que es para lo que estaban los huecos— pero cuando los dos han
+   * sacado tres pokémon no quedan seis cuadros vacíos debajo de cada combate.
+   */
+  const casillas = Math.min(
+    maximo,
+    Math.max(1, ...sides.map((side) => side.team.length)),
+  );
+
   if (!hasTeams && !canManage) return null;
 
   return (
@@ -87,7 +98,13 @@ export function MatchTeams({
             )}
           >
             {sides.map((side) => (
-              <TeamBox key={side.participantId} side={side} maximo={maximo} aLaVez={aLaVez} />
+              <TeamBox
+                key={side.participantId}
+                side={side}
+                maximo={maximo}
+                casillas={casillas}
+                aLaVez={aLaVez}
+              />
             ))}
           </div>
         </>
@@ -149,21 +166,24 @@ function TeamRow({ side, aLaVez = 1 }: { side: TeamSide; aLaVez?: number }) {
 }
 
 /**
- * El equipo como una caja, al estilo del equipo de un juego. Los huecos están
- * siempre, aunque falten pokémon, para que las dos cajas de un combate midan
- * igual y se lean de un vistazo. Cuántos hay lo dice el formato: seis en
- * singles, cuatro en VGC.
+ * El equipo como una caja, al estilo del equipo de un juego. Los huecos que
+ * faltan se pintan en punteado para que las dos cajas de un combate midan igual
+ * y se lean de un vistazo, pero solo hasta donde llegue el equipo más largo:
+ * ver `casillas` en `MatchTeams`. `maximo` sigue siendo el del formato —seis en
+ * singles, cuatro en VGC— porque es lo que dice el contador de la esquina.
  */
 function TeamBox({
   side,
   maximo = 6,
+  casillas = maximo,
   aLaVez = 1,
 }: {
   side: TeamSide;
   maximo?: number;
+  casillas?: number;
   aLaVez?: number;
 }) {
-  const huecos = Array.from({ length: maximo }, (_, index) => side.team[index] ?? null);
+  const huecos = Array.from({ length: casillas }, (_, index) => side.team[index] ?? null);
 
   return (
     <div className="min-w-0 rounded-xl border border-white/5 bg-white/[0.02] p-2">

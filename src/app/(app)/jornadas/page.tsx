@@ -155,11 +155,36 @@ export default async function MatchdaysPage() {
         <div className="space-y-4">
           {matchdays.map((matchday) => {
             const played = matchday.matches.filter((match) => match.winnerId).length;
-            const complete =
-              matchday.matches.length > 0 && played === matchday.matches.length;
             const mvpState = mvpStates.get(matchday.id);
             const formato = formatoDeCombate(matchday.formato);
             const temática = formato.id !== "singles";
+
+            /**
+             * Terminada. En una jornada de royales no hay combates que contar:
+             * lo que la cierra es que todos tengan sus puestos repartidos.
+             */
+            const complete = formato.multiple
+              ? matchday.royales.length > 0 &&
+                matchday.royales.every((royale) =>
+                  royale.puestos.some((fila) => fila.puesto !== null),
+                )
+              : matchday.matches.length > 0 &&
+                played === matchday.matches.length;
+
+            /** Quién ganó cada cosa, para el renglón de la jornada plegada */
+            const ganadores = formato.multiple
+              ? matchday.royales.flatMap((royale) =>
+                  royale.puestos
+                    .filter((fila) => fila.puesto === 1)
+                    .map((fila) => fila.participant),
+                )
+              : matchday.matches
+                  .filter((match) => match.winnerId)
+                  .map((match) =>
+                    match.winnerId === match.participantAId
+                      ? match.participantA
+                      : match.participantB,
+                  );
 
             return (
               <section
@@ -228,238 +253,291 @@ export default async function MatchdaysPage() {
                   ) : null}
                 </div>
 
-                {matchday.royales.length ? (
-                  <div className="mb-4 space-y-3">
-                    {matchday.royales.map((royale) => (
-                      <Royale
-                        key={royale.id}
-                        canManage={canManage}
-                        miParticipanteId={myParticipant?.id ?? null}
-                        maximo={formato.equipo}
-                        royale={{
-                          id: royale.id,
-                          label: royale.label,
-                          cronica: royale.cronica,
-                          replayUrl: royale.replayUrl,
-                          playedAt: royale.playedAt,
-                          jugadores: royale.puestos
-                            .slice()
-                            .sort((a, b) => (a.puesto ?? 99) - (b.puesto ?? 99))
-                            .map((fila) => ({
-                              puestoId: fila.id,
-                              participantId: fila.participantId,
-                              displayName: fila.participant.displayName,
-                              color: fila.participant.color,
-                              avatarImage:
-                                avatarByParticipant.get(fila.participantId) ?? null,
-                              puesto: fila.puesto,
-                              vivos: fila.vivos,
-                              notes: fila.notes,
-                              equipo: royale.equipos
-                                .filter((p) => p.participantId === fila.participantId)
-                                .map((pokemon) => ({
-                                  id: pokemon.id,
-                                  species: pokemon.species,
-                                  nickname: pokemon.nickname,
-                                  boxImage: sprites(pokemon.id),
-                                })),
-                            })),
-                        }}
-                      />
-                    ))}
-                  </div>
-                ) : null}
-
-                {formato.multiple ? (
-                  canManage ? (
-                    <div className="mt-2">
-                      <NuevoRoyale matchdayId={matchday.id} />
-                    </div>
-                  ) : null
-                ) : matchday.matches.length === 0 ? (
-                  <p className="muted">Sin emparejamientos todavía.</p>
-                ) : (
-                  <ul className="space-y-2">
-                    {matchday.matches.map((match) => (
-                      <li
-                        key={match.id}
-                        className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5"
-                      >
-                        {/* En móvil los datos del combate bajan a su propia
-                            línea: si comparten fila con los nombres, estos se
-                            quedan sin sitio y se cortan a una letra. */}
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                          {/* En pantallas muy estrechas los dos nombres pasan
-                              a dos líneas antes que recortarse */}
-                          <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
-                            <PlayerChip
-                              participantId={match.participantAId}
-                              name={match.participantA.displayName}
-                              color={match.participantA.color}
-                              image={avatarByParticipant.get(match.participantAId) ?? null}
-                              winner={match.winnerId === match.participantAId}
+                {/**
+                 * El cuerpo se pliega. Una jornada terminada ya no se toca y
+                 * ocupaba lo mismo que una en marcha: con cinco jornadas había
+                 * que bajar cuatro pantallas para llegar a la de hoy. Plegada
+                 * deja su renglón de quién ganó, que es lo que se consulta.
+                 */}
+                <details open={!complete} className="group">
+                  {/* En una jornada en marcha no hay nada que plegar: la barra
+                      sobraría, así que se esconde y esto se queda abierto */}
+                  <summary
+                    className={cx(
+                      "flex cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-1 py-1 text-xs text-slate-500 marker:hidden hover:text-slate-300",
+                      !complete && "hidden",
+                    )}
+                  >
+                    <span
+                      aria-hidden
+                      className="inline-block text-slate-600 transition group-open:rotate-90"
+                    >
+                      ▸
+                    </span>
+                    {complete && ganadores.length ? (
+                      <>
+                        <span>Ganaron</span>
+                        {ganadores.map((quien, posicion) => (
+                          <span
+                            key={`${quien.id}-${posicion}`}
+                            className="inline-flex items-center gap-1 text-slate-300"
+                          >
+                            {/* Sin enlace: dentro de un summary, pinchar el
+                                avatar abriría el perfil en vez de desplegar */}
+                            <Avatar
+                              name={quien.displayName}
+                              color={quien.color}
+                              image={avatarByParticipant.get(quien.id) ?? null}
+                              size={16}
                             />
-                            <span className="shrink-0 text-xs text-slate-500">
-                              vs
-                            </span>
-                            <PlayerChip
-                              participantId={match.participantBId}
-                              name={match.participantB.displayName}
-                              color={match.participantB.color}
-                              image={avatarByParticipant.get(match.participantBId) ?? null}
-                              winner={match.winnerId === match.participantBId}
-                            />
-                          </div>
-                          <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
-                            {/* Solo si este combate se juega distinto al resto
-                                de su jornada; si no, ya lo dice la cabecera */}
-                            {match.formato && match.formato !== matchday.formato ? (
-                              <ChapaDeFormato formato={match.formato} />
-                            ) : null}
-                            <ReplayLink url={match.replayUrl} />
-                            {/* Bien visible: no es una victoria como las
-                                demás y tiene que verse de un vistazo */}
-                            {match.porRetirada ? (
-                              <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-200">
-                                🏳️ Por retirada de{" "}
-                                {match.winnerId === match.participantAId
-                                  ? match.participantB.displayName
-                                  : match.participantA.displayName}
-                              </span>
-                            ) : null}
-                            {/* La excepción: alguien que está fuera lo juega
-                                igual porque la organización lo ha permitido */}
-                            {match.excepcion ? (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-200/90"
-                                title="Uno de los dos está fuera del locke y lo juega con permiso de la organización. No se dará por retirada."
-                              >
-                                🤝 Con permiso
-                              </span>
-                            ) : null}
-                            {/* Esperando a que acabe el resto de la jornada
-                                para darse por ganado: ver lib/retiradas.ts */}
-                            {esperando.has(match.id) ? (
-                              <span
-                                className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200/90"
-                                title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
-                              >
-                                🏳️ Por retirada, al acabar la jornada
-                              </span>
-                            ) : null}
-                            {match.pokemonDiff !== null ? (
-                              <span className="chip">
-                                dif. {match.pokemonDiff}
-                              </span>
-                            ) : null}
-                            {match.playedAt ? (
-                              <span>{formatDate(match.playedAt)}</span>
-                            ) : esperando.has(match.id) ? null : (
-                              <span className="text-amber-400/80">Pendiente</span>
-                            )}
-                            {/**
-                             * El permiso se da y se quita aquí porque lo
-                             * normal es que el wipeo llegue con el combate ya
-                             * puesto. Solo sale si hace falta: si los dos
-                             * siguen jugando no hay nada que permitir.
-                             */}
-                            {canManage &&
-                            (estaFuera.has(match.participantAId) ||
-                              estaFuera.has(match.participantBId)) ? (
-                              <form action={permitirCombateAction}>
-                                <input
-                                  type="hidden"
-                                  name="matchId"
-                                  value={match.id}
-                                />
-                                <ConfirmSubmit
-                                  className="btn-ghost btn-sm text-sky-300/80"
-                                  message={
-                                    match.excepcion
-                                      ? "¿Quitar el permiso? El combate volverá a darse por retirada cuando acabe la jornada."
-                                      : "¿Dejar que lo jueguen? Uno de los dos está fuera del locke: el combate no se dará por retirada y contará como cualquier otro."
-                                  }
-                                >
-                                  {match.excepcion
-                                    ? "Quitar el permiso"
-                                    : "🤝 Dejar que lo jueguen"}
-                                </ConfirmSubmit>
-                              </form>
-                            ) : null}
-                            {canManage ? (
-                              <form action={deleteMatchAction}>
-                                <input
-                                  type="hidden"
-                                  name="matchId"
-                                  value={match.id}
-                                />
-                                <ConfirmSubmit message="¿Borrar este combate?">
-                                  ✕
-                                </ConfirmSubmit>
-                              </form>
-                            ) : null}
-                          </div>
-                        </div>
+                            {quien.displayName}
+                          </span>
+                        ))}
+                      </>
+                    ) : (
+                      <span>{formato.multiple ? "Los royales" : "Los combates"}</span>
+                    )}
+                    <span className="text-slate-600 group-open:hidden">· ver</span>
+                    <span className="hidden text-slate-600 group-open:inline">
+                      · ocultar
+                    </span>
+                  </summary>
 
-                        {match.notes ? (
-                          <p className="mt-1.5 text-xs text-slate-500">
-                            {match.notes}
-                          </p>
-                        ) : null}
-
-                        <MatchTeams
-                          matchId={match.id}
+                  <div className={complete ? "mt-3" : undefined}>
+                  {matchday.royales.length ? (
+                    <div className="mb-4 space-y-3">
+                      {matchday.royales.map((royale) => (
+                        <Royale
+                          key={royale.id}
                           canManage={canManage}
-                          maximo={formatoDeCombate(match.formato ?? matchday.formato).equipo}
-                          aLaVez={formatoDeCombate(match.formato ?? matchday.formato).aLaVez}
-                          sides={[
-                            teamSide(
-                              match.participantA,
-                              match.team,
-                              sprites,
-                              avatarByParticipant.get(match.participantAId) ?? null,
-                            ),
-                            teamSide(
-                              match.participantB,
-                              match.team,
-                              sprites,
-                              avatarByParticipant.get(match.participantBId) ?? null,
-                            ),
-                          ]}
+                          miParticipanteId={myParticipant?.id ?? null}
+                          maximo={formato.equipo}
+                          royale={{
+                            id: royale.id,
+                            label: royale.label,
+                            cronica: royale.cronica,
+                            replayUrl: royale.replayUrl,
+                            playedAt: royale.playedAt,
+                            jugadores: royale.puestos
+                              .slice()
+                              .sort((a, b) => (a.puesto ?? 99) - (b.puesto ?? 99))
+                              .map((fila) => ({
+                                puestoId: fila.id,
+                                participantId: fila.participantId,
+                                displayName: fila.participant.displayName,
+                                color: fila.participant.color,
+                                avatarImage:
+                                  avatarByParticipant.get(fila.participantId) ?? null,
+                                puesto: fila.puesto,
+                                vivos: fila.vivos,
+                                notes: fila.notes,
+                                equipo: royale.equipos
+                                  .filter((p) => p.participantId === fila.participantId)
+                                  .map((pokemon) => ({
+                                    id: pokemon.id,
+                                    species: pokemon.species,
+                                    nickname: pokemon.nickname,
+                                    boxImage: sprites(pokemon.id),
+                                  })),
+                              })),
+                          }}
                         />
+                      ))}
+                    </div>
+                  ) : null}
 
-                        {canManage ? (
-                          <MatchResultForm
-                            match={{
-                              id: match.id,
-                              winnerId: match.winnerId,
-                              pokemonDiff: match.pokemonDiff,
-                              replayUrl: match.replayUrl,
-                              notes: match.notes,
-                              a: {
-                                id: match.participantAId,
-                                name: match.participantA.displayName,
-                              },
-                              b: {
-                                id: match.participantBId,
-                                name: match.participantB.displayName,
-                              },
-                            }}
+                  {formato.multiple ? (
+                    canManage ? (
+                      <div className="mt-2">
+                        <NuevoRoyale matchdayId={matchday.id} />
+                      </div>
+                    ) : null
+                  ) : matchday.matches.length === 0 ? (
+                    <p className="muted">Sin emparejamientos todavía.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {matchday.matches.map((match) => (
+                        <li
+                          key={match.id}
+                          className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5"
+                        >
+                          {/* En móvil los datos del combate bajan a su propia
+                              línea: si comparten fila con los nombres, estos se
+                              quedan sin sitio y se cortan a una letra. */}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                            {/* En pantallas muy estrechas los dos nombres pasan
+                                a dos líneas antes que recortarse */}
+                            <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
+                              <PlayerChip
+                                participantId={match.participantAId}
+                                name={match.participantA.displayName}
+                                color={match.participantA.color}
+                                image={avatarByParticipant.get(match.participantAId) ?? null}
+                                winner={match.winnerId === match.participantAId}
+                              />
+                              <span className="shrink-0 text-xs text-slate-500">
+                                vs
+                              </span>
+                              <PlayerChip
+                                participantId={match.participantBId}
+                                name={match.participantB.displayName}
+                                color={match.participantB.color}
+                                image={avatarByParticipant.get(match.participantBId) ?? null}
+                                winner={match.winnerId === match.participantBId}
+                              />
+                            </div>
+                            <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                              {/* Solo si este combate se juega distinto al resto
+                                  de su jornada; si no, ya lo dice la cabecera */}
+                              {match.formato && match.formato !== matchday.formato ? (
+                                <ChapaDeFormato formato={match.formato} />
+                              ) : null}
+                              <ReplayLink url={match.replayUrl} />
+                              {/* Bien visible: no es una victoria como las
+                                  demás y tiene que verse de un vistazo */}
+                              {match.porRetirada ? (
+                                <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-200">
+                                  🏳️ Por retirada de{" "}
+                                  {match.winnerId === match.participantAId
+                                    ? match.participantB.displayName
+                                    : match.participantA.displayName}
+                                </span>
+                              ) : null}
+                              {/* La excepción: alguien que está fuera lo juega
+                                  igual porque la organización lo ha permitido */}
+                              {match.excepcion ? (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-200/90"
+                                  title="Uno de los dos está fuera del locke y lo juega con permiso de la organización. No se dará por retirada."
+                                >
+                                  🤝 Con permiso
+                                </span>
+                              ) : null}
+                              {/* Esperando a que acabe el resto de la jornada
+                                  para darse por ganado: ver lib/retiradas.ts */}
+                              {esperando.has(match.id) ? (
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200/90"
+                                  title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
+                                >
+                                  🏳️ Por retirada, al acabar la jornada
+                                </span>
+                              ) : null}
+                              {match.pokemonDiff !== null ? (
+                                <span className="chip">
+                                  dif. {match.pokemonDiff}
+                                </span>
+                              ) : null}
+                              {match.playedAt ? (
+                                <span>{formatDate(match.playedAt)}</span>
+                              ) : esperando.has(match.id) ? null : (
+                                <span className="text-amber-400/80">Pendiente</span>
+                              )}
+                              {/**
+                               * El permiso se da y se quita aquí porque lo
+                               * normal es que el wipeo llegue con el combate ya
+                               * puesto. Solo sale si hace falta: si los dos
+                               * siguen jugando no hay nada que permitir.
+                               */}
+                              {canManage &&
+                              (estaFuera.has(match.participantAId) ||
+                                estaFuera.has(match.participantBId)) ? (
+                                <form action={permitirCombateAction}>
+                                  <input
+                                    type="hidden"
+                                    name="matchId"
+                                    value={match.id}
+                                  />
+                                  <ConfirmSubmit
+                                    className="btn-ghost btn-sm text-sky-300/80"
+                                    message={
+                                      match.excepcion
+                                        ? "¿Quitar el permiso? El combate volverá a darse por retirada cuando acabe la jornada."
+                                        : "¿Dejar que lo jueguen? Uno de los dos está fuera del locke: el combate no se dará por retirada y contará como cualquier otro."
+                                    }
+                                  >
+                                    {match.excepcion
+                                      ? "Quitar el permiso"
+                                      : "🤝 Dejar que lo jueguen"}
+                                  </ConfirmSubmit>
+                                </form>
+                              ) : null}
+                              {canManage ? (
+                                <form action={deleteMatchAction}>
+                                  <input
+                                    type="hidden"
+                                    name="matchId"
+                                    value={match.id}
+                                  />
+                                  <ConfirmSubmit message="¿Borrar este combate?">
+                                    ✕
+                                  </ConfirmSubmit>
+                                </form>
+                              ) : null}
+                            </div>
+                          </div>
+
+                          {match.notes ? (
+                            <p className="mt-1.5 text-xs text-slate-500">
+                              {match.notes}
+                            </p>
+                          ) : null}
+
+                          <MatchTeams
+                            matchId={match.id}
+                            canManage={canManage}
+                            maximo={formatoDeCombate(match.formato ?? matchday.formato).equipo}
+                            aLaVez={formatoDeCombate(match.formato ?? matchday.formato).aLaVez}
+                            sides={[
+                              teamSide(
+                                match.participantA,
+                                match.team,
+                                sprites,
+                                avatarByParticipant.get(match.participantAId) ?? null,
+                              ),
+                              teamSide(
+                                match.participantB,
+                                match.team,
+                                sprites,
+                                avatarByParticipant.get(match.participantBId) ?? null,
+                              ),
+                            ]}
                           />
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
 
-                {canManage && !formato.multiple && participantOptions.length >= 2 ? (
-                  <div className="mt-4 border-t border-white/10 pt-4">
-                    <AddMatchForm
-                      matchdayId={matchday.id}
-                      participants={participantOptions}
-                    />
+                          {canManage ? (
+                            <MatchResultForm
+                              match={{
+                                id: match.id,
+                                winnerId: match.winnerId,
+                                pokemonDiff: match.pokemonDiff,
+                                replayUrl: match.replayUrl,
+                                notes: match.notes,
+                                a: {
+                                  id: match.participantAId,
+                                  name: match.participantA.displayName,
+                                },
+                                b: {
+                                  id: match.participantBId,
+                                  name: match.participantB.displayName,
+                                },
+                              }}
+                            />
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {canManage && !formato.multiple && participantOptions.length >= 2 ? (
+                    <div className="mt-4 border-t border-white/10 pt-4">
+                      <AddMatchForm
+                        matchdayId={matchday.id}
+                        participants={participantOptions}
+                      />
+                    </div>
+                  ) : null}
                   </div>
-                ) : null}
+                </details>
               </section>
             );
           })}

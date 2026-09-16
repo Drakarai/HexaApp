@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 15 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 16 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -19,7 +19,9 @@ reparto de papeles en **Creador / administrador de locke / jugador**, y los
 wipeos con su estado de locke perdido, la lista de participantes arreglada
 para el móvil, los **combates con permiso** para quien está fuera del locke, y
 el **hall de la fama** con su podio y las cifras del locke, y **todo el cuadro
-final al mejor de tres** con repetición en cada combate).
+final al mejor de tres** con repetición en cada combate, el **palmarés** entre
+ediciones con los lockes de antes de la app, y el **repaso de las 24 pantallas**
+del que salieron las jornadas plegables y los level caps de dos en dos).
 
 ---
 
@@ -48,7 +50,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
-| **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. |
+| **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
@@ -1864,6 +1866,57 @@ para lo mismo solo confunden. Y **el tachado es del nombre**, no de la línea: l
 lleva un `<span>` suyo, que si no las chapas de *admin* y *💥 locke perdido*
 salían tachadas y no se leían.
 
+### El repaso de pantallas: lo que ocupaba de más
+
+Se midieron las 24 pantallas a lo ancho de un móvil (390) y de un ordenador
+(1280). Nada se salía por los lados, no había errores en consola ni imágenes
+rotas —lo que parecía imagen rota era una foto con carga diferida que no había
+llegado a tiempo a la medición, no un fallo—. Lo que sí apareció fue **altura
+de sobra**, y de ahí salieron cuatro arreglos.
+
+**Una jornada terminada se pliega.** Ocupaba exactamente lo mismo que una en
+marcha, así que con cinco jornadas había que bajar cuatro pantallas para llegar
+a la de hoy. Ahora, cuando están todos sus combates jugados, el cuerpo entra en
+un `<details>` cerrado y en su sitio queda un renglón con **quién ganó**, que es
+lo que se consulta de una jornada vieja. Medido: de 954 a 238 píxeles. En una
+jornada en marcha la barra de plegar **se esconde** (`hidden`) en vez de
+quitarse el `<details>`, para no tener el mismo cuerpo escrito dos veces; queda
+abierta y quieta. Las de Battle Royale también cuentan como terminadas: ahí lo
+que las cierra es que todos los royales tengan repartidos sus puestos.
+
+**Los huecos del equipo, solo hasta donde llega el equipo más largo.** Las cajas
+de los dos lados pintaban siempre las seis casillas del formato, así que un
+combate con tres pokémon por lado arrastraba seis cuadros punteados vacíos. Se
+siguen pintando huecos —para eso estaban: que las dos cajas midan igual y se
+lean de un vistazo— pero contando desde el equipo más largo **de ese combate**
+(`casillas` en `MatchTeams`). El contador de la esquina sigue diciendo `3/6`,
+que es la información que se perdería.
+
+**Los level caps, de dos en dos en pantalla ancha.** Una tarjeta de gimnasio no
+llega ni a media pantalla y en fila de una sola la página medía 2825 píxeles;
+en dos columnas (`xl:grid-cols-2`, solo a partir de 1280: más estrecho no caben
+las seis pastillas de jugador) se queda en 1854. En el móvil no cambia nada.
+
+**Los vídeos del gimnasio ya no ofrecen los de los demás.** A quien administra
+le salía una pastilla "＋ nombre" por cada jugador que se hubiera pasado el
+gimnasio: ocho gimnasios eran cuarenta y ocho botones para no ver ningún vídeo.
+Ahora se ofrece **el tuyo** y los demás quedan detrás de un "＋ el de otro (N)",
+que sigue dejando poner el de cualquiera.
+
+**Las tarjetas de la derecha de la portada no se estiran.** *Próxima jornada* y
+*Ruleta* comparten fila con la clasificación y la actividad, que son mucho más
+altas, así que crecían con ellas y dejaban media tarjeta vacía. Con `self-start`
+cada una mide lo suyo.
+
+**Un botón que solo es un símbolo tiene que decir qué hace.** La ✕ de borrar
+salía sin `title` ni `aria-label` en cinco pantallas: al pasar el ratón no
+aparecía nada y un lector de pantalla leía "equis". Ahora `ConfirmSubmit`
+**reutiliza la pregunta de confirmación** de etiqueta cuando lo que lleva dentro
+no tiene ni una letra, sin obligar a escribirla dos veces en cada sitio. Si el
+botón lleva texto de verdad, ese texto manda. Comprobado después: no queda
+ningún botón de icono sin nombre accesible (los demás ya lo tenían por `title`,
+que es nombre válido).
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -2197,6 +2250,12 @@ para abajo los números no cuadraban con los pies. Va a mano, así que **hay que
 mirarlo cada vez que se mueve una página**; ahora hay 21 entradas y la última es
 la 23.
 
+**Para medir pantallas** hay un cuarto script, `guia/medir.mjs`, que no hace
+guía ninguna: entra en la aplicación y dice de cada ruta cuánto mide de alto,
+cuánto pesa su HTML y cuántos nodos tiene, en móvil y en ordenador. Vive ahí
+porque reaprovecha el mismo Playwright y la misma forma de entrar. Se usa antes
+y después de tocar algo (`node guia/medir.mjs /jornadas /level-caps`).
+
 Hay **dos guías**: la de uso (23 páginas, para todos) y la del administrador
 (13, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
 que salgan idénticas. Rehacerlas mueve los números de página del índice escrito
@@ -2358,3 +2417,7 @@ lugar de destruir datos, y hay que avisar antes.
     locke se copia a otro aunque sean de juegos distintos.
 57. **Los lockes de antes de la app** se apuntan a mano en el palmarés, para
     que el Hexalocke 1 no se quede fuera del histórico.
+58. **Repaso de las 24 pantallas** en móvil y en ordenador: las jornadas
+    terminadas se pliegan, los equipos dejan de pintar huecos que sobran, los
+    level caps van de dos en dos en pantalla ancha y los botones de icono ya
+    dicen qué hacen.

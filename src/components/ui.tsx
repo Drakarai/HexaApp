@@ -53,10 +53,24 @@ export function ConfirmSubmit({
   title?: string;
 }) {
   const { pending } = useFormStatus();
+
+  /**
+   * Un botón que solo es un símbolo —la ✕ de borrar, sin ir más lejos— no dice
+   * nada: al pasar el ratón no sale nada y un lector de pantalla lee "equis".
+   * Como la pregunta de confirmación ya explica qué va a pasar, se usa **ella**
+   * de etiqueta en vez de obligar a escribirla dos veces en cada sitio.
+   *
+   * Solo cuando hace falta: si el botón lleva texto de verdad, ese texto manda.
+   */
+  const soloUnSimbolo =
+    typeof children === "string" && !/[a-záéíóúñ]/i.test(children);
+  const etiqueta = title ?? (soloUnSimbolo ? message : undefined);
+
   return (
     <button
       type="submit"
-      title={title}
+      title={etiqueta}
+      aria-label={etiqueta}
       className={className}
       disabled={pending}
       onClick={(event) => {

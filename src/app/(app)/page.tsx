@@ -207,8 +207,11 @@ export default async function DashboardPage() {
           )}
         </section>
 
-        {/* En solitario no hay jornadas: el hueco sobra */}
-        <section className={progreso ? "hidden" : "card"}>
+        {/* En solitario no hay jornadas: el hueco sobra.
+            El `self-start` es para que no se estire hasta lo que mida la
+            clasificación: con seis jugadores y dos combates, la tarjeta
+            quedaba con media pantalla de vacío debajo. */}
+        <section className={progreso ? "hidden" : "card self-start"}>
           <h2 className="section-title mb-4">Próxima jornada</h2>
           {nextMatchday ? (
             <div className="space-y-3">
@@ -260,7 +263,7 @@ export default async function DashboardPage() {
           <ActivityFeed entries={activity} compact />
         </section>
 
-        <section className={progreso ? "hidden" : "card"}>
+        <section className={progreso ? "hidden" : "card self-start"}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">Ruleta</h2>
             <Link href="/ruleta" className="text-xs text-brand-400 hover:underline">
