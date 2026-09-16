@@ -35,6 +35,31 @@ await p.fill('input[name="password"]', CLAVE);
 await p.click('button[type="submit"]');
 await p.waitForTimeout(1500);
 
+/**
+ * --- El juego de la edición
+ *
+ * Va lo primero y **no sobra**: sin juego elegido no hay región, y sin región
+ * la pantalla del mapa dice "esta edición no tiene juego elegido" en vez de
+ * enseñar las rutas. Todo lo de abajo —las capturas, las bajas con su zona— se
+ * cae detrás.
+ */
+await p.goto(BASE + "/competiciones", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(900);
+{
+  // Hay más de un formulario con selector de juego en la página (el de crear
+  // una edición nueva, por ejemplo): se trabaja dentro del de editar
+  const bloque = p.locator("details", { hasText: "Editar datos" }).first();
+  if (await bloque.count()) {
+    await bloque.locator("summary").first().click();
+    await p.waitForTimeout(500);
+    await bloque.locator('select[name="gameId"]').first().selectOption("heartgold");
+    await p.waitForTimeout(400);
+    await bloque.locator("button[type=submit]").first().click();
+    await p.waitForTimeout(2400);
+    console.log("juego: HeartGold");
+  }
+}
+
 // --- Los mapas: copiar las zonas que trae escritas de fábrica
 for (const region of ["johto", "kanto"]) {
   await p.goto(`${BASE}/admin/mapas?region=${region}`, { waitUntil: "domcontentloaded" });
