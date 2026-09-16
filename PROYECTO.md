@@ -2177,6 +2177,16 @@ fotos no se suben (se rehacen en cinco minutos), pero **el PDF sí**, en
 Instrucciones en `guia/README.md`; **el índice y la cuenta de páginas** de ese
 apartado están escritos a mano y hay que tocarlos si se mueve una página.
 
+**Rehacer las fotos empieza por borrar y volver a sembrar la base local**
+(`prisma db push --force-reset` y `npm run db:seed`): en cuanto se prueba algo a
+mano, la partida de ejemplo deja de servir para capturas. Y `datos.mjs` arranca
+**eligiendo el juego de la edición**, que no sobra: la semilla no lo pone, y sin
+juego no hay región, así que el mapa dice "esta edición no tiene juego elegido"
+y se cae detrás todo lo que necesita rutas —las capturas y las bajas con su
+zona—. Faltaba desde siempre; quien hizo la guía la primera vez lo puso a mano
+por la interfaz y no quedó escrito, así que el proceso del README no funcionaba
+de principio a fin.
+
 **Dónde va lo nuevo**: si lo hace cualquiera, en la guía de uso; si es de llevar
 un locke —emparejar, anotar resultados, repartir premios—, en la del
 administrador.
