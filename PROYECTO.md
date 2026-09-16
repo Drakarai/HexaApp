@@ -55,6 +55,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
 | **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
 | **Copiar de otra edición** | Al montar el locke siguiente, traerse de otro las **reglas**, los **level caps** y los **ajustes** (puntos de inicio, jornadas previstas, si los retos cuentan para la diferencia) en vez de reescribirlos. **Vale entre juegos distintos**, avisando de que unos level caps de otra región tienen los líderes que no son. No se copian jugadores, jornadas, puntos ni bajas. |
+| **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
 | **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
@@ -989,6 +990,22 @@ cliente de Prisma descarta las columnas de imagen por defecto (`SIN_IMAGENES` en
 `user.avatarImage` a pelo devuelve vacío y la foto no sale. Pasó en el palmarés
 recién hecho. Lo que hace falta es `urlsDeImagen("avatar", userIds)`, como en
 `getParticipants`.
+
+**Un locke de antes no es una `Competition` vacía.** Vive en su propia tabla
+(`LockeDeAntes`) y no se cuela como edición sin jornadas: si fuera una
+`Competition`, el resto de pantallas —jornadas, bajas, clasificación, la
+final— tendría que aprender a esquivar una edición de la que no hay nada. Así
+solo aparece donde tiene sentido, que es el palmarés, y se marca con 📜.
+
+- **De aquello no se inventa nada.** Suma un locke jugado y, al ganador, uno
+  ganado; las bajas y las victorias se quedan a cero, que es más honesto.
+- **Quién lo ve sale de `jugadoresIds`**, no de nadie más. Si se viera entero,
+  alguien que monta su propio locke se encontraría el histórico de un grupo con
+  el que no tiene nada que ver. Vienen marcados los del locke que se está
+  jugando, que es lo que acierta casi siempre: marcarlo **todo** por defecto
+  colaba cuentas que no pintaban nada, y esas acababan viéndolo.
+- Al ganador y al subcampeón se les añade a esa lista **en el servidor**: no
+  tendría sentido apuntar que alguien ganó un locke y que él no lo viera.
 
 **El palmarés junta todas las ediciones, y solo las que puedes abrir.** Sale de
 `listCompetitions`, que ya lleva el filtro de visibilidad; comprobado con una
@@ -2286,3 +2303,5 @@ lugar de destruir datos, y hay que avisar antes.
 56. **Palmarés** de todas las ediciones juntas, el equipo del hall se puede
     traer del último combate en vez de teclearlo, y la configuración de un
     locke se copia a otro aunque sean de juegos distintos.
+57. **Los lockes de antes de la app** se apuntan a mano en el palmarés, para
+    que el Hexalocke 1 no se quede fuera del histórico.

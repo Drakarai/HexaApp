@@ -68,6 +68,9 @@ model User {
   espectador           Spectator[]
   solicitudes          LockeRequest[]   @relation("SolicitanteDeLocke")
   solicitudesResueltas LockeRequest[]   @relation("ResolutorDeLocke")
+  lockesDeAntesGanados LockeDeAntes[]   @relation("GanadorDeAntes")
+  lockesDeAntesSegundo LockeDeAntes[]   @relation("SubcampeonDeAntes")
+  lockesDeAntesApuntados LockeDeAntes[] @relation("ApuntadorDeAntes")
 }
 
 /**
@@ -1582,4 +1585,39 @@ model Backup {
   imagenes   String[]
 
   @@index([createdAt])
+}
+
+/**
+ * Un locke que se jugó **antes de que existiera la aplicación**, apuntado a
+ * mano para que no se pierda del palmarés.
+ *
+ * No es una `Competition`: no tiene jornadas, ni bajas, ni combates, porque de
+ * aquello no quedó nada guardado. Es solo la línea del palmarés —quién ganó, a
+ * quién y cuándo—, y por eso vive en su propia tabla en vez de ensuciar
+ * `Competition` con ediciones vacías que el resto de pantallas tendría que
+ * aprender a esquivar.
+ *
+ * **Quién lo ve sale de `jugadoresIds`**: solo la gente que lo jugó. Si fuera
+ * visible para todos, alguien que monta su propio locke vería el histórico de
+ * un grupo con el que no tiene nada que ver.
+ */
+model LockeDeAntes {
+  id           String   @id @default(cuid())
+  nombre       String
+  /** El juego, escrito a mano: de entonces no hay identificador que valga */
+  juego        String?
+  cuando       DateTime
+  ganadorId    String
+  subcampeonId String?
+  /** Las cuentas de quienes lo jugaron. El ganador entra siempre. */
+  jugadoresIds String[] @default([])
+  notas        String?
+  createdById  String?
+  createdAt    DateTime @default(now())
+
+  ganador    User  @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
+  subcampeon User? @relation("SubcampeonDeAntes", fields: [subcampeonId], references: [id], onDelete: SetNull)
+  apuntadoPor User? @relation("ApuntadorDeAntes", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([ganadorId])
 }

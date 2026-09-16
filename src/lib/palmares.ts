@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { listCompetitions } from "@/lib/competition";
+import { esCreador, getCurrentUser } from "@/lib/auth";
 import { urlsDeImagen } from "@/lib/imagenes";
 import {
   campeonYSubcampeon,
@@ -25,7 +26,13 @@ import {
  */
 
 export type CampeonDeUnLocke = {
+  /** El identificador de la edición, o del apunte si es un locke de antes */
   competitionId: string;
+  /** Se jugó antes de que existiera la aplicación y está apuntado a mano */
+  deAntes: boolean;
+  /** Si quien mira puede quitar ese apunte */
+  puedeBorrar: boolean;
+  notas: string | null;
   nombre: string;
   game: string | null;
   startedAt: Date;
@@ -52,9 +59,28 @@ export type Palmares = {
 };
 
 export async function getPalmares(): Promise<Palmares> {
+  const yo = await getCurrentUser();
   const competiciones = await listCompetitions();
   const ids = competiciones.map((competicion) => competicion.id);
-  if (!ids.length) return { ediciones: [], gente: [] };
+
+  /**
+   * Los lockes de antes que le tocan: **solo los que jugó**. El Creador los ve
+   * todos, como en el resto de la aplicación.
+   */
+  const deAntes = yo
+    ? await prisma.lockeDeAntes.findMany({
+        where: esCreador(yo) ? {} : { jugadoresIds: { has: yo.id } },
+        orderBy: { cuando: "desc" },
+        include: {
+          ganador: { select: { id: true, displayName: true, avatarColor: true } },
+          subcampeon: {
+            select: { id: true, displayName: true, avatarColor: true },
+          },
+        },
+      })
+    : [];
+
+  if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
   const [participantes, finales, bajas, combates] = await Promise.all([
     prisma.participant.findMany({
@@ -94,10 +120,11 @@ export async function getPalmares(): Promise<Palmares> {
    * `lib/db.ts`), justo para que no se cuelen enteras en el HTML. Lo que hace
    * falta es la dirección, y eso lo da `urlsDeImagen`.
    */
-  const avatares = await urlsDeImagen(
-    "avatar",
-    participantes.map((p) => p.userId),
-  );
+  const avatares = await urlsDeImagen("avatar", [
+    ...participantes.map((p) => p.userId),
+    // También los de los lockes de antes, que pueden ser gente que ya no juega
+    ...deAntes.flatMap((locke) => locke.jugadoresIds),
+  ]);
 
   const porParticipante = new Map(participantes.map((p) => [p.id, p]));
   const bajasPorParticipante = new Map(
@@ -146,22 +173,59 @@ export async function getPalmares(): Promise<Palmares> {
       nombre: competicion.name,
       game: competicion.game,
       startedAt: competicion.startedAt,
+      deAntes: false,
+      puedeBorrar: false,
+      notas: null,
       terminado: Boolean(campeon),
       campeon: ficha(campeon),
       subcampeon: ficha(subcampeon),
     };
   });
 
+  /**
+   * Los lockes de antes: como no queda nada de aquello, solo aportan la línea
+   * y el "ganado". Las bajas y las victorias se quedan a cero **a propósito**,
+   * que es más honesto que inventárselas.
+   */
+  const puedeBorrar = (createdById: string | null) =>
+    Boolean(yo) && (esCreador(yo!) || createdById === yo!.id);
+
+  const apuntados: CampeonDeUnLocke[] = deAntes.map((locke) => ({
+    competitionId: locke.id,
+    deAntes: true,
+    puedeBorrar: puedeBorrar(locke.createdById),
+    notas: locke.notas,
+    nombre: locke.nombre,
+    game: locke.juego,
+    startedAt: locke.cuando,
+    terminado: true,
+    campeon: {
+      displayName: locke.ganador.displayName,
+      color: locke.ganador.avatarColor,
+      avatarImage: avatares(locke.ganador.id),
+    },
+    subcampeon: locke.subcampeon
+      ? {
+          displayName: locke.subcampeon.displayName,
+          color: locke.subcampeon.avatarColor,
+        }
+      : null,
+  }));
+
   /** Las cuentas van por **cuenta de usuario**, no por participante: el mote
    * cambia de una edición a otra y la persona es la misma. */
   const gente = new Map<string, FilaDelPalmares>();
-  const deLaPersona = (userId: string, p: (typeof participantes)[number]) => {
-    if (!gente.has(userId)) {
-      gente.set(userId, {
-        userId,
-        displayName: p.displayName,
-        color: p.color,
-        avatarImage: avatares(p.userId),
+  const deLaPersona = (quien: {
+    userId: string;
+    displayName: string;
+    color: string;
+  }) => {
+    if (!gente.has(quien.userId)) {
+      gente.set(quien.userId, {
+        userId: quien.userId,
+        displayName: quien.displayName,
+        color: quien.color,
+        avatarImage: avatares(quien.userId),
         lockes: 0,
         ganados: 0,
         victorias: 0,
@@ -169,11 +233,11 @@ export async function getPalmares(): Promise<Palmares> {
         bajas: 0,
       });
     }
-    return gente.get(userId)!;
+    return gente.get(quien.userId)!;
   };
 
   for (const p of participantes) {
-    const fila = deLaPersona(p.userId, p);
+    const fila = deLaPersona(p);
     fila.lockes += 1;
     fila.bajas += bajasPorParticipante.get(p.id) ?? 0;
     if (campeonPorEdicion.get(p.competitionId) === p.userId) fila.ganados += 1;
@@ -187,12 +251,38 @@ export async function getPalmares(): Promise<Palmares> {
         ? combate.participantBId
         : combate.participantAId;
     const perdedor = porParticipante.get(perdedorId);
-    if (ganador) deLaPersona(ganador.userId, ganador).victorias += 1;
-    if (perdedor) deLaPersona(perdedor.userId, perdedor).derrotas += 1;
+    if (ganador) deLaPersona(ganador).victorias += 1;
+    if (perdedor) deLaPersona(perdedor).derrotas += 1;
+  }
+
+  /**
+   * De los lockes de antes solo hay nombres de cuenta, no motes de edición: no
+   * existió ninguna ficha de participante de aquello. Se piden de una vez, que
+   * puede haber gente que ya no juegue nada y no salga por ningún otro lado.
+   */
+  const cuentas = deAntes.length
+    ? await prisma.user.findMany({
+        where: { id: { in: [...new Set(deAntes.flatMap((l) => l.jugadoresIds))] } },
+        select: { id: true, displayName: true, avatarColor: true },
+      })
+    : [];
+  const nombreDeCuenta = new Map(cuentas.map((quien) => [quien.id, quien]));
+
+  for (const locke of deAntes) {
+    for (const userId of locke.jugadoresIds) {
+      const cuenta = nombreDeCuenta.get(userId);
+      const fila = deLaPersona({
+        userId,
+        displayName: cuenta?.displayName ?? "Alguien",
+        color: cuenta?.avatarColor ?? "#64748b",
+      });
+      fila.lockes += 1;
+      if (userId === locke.ganadorId) fila.ganados += 1;
+    }
   }
 
   return {
-    ediciones: ediciones.sort(
+    ediciones: [...ediciones, ...apuntados].sort(
       (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
     ),
     gente: [...gente.values()].sort(

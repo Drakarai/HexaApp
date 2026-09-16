@@ -1,6 +1,11 @@
-import { requireUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+import { requireUser, esCreador, puedeCrearLockes } from "@/lib/auth";
 import { abrirCompeticionAction } from "@/app/actions/competitions";
-import { getPalmares } from "@/lib/palmares";
+import { borrarLockeDeAntesAction } from "@/app/actions/lockes-de-antes";
+import { ConfirmSubmit } from "@/components/ui";
+import { ApuntarLockeDeAntesForm } from "./apuntar-form";
+import { getPalmares, type CampeonDeUnLocke } from "@/lib/palmares";
+import { getActiveCompetition } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, EmptyState } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
@@ -11,8 +16,30 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 export default async function PalmaresPage() {
   // No hace falta edición activa: esta pantalla va por encima de todas
-  await requireUser();
+  const user = await requireUser();
   const { ediciones, gente } = await getPalmares();
+
+  /** Apuntar lockes de antes lo puede hacer quien puede montarlos */
+  const puedeApuntar = esCreador(user) || puedeCrearLockes(user);
+  const [cuentas, jugandoAhora] = puedeApuntar
+    ? await Promise.all([
+        prisma.user.findMany({
+          orderBy: { displayName: "asc" },
+          select: { id: true, displayName: true, username: true },
+        }),
+        // Los del locke que se está jugando: son los que vienen marcados
+        getActiveCompetition().then((activa) =>
+          activa
+            ? prisma.participant
+                .findMany({
+                  where: { competitionId: activa.id },
+                  select: { userId: true },
+                })
+                .then((filas) => filas.map((fila) => fila.userId))
+            : [],
+        ),
+      ])
+    : [[], []];
 
   if (!ediciones.length) {
     return (
@@ -22,6 +49,7 @@ export default async function PalmaresPage() {
           title="Todavía no hay ninguna edición"
           hint="Aquí se juntarán todos los lockes que hayas jugado."
         />
+        {puedeApuntar ? <ApuntarLockeDeAntesForm cuentas={cuentas} deEntrada={jugandoAhora} /> : null}
       </>
     );
   }
@@ -111,10 +139,37 @@ export default async function PalmaresPage() {
           {ediciones.map((edicion) => (
             <li key={edicion.competitionId}>
               {/**
-               * Abrir una edición es cambiar la cookie de cuál se está
-               * mirando, así que es un formulario y no un enlace; la acción
-               * vuelve a comprobar en el servidor quién puede abrir cuál.
+               * Un locke de antes no se puede abrir: no hay nada suyo
+               * guardado, solo esta línea. Así que se pinta igual pero sin
+               * formulario, y con su botón de quitarlo si es tuyo.
                */}
+              {edicion.deAntes ? (
+                <div className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5">
+                  <div className="flex items-center gap-3">
+                    <Ficha edicion={edicion} />
+                  </div>
+                  {/* El botón debajo y no al lado: al lado apretaba el nombre
+                      del juego y la fecha hasta dejarlos en puntos suspensivos */}
+                  {edicion.puedeBorrar ? (
+                    <form
+                      action={borrarLockeDeAntesAction}
+                      className="mt-2 flex justify-end"
+                    >
+                      <input
+                        type="hidden"
+                        name="id"
+                        value={edicion.competitionId}
+                      />
+                      <ConfirmSubmit
+                        className="btn-ghost btn-sm text-slate-500"
+                        message={`¿Quitar ${edicion.nombre} del palmarés?`}
+                      >
+                        ✕ Quitarlo del palmarés
+                      </ConfirmSubmit>
+                    </form>
+                  ) : null}
+                </div>
+              ) : (
               <form action={abrirCompeticionAction}>
                 <input
                   type="hidden"
@@ -130,47 +185,15 @@ export default async function PalmaresPage() {
                       : "border-dashed border-white/10 bg-white/[0.01]",
                   )}
                 >
-                  <span className="text-xl" aria-hidden>
-                    {edicion.terminado ? "🏆" : "⏳"}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-white">
-                      {edicion.nombre}
-                    </p>
-                    <p className="truncate text-xs text-slate-500">
-                      {edicion.game ? `${edicion.game} · ` : ""}
-                      {formatDate(edicion.startedAt)}
-                    </p>
-                  </div>
-                  {edicion.campeon ? (
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Avatar
-                        name={edicion.campeon.displayName}
-                        color={edicion.campeon.color}
-                        image={edicion.campeon.avatarImage}
-                        size={26}
-                      />
-                      <div className="text-right">
-                        <p className="text-sm font-semibold text-amber-200">
-                          {edicion.campeon.displayName}
-                        </p>
-                        {edicion.subcampeon ? (
-                          <p className="text-[11px] text-slate-500">
-                            ganó a {edicion.subcampeon.displayName}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : (
-                    <span className="shrink-0 text-xs text-slate-500">
-                      En marcha
-                    </span>
-                  )}
+                  <Ficha edicion={edicion} />
                 </button>
               </form>
+              )}
             </li>
           ))}
         </ul>
+
+        {puedeApuntar ? <ApuntarLockeDeAntesForm cuentas={cuentas} deEntrada={jugandoAhora} /> : null}
       </section>
     </>
   );
@@ -184,5 +207,49 @@ function Cifra({ valor, rotulo }: { valor: string | number; rotulo: string }) {
         {rotulo}
       </p>
     </div>
+  );
+}
+
+/** La línea de una edición: nombre, juego, fecha y quién la ganó. */
+function Ficha({ edicion }: { edicion: CampeonDeUnLocke }) {
+  return (
+    <>
+      <span className="text-xl" aria-hidden>
+        {edicion.deAntes ? "📜" : edicion.terminado ? "🏆" : "⏳"}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate font-semibold text-white">{edicion.nombre}</p>
+        <p className="truncate text-xs text-slate-500">
+          {edicion.game ? `${edicion.game} · ` : ""}
+          {formatDate(edicion.startedAt)}
+          {edicion.deAntes ? " · a mano" : ""}
+        </p>
+        {edicion.notas ? (
+          <p className="truncate text-[11px] text-slate-600">{edicion.notas}</p>
+        ) : null}
+      </div>
+      {edicion.campeon ? (
+        <div className="flex shrink-0 items-center gap-2">
+          <Avatar
+            name={edicion.campeon.displayName}
+            color={edicion.campeon.color}
+            image={edicion.campeon.avatarImage}
+            size={26}
+          />
+          <div className="text-right">
+            <p className="text-sm font-semibold text-amber-200">
+              {edicion.campeon.displayName}
+            </p>
+            {edicion.subcampeon ? (
+              <p className="text-[11px] text-slate-500">
+                ganó a {edicion.subcampeon.displayName}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : (
+        <span className="shrink-0 text-xs text-slate-500">En marcha</span>
+      )}
+    </>
   );
 }
