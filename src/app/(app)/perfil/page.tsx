@@ -160,20 +160,48 @@ export default async function ProfilePage() {
         <ThemePicker current={user.theme} />
       </section>
 
-      {esCreador(user) ? (
-        <section className="card mt-4">
-          <h2 className="section-title mb-1">Diagnóstico</h2>
-          <p className="muted mb-4">
-            Cuánto ocupa la base de datos y cuántos lockes cabrían, y lo que
-            tarda la aplicación en hablar con ella cuando va lenta. Es para
-            mirarlo de vez en cuando, no todos los días, así que vive aquí y en
-            Administración en vez de ocupar sitio en el menú.
-          </p>
-          <Link href="/diagnostico" className="btn-ghost">
-            🩺 Ver el diagnóstico
+      {/**
+       * Las pantallas de gestionar viven aquí, a un toque del avatar, y **no en
+       * el menú**: se abren de uvas a peras y al final de "La edición" la
+       * dejaban en ocho entradas. Lo de todos los días no tiene por qué
+       * compartir sitio con lo de montar el tinglado.
+       */}
+      <section className="card mt-4">
+        <h2 className="section-title mb-1">Gestionar</h2>
+        <p className="muted mb-4">
+          Lo que se toca de vez en cuando. No está en el menú de abajo para no
+          llenarlo: se llega desde aquí, tocando tu foto.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/competiciones" className="btn-ghost">
+            🗂️ Ediciones
           </Link>
-        </section>
-      ) : null}
+          {esCreador(user) ? (
+            <>
+              <Link href="/admin" className="btn-ghost">
+                ⚙️ Administración
+              </Link>
+              <Link href="/diagnostico" className="btn-ghost">
+                🩺 Diagnóstico
+              </Link>
+            </>
+          ) : null}
+        </div>
+        {esCreador(user) ? (
+          <p className="muted mt-3 text-xs">
+            En <strong>Ediciones</strong> están los jugadores y los ajustes de
+            cada locke. En <strong>Administración</strong>, lo que vale para
+            toda la aplicación: mapas, catálogo, cuentas y copias. El{" "}
+            <strong>diagnóstico</strong> dice cuánto ocupa la base de datos y
+            cuántos lockes cabrían.
+          </p>
+        ) : (
+          <p className="muted mt-3 text-xs">
+            En <strong>Ediciones</strong> ves quién juega cada locke y puedes
+            cambiar de uno a otro.
+          </p>
+        )}
+      </section>
 
       <section className="card mt-4">
         <h2 className="section-title mb-1">Cuando algo va mal</h2>

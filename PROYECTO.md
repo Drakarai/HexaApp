@@ -863,6 +863,22 @@ de tipo `CHAMPION`, que es el que ya representa la Liga. Un dato calculado no se
 puede desincronizar de la marca de la que sale, que es la misma razón por la que
 el MVP tampoco se guarda.
 
+**Lo de gestionar no está en el menú: vive dentro de Mi perfil.** *Ediciones*,
+*Administración* y *Diagnóstico* se abren desde ahí, a un toque del avatar de
+arriba. El diagnóstico ya lo hacía y se extendió a los otros dos: colgados al
+final de "La edición" la dejaban en **ocho entradas**, y lo de todos los días
+—clasificación, caja, actividad, level caps, reglas, palmarés— no tiene por qué
+compartir sitio con lo de montar el tinglado. Con eso "La edición" se queda en
+seis, igual para quien administra y para quien solo juega.
+
+**Las cuatro pestañas de abajo no se tocan**: el usuario lo pidió así, y son lo
+que la gente ya tiene aprendido. Si mañana hace falta otra pantalla de
+gestionar, el sitio es ese bloque de *Mi perfil*, no una pestaña nueva.
+
+Ojo con una cosa: las pantallas que se guardan para verlas sin conexión salen
+del propio menú (`rutasParaGuardar`), así que al sacar *Ediciones* de ahí dejaba
+de guardarse. Se añade a mano, porque es de donde sale la lista de quién juega.
+
 **Un locke no se ve por defecto.** Hasta ahora cualquier cuenta que entrara se
 leía todos los Hexalockes enteros —muertes, puntos, jornadas, perfiles—, y eso
 no es lo que quiere un grupo privado: un locke es de los que lo juegan. Ahora

@@ -154,9 +154,14 @@ export default async function AppLayout({
   }
 
   /**
-   * Ediciones y Administración van al final de "La edición": son de gestionar,
-   * se tocan de uvas a peras y no merecen una pestaña propia. El diagnóstico no
-   * está en ninguna: vive dentro de Mi perfil.
+   * **Ediciones, Administración y Diagnóstico no salen en el menú**: viven
+   * dentro de *Mi perfil*, a un toque del avatar de arriba.
+   *
+   * Es lo que hacía ya el diagnóstico y se extendió a los otros dos: son
+   * pantallas de gestionar, se abren de uvas a peras, y al final de "La
+   * edición" la dejaban en ocho entradas. Lo de todos los días —clasificación,
+   * caja, actividad, level caps, reglas— no tiene por qué compartir sitio con
+   * lo de montar el tinglado.
    */
   const finalConSuNombre: NavItem = {
     ...S.finalFour,
@@ -207,8 +212,6 @@ export default async function AppLayout({
                     : item,
                 ),
               ...(perfil.enSolitario ? [S.hall] : []),
-              S.ediciones,
-              ...(esCreador(user) ? [S.admin] : []),
             ],
           },
         ]
@@ -255,7 +258,16 @@ export default async function AppLayout({
    * del menú de cada uno, que son las suyas. Sale de aquí y no de una lista
    * aparte para que una sección nueva entre sola.
    */
-  const rutasParaGuardar = ["/", ...Object.keys(rutasDeGrupo)];
+  const rutasParaGuardar = [
+    "/",
+    ...Object.keys(rutasDeGrupo),
+    /**
+     * Ediciones va aparte porque ya no está en el menú: es de donde sale la
+     * lista de quién juega, y sin ella se dejaba de guardar para verla sin
+     * conexión, que es un paso atrás que nadie pidió.
+     */
+    S.ediciones.href,
+  ];
 
   const switcher = (
     <CompetitionSwitcher
