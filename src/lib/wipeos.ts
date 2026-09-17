@@ -1,10 +1,10 @@
 /**
  * Los dos motivos por los que alguien puede estar fuera de un locke.
  *
- * Para la competición son lo mismo —deja de emparejarse, no cuenta para el MVP
- * ni para el formato del final, y sus combates pendientes los gana el rival—,
- * así que los dos se guardan en `Participant.retiredAt`. Esto es solo **por
- * qué**, que es lo que se enseña y lo único que los distingue.
+ * Para casi todo son lo mismo —deja de emparejarse, no cuenta para el formato
+ * del final y sus combates pendientes los gana el rival—, así que los dos se
+ * guardan en `Participant.retiredAt`. Esto es **por qué**, que es lo que se
+ * enseña y, en una cosa, lo que decide: **votar al MVP** (ver `puedeVotarElMvp`).
  */
 export const MOTIVOS_DE_SALIDA = {
   /** Lo dejó él */
@@ -50,3 +50,30 @@ export function comoEstaFuera(participante: {
     ? SALIDAS[MOTIVOS_DE_SALIDA.WIPEO]
     : SALIDAS[MOTIVOS_DE_SALIDA.RETIRADA];
 }
+
+/**
+ * Quién vota al MVP de la jornada: los que siguen jugando y **los que perdieron
+ * el locke**. Al que lo pierde no se le echa del grupo: sigue mirando los
+ * combates y opinando, y dejarle sin voto era castigarle dos veces. El que se
+ * retira sí deja de votar, porque se ha ido.
+ *
+ * Es lo único en lo que los dos motivos de salida no dan igual, así que se
+ * pregunta aquí y no con un `retiredAt === null` suelto por ahí.
+ */
+export function puedeVotarElMvp(participante: {
+  retiredAt: Date | null;
+  motivoDeSalida?: string | null;
+}) {
+  return (
+    !participante.retiredAt ||
+    participante.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO
+  );
+}
+
+/** Lo mismo, dicho en una consulta de Prisma */
+export const VOTANTES_DEL_MVP = {
+  OR: [
+    { retiredAt: null },
+    { motivoDeSalida: MOTIVOS_DE_SALIDA.WIPEO },
+  ],
+};

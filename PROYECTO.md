@@ -259,7 +259,7 @@ una jornada no cambia aunque ese pokémon muera después.
 **El MVP de la jornada sale de una votación**, no lo elige nadie a dedo. Los
 candidatos son todos los pokémon que jugaron esa jornada, y vota cada jugador de
 la competición (uno por jornada; volver a votar cambia el voto en vez de sumar
-otro). Gana por **mayoría simple**: el más votado, aunque no pase de la mitad.
+otro) **incluidos los que perdieron el locke**; los que se retiraron, no. Gana por **mayoría simple**: el más votado, aunque no pase de la mitad.
 El ganador **no se guarda**, se recalcula del recuento, para que no pueda quedar
 desincronizado si alguien cambia su voto o se borra un pokémon. Si hay empate
 arriba no hay MVP: o alguien mueve su voto, o un administrador desempata, y ese
@@ -1793,8 +1793,8 @@ una baja: es su partida y lo sabe él. Dejar a alguien fuera es solo de la
 organización.
 
 **"Perdió el locke" y "se retiró" son el mismo estado con distinto motivo.** Para
-la competición son idénticos —deja de emparejarse, no cuenta para el MVP ni para
-el formato del final, y sus combates pendientes los gana el rival—, y toda esa
+la competición son casi idénticos —deja de emparejarse, no cuenta para el
+formato del final, y sus combates pendientes los gana el rival—, y toda esa
 maquinaria ya preguntaba por `Participant.retiredAt`. Así que un locke perdido
 también rellena esa fecha, y lo que los distingue es `motivoDeSalida`.
 
@@ -1807,6 +1807,24 @@ cuenta, que es justo lo que se quería distinguir: en rojo y con su nombre.
 Comprobado que de verdad queda fuera: con seis jugadores y uno con el locke
 perdido, la jornada siguiente empareja a cuatro y deja descansando a uno, sin
 contar con él.
+
+**El que pierde el locke sigue votando el MVP; el que se retira, no.** Es lo
+único en lo que los dos motivos de salida no dan igual, y por eso se pregunta
+con `puedeVotarElMvp()` y no con un `retiredAt === null` suelto. Al que lo
+pierde no se le echa del grupo: sigue viendo los combates y opinando, y dejarle
+sin voto era castigarle dos veces. El que se retira se ha ido, y ya está.
+
+Son **cuatro sitios** y hay que tocar los cuatro: la acción de votar (que es la
+que manda), la chapa que pinta los botones, el recuento de votantes de
+`lib/mvp.ts` —si contara un retirado la votación nunca estaría completa, y si no
+contara un wipeado estaría "completa" faltando su voto— y **el punto ámbar**.
+Este último es el que se olvida: el aviso de "te toca votar" no se apaga por
+mirarlo, sino por votar, así que a un retirado se le quedaría encendido para
+siempre. Por eso `getAvisos` recibe `puedeVotar`.
+
+Un voto de alguien que se retira después **se queda**: es lo que pasó, y borrarlo
+cambiaría un MVP ya decidido. Como entonces puede haber más votos que votantes,
+el recuento enseña `Math.max(votantes, votos)` y nunca un "6/5".
 
 **Pero estar fuera no quita el mando.** Quien administra el locke lo sigue
 administrando aunque se retire o pierda el locke: quien organiza suele jugar, y
@@ -2085,8 +2103,10 @@ Piezas con truco:
 - `lib/wipeos.ts` — los dos motivos de estar fuera y cómo se cuenta cada uno.
   `actions/wipeos.ts` son las marcas y el estado; `jugador/[id]/wipeos-client.tsx`
   la sección del perfil. **Al mirar si alguien sigue jugando se pregunta por
-  `retiredAt`**, que vale para los dos casos; `motivoDeSalida` es solo para
-  enseñarlo.
+  `retiredAt`**, que vale para los dos casos; `motivoDeSalida` es para enseñarlo
+  y para lo único donde los dos motivos no dan igual: **votar al MVP**, que sí
+  puede el que perdió el locke y no el que se retiró (`puedeVotarElMvp()` y
+  `VOTANTES_DEL_MVP`, su gemelo para las consultas de Prisma).
 - `lib/retiradas.ts` — quién tiene combates pendientes por estar fuera y cuándo
   se le dan al rival. **`Match.excepcion` es lo que le dice que no toque uno**:
   un combate con permiso ni se reparte ni sale como "pendiente por retirada",
@@ -2488,3 +2508,5 @@ lugar de destruir datos, y hay que avisar antes.
     dicen qué hacen.
 59. **La ruleta reparte premios**: una casilla puede ser un objeto de la bolsa
     o tickets de una ruleta, y sale sola a la bolsa o al saldo de quien gira.
+60. **El que pierde el locke sigue votando el MVP**, y el que se retira deja de
+    votar: es lo único en lo que los dos motivos de salida no dan igual.

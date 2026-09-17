@@ -31,12 +31,19 @@ export async function getAvisos({
   userId,
   competitionId,
   participantId,
+  puedeVotar = true,
   esAdmin = false,
 }: {
   userId: string;
   competitionId: string;
   /** Su participante en esta edición, o null si no la juega */
   participantId: string | null;
+  /**
+   * Si le toca votar al MVP. El que se retiró no vota, y sin esto se quedaría
+   * con el punto ámbar de "tienes algo que hacer" encendido **para siempre**,
+   * porque lo que lo apaga es justamente votar. Ver `lib/wipeos.ts`.
+   */
+  puedeVotar?: boolean;
   /** Administrador global: a él además le avisan las peticiones sin responder */
   esAdmin?: boolean;
 }): Promise<Avisos> {
@@ -53,6 +60,8 @@ export async function getAvisos({
   // En SQL no hay "sin participante": se usa un id que no existe y las
   // subconsultas suyas se quedan vacías solas.
   const yo = participantId ?? "";
+  /** El mismo truco para el voto: si no votas, la subconsulta se queda vacía */
+  const votante = puedeVotar ? yo : "";
 
   const [fila] = await prisma.$queryRaw<
     { combates: boolean; edicion: boolean; lomio: boolean }[]
@@ -76,13 +85,13 @@ export async function getAvisos({
         OR EXISTS (
           SELECT 1 FROM "Matchday" md
            WHERE md."competitionId" = ${competitionId}
-             AND ${yo} <> ''
+             AND ${votante} <> ''
              AND EXISTS (SELECT 1 FROM "Match" mt
                           JOIN "MatchPokemon" mp ON mp."matchId" = mt.id
                          WHERE mt."matchdayId" = md.id)
              AND NOT EXISTS (SELECT 1 FROM "MvpVote" v
                               WHERE v."matchdayId" = md.id
-                                AND v."voterId" = ${yo})
+                                AND v."voterId" = ${votante})
         )
       ) AS combates,
       (

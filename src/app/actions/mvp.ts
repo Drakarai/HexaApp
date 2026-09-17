@@ -7,6 +7,7 @@ import {
   getMyParticipant,
   requireCompetitionManager,
 } from "@/lib/competition";
+import { puedeVotarElMvp } from "@/lib/wipeos";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -24,9 +25,10 @@ export async function castMvpVoteAction(formData: FormData) {
   });
   if (!matchday) return;
 
-  // Solo votan los que juegan: un administrador que no participa, no.
+  // Solo votan los que juegan: un administrador que no participa, no. Y de los
+  // que están fuera, solo los que perdieron el locke: ver lib/wipeos.ts
   const voter = await getMyParticipant(matchday.competitionId, me.id);
-  if (!voter) return;
+  if (!voter || !puedeVotarElMvp(voter)) return;
 
   // El candidato tiene que ser de esa misma jornada
   const candidate = await prisma.matchPokemon.findFirst({
@@ -55,7 +57,7 @@ export async function clearMvpVoteAction(formData: FormData) {
   if (!matchday) return;
 
   const voter = await getMyParticipant(matchday.competitionId, me.id);
-  if (!voter) return;
+  if (!voter || !puedeVotarElMvp(voter)) return;
 
   await prisma.mvpVote.deleteMany({ where: { matchdayId, voterId: voter.id } });
   revalidatePath("/jornadas");

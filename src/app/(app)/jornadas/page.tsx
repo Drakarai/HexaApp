@@ -9,7 +9,7 @@ import {
 } from "@/lib/competition";
 import { getMvpStates } from "@/lib/mvp";
 import { combatesEsperandoRetirada } from "@/lib/retiradas";
-import { comoEstaFuera } from "@/lib/wipeos";
+import { comoEstaFuera, puedeVotarElMvp } from "@/lib/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -235,7 +235,11 @@ export default async function MatchdaysPage() {
                           myVoteId: mvpState.myVoteId,
                           votesCast: mvpState.votesCast,
                           voterCount: mvpState.voterCount,
-                          canVote: Boolean(myParticipant),
+                          // El que perdió el locke sigue votando; el que se
+                          // retiró, no: ver lib/wipeos.ts
+                          canVote: Boolean(
+                            myParticipant && puedeVotarElMvp(myParticipant),
+                          ),
                           canManage,
                         }}
                       />

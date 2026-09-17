@@ -18,6 +18,7 @@ import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getAvisos } from "@/lib/novedades";
+import { puedeVotarElMvp } from "@/lib/wipeos";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -117,6 +118,7 @@ export default async function AppLayout({
           userId: user.id,
           competitionId: active.id,
           participantId: yo?.id ?? null,
+          puedeVotar: yo ? puedeVotarElMvp(yo) : false,
           esAdmin: esCreador(user),
         }),
       ])

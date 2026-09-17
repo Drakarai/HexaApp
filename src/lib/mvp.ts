@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { urlsDeImagen } from "@/lib/imagenes";
+import { VOTANTES_DEL_MVP } from "@/lib/wipeos";
 
 export type MvpCandidate = {
   id: string;
@@ -65,9 +66,12 @@ export async function getMvpStates(
       where: { id: { in: matchdayIds } },
       select: { id: true, mvpTiebreakId: true },
     }),
-    // Solo los que siguen jugando: si un retirado contara como votante, la
-    // votación nunca llegaría a estar completa
-    prisma.participant.count({ where: { competitionId, retiredAt: null } }),
+    // Los que pueden votar: los que siguen y los que perdieron el locke. Si
+    // contara un retirado, la votación nunca llegaría a estar completa; si no
+    // contara un wipeado, estaría "completa" faltando su voto. Ver lib/wipeos.
+    prisma.participant.count({
+      where: { competitionId, ...VOTANTES_DEL_MVP },
+    }),
   ]);
 
   const ids = pokemon.map((row) => row.id);
@@ -133,16 +137,20 @@ export async function getMvpStates(
       if (!winner) tied = leaders;
     }
 
+    const votesCast = votes
+      .filter((row) => row.matchdayId === matchdayId)
+      .reduce((sum, row) => sum + row._count._all, 0);
+
     states.set(matchdayId, {
       matchdayId,
       candidates,
       winner,
       tied,
       myVoteId: myVoteByMatchday.get(matchdayId) ?? null,
-      votesCast: votes
-        .filter((row) => row.matchdayId === matchdayId)
-        .reduce((sum, row) => sum + row._count._all, 0),
-      voterCount,
+      votesCast,
+      // Alguien pudo votar y retirarse después: su voto se queda —es lo que
+      // pasó— pero ya no cuenta como votante, y sin esto saldría "6/5 votos"
+      voterCount: Math.max(voterCount, votesCast),
     });
   }
 

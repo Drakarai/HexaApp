@@ -415,7 +415,8 @@ function Votacion({ mvp }: { mvp: MvpView }) {
 
       {!mvp.canVote ? (
         <p className="muted mt-3">
-          Solo votan los jugadores de la competición.
+          Votan los jugadores de la competición, también los que perdieron el
+          locke. Quien se retira, ya no.
         </p>
       ) : null}
     </div>
