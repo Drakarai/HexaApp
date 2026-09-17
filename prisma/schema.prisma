@@ -22,55 +22,53 @@ datasource db {
 // ---------------------------------------------------------------------------
 
 model User {
-  id           String   @id @default(cuid())
-  username     String   @unique
-  displayName  String
-  passwordHash String
+  id               String   @id @default(cuid())
+  username         String   @unique
+  displayName      String
+  passwordHash     String
   // "ADMIN" | "PLAYER". Los admin globales pueden crear competiciones y usuarios.
-  role         String   @default("PLAYER")
+  role             String   @default("PLAYER")
   /**
    * Permiso de **organizador**: puede montar sus propios lockes y dar de alta a
    * la gente que juega con él, sin ver los lockes de los demás.
-   *
    * Es una marca aparte y no un rol nuevo a propósito: un organizador no es
    * medio administrador global —no toca el catálogo de objetos, ni los mapas,
    * ni las copias de seguridad, ni ve un locke en el que no juega—, solo se le
    * levanta la puerta de "crear". Lo da y lo quita un administrador global.
    */
-  puedeCrearLockes Boolean @default(false)
+  puedeCrearLockes Boolean  @default(false)
   /**
    * Quién dio de alta esta cuenta, si la dio un organizador.
-   *
    * Hace falta para que un organizador pueda arreglar lo suyo —cambiarle la
    * contraseña a alguien de su grupo, borrar una cuenta que creó mal— sin poder
    * tocar las cuentas del resto de la casa. En las cuentas que creó un
    * administrador global va vacío.
    */
-  creadoPorId  String?
-  creadoPor    User?    @relation("CuentasCreadas", fields: [creadoPorId], references: [id], onDelete: SetNull)
-  cuentasCreadas User[] @relation("CuentasCreadas")
-  avatarColor  String   @default("#6366f1")
+  creadoPorId      String?
+  creadoPor        User?    @relation("CuentasCreadas", fields: [creadoPorId], references: [id], onDelete: SetNull)
+  cuentasCreadas   User[]   @relation("CuentasCreadas")
+  avatarColor      String   @default("#6366f1")
   // Foto de perfil: URL externa o imagen subida (data URL ya redimensionada)
-  avatarImage  String?
+  avatarImage      String?
   // Tema de color elegido, uno por juego principal. Ver src/lib/themes.ts
-  theme        String   @default("hexa")
-  createdAt    DateTime @default(now())
+  theme            String   @default("hexa")
+  createdAt        DateTime @default(now())
 
-  participations       Participant[]
-  notes                Note[]
-  pointsGiven          PointEntry[]     @relation("PointAuthor")
-  spins                RouletteSpin[]
-  competitions         Competition[]    @relation("CompetitionCreator")
-  ticketsGiven         RouletteTicket[] @relation("TicketAuthor")
-  titles               TitleAward[]     @relation("TitleOwner")
-  titlesGiven          TitleAward[]     @relation("TitleGiver")
-  visitas              TabSeen[]
-  espectador           Spectator[]
-  solicitudes          LockeRequest[]   @relation("SolicitanteDeLocke")
-  solicitudesResueltas LockeRequest[]   @relation("ResolutorDeLocke")
-  lockesDeAntesGanados LockeDeAntes[]   @relation("GanadorDeAntes")
-  lockesDeAntesSegundo LockeDeAntes[]   @relation("SubcampeonDeAntes")
-  lockesDeAntesApuntados LockeDeAntes[] @relation("ApuntadorDeAntes")
+  participations         Participant[]
+  notes                  Note[]
+  pointsGiven            PointEntry[]     @relation("PointAuthor")
+  spins                  RouletteSpin[]
+  competitions           Competition[]    @relation("CompetitionCreator")
+  ticketsGiven           RouletteTicket[] @relation("TicketAuthor")
+  titles                 TitleAward[]     @relation("TitleOwner")
+  titlesGiven            TitleAward[]     @relation("TitleGiver")
+  visitas                TabSeen[]
+  espectador             Spectator[]
+  solicitudes            LockeRequest[]   @relation("SolicitanteDeLocke")
+  solicitudesResueltas   LockeRequest[]   @relation("ResolutorDeLocke")
+  lockesDeAntesGanados   LockeDeAntes[]   @relation("GanadorDeAntes")
+  lockesDeAntesSegundo   LockeDeAntes[]   @relation("SubcampeonDeAntes")
+  lockesDeAntesApuntados LockeDeAntes[]   @relation("ApuntadorDeAntes")
 }
 
 /**
@@ -167,28 +165,28 @@ model TitleAward {
  * `lib/mapas-de-fabrica.ts` solo se copian la primera vez.
  */
 model MapRegion {
-  id     String  @id @default(cuid())
+  id      String  @id @default(cuid())
   /**
    * "johto", "kanto"… El identificador de lib/juegos.ts
    */
-  slug   String  @unique
-  name   String
+  slug    String  @unique
+  name    String
   /**
    * La imagen del mapa, si alguien la sube: las chinchetas se pintan encima.
    * Es opcional y el esquema funciona igual sin ella.
    */
-  image  String?
+  image   String?
   /**
    * Tamaño del lienzo sobre el que se colocan las zonas
    */
-  width  Int     @default(1490)
-  height Int     @default(890)
+  width   Int     @default(1490)
+  height  Int     @default(890)
   /**
    * Cuánto se rellenan las zonas, en tanto por ciento. Con un mapa dibujado a
    * mano interesa el 100; con una imagen detallada —las islas de Alola— se baja
    * para que las zonas queden como puntos encima sin tapar el dibujo.
    */
-  relleno Int @default(100)
+  relleno Int     @default(100)
 
   zones MapZone[]
 }
@@ -334,10 +332,13 @@ model Item {
   isGroup     Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  options ItemOption[]
-  entries BagEntry[]
-  uses    BagUse[]
-  premios ChallengePrize[]
+  options       ItemOption[]
+  entries       BagEntry[]
+  uses          BagUse[]
+  premios       ChallengePrize[]
+  // Las casillas de ruleta que lo reparten, y los giros en los que ya tocó
+  casillas      RouletteOption[]
+  girosDeRuleta RouletteSpin[]
 }
 
 /**
@@ -488,17 +489,17 @@ model Spectator {
 }
 
 model Participant {
-  id            String    @id @default(cuid())
-  competitionId String
-  userId        String
+  id             String    @id @default(cuid())
+  competitionId  String
+  userId         String
   // Nombre mostrado dentro de esta competición (mote/nick del jugador)
-  displayName   String
+  displayName    String
   // Edición del juego que le tocó ("HeartGold" / "SoulSilver")
-  gameVersion   String?
-  color         String    @default("#6366f1")
+  gameVersion    String?
+  color          String    @default("#6366f1")
   // Admin de esta competición concreta (puede editar reglas, ruletas y puntos)
-  isAdmin       Boolean   @default(false)
-  joinedAt      DateTime  @default(now())
+  isAdmin        Boolean   @default(false)
+  joinedAt       DateTime  @default(now())
   /**
    * Cuándo se retiró del locke, si es que se retiró.
    * **No se le borra nada**: su cementerio, sus puntos y sus combates jugados
@@ -508,16 +509,14 @@ model Participant {
    * pendientes se dan por perdidos.
    * Es reversible: si vuelve, se le quita la marca. Los combates que ya se
    * hayan dado por retirada no se deshacen solos.
-   *
    * **Ojo**: esta fecha significa "cuándo dejó de competir", no solo "cuándo se
    * retiró". Un locke perdido por wipeo también la lleva; lo que los distingue
    * es `motivoDeSalida`.
    */
-  retiredAt     DateTime?
+  retiredAt      DateTime?
   /**
    * Por qué está fuera: `"retirada"` si lo dejó, `"wipeo"` si perdió el locke.
    * Vacío mientras siga jugando.
-   *
    * Se hace así, y no con una segunda fecha, **a propósito**: para el locke las
    * dos salidas son la misma cosa —deja de entrar en emparejamientos, no cuenta
    * para el MVP ni para el formato del final, y sus combates pendientes los gana
@@ -540,32 +539,33 @@ model Participant {
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  deaths        Death[]
-  wipeos        Wipeo[]
-  pointEntries  PointEntry[]
-  gymClears     GymClear[]
-  gymVideos     GymVideo[]
-  notesAbout    Note[]            @relation("NoteSubject")
-  matchesAsA    Match[]           @relation("MatchPlayerA")
-  matchesAsB    Match[]           @relation("MatchPlayerB")
-  matchesWon    Match[]           @relation("MatchWinner")
-  finalsWon     FinalMatch[]      @relation("FinalMatchWinner")
-  hallOfFame    HallOfFameEntry[]
-  tickets       RouletteTicket[]
-  matchTeams    MatchPokemon[]
-  mvpVotes      MvpVote[]         @relation("MvpVoter")
-  favorites     FavoritePokemon[]
-  challengesA   ChallengeMatch[]  @relation("ChallengePlayerA")
-  challengesB   ChallengeMatch[]  @relation("ChallengePlayerB")
-  challengesWon ChallengeMatch[]  @relation("ChallengeWinner")
-  bag           BagEntry[]
-  bagUses       BagUse[]
-  captures      Capture[]
-  royales       RoyalePuesto[]
-  sorteos       SorteoParticipante[]
-  aportadosASorteos SorteoPokemon[]  @relation("SorteoAportadoPor")
-  tocadosEnSorteos  SorteoPokemon[]  @relation("SorteoTocaA")
-  equipoDeTipos TypeTeam?
+  deaths            Death[]
+  wipeos            Wipeo[]
+  pointEntries      PointEntry[]
+  gymClears         GymClear[]
+  gymVideos         GymVideo[]
+  notesAbout        Note[]               @relation("NoteSubject")
+  matchesAsA        Match[]              @relation("MatchPlayerA")
+  matchesAsB        Match[]              @relation("MatchPlayerB")
+  matchesWon        Match[]              @relation("MatchWinner")
+  finalsWon         FinalMatch[]         @relation("FinalMatchWinner")
+  hallOfFame        HallOfFameEntry[]
+  tickets           RouletteTicket[]
+  premiosRuleta     RouletteSpin[]       @relation("PremioDeRuleta")
+  matchTeams        MatchPokemon[]
+  mvpVotes          MvpVote[]            @relation("MvpVoter")
+  favorites         FavoritePokemon[]
+  challengesA       ChallengeMatch[]     @relation("ChallengePlayerA")
+  challengesB       ChallengeMatch[]     @relation("ChallengePlayerB")
+  challengesWon     ChallengeMatch[]     @relation("ChallengeWinner")
+  bag               BagEntry[]
+  bagUses           BagUse[]
+  captures          Capture[]
+  royales           RoyalePuesto[]
+  sorteos           SorteoParticipante[]
+  aportadosASorteos SorteoPokemon[]      @relation("SorteoAportadoPor")
+  tocadosEnSorteos  SorteoPokemon[]      @relation("SorteoTocaA")
+  equipoDeTipos     TypeTeam?
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -804,7 +804,6 @@ model Death {
 
 /**
  * Un **wipeo**: que en un combate del juego te tumben el equipo entero.
- *
  * Por las reglas de siempre un wipeo es perder el locke, pero eso es muy duro
  * si pasa en la primera ruta, así que aquí es **solo una marca que se cuenta**.
  * Se ponen las que haga falta y se quitan si se apuntó una por error. Que
@@ -814,12 +813,18 @@ model Death {
 model Wipeo {
   id            String   @id @default(cuid())
   participantId String
-  /** Cuándo pasó. Por defecto hoy, y se puede corregir. */
+  /**
+   * Cuándo pasó. Por defecto hoy, y se puede corregir.
+   */
   ocurridoAt    DateTime @default(now())
-  /** Contra qué o quién: "Bruno", "la Ruta 34", "un Onix con Rugido". */
+  /**
+   * Contra qué o quién: "Bruno", "la Ruta 34", "un Onix con Rugido".
+   */
   contra        String?
   notas         String?
-  /** Quién lo apuntó: el propio jugador o quien administre el locke */
+  /**
+   * Quién lo apuntó: el propio jugador o quien administre el locke
+   */
   autorId       String?
   createdAt     DateTime @default(now())
 
@@ -881,21 +886,20 @@ model TypeTeam {
 // Historial de movimientos de puntos. El total de un participante es
 // competition.startingPoints + suma de todos sus deltas.
 model PointEntry {
-  id            String   @id @default(cuid())
-  competitionId String
-  participantId String
-  delta         Int
-  reason        String
-  createdById   String?
-  createdAt     DateTime @default(now())
+  id             String   @id @default(cuid())
+  competitionId  String
+  participantId  String
+  delta          Int
+  reason         String
+  createdById    String?
+  createdAt      DateTime @default(now())
   // Si el punto viene de ganar un combate de jornada, se enlaza con él para
   // poder rehacerlo si se corrige el resultado.
-  sourceMatchId String?  @unique
+  sourceMatchId  String?  @unique
   /**
    * Y si viene de ganar un Battle Royale, con el royale. Es otro campo y no el
    * de arriba porque son tablas distintas; la idea es la misma: si se corrige
    * el orden de llegada, el punto se recoloca en vez de duplicarse.
-   *
    * **Sin `@unique` a propósito**: añadir una restricción de unicidad hace que
    * `prisma db push` avise de posible pérdida de datos, y el despliegue de
    * Vercel corre ese comando sin aceptar avisos, así que el despliegue se
@@ -995,7 +999,6 @@ model Match {
    * Alguien que está fuera del locke lo juega igual, porque la organización
    * lo ha permitido. Es la excepción a la norma: se pone sola al montar a
    * mano un combate con alguien retirado o con el locke perdido.
-   *
    * **Sin esto el combate se daría por ganado al rival.** `lib/retiradas.ts`
    * reparte los combates pendientes de los que están fuera, y este hay que
    * dejarlo en paz para que lo jueguen.
@@ -1103,7 +1106,9 @@ model ChallengeMatch {
   playedAt       DateTime?
   notes          String?
   createdAt      DateTime  @default(now())
-  /** Qué tipo de combate es. Cada reto lleva el suyo, sin depender de nada */
+  /**
+   * Qué tipo de combate es. Cada reto lleva el suyo, sin depender de nada
+   */
   formato        String    @default("singles")
 
   competition  Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
@@ -1165,7 +1170,6 @@ model MvpVote {
 
 /**
  * Un **bote de pokémon que se reparte al azar** entre unas cuantas personas.
- *
  * Es lo que hace falta para jugar una jornada de "Pokémon de Préstamo": entre
  * todos se echan bichos al bote y la aplicación reparte, sin que nadie tenga
  * que hacer papelitos. Vive por su cuenta y no cuelga de una jornada: se puede
@@ -1175,7 +1179,9 @@ model Sorteo {
   id            String    @id @default(cuid())
   competitionId String
   label         String?
-  /** Cuándo se repartió. Vacío mientras el bote se está llenando */
+  /**
+   * Cuándo se repartió. Vacío mientras el bote se está llenando
+   */
   repartidoAt   DateTime?
   createdAt     DateTime  @default(now())
 
@@ -1186,7 +1192,9 @@ model Sorteo {
   @@index([competitionId, createdAt])
 }
 
-/** Quién entra en el reparto. De dos a seis, que es lo que cabe en un equipo. */
+/**
+ * Quién entra en el reparto. De dos a seis, que es lo que cabe en un equipo.
+ */
 model SorteoParticipante {
   id            String @id @default(cuid())
   sorteoId      String
@@ -1201,7 +1209,6 @@ model SorteoParticipante {
 
 /**
  * Un pokémon del bote.
- *
  * `tocaAId` vacío significa una de dos cosas según el momento: que todavía no
  * se ha repartido, o que **se quedó fuera** porque había más pokémon que
  * huecos. Un equipo son seis como mucho, así que con seis personas entran 36 y
@@ -1212,13 +1219,21 @@ model SorteoPokemon {
   sorteoId    String
   species     String
   nickname    String?
-  /** Sprite de caja, descargado al guardar como en el resto de la aplicación */
+  /**
+   * Sprite de caja, descargado al guardar como en el resto de la aplicación
+   */
   boxImage    String?
-  /** Quién lo echó al bote */
+  /**
+   * Quién lo echó al bote
+   */
   aportadoPor String?
-  /** A quién le ha tocado */
+  /**
+   * A quién le ha tocado
+   */
   tocaAId     String?
-  /** Su sitio dentro del equipo de quien le tocó */
+  /**
+   * Su sitio dentro del equipo de quien le tocó
+   */
   position    Int      @default(0)
   createdAt   DateTime @default(now())
 
@@ -1237,14 +1252,12 @@ model SorteoPokemon {
 /**
  * Un **Battle Royale**: un combate con más de dos jugadores dentro de una
  * jornada.
- *
  * Tiene su propia tabla y no cabe en `Match` a propósito. Un combate normal es
  * "A contra B, gana uno y le quedan tantos pokémon vivos"; un royale es
  * "entran cuatro y salen en este orden". Meterlo a la fuerza en la tabla de
  * siempre habría obligado a llenar de excepciones la clasificación, el cara a
  * cara y el emparejador, y a cambio no habría contado bien ninguna de las dos
  * cosas.
- *
  * Lo que sí comparte con los combates de siempre es el **equipo**: los pokémon
  * que saca cada uno se apuntan con el mismo editor (`MatchPokemon.royaleId`).
  */
@@ -1275,18 +1288,21 @@ model Royale {
 
 /**
  * Quién jugó un royale y en qué puesto quedó.
- *
  * `puesto` vacío significa "todavía no se sabe": un royale se prepara con sus
  * jugadores y el orden se rellena al terminar. Los puntos se los lleva el
  * primero, igual que el ganador de un combate normal.
  */
 model RoyalePuesto {
-  id            String @id @default(cuid())
+  id            String  @id @default(cuid())
   royaleId      String
   participantId String
-  /** 1 es el que gana. Vacío mientras no se haya jugado */
+  /**
+   * 1 es el que gana. Vacío mientras no se haya jugado
+   */
   puesto        Int?
-  /** Cuántos pokémon le quedaban vivos, si se quiere apuntar */
+  /**
+   * Cuántos pokémon le quedaban vivos, si se quiere apuntar
+   */
   vivos         Int?
   notes         String?
 
@@ -1347,7 +1363,9 @@ model FinalMatch {
   pokemonDiff Int?
   playedAt    DateTime?
   notes       String?
-  /** Enlace a la repetición, igual que en los combates de jornada */
+  /**
+   * Enlace a la repetición, igual que en los combates de jornada
+   */
   replayUrl   String?
 
   finalFour FinalFour    @relation(fields: [finalFourId], references: [id], onDelete: Cascade)
@@ -1418,22 +1436,45 @@ model Roulette {
   options     RouletteOption[]
   spins       RouletteSpin[]
   tickets     RouletteTicket[]
+  // Opciones y giros de otras ruletas que reparten tickets de esta
+  daTickets   RouletteOption[] @relation("PremioDeTickets")
+  dioTickets  RouletteSpin[]   @relation("GiroDaTickets")
 
   @@index([competitionId])
 }
 
+/**
+ * Una casilla de la ruleta. Puede ser texto suelto —lo de siempre— o **un
+ * premio de verdad**: un objeto del catálogo de la bolsa, o tickets de una
+ * ruleta. Los tres son excluyentes; `label` es lo que se pinta en la rueda y en
+ * los premios se rellena solo con el nombre del objeto o "2 × Castigos".
+ */
 model RouletteOption {
-  id         String  @id @default(cuid())
-  rouletteId String
-  label      String
+  id          String  @id @default(cuid())
+  rouletteId  String
+  label       String
   // Peso relativo: una opción con peso 3 sale el triple que una de peso 1
-  weight     Int     @default(1)
-  color      String?
-  enabled    Boolean @default(true)
-  position   Int     @default(0)
+  weight      Int     @default(1)
+  color       String?
+  enabled     Boolean @default(true)
+  position    Int     @default(0)
+  /**
+   * Si la opción es un objeto del catálogo, cae solo en la bolsa al salir
+   */
+  itemId      String?
+  /**
+   * De qué ruleta son los tickets que reparte, si reparte tickets
+   */
+  ticketsDeId String?
+  /**
+   * Cuántos: unidades del objeto o tickets. Sin premio no pinta nada.
+   */
+  cantidad    Int     @default(1)
 
-  roulette Roulette       @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
-  spins    RouletteSpin[]
+  roulette  Roulette       @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
+  spins     RouletteSpin[]
+  item      Item?          @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  ticketsDe Roulette?      @relation("PremioDeTickets", fields: [ticketsDeId], references: [id], onDelete: SetNull)
 
   @@index([rouletteId, position])
 }
@@ -1469,18 +1510,32 @@ model RouletteTicket {
 }
 
 model RouletteSpin {
-  id          String   @id @default(cuid())
-  rouletteId  String
-  optionId    String?
+  id                String   @id @default(cuid())
+  rouletteId        String
+  optionId          String?
   // Copia del texto por si luego se borra o renombra la opción
-  optionLabel String
-  spunById    String?
-  note        String?
-  createdAt   DateTime @default(now())
+  optionLabel       String
+  spunById          String?
+  note              String?
+  createdAt         DateTime @default(now())
+  /**
+   * El premio que tocó, **copiado** de la opción por lo mismo que el texto: la
+   * opción se puede borrar y el historial tiene que seguir sabiendo qué se dio
+   * y a quién. `entregadoA` es el participante que se lo llevó; en null con
+   * premio significa **pendiente de entregar**, que es lo que pasa cuando gira
+   * quien administra y no está gastando ticket de nadie.
+   */
+  premioItemId      String?
+  premioTicketsDeId String?
+  premioCantidad    Int      @default(0)
+  entregadoA        String?
 
-  roulette Roulette        @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
-  option   RouletteOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
-  spunBy   User?           @relation(fields: [spunById], references: [id], onDelete: SetNull)
+  roulette      Roulette        @relation(fields: [rouletteId], references: [id], onDelete: Cascade)
+  option        RouletteOption? @relation(fields: [optionId], references: [id], onDelete: SetNull)
+  spunBy        User?           @relation(fields: [spunById], references: [id], onDelete: SetNull)
+  premioItem    Item?           @relation(fields: [premioItemId], references: [id], onDelete: SetNull)
+  premioTickets Roulette?       @relation("GiroDaTickets", fields: [premioTicketsDeId], references: [id], onDelete: SetNull)
+  entregado     Participant?    @relation("PremioDeRuleta", fields: [entregadoA], references: [id], onDelete: SetNull)
 
   @@index([rouletteId])
 }
@@ -1495,7 +1550,6 @@ model RouletteSpin {
  */
 /**
  * Los apuntes que ya se han subido desde la cola de un móvil sin conexión.
- *
  * Solo guarda el identificador que generó el propio móvil: si el mismo apunte
  * llega dos veces —porque se reintentó, porque se abrió la aplicación en dos
  * sitios— la segunda se descarta en vez de duplicar la captura. No guarda el
@@ -1503,37 +1557,42 @@ model RouletteSpin {
  */
 /**
  * El almacén de imágenes: **cada una guardada una sola vez**.
- *
  * Antes, el sprite de Garchomp se guardaba entero en cada combate, en cada baja
  * y en cada bote: la misma imagen de 18 KB repetida decenas de veces. Aquí se
  * guarda una vez y las filas apuntan a ella con `ref:<clave>` en la columna de
  * siempre, que son 20 caracteres en vez de 18 KB.
- *
  * La **clave dice de dónde salió**, y por eso no hay que descargar nada que ya
  * se tenga:
  * - `pkm-6-box`, `pkm-6-detail-shiny`… el sprite de una especie. Nunca cambian.
  * - `obj-poke-ball` el dibujo de un objeto.
  * - `h-<md5>` una imagen cualquiera, guardada por su contenido. Es la que sale
- *   al deduplicar lo que ya estaba escrito.
- *
+ * al deduplicar lo que ya estaba escrito.
  * Como la clave manda en el contenido y el contenido no cambia nunca, la
  * dirección `/api/imagen/c/<clave>` se puede cachear para siempre **y la
  * comparten todas las filas**: el navegador se baja un Garchomp, no doce.
  */
 model Imagen {
   clave     String   @id
-  /** La imagen como data URL, igual que se guardaba antes en cada fila */
+  /**
+   * La imagen como data URL, igual que se guardaba antes en cada fila
+   */
   datos     String
-  /** Lo que ocupa, para poder enseñarlo sin leer la imagen entera */
+  /**
+   * Lo que ocupa, para poder enseñarlo sin leer la imagen entera
+   */
   bytes     Int
   createdAt DateTime @default(now())
 }
 
 model ApunteSincronizado {
-  /** El identificador que puso el móvil, no uno nuestro */
+  /**
+   * El identificador que puso el móvil, no uno nuestro
+   */
   id        String   @id
   userId    String
-  /** "captura" | "baja" | "gimnasio" | "nota" */
+  /**
+   * "captura" | "baja" | "gimnasio" | "nota"
+   */
   tipo      String
   createdAt DateTime @default(now())
 
@@ -1567,7 +1626,6 @@ model Backup {
    * Cómo está guardado el volcado. **1**: lo lleva todo dentro, imágenes
    * incluidas, que es como se guardaban antes del almacén. **2**: las imágenes
    * se sacan del almacén al leerla.
-   *
    * Es una columna y no se deduce de `imagenes` porque una copia puede
    * necesitar cero imágenes —una base de datos recién puesta— y entonces
    * parecería para siempre una copia por aligerar, con un aviso que no se iría
@@ -1576,7 +1634,6 @@ model Backup {
   formato    Int      @default(1)
   /**
    * Las claves del almacén que necesita esta copia (formato 2).
-   *
    * La copia **no guarda las imágenes**: ya están en `Imagen`, y guardarlas
    * otra vez en cada una de las cinco copias multiplicaba por cinco lo que más
    * pesa. Aquí queda apuntado cuáles hacen falta, para que la limpieza de
@@ -1590,13 +1647,11 @@ model Backup {
 /**
  * Un locke que se jugó **antes de que existiera la aplicación**, apuntado a
  * mano para que no se pierda del palmarés.
- *
  * No es una `Competition`: no tiene jornadas, ni bajas, ni combates, porque de
  * aquello no quedó nada guardado. Es solo la línea del palmarés —quién ganó, a
  * quién y cuándo—, y por eso vive en su propia tabla en vez de ensuciar
  * `Competition` con ediciones vacías que el resto de pantallas tendría que
  * aprender a esquivar.
- *
  * **Quién lo ve sale de `jugadoresIds`**: solo la gente que lo jugó. Si fuera
  * visible para todos, alguien que monta su propio locke vería el histórico de
  * un grupo con el que no tiene nada que ver.
@@ -1604,19 +1659,23 @@ model Backup {
 model LockeDeAntes {
   id           String   @id @default(cuid())
   nombre       String
-  /** El juego, escrito a mano: de entonces no hay identificador que valga */
+  /**
+   * El juego, escrito a mano: de entonces no hay identificador que valga
+   */
   juego        String?
   cuando       DateTime
   ganadorId    String
   subcampeonId String?
-  /** Las cuentas de quienes lo jugaron. El ganador entra siempre. */
+  /**
+   * Las cuentas de quienes lo jugaron. El ganador entra siempre.
+   */
   jugadoresIds String[] @default([])
   notas        String?
   createdById  String?
   createdAt    DateTime @default(now())
 
-  ganador    User  @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
-  subcampeon User? @relation("SubcampeonDeAntes", fields: [subcampeonId], references: [id], onDelete: SetNull)
+  ganador     User  @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
+  subcampeon  User? @relation("SubcampeonDeAntes", fields: [subcampeonId], references: [id], onDelete: SetNull)
   apuntadoPor User? @relation("ApuntadorDeAntes", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([ganadorId])

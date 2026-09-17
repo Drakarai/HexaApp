@@ -25,6 +25,8 @@ import {
   RouletteSettingsForm,
 } from "./roulette-forms";
 import { MyTickets, TicketsPanel } from "./tickets";
+import { EntregarPremio } from "./entregar-premio";
+import { describirPremio } from "@/lib/premios-de-ruleta";
 
 export const metadata = { title: "Ruleta" };
 
@@ -65,15 +67,38 @@ export default async function RoulettePage({
     ? await prisma.roulette.findUnique({
         where: { id: selectedId },
         include: {
-          options: { orderBy: { position: "asc" } },
+          options: {
+            orderBy: { position: "asc" },
+            include: {
+              item: { select: { name: true, image: true } },
+              ticketsDe: { select: { name: true } },
+            },
+          },
           spins: {
             orderBy: { createdAt: "desc" },
             take: 20,
-            include: { spunBy: { select: { displayName: true } } },
+            include: {
+              spunBy: { select: { displayName: true } },
+              premioItem: { select: { name: true, image: true } },
+              premioTickets: { select: { name: true } },
+              entregado: { select: { displayName: true, color: true } },
+            },
           },
         },
       })
     : null;
+
+  /**
+   * El catálogo de la bolsa, para poder poner objetos de premio. Es global y no
+   * de cada edición: ver el modelo `Item`. Solo hace falta si administras.
+   */
+  const catalogo = canManage
+    ? await prisma.item.findMany({
+        orderBy: { name: "asc" },
+        // Sin el dibujo: son data URLs y en un desplegable no se ven
+        select: { id: true, name: true },
+      })
+    : [];
 
   return (
     <>
@@ -184,6 +209,20 @@ export default async function RoulettePage({
                         style={{ background: option.color ?? "#6366f1" }}
                         aria-hidden
                       />
+                      {/* El dibujo del objeto, que es lo que distingue de un
+                          vistazo una casilla que reparte algo de una de texto */}
+                      {option.item?.image ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={option.item.image}
+                          alt=""
+                          className="h-5 w-5 shrink-0 object-contain"
+                        />
+                      ) : option.itemId ? (
+                        <span aria-hidden>🎒</span>
+                      ) : option.ticketsDeId ? (
+                        <span aria-hidden>🎟️</span>
+                      ) : null}
                       <span className="min-w-0 flex-1 truncate text-sm text-white">
                         {option.label}
                       </span>
@@ -223,7 +262,14 @@ export default async function RoulettePage({
 
               {canManage ? (
                 <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
-                  <AddOptionForm rouletteId={selected.id} />
+                  <AddOptionForm
+                    rouletteId={selected.id}
+                    catalogo={catalogo}
+                    ruletas={roulettes.map((ruleta) => ({
+                      id: ruleta.id,
+                      name: ruleta.name,
+                    }))}
+                  />
                   <RouletteSettingsForm
                     roulette={{
                       id: selected.id,
@@ -256,20 +302,73 @@ export default async function RoulettePage({
                 <EmptyState title="Sin giros todavía" />
               ) : (
                 <ol className="space-y-2">
-                  {selected.spins.map((spin) => (
-                    <li
-                      key={spin.id}
-                      className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
-                    >
-                      <p className="text-sm font-medium text-white">
-                        {spin.optionLabel}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {formatDateTime(spin.createdAt)}
-                        {spin.spunBy ? ` · ${spin.spunBy.displayName}` : ""}
-                      </p>
-                    </li>
-                  ))}
+                  {selected.spins.map((spin) => {
+                    const premio = describirPremio({
+                      premioItemId: spin.premioItemId,
+                      premioTicketsDeId: spin.premioTicketsDeId,
+                      premioCantidad: spin.premioCantidad,
+                      objeto: spin.premioItem?.name,
+                      ruleta: spin.premioTickets?.name,
+                    });
+
+                    return (
+                      <li
+                        key={spin.id}
+                        className={cx(
+                          "rounded-lg border px-3 py-2",
+                          // Lo que está sin dar salta a la vista: si no, se
+                          // queda ahí abajo y nadie se acuerda
+                          premio && !spin.entregadoA
+                            ? "border-amber-500/40 bg-amber-500/[0.07]"
+                            : "border-white/5 bg-white/[0.03]",
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          {spin.premioItem?.image ? (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img
+                              src={spin.premioItem.image}
+                              alt=""
+                              className="h-6 w-6 shrink-0 object-contain"
+                            />
+                          ) : null}
+                          <p className="min-w-0 flex-1 text-sm font-medium text-white">
+                            {spin.optionLabel}
+                          </p>
+                        </div>
+                        <p className="text-xs text-slate-500">
+                          {formatDateTime(spin.createdAt)}
+                          {spin.spunBy ? ` · ${spin.spunBy.displayName}` : ""}
+                        </p>
+
+                        {premio && spin.entregado ? (
+                          <p className="mt-1 text-xs text-emerald-300/90">
+                            🎁 {premio} para{" "}
+                            <span style={{ color: spin.entregado.color }}>
+                              {spin.entregado.displayName}
+                            </span>
+                          </p>
+                        ) : null}
+
+                        {premio && canManage ? (
+                          <EntregarPremio
+                            spinId={spin.id}
+                            premio={premio}
+                            actual={spin.entregadoA}
+                            jugadores={participants.map((jugador) => ({
+                              id: jugador.id,
+                              displayName: jugador.displayName,
+                            }))}
+                          />
+                        ) : premio && !spin.entregadoA ? (
+                          <p className="mt-1 text-xs text-amber-200/80">
+                            🎁 {premio}, pendiente de que lo reparta la
+                            organización.
+                          </p>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ol>
               )}
             </section>

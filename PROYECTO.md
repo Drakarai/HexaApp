@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 16 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 17 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -20,8 +20,9 @@ wipeos con su estado de locke perdido, la lista de participantes arreglada
 para el móvil, los **combates con permiso** para quien está fuera del locke, y
 el **hall de la fama** con su podio y las cifras del locke, y **todo el cuadro
 final al mejor de tres** con repetición en cada combate, el **palmarés** entre
-ediciones con los lockes de antes de la app, y el **repaso de las 24 pantallas**
-del que salieron las jornadas plegables y los level caps de dos en dos).
+ediciones con los lockes de antes de la app, el **repaso de las 24 pantallas**
+del que salieron las jornadas plegables y los level caps de dos en dos, y **la
+ruleta repartiendo objetos de la bolsa y tickets**).
 
 ---
 
@@ -72,7 +73,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
-| **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. |
+| **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
 | **Guía de uso** | El manual en PDF, con fotos de cada pantalla, y una **segunda guía para quien lleva un locke** en su propia pestaña. La del administrador solo se le enseña a quien administra alguna edición o al Creador. |
@@ -1866,6 +1867,47 @@ para lo mismo solo confunden. Y **el tachado es del nombre**, no de la línea: l
 lleva un `<span>` suyo, que si no las chapas de *admin* y *💥 locke perdido*
 salían tachadas y no se leían.
 
+### La ruleta reparte premios de verdad
+
+Una casilla ya no es solo texto. Puede ser **un objeto del catálogo de la
+bolsa** o **tickets de una ruleta**, y entonces sale sola de la rueda a la bolsa
+o al saldo, igual que los objetos que se lleva quien gana un reto. Lo que no se
+hace solo se olvida, y "acuérdate de darle la Ultra Ball a Enzo" es justo el
+tipo de cosa que se olvida.
+
+**Quién se lo lleva depende de quién gira**, y es la única regla que hay que
+tener en la cabeza:
+
+- **Gira un jugador**: está gastando *su* ticket, así que la tirada es suya y el
+  premio también. Cae solo y se avisa ahí mismo.
+- **Gira quien administra**: no gasta ticket de nadie, así que la tirada no es
+  de nadie todavía. El premio queda **pendiente**, la fila del historial se pone
+  ámbar y se elige a quién dárselo con un desplegable.
+
+Un premio ya entregado **se puede pasar a otro** ("✎ Dárselo a otro"): se le
+quita al primero y se le da al segundo. Dárselo a quien no era y darse cuenta al
+momento es lo que pasa de verdad. Con los tickets no se borra nada, que el saldo
+es un historial de sumas y restas: devolver uno es **otra fila en negativo** y
+queda dicho por qué.
+
+Dos cosas que no son evidentes y están así a propósito:
+
+**El rótulo de una casilla con premio lo pone el servidor**, con el nombre del
+objeto o de la ruleta ("2 × Ultra Ball", "3 🎟️ Recompensas del líder"). Dejarlo
+escribir a mano era la forma segura de acabar con una casilla que dice *Ultra
+Ball* y reparte otra cosa.
+
+**El premio se copia al giro**, como ya se copiaba el texto: `premioItemId`,
+`premioTicketsDeId` y `premioCantidad` viven en `RouletteSpin`. La casilla se
+puede borrar o cambiar de premio, y lo que se dio ya está dado; el historial
+tiene que aguantarlo. `entregadoA` en null **con premio** significa pendiente.
+
+Los tickets pueden ser **de la ruleta misma**, y entonces lo que toca es volver
+a girar ahí. No hace falta nada especial: es una fila más de saldo.
+
+Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
+lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
+
 ### El repaso de pantallas: lo que ocupaba de más
 
 Se midieron las 24 pantallas a lo ancho de un móvil (390) y de un ordenador
@@ -2106,6 +2148,12 @@ Piezas con truco:
 - `lib/premios.ts` — los objetos que reparte un reto y los castigos que hay que
   anunciar. `sincronizarPremios()` es la que da y quita según quién gane;
   `components/castigos.tsx` es el bloque de la portada.
+- `lib/bolsa-entregas.ts` — meter y sacar cosas de la bolsa de alguien, sin
+  cantidades negativas. Lo usan los dos sitios que reparten solos: los premios
+  de un reto y las casillas de la ruleta.
+- `lib/premios-de-ruleta.ts` — el premio de un giro: a quién le toca,
+  entregarlo y **cambiarlo de dueño**. `ruleta/entregar-premio.tsx` es el
+  desplegable del historial y `entregarPremioAction` la acción.
 - `lib/series.ts` — el desempate de una jornada al mejor de tres: lo añade
   cuando la serie se empata y lo quita cuando sobra. Se llama desde las tres
   acciones que pueden cambiar el resultado de un combate.
@@ -2183,6 +2231,11 @@ Piezas con truco:
 **Pendiente ahora mismo**: el usuario todavía no ha desplegado. El siguiente
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
+
+**Pendiente de guía**: los premios de la ruleta —objetos de la bolsa y tickets—
+todavía **no salen en el PDF**. Rehacerlo pide borrar y volver a sembrar la base
+local (ver el apartado 5), así que conviene juntarlo con la siguiente novedad y
+hacerlo de una vez, que además mueve los números del índice escrito a mano.
 
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
@@ -2421,3 +2474,5 @@ lugar de destruir datos, y hay que avisar antes.
     terminadas se pliegan, los equipos dejan de pintar huecos que sobran, los
     level caps van de dos en dos en pantalla ancha y los botones de icono ya
     dicen qué hacen.
+59. **La ruleta reparte premios**: una casilla puede ser un objeto de la bolsa
+    o tickets de una ruleta, y sale sola a la bolsa o al saldo de quien gira.

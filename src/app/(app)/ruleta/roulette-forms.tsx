@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/roulette";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { cx } from "@/lib/utils";
 
 export function NewRouletteForm({ competitionId }: { competitionId: string }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -68,45 +69,185 @@ export function NewRouletteForm({ competitionId }: { competitionId: string }) {
   );
 }
 
-export function AddOptionForm({ rouletteId }: { rouletteId: string }) {
+type ClaseDeCasilla = "texto" | "objeto" | "tickets";
+
+/**
+ * Añadir una casilla. Tres clases, y las dos últimas son premios de verdad:
+ * el objeto cae en la bolsa y los tickets en el saldo de la ruleta que se elija
+ * —que puede ser esta misma, y entonces lo que toca es volver a girar—.
+ *
+ * El rótulo de un premio no se escribe: lo pone el servidor con el nombre del
+ * objeto o de la ruleta. Escribirlo a mano era la forma segura de acabar con
+ * una casilla que dice "Ultra Ball" y reparte otra cosa.
+ */
+export function AddOptionForm({
+  rouletteId,
+  catalogo,
+  ruletas,
+}: {
+  rouletteId: string;
+  /** El catálogo de la bolsa, que es global y no de cada edición */
+  catalogo: Array<{ id: string; name: string }>;
+  /** Las ruletas de esta competición, para los tickets */
+  ruletas: Array<{ id: string; name: string }>;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    addOptionAction,
+    null,
+  );
+  const [clase, setClase] = useState<ClaseDeCasilla>("texto");
   const formRef = useRef<HTMLFormElement>(null);
 
+  useEffect(() => {
+    if (state?.success) formRef.current?.reset();
+  }, [state]);
+
   return (
-    <form
-      ref={formRef}
-      action={async (formData) => {
-        await addOptionAction(formData);
-        formRef.current?.reset();
-      }}
-      className="flex flex-wrap items-end gap-2"
-    >
+    <form ref={formRef} action={formAction} className="space-y-3">
       <input type="hidden" name="rouletteId" value={rouletteId} />
-      <div className="min-w-40 flex-1">
-        <label className="label">Nueva opción</label>
-        <input name="label" className="input" placeholder="Texto de la opción" required />
+      {/* Va en el formulario para que el servidor no tenga que adivinar qué es
+          por lo que venga relleno */}
+      <input type="hidden" name="clase" value={clase} />
+
+      <div>
+        <label className="label">Nueva casilla</label>
+        <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+          <Pestana activa={clase === "texto"} onClick={() => setClase("texto")}>
+            ✍️ Texto
+          </Pestana>
+          <Pestana
+            activa={clase === "objeto"}
+            onClick={() => setClase("objeto")}
+          >
+            🎒 Objeto
+          </Pestana>
+          <Pestana
+            activa={clase === "tickets"}
+            onClick={() => setClase("tickets")}
+          >
+            🎟️ Tickets
+          </Pestana>
+        </div>
       </div>
-      <div className="w-20">
-        <label className="label">Peso</label>
-        <input
-          name="weight"
-          type="number"
-          min={1}
-          max={100}
-          defaultValue={1}
-          className="input"
-        />
+
+      <div className="flex flex-wrap items-end gap-2">
+        {clase === "texto" ? (
+          <div className="min-w-40 flex-1">
+            <label className="label">Qué dice</label>
+            <input
+              name="label"
+              className="input"
+              placeholder="Monotipo la próxima ruta"
+            />
+          </div>
+        ) : clase === "objeto" ? (
+          <div className="min-w-40 flex-1">
+            <label className="label">Objeto</label>
+            <select name="itemId" className="input" defaultValue="">
+              <option value="" disabled>
+                Elige uno
+              </option>
+              {catalogo.map((objeto) => (
+                <option key={objeto.id} value={objeto.id}>
+                  {objeto.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : (
+          <div className="min-w-40 flex-1">
+            <label className="label">Tickets de</label>
+            <select name="ticketsDeId" className="input" defaultValue="">
+              <option value="" disabled>
+                Elige la ruleta
+              </option>
+              {ruletas.map((ruleta) => (
+                <option key={ruleta.id} value={ruleta.id}>
+                  {ruleta.name}
+                  {ruleta.id === rouletteId ? " (esta misma)" : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {clase !== "texto" ? (
+          <div className="w-20">
+            <label className="label">Cuántos</label>
+            <input
+              name="cantidad"
+              type="number"
+              min={1}
+              max={99}
+              defaultValue={1}
+              className="input"
+            />
+          </div>
+        ) : null}
+
+        <div className="w-20">
+          <label className="label">Peso</label>
+          <input
+            name="weight"
+            type="number"
+            min={1}
+            max={100}
+            defaultValue={1}
+            className="input"
+          />
+        </div>
+        <div className="w-16">
+          <label className="label">Color</label>
+          <input
+            name="color"
+            type="color"
+            defaultValue="#6366f1"
+            className="input h-9.5 p-1"
+          />
+        </div>
+        <SubmitButton className="btn-ghost">Añadir</SubmitButton>
       </div>
-      <div className="w-16">
-        <label className="label">Color</label>
-        <input
-          name="color"
-          type="color"
-          defaultValue="#6366f1"
-          className="input h-9.5 p-1"
-        />
-      </div>
-      <SubmitButton className="btn-ghost">Añadir</SubmitButton>
+
+      {clase === "objeto" && !catalogo.length ? (
+        <p className="text-xs text-slate-500">
+          El catálogo de objetos está vacío: créalos en Administración → Bolsa.
+        </p>
+      ) : null}
+      {clase !== "texto" ? (
+        <p className="text-xs text-slate-500">
+          {clase === "objeto"
+            ? "Al salir, el objeto cae solo en la bolsa de quien gire. Si giras tú como organización, eliges abajo a quién dárselo."
+            : "Al salir, los tickets se suman al saldo de esa ruleta. Los de esta misma son otra tirada aquí."}
+        </p>
+      ) : null}
+
+      <FormMessage state={state} />
     </form>
+  );
+}
+
+function Pestana({
+  activa,
+  onClick,
+  children,
+}: {
+  activa: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cx(
+        "flex-1 rounded-md px-2 py-1.5 text-sm font-medium transition",
+        activa
+          ? "bg-brand-600/25 text-white ring-1 ring-brand-500/40"
+          : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+      )}
+    >
+      {children}
+    </button>
   );
 }
 

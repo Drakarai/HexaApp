@@ -35,6 +35,11 @@ export function RouletteWheel({
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  /** Lo que se ha repartido, si la casilla era un premio */
+  const [premio, setPremio] = useState<{
+    que: string;
+    pendiente: boolean;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -56,6 +61,7 @@ export function RouletteWheel({
     if (spinning || !options.length) return;
     setSpinning(true);
     setResult(null);
+    setPremio(null);
     setError(null);
 
     const outcome = await spinRouletteAction(rouletteId);
@@ -78,6 +84,9 @@ export function RouletteWheel({
     if (timeout.current) clearTimeout(timeout.current);
     timeout.current = setTimeout(() => {
       setResult(outcome.label);
+      if (outcome.premio) {
+        setPremio({ que: outcome.premio, pendiente: outcome.pendiente });
+      }
       setSpinning(false);
       router.refresh();
     }, spinSeconds * 1000);
@@ -178,6 +187,21 @@ export function RouletteWheel({
         {result ? (
           <p className="mt-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-lg font-bold text-emerald-200">
             {result}
+          </p>
+        ) : null}
+        {premio ? (
+          <p
+            className={
+              premio.pendiente
+                ? "mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm text-amber-200"
+                : "mt-2 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-2 text-sm text-emerald-200/90"
+            }
+          >
+            {/* "Te llevas" y no "ya es tuyo": vale igual para un objeto que
+                para tres tickets, sin tener que concordar el número */}
+            {premio.pendiente
+              ? `🎁 ${premio.que}. Di abajo, en el historial, para quién es.`
+              : `🎁 Te llevas ${premio.que}.`}
           </p>
         ) : null}
         {error ? (

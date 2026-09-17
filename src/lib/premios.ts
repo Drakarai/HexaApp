@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { ponerEnLaBolsa, quitarDeLaBolsa } from "@/lib/bolsa-entregas";
 
 /**
  * Los premios de un reto que son **objetos de la bolsa**, y el anuncio de los
@@ -37,7 +38,12 @@ export async function sincronizarPremios(challengeMatchId: string) {
       await quitarDeLaBolsa(premio.entregadoA, premio.itemId, premio.quantity);
     }
     if (reto.winnerId) {
-      await ponerEnLaBolsa(reto.winnerId, premio.itemId, premio.quantity);
+      await ponerEnLaBolsa(
+        reto.winnerId,
+        premio.itemId,
+        premio.quantity,
+        "Premio de un reto",
+      );
     }
 
     await prisma.challengePrize.update({
@@ -58,45 +64,6 @@ export async function devolverPremio(premioId: string) {
   });
   if (!premio?.entregadoA) return;
   await quitarDeLaBolsa(premio.entregadoA, premio.itemId, premio.quantity);
-}
-
-/** Suma a lo que ya tenga, igual que cuando se lo da un administrador. */
-async function ponerEnLaBolsa(
-  participantId: string,
-  itemId: string,
-  quantity: number,
-) {
-  await prisma.bagEntry.upsert({
-    where: { participantId_itemId: { participantId, itemId } },
-    create: { participantId, itemId, quantity, note: "Premio de un reto" },
-    update: { quantity: { increment: quantity } },
-  });
-}
-
-/**
- * Le quita lo que se le había dado. Si mientras tanto se lo ha gastado, la
- * cuenta se queda en cero y la fila desaparece: **una bolsa no puede tener
- * cantidades negativas**, y perseguir un objeto ya usado no tendría sentido.
- */
-async function quitarDeLaBolsa(
-  participantId: string,
-  itemId: string,
-  quantity: number,
-) {
-  const fila = await prisma.bagEntry.findUnique({
-    where: { participantId_itemId: { participantId, itemId } },
-  });
-  if (!fila) return;
-
-  const queda = fila.quantity - quantity;
-  if (queda > 0) {
-    await prisma.bagEntry.update({
-      where: { id: fila.id },
-      data: { quantity: queda },
-    });
-  } else {
-    await prisma.bagEntry.delete({ where: { id: fila.id } });
-  }
 }
 
 export type CastigoPendiente = {

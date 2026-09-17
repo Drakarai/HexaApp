@@ -8,6 +8,10 @@ import {
   requireCompetitionManager,
 } from "@/lib/competition";
 import { PALETTE } from "@/lib/constants";
+import {
+  describirPremio,
+  entregarPremioDelGiro,
+} from "@/lib/premios-de-ruleta";
 import type { FormState } from "@/app/actions/auth";
 
 export async function createRouletteAction(
@@ -84,17 +88,63 @@ export async function deleteRouletteAction(formData: FormData) {
   revalidatePath("/ruleta");
 }
 
-export async function addOptionAction(formData: FormData) {
+/**
+ * Añade una casilla. Puede ser de tres clases —texto, un objeto del catálogo o
+ * tickets de una ruleta— y **el rótulo lo pone el servidor** en las dos con
+ * premio: si lo escribiera cada uno a mano, la rueda acabaría diciendo una cosa
+ * y repartiendo otra.
+ */
+export async function addOptionAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
   const rouletteId = String(formData.get("rouletteId") ?? "");
   const roulette = await prisma.roulette.findUnique({
     where: { id: rouletteId },
     include: { _count: { select: { options: true } } },
   });
-  if (!roulette) return;
-  await requireCompetitionManager(roulette.competitionId);
+  if (!roulette) return { error: "No encuentro esa ruleta." };
+  try {
+    await requireCompetitionManager(roulette.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
 
-  const label = String(formData.get("label") ?? "").trim();
-  if (!label) return;
+  const clase = String(formData.get("clase") ?? "texto");
+  const cantidadCruda = Number(formData.get("cantidad") ?? 1);
+  const cantidad =
+    Number.isFinite(cantidadCruda) && cantidadCruda > 0
+      ? Math.min(99, Math.trunc(cantidadCruda))
+      : 1;
+
+  let label = String(formData.get("label") ?? "").trim();
+  let itemId: string | null = null;
+  let ticketsDeId: string | null = null;
+
+  if (clase === "objeto") {
+    itemId = String(formData.get("itemId") ?? "") || null;
+    if (!itemId) return { error: "Elige el objeto." };
+    const objeto = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { name: true },
+    });
+    if (!objeto) return { error: "Ese objeto ya no está en el catálogo." };
+    label = cantidad > 1 ? `${cantidad} × ${objeto.name}` : objeto.name;
+  } else if (clase === "tickets") {
+    ticketsDeId = String(formData.get("ticketsDeId") ?? "") || null;
+    if (!ticketsDeId) return { error: "Elige de qué ruleta son los tickets." };
+    const destino = await prisma.roulette.findUnique({
+      where: { id: ticketsDeId },
+      select: { name: true, competitionId: true },
+    });
+    // De otra edición no: los tickets son de una competición concreta
+    if (!destino || destino.competitionId !== roulette.competitionId) {
+      return { error: "Esa ruleta no es de esta competición." };
+    }
+    label = `${cantidad} 🎟️ ${destino.name}`;
+  } else if (!label) {
+    return { error: "Escribe el texto de la opción." };
+  }
 
   const weight = Number(formData.get("weight") ?? 1);
   const count = roulette._count.options;
@@ -108,10 +158,34 @@ export async function addOptionAction(formData: FormData) {
         String(formData.get("color") ?? "").trim() ||
         PALETTE[count % PALETTE.length],
       position: count,
+      itemId,
+      ticketsDeId,
+      cantidad,
     },
   });
 
   revalidatePath("/ruleta");
+  return { success: `"${label}" añadido.` };
+}
+
+/**
+ * A quién se le da el premio de un giro. Solo la organización: es meter cosas
+ * en la bolsa de alguien, y eso nunca lo decide quien mira.
+ */
+export async function entregarPremioAction(formData: FormData) {
+  const spinId = String(formData.get("spinId") ?? "");
+  const giro = await prisma.rouletteSpin.findUnique({
+    where: { id: spinId },
+    select: { roulette: { select: { competitionId: true } } },
+  });
+  if (!giro) return;
+  const me = await requireCompetitionManager(giro.roulette.competitionId);
+
+  const participantId = String(formData.get("participantId") ?? "") || null;
+  await entregarPremioDelGiro(spinId, participantId, me.id);
+
+  revalidatePath("/ruleta");
+  revalidatePath("/bolsa");
 }
 
 export async function updateOptionAction(formData: FormData) {
@@ -170,7 +244,16 @@ export async function deleteOptionAction(formData: FormData) {
 }
 
 export type SpinResult =
-  | { ok: true; optionId: string; label: string; index: number }
+  | {
+      ok: true;
+      optionId: string;
+      label: string;
+      index: number;
+      /** Qué se ha repartido y a quién, si la casilla llevaba premio */
+      premio: string | null;
+      /** Si hay que bajar al historial a decir de quién es */
+      pendiente: boolean;
+    }
   | { ok: false; error: string };
 
 /**
@@ -185,7 +268,16 @@ export async function spinRouletteAction(
 
   const roulette = await prisma.roulette.findUnique({
     where: { id: rouletteId },
-    include: { options: { orderBy: { position: "asc" } } },
+    include: {
+      options: {
+        orderBy: { position: "asc" },
+        // Para poder decir en el aviso qué ha tocado, no solo el rótulo
+        include: {
+          item: { select: { name: true } },
+          ticketsDe: { select: { name: true } },
+        },
+      },
+    },
   });
   if (!roulette) return { ok: false, error: "Ruleta no encontrada." };
 
@@ -237,6 +329,19 @@ export async function spinRouletteAction(
     }
   }
 
+  /**
+   * El premio se **copia** al giro en vez de mirarse por el enlace a la
+   * casilla: la casilla se puede borrar o cambiar de premio, y lo que se dio ya
+   * está dado. Igual que el rótulo, que también va copiado desde el principio.
+   */
+  const premio = {
+    premioItemId: winner.itemId,
+    premioTicketsDeId: winner.ticketsDeId,
+    premioCantidad: winner.itemId || winner.ticketsDeId ? winner.cantidad : 0,
+  };
+
+  let spinId: string | null = null;
+
   try {
     await prisma.$transaction(
       async (tx) => {
@@ -262,14 +367,16 @@ export async function spinRouletteAction(
           }
         }
 
-        await tx.rouletteSpin.create({
+        const giro = await tx.rouletteSpin.create({
           data: {
             rouletteId,
             optionId: winner.id,
             optionLabel: winner.label,
             spunById: me.id,
+            ...premio,
           },
         });
+        spinId = giro.id;
 
         // Si la ruleta no permite repetir, la opción se desactiva tras salir
         if (!roulette.allowRepeats) {
@@ -288,6 +395,24 @@ export async function spinRouletteAction(
     };
   }
 
+  /**
+   * El premio se reparte **fuera** de la transacción a propósito: ahí dentro
+   * está en juego el ticket, que es lo que no puede quedar a medias. Si algo
+   * fallara al meterlo en la bolsa, el giro ya está apuntado y la organización
+   * lo entrega desde el historial, que es justo para lo que está.
+   */
+  const queHaTocado = describirPremio({
+    ...premio,
+    objeto: winner.item?.name,
+    ruleta: winner.ticketsDe?.name,
+  });
+
+  // Gira un jugador gastando su ticket: la tirada es suya y el premio también
+  if (spinId && queHaTocado && participant) {
+    await entregarPremioDelGiro(spinId, participant.id, me.id);
+    revalidatePath("/bolsa");
+  }
+
   revalidatePath("/ruleta");
 
   return {
@@ -295,6 +420,8 @@ export async function spinRouletteAction(
     optionId: winner.id,
     label: winner.label,
     index: active.findIndex((option) => option.id === winner.id),
+    premio: queHaTocado,
+    pendiente: Boolean(queHaTocado) && !participant,
   };
 }
 
