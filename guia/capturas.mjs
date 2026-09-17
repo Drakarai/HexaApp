@@ -48,6 +48,20 @@ async function entrar(pagina, quien) {
   }
 }
 
+/**
+ * Abre las jornadas que estén plegadas. Una jornada con todos sus combates
+ * jugados se pliega sola, y lo de dentro —los equipos, el botón de cambiar el
+ * resultado— existe pero no se ve, así que no se puede fotografiar ni pulsar.
+ */
+async function desplegarJornadas(p) {
+  for (const plegada of await p
+    .locator("section.card details:not([open]) summary")
+    .all()) {
+    await plegada.click();
+    await p.waitForTimeout(400);
+  }
+}
+
 async function foto(pagina, nombre, ruta, prepara) {
   if (ruta) {
     await pagina.goto(BASE + ruta, { waitUntil: "domcontentloaded" });
@@ -106,9 +120,11 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
 
   await foto(pagina, "level-caps", "/level-caps");
+  // Esta va tal cual: enseña la jornada terminada plegada, que es como se ve
   await foto(pagina, "jornadas", "/jornadas");
-  await foto(pagina, "jornada-jugada", "/jornadas");
+  await foto(pagina, "jornada-jugada", "/jornadas", desplegarJornadas);
   await foto(pagina, "equipos", "/jornadas", async (p) => {
+    await desplegarJornadas(p);
     await p.locator("button", { hasText: "Cambiar equipos" }).first().click();
     await p.waitForTimeout(1200);
   });
@@ -118,7 +134,15 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await foto(pagina, "puntos", "/puntos");
   await foto(pagina, "retos", "/retos");
-  await foto(pagina, "ruleta", "/ruleta");
+  // La de las recompensas y no la primera: es la que lleva las casillas con
+  // premio, que es lo que cuenta la guía
+  await foto(pagina, "ruleta", "/ruleta", async (p) => {
+    const chapa = p.locator('a:has-text("Recompensas del líder")').first();
+    if (await chapa.count()) {
+      await chapa.click();
+      await p.waitForTimeout(1500);
+    }
+  });
   await foto(pagina, "bolsa", "/bolsa");
   await foto(pagina, "notas", "/notas");
   await foto(pagina, "tipos", "/notas", async (p) => {

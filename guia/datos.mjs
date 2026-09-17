@@ -184,6 +184,38 @@ for (let fila = 0; fila < Math.min(3, await bolsas.count()); fila++) {
 }
 console.log("bolsas repartidas");
 
+// --- Dos casillas con premio en la ruleta de las recompensas
+// Van después de crear los objetos a propósito: el desplegable de la casilla
+// se llena del catálogo, y antes de esto el catálogo está vacío.
+await p.goto(BASE + "/ruleta", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(1200);
+await p.locator('a:has-text("Recompensas del líder")').first().click();
+await p.waitForTimeout(1500);
+
+await p.locator('button:has-text("🎒 Objeto")').click();
+await p.waitForTimeout(400);
+await p.locator('select[name="itemId"]').selectOption({ label: "Ultra Ball" });
+await p.locator('input[name="cantidad"]').fill("2");
+// Colores propios: por defecto las dos salen del mismo azul y en la rueda se
+// leen como un solo trozo, que es justo lo que la foto tiene que enseñar
+await p.locator('input[name="color"]').fill("#8b5cf6");
+await p.locator('form:has(select[name="itemId"]) button[type="submit"]').click();
+await p.waitForTimeout(2000);
+console.log("casilla con objeto");
+
+await p.locator('button:has-text("🎟️ Tickets")').click();
+await p.waitForTimeout(400);
+await p
+  .locator('select[name="ticketsDeId"]')
+  .selectOption({ label: "Castigos de la jornada" });
+await p.locator('input[name="cantidad"]').fill("2");
+await p.locator('input[name="color"]').fill("#ec4899");
+await p
+  .locator('form:has(select[name="ticketsDeId"]) button[type="submit"]')
+  .click();
+await p.waitForTimeout(2000);
+console.log("casilla con tickets");
+
 // --- La primera jornada, jugada entera
 const resultados = [
   { ganador: 1, diferencia: 2 },
@@ -207,6 +239,12 @@ for (const resultado of resultados) {
 // --- Y los equipos de uno de esos combates, que es lo que abre la votación de MVP
 await p.goto(BASE + "/jornadas", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1500);
+// La jornada acaba de terminarse, así que está plegada y hay que abrirla: los
+// botones de dentro existen pero no se ven, y el clic se quedaba esperando
+for (const plegada of await p.locator("section.card details:not([open]) summary").all()) {
+  await plegada.click();
+  await p.waitForTimeout(400);
+}
 await p.locator("button", { hasText: "Apuntar equipos" }).first().click();
 await p.waitForTimeout(1200);
 const equipos = [

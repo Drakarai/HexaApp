@@ -2232,11 +2232,6 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
-**Pendiente de guía**: los premios de la ruleta —objetos de la bolsa y tickets—
-todavía **no salen en el PDF**. Rehacerlo pide borrar y volver a sembrar la base
-local (ver el apartado 5), así que conviene juntarlo con la siguiente novedad y
-hacerlo de una vez, que además mueve los números del índice escrito a mano.
-
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
@@ -2302,6 +2297,23 @@ faltaban dos páginas —el sorteo de préstamos y el modo sin conexión— y de
 para abajo los números no cuadraban con los pies. Va a mano, así que **hay que
 mirarlo cada vez que se mueve una página**; ahora hay 21 entradas y la última es
 la 23.
+
+**Y el de dentro de la aplicación es otro**, en `guia/page.tsx`, también a mano:
+se había quedado en 22 páginas y sin *El palmarés*, con todo lo de detrás
+corrido un número. Son dos sitios y **hay que tocar los dos**.
+
+**Al rehacer las fotos, cuidado con lo que se pliega**: una jornada terminada
+se pliega sola, y lo de dentro —los equipos, cambiar el resultado— existe pero
+no se ve, así que Playwright se queda esperando un clic que nunca llega. Tanto
+`datos.mjs` como `capturas.mjs` abren lo plegado antes de tocar nada
+(`section.card details:not([open]) summary`). Le pasará lo mismo a cualquier
+cosa que se esconda: si un guion de la guía se cuelga en un botón que "está
+ahí", es esto.
+
+**Una hoja de la guía no crece**: lo que no cabe se recorta y `pdf.mjs` solo
+avisa. La página de las jornadas se quedó **clavada en el límite** al añadirle
+la línea de que se pliegan; para que cupiera se recortó su entradilla. Si hay
+que meter algo más ahí, hay que quitar otra cosa.
 
 **Para medir pantallas** hay un cuarto script, `guia/medir.mjs`, que no hace
 guía ninguna: entra en la aplicación y dice de cada ruta cuánto mide de alto,
