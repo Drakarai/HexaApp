@@ -142,6 +142,43 @@ export function Avatar({
   );
 }
 
+/**
+ * La foto y el nombre de un jugador, llevando **las dos cosas** a su ficha.
+ *
+ * Existe porque el enlace era solo la foto: un círculo de 20 píxeles al que hay
+ * que apuntar con el dedo, con el nombre justo al lado sin hacer nada. Ahora se
+ * toca donde parece que hay que tocar.
+ *
+ * Lo que va dentro **no puede llevar otro enlace ni un botón**: un `<a>` dentro
+ * de otro no es HTML válido y el navegador hace cosas raras. Por eso el avatar
+ * de dentro va sin `participantId`, que si no pondría el suyo.
+ */
+export function EnlaceDeJugador({
+  participantId,
+  name,
+  className,
+  children,
+}: {
+  participantId: string;
+  /** Solo para el rótulo al pasar el ratón */
+  name: string;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={`/jugador/${participantId}`}
+      title={`Ver el perfil de ${name}`}
+      className={cx(
+        "flex min-w-0 items-center transition hover:brightness-125",
+        className,
+      )}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function EmptyState({
   title,
   hint,

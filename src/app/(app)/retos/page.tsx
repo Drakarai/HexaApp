@@ -9,7 +9,12 @@ import { comoEstaFuera } from "@/lib/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
-import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
+import {
+  Avatar,
+  ConfirmSubmit,
+  EmptyState,
+  EnlaceDeJugador,
+} from "@/components/ui";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
 import { ChapaDeFormato } from "@/components/formato";
@@ -307,23 +312,19 @@ function Jugador({
   winner: boolean;
 }) {
   return (
-    <span
+    <EnlaceDeJugador
+      participantId={participantId}
+      name={name}
       className={cx(
-        "flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-sm",
+        "gap-1.5 rounded-lg px-2 py-1 text-sm",
         winner
           ? "bg-emerald-500/15 font-semibold text-emerald-200 ring-1 ring-emerald-500/30"
-          : "text-slate-300",
+          : "text-slate-300 hover:bg-white/5",
       )}
     >
-      <Avatar
-        name={name}
-        color={color}
-        image={image}
-        size={20}
-        participantId={participantId}
-      />
+      <Avatar name={name} color={color} image={image} size={20} />
       <span className="truncate">{name}</span>
       {winner ? <span aria-hidden>👑</span> : null}
-    </span>
+    </EnlaceDeJugador>
   );
 }

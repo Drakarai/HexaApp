@@ -95,8 +95,11 @@ export default async function ProfilePage() {
         avatarImage={user.avatarImage}
       />
 
+      {/* En pantalla ancha, de dos en dos: son seis tarjetas cortas y en una
+          sola columna el perfil medía dos mil quinientos píxeles */}
+      <div className="mt-4 grid gap-4 xl:grid-cols-2">
       {myParticipant && competition ? (
-        <section className="card mt-4">
+        <section className="card">
           <h2 className="section-title mb-1">Tu pokémon as</h2>
           <p className="muted mb-4">
             Tu representante en {competition.name}. Se ve en la clasificación y
@@ -126,7 +129,7 @@ export default async function ProfilePage() {
       ) : null}
 
       {myParticipant ? (
-        <section className="card mt-4">
+        <section className="card">
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="section-title">Pokémon favoritos</h2>
             <Link
@@ -152,7 +155,7 @@ export default async function ProfilePage() {
         <TitlesSection userId={user.id} titulos={titulos} editable propio />
       </div>
 
-      <section className="card mt-4">
+      <section className="card">
         <h2 className="section-title mb-1">Tema</h2>
         <p className="muted mb-4">
           Un color por juego. Pincha en cualquiera para verlo al momento.
@@ -166,7 +169,7 @@ export default async function ProfilePage() {
        * dejaban en ocho entradas. Lo de todos los días no tiene por qué
        * compartir sitio con lo de montar el tinglado.
        */}
-      <section className="card mt-4">
+      <section className="card">
         <h2 className="section-title mb-1">Gestionar</h2>
         <p className="muted mb-4">
           Lo que se toca de vez en cuando. No está en el menú de abajo para no
@@ -203,7 +206,7 @@ export default async function ProfilePage() {
         )}
       </section>
 
-      <section className="card mt-4">
+      <section className="card">
         <h2 className="section-title mb-1">Cuando algo va mal</h2>
         <p className="muted mb-4">
           La aplicación guarda pantallas en el móvil para poder verlas sin
@@ -213,6 +216,7 @@ export default async function ProfilePage() {
         </p>
         <RepararLaAplicacion />
       </section>
+      </div>
 
       <form action={logoutAction} className="mt-6">
         <button type="submit" className="btn-ghost">

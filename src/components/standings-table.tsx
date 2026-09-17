@@ -1,6 +1,6 @@
 import type { StandingRow } from "@/lib/competition";
 import { AceBadge } from "@/components/ace-badge";
-import { Avatar } from "@/components/ui";
+import { Avatar, EnlaceDeJugador } from "@/components/ui";
 import { TitleBadge } from "@/components/title-badge";
 import { comoEstaFuera } from "@/lib/wipeos";
 import { cx } from "@/lib/utils";
@@ -213,14 +213,22 @@ function Ficha({
           editableParticipantIds={editableParticipantIds}
           size={26}
         />
-        <p
-          className={cx(
-            "min-w-0 flex-1 truncate font-semibold text-white",
-            row.retirado && "text-slate-400 line-through",
-          )}
+        {/* El nombre también lleva a su ficha: en la foto, de 32 píxeles, hay
+            que acertar con el dedo, y el nombre es lo que se mira */}
+        <EnlaceDeJugador
+          participantId={row.participantId}
+          name={row.displayName}
+          className="min-w-0 flex-1"
         >
-          {row.displayName}
-        </p>
+          <span
+            className={cx(
+              "min-w-0 truncate font-semibold text-white",
+              row.retirado && "text-slate-400 line-through",
+            )}
+          >
+            {row.displayName}
+          </span>
+        </EnlaceDeJugador>
         {row.retirado ? <Fuera motivo={row.motivoDeSalida} /> : null}
         <Wipeos cuantos={row.wipeos} />
       </div>
@@ -315,14 +323,19 @@ function Fila({
             size={24}
           />
           <div className="min-w-0">
-            <p
-              className={cx(
-                "truncate font-medium text-white",
-                row.retirado && "text-slate-400 line-through",
-              )}
+            <EnlaceDeJugador
+              participantId={row.participantId}
+              name={row.displayName}
             >
-              {row.displayName}
-            </p>
+              <span
+                className={cx(
+                  "truncate font-medium text-white",
+                  row.retirado && "text-slate-400 line-through",
+                )}
+              >
+                {row.displayName}
+              </span>
+            </EnlaceDeJugador>
             {row.retirado ? <Fuera motivo={row.motivoDeSalida} /> : null}
         <Wipeos cuantos={row.wipeos} />
             {compact ? null : row.title ? (

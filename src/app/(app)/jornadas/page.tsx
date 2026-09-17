@@ -16,7 +16,12 @@ import { NoCompetition } from "@/components/no-competition";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
 import { BolaDePartido } from "@/components/marcador-dual";
-import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
+import {
+  Avatar,
+  ConfirmSubmit,
+  EmptyState,
+  EnlaceDeJugador,
+} from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import {
   deleteMatchAction,
@@ -599,23 +604,19 @@ function PlayerChip({
   winner: boolean;
 }) {
   return (
-    <span
+    <EnlaceDeJugador
+      participantId={participantId}
+      name={name}
       className={cx(
-        "flex min-w-0 items-center gap-1.5 rounded-lg px-2 py-1 text-sm",
+        "gap-1.5 rounded-lg px-2 py-1 text-sm",
         winner
           ? "bg-emerald-500/15 font-semibold text-emerald-200 ring-1 ring-emerald-500/30"
-          : "text-slate-300",
+          : "text-slate-300 hover:bg-white/5",
       )}
     >
-      <Avatar
-        name={name}
-        color={color}
-        image={image}
-        size={20}
-        participantId={participantId}
-      />
+      <Avatar name={name} color={color} image={image} size={20} />
       <span className="truncate">{name}</span>
       {winner ? <span aria-hidden>👑</span> : null}
-    </span>
+    </EnlaceDeJugador>
   );
 }

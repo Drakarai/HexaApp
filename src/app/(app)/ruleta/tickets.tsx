@@ -6,7 +6,12 @@ import {
   quickGrantTicketAction,
 } from "@/app/actions/tickets";
 import type { FormState } from "@/app/actions/auth";
-import { Avatar, FormMessage, SubmitButton } from "@/components/ui";
+import {
+  Avatar,
+  EnlaceDeJugador,
+  FormMessage,
+  SubmitButton,
+} from "@/components/ui";
 import { cx } from "@/lib/utils";
 
 export type TicketRow = {
@@ -53,16 +58,21 @@ export function TicketsPanel({
             key={row.participantId}
             className="flex items-center gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
           >
-            <Avatar
-              name={row.displayName}
-              color={row.color}
-              image={row.avatarImage}
-              size={26}
+            <EnlaceDeJugador
               participantId={row.participantId}
-            />
-            <span className="min-w-0 flex-1 truncate text-sm text-white">
-              {row.displayName}
-            </span>
+              name={row.displayName}
+              className="min-w-0 flex-1 gap-2"
+            >
+              <Avatar
+                name={row.displayName}
+                color={row.color}
+                image={row.avatarImage}
+                size={26}
+              />
+              <span className="min-w-0 flex-1 truncate text-sm text-white">
+                {row.displayName}
+              </span>
+            </EnlaceDeJugador>
 
             <form action={quickGrantTicketAction}>
               <input type="hidden" name="competitionId" value={competitionId} />

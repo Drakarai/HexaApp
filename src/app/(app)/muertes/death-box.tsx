@@ -7,7 +7,13 @@ import {
   updateDeathAction,
 } from "@/app/actions/deaths";
 import type { FormState } from "@/app/actions/auth";
-import { Avatar, ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
+import {
+  Avatar,
+  ConfirmSubmit,
+  EnlaceDeJugador,
+  FormMessage,
+  SubmitButton,
+} from "@/components/ui";
 import { AceBadge } from "@/components/ace-badge";
 import { ImageInput } from "@/components/image-input";
 import { SpeciesPicker } from "@/components/species-picker";
@@ -87,16 +93,21 @@ export function DeathBox({
           <section key={group.participant?.id ?? index} className="card">
             {group.participant ? (
               <div className="mb-4 flex items-center gap-2.5">
-                <Avatar
-                  name={group.participant.displayName}
-                  color={group.participant.color}
-                  image={group.participant.avatarImage}
-                  size={28}
+                <EnlaceDeJugador
                   participantId={group.participant.id}
-                />
-                <h2 className="font-semibold text-white">
-                  {group.participant.displayName}
-                </h2>
+                  name={group.participant.displayName}
+                  className="gap-2.5"
+                >
+                  <Avatar
+                    name={group.participant.displayName}
+                    color={group.participant.color}
+                    image={group.participant.avatarImage}
+                    size={28}
+                  />
+                  <h2 className="font-semibold text-white">
+                    {group.participant.displayName}
+                  </h2>
+                </EnlaceDeJugador>
                 <AceBadge
                   size={26}
                   showEmpty

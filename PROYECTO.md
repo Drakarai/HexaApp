@@ -1933,6 +1933,29 @@ igual: conviene mirarlo cada vez que se pinta una imagen nueva.
 Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
 lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
 
+### El segundo repaso: lo que se toca y lo que estorba
+
+**Para abrir la ficha de un jugador había que acertarle a su foto**, un círculo
+de 20 píxeles, con el nombre justo al lado sin hacer nada. Ahora la pastilla
+entera —foto y nombre— es el enlace, con `EnlaceDeJugador`: de 20×20 a 117×28 en
+las jornadas. Está en las jornadas, los retos, la clasificación, el cementerio y
+el reparto de tickets. **Ojo**: dentro no puede ir otro enlace ni un botón, así
+que el avatar de dentro va sin `participantId` —si no, pondría el suyo y
+quedaría un `<a>` dentro de otro—.
+
+**Retirar, dar el locke por perdido y sacar a alguien viven detrás de un "⋯
+Más".** Estaban los tres a la vista por jugador: con seis, dieciocho botones en
+ámbar y rojo en una pantalla que se abre para mirar quién juega. Son cosas de
+una vez en todo el locke. *Editar* se queda fuera, que esa sí se usa.
+
+**El perfil va de dos en dos en pantalla ancha** (`xl:grid-cols-2`, sin
+`items-start`: estirando las tarjetas la rejilla se lee mejor que con los huecos
+desiguales). De 2449 a 1973 píxeles.
+
+**La gráfica de la clasificación no sale con una sola jornada jugada.** Eran dos
+columnas —"Inicio" y "J1"— y trescientos píxeles para decir lo que la tabla de
+debajo ya dice. Aparece con dos jornadas, que es cuando hay recorrido que ver.
+
 ### El repaso de pantallas: lo que ocupaba de más
 
 Se midieron las 24 pantallas a lo ancho de un móvil (390) y de un ordenador
@@ -2517,3 +2540,6 @@ lugar de destruir datos, y hay que avisar antes.
     o tickets de una ruleta, y sale sola a la bolsa o al saldo de quien gira.
 60. **El que pierde el locke sigue votando el MVP**, y el que se retira deja de
     votar: es lo único en lo que los dos motivos de salida no dan igual.
+61. **Segundo repaso de pantallas**: la pastilla entera del jugador lleva a su
+    ficha, las acciones de retirar y demás se guardan detrás de un "⋯", el
+    perfil va de dos en dos y la gráfica espera a tener dos jornadas.

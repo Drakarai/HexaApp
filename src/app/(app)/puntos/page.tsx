@@ -94,7 +94,13 @@ export default async function PointsPage() {
 
       {marcador ? <MarcadorDual marcador={marcador} /> : null}
 
-      {grafico ? (
+      {/**
+       * Con una sola jornada jugada la gráfica son dos columnas —"Inicio" y
+       * "J1"— y trescientos píxeles para contar lo que la tabla de abajo ya
+       * dice. Aparece cuando hay **dos jornadas que comparar**, que es cuando
+       * empieza a haber un recorrido.
+       */}
+      {grafico && grafico.etapas.length > 2 ? (
         <section className="card mb-4">
           <h2 className="section-title mb-1">Cómo ha ido la cosa</h2>
           <p className="muted mb-4">

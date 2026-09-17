@@ -36,6 +36,7 @@ import {
   EditParticipantForm,
   CopiarDeOtraEdicionForm,
 } from "./competition-forms";
+import { AccionesDeJugador } from "./acciones-de-jugador";
 
 export const metadata = { title: "Competiciones" };
 
@@ -216,7 +217,7 @@ export default async function CompetitionsPage() {
                   </div>
 
                   {canManageActive ? (
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <AccionesDeJugador nombre={participant.displayName}>
                       {/**
                        * Cuando está fuera por wipeo manda el botón de abajo:
                        * los dos lo devolverían al locke, y dos botones que
@@ -289,7 +290,7 @@ export default async function CompetitionsPage() {
                           ✕
                         </ConfirmSubmit>
                       </form>
-                    </div>
+                    </AccionesDeJugador>
                   ) : null}
 
                   {canManageActive ? (
