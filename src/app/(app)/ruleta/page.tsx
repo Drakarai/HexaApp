@@ -27,6 +27,7 @@ import {
 import { MyTickets, TicketsPanel } from "./tickets";
 import { EntregarPremio } from "./entregar-premio";
 import { describirPremio } from "@/lib/premios-de-ruleta";
+import { urlsDeImagen } from "@/lib/imagenes";
 
 export const metadata = { title: "Ruleta" };
 
@@ -69,8 +70,9 @@ export default async function RoulettePage({
         include: {
           options: {
             orderBy: { position: "asc" },
+            // Sin el dibujo: es una data URL y se pide aparte, por el almacén
             include: {
-              item: { select: { name: true, image: true } },
+              item: { select: { id: true, name: true } },
               ticketsDe: { select: { name: true } },
             },
           },
@@ -79,7 +81,7 @@ export default async function RoulettePage({
             take: 20,
             include: {
               spunBy: { select: { displayName: true } },
-              premioItem: { select: { name: true, image: true } },
+              premioItem: { select: { id: true, name: true } },
               premioTickets: { select: { name: true } },
               entregado: { select: { displayName: true, color: true } },
             },
@@ -87,6 +89,19 @@ export default async function RoulettePage({
         },
       })
     : null;
+
+  /**
+   * Los dibujos de los objetos, **como direcciones y no como imágenes**: ver
+   * `lib/imagen-url.ts`. Metiendo la columna en el `select` viajaba la data URL
+   * entera dentro del HTML, que es lo que el almacén está para evitar.
+   */
+  const dibujos = await urlsDeImagen(
+    "objeto",
+    [
+      ...(selected?.options ?? []).map((casilla) => casilla.itemId),
+      ...(selected?.spins ?? []).map((giro) => giro.premioItemId),
+    ].filter((id): id is string => Boolean(id)),
+  );
 
   /**
    * El catálogo de la bolsa, para poder poner objetos de premio. Es global y no
@@ -211,10 +226,10 @@ export default async function RoulettePage({
                       />
                       {/* El dibujo del objeto, que es lo que distingue de un
                           vistazo una casilla que reparte algo de una de texto */}
-                      {option.item?.image ? (
+                      {option.itemId && dibujos(option.itemId) ? (
                         /* eslint-disable-next-line @next/next/no-img-element */
                         <img
-                          src={option.item.image}
+                          src={dibujos(option.itemId)!}
                           alt=""
                           className="h-5 w-5 shrink-0 object-contain"
                         />
@@ -324,10 +339,10 @@ export default async function RoulettePage({
                         )}
                       >
                         <div className="flex items-center gap-2">
-                          {spin.premioItem?.image ? (
+                          {spin.premioItemId && dibujos(spin.premioItemId) ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
-                              src={spin.premioItem.image}
+                              src={dibujos(spin.premioItemId)!}
                               alt=""
                               className="h-6 w-6 shrink-0 object-contain"
                             />

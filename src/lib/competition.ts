@@ -136,9 +136,12 @@ export const getParticipants = cache(async (competitionId: string) => {
  * Los que siguen jugando: sin los retirados.
  *
  * Es lo que hay que usar para todo lo que hace avanzar al grupo —los gimnasios
- * que hay que superar, quién tiene que votar el MVP, contra quién se puede
- * emparejar—, porque esperar a alguien que se ha ido bloquea al resto. Para
- * enseñar lo que ya pasó se sigue usando `getParticipants`, con todos.
+ * que hay que superar, contra quién se puede emparejar—, porque esperar a
+ * alguien que se ha ido bloquea al resto. Para enseñar lo que ya pasó se sigue
+ * usando `getParticipants`, con todos.
+ *
+ * **Para votar el MVP no vale**: ahí sí votan los que perdieron el locke, y eso
+ * se pregunta con `puedeVotarElMvp()` (ver `lib/wipeos.ts`).
  */
 export function soloActivos<T extends { retiredAt: Date | null }>(
   participantes: T[],

@@ -1923,6 +1923,13 @@ tiene que aguantarlo. `entregadoA` en null **con premio** significa pendiente.
 Los tickets pueden ser **de la ruleta misma**, y entonces lo que toca es volver
 a girar ahí. No hace falta nada especial: es una fila más de saldo.
 
+**Los dibujos de los objetos van por el almacén**, con `urlsDeImagen("objeto")`,
+como en los retos. La primera versión los pedía con un `select: { image: true }`
+y colaba la data URL entera en el HTML —tres veces, una por sitio donde sale el
+objeto—; ahora es una dirección de 50 caracteres que además el navegador
+guarda. Es el error de siempre con las imágenes de esta aplicación y se coló
+igual: conviene mirarlo cada vez que se pinta una imagen nueva.
+
 Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
 lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
 

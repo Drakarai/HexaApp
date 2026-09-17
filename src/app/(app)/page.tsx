@@ -4,6 +4,7 @@ import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   getActiveCompetition,
+  getMyParticipant,
   getStandings,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
@@ -67,11 +68,9 @@ export default async function DashboardPage() {
           },
         },
       }),
-      prisma.participant.findUnique({
-        where: {
-          competitionId_userId: { competitionId: competition.id, userId: user.id },
-        },
-      }),
+      // El mismo que ya ha pedido el layout: `getMyParticipant` va con
+      // `cache()`, así que esto no es otro viaje a la base de datos
+      getMyParticipant(competition.id, user.id),
       // Cuántos llevan medalla de clasificado depende del formato de la final
       getFormatoFinal(competition.id),
       porJornadas ? getMarcador(competition.id) : null,
