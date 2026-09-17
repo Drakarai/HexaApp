@@ -38,12 +38,15 @@ export async function getActivity(competitionId: string, limit = 60) {
    * 6. Contra una base de datos en internet cada viaje cuesta su ida y vuelta,
    * así que esto se notaba de verdad.
    */
-  const jugadores = await getParticipants(competitionId);
-  const porId = new Map(jugadores.map((jugador) => [jugador.id, jugador]));
-  const quien = (participantId: string) => porId.get(participantId);
-
+  /**
+   * Y se piden **a la vez que las fuentes**, no antes: ninguna de las siete
+   * consultas de abajo necesita a los jugadores —todas filtran por la edición—,
+   * así que esperarlos costaba dos idas y vueltas enteras de la portada.
+   */
   // prettier-ignore
-  const [deaths, points, clears, spins, tickets, matches, usos] = await Promise.all([
+  const [jugadores, [deaths, points, clears, spins, tickets, matches, usos]] = await Promise.all([
+    getParticipants(competitionId),
+    Promise.all([
     prisma.death.findMany({
       where: { participant: { competitionId } },
       orderBy: { diedAt: "desc" },
@@ -94,7 +97,11 @@ export async function getActivity(competitionId: string, limit = 60) {
       orderBy: { usedAt: "desc" },
       take,
     }),
+    ] as const),
   ]);
+
+  const porId = new Map(jugadores.map((jugador) => [jugador.id, jugador]));
+  const quien = (participantId: string) => porId.get(participantId);
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts. Antes
   // el muro incrustaba el sprite de cada baja y la foto de cada jugador.

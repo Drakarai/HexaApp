@@ -114,21 +114,24 @@ export default async function MatchdaysPage() {
     ]),
   );
 
-  // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
-  const sprites = await urlsDeImagen("equipo", [
-    ...matchdays.flatMap((jornada) =>
-      jornada.matches.flatMap((combate) => combate.team.map((p) => p.id)),
-    ),
-    ...matchdays.flatMap((jornada) =>
-      jornada.royales.flatMap((royale) => royale.equipos.map((p) => p.id)),
+  // Las dos a la vez: la votación del MVP no necesita los sprites, y pedidas
+  // en fila era una ida y vuelta de más en la pantalla que más se abre.
+  const [sprites, mvpStates] = await Promise.all([
+    // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
+    urlsDeImagen("equipo", [
+      ...matchdays.flatMap((jornada) =>
+        jornada.matches.flatMap((combate) => combate.team.map((p) => p.id)),
+      ),
+      ...matchdays.flatMap((jornada) =>
+        jornada.royales.flatMap((royale) => royale.equipos.map((p) => p.id)),
+      ),
+    ]),
+    getMvpStates(
+      competition.id,
+      matchdays.map((matchday) => matchday.id),
+      myParticipant?.id ?? null,
     ),
   ]);
-
-  const mvpStates = await getMvpStates(
-    competition.id,
-    matchdays.map((matchday) => matchday.id),
-    myParticipant?.id ?? null,
-  );
 
   /** Añade la foto de perfil del dueño, que no viaja con el recuento */
   const withAvatar = (

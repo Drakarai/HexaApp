@@ -42,8 +42,24 @@ const SIN_IMAGENES = {
  * Se enciende a mano y no se queda encendido: los registros sacan el SQL
  * entero, y eso ni hace falta ni conviene en producción.
  */
-const crearCliente = () =>
-  new PrismaClient({
+/**
+ * Con `LATENCIA_FALSA=30` cada consulta tarda 30 ms de más, como si la base de
+ * datos estuviera lejos.
+ *
+ * Es la única forma de ver **aquí** lo que se va a notar en producción. En el
+ * ordenador Postgres está al lado y todo va en dos centésimas, así que da igual
+ * hacer veinte consultas que cuarenta; en Neon, por internet, lo que se paga es
+ * cada ida y vuelta. Y lo que cuesta no es *cuántas* consultas hay sino
+ * **cuántas tandas**: las que se piden a la vez cuestan una, y una que espera a
+ * la anterior cuesta otra.
+ *
+ * Se enciende a mano para medir y se apaga: `LATENCIA_FALSA=30 npm run start`.
+ */
+const esperar = (ms: number) =>
+  new Promise((suelta) => setTimeout(suelta, ms));
+
+const crearCliente = () => {
+  const cliente = new PrismaClient({
     log: process.env.CONTAR_CONSULTAS
       ? ["query"]
       : process.env.NODE_ENV === "development"
@@ -51,6 +67,25 @@ const crearCliente = () =>
         : ["error"],
     omit: SIN_IMAGENES,
   });
+
+  const latencia = Number(process.env.LATENCIA_FALSA ?? 0);
+  if (!latencia) return cliente;
+
+  return cliente.$extends({
+    query: {
+      async $allOperations({ model, operation, args, query }) {
+        // Con las dos encendidas sale también **cuándo** empieza cada una, que
+        // es lo que enseña las tandas: las de la misma tanda salen seguidas con
+        // el mismo momento, y una tanda nueva empieza 30 ms después
+        if (process.env.CONTAR_CONSULTAS) {
+          console.log(`tanda ${Date.now() % 100000} ${model}.${operation}`);
+        }
+        await esperar(latencia);
+        return query(args);
+      },
+    },
+  }) as unknown as typeof cliente;
+};
 
 // El tipo sale del propio cliente para que arrastre el `omit` de arriba
 const globalForPrisma = globalThis as unknown as {

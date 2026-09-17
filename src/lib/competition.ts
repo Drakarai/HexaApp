@@ -252,14 +252,18 @@ export async function assertCanActForParticipant(participantId: string) {
 export const getStandings = cache(async (
   competitionId: string,
 ): Promise<StandingRow[]> => {
-  const competition = await prisma.competition.findUnique({
-    where: { id: competitionId },
-    select: { startingPoints: true, challengeDiffCounts: true },
-  });
-  const startingPoints = competition?.startingPoints ?? 0;
-
-  const [participants, pointSums, deathCounts, wipeoCounts, matches, challenges] =
+  /**
+   * La competición va **dentro** del grupo y no antes: pidiéndola suelta, las
+   * otras seis consultas esperaban a que volviera, y contra una base de datos
+   * que está en internet eso es una ida y vuelta entera de más para leer dos
+   * números. Ninguna de las demás la necesita.
+   */
+  const [competition, participants, pointSums, deathCounts, wipeoCounts, matches, challenges] =
     await Promise.all([
+      prisma.competition.findUnique({
+        where: { id: competitionId },
+        select: { startingPoints: true, challengeDiffCounts: true },
+      }),
       getParticipants(competitionId),
       prisma.pointEntry.groupBy({
         by: ["participantId"],
@@ -295,6 +299,8 @@ export const getStandings = cache(async (
         },
       }),
     ]);
+
+  const startingPoints = competition?.startingPoints ?? 0;
 
   const deltaByParticipant = new Map(
     pointSums.map((row) => [row.participantId, row._sum.delta ?? 0]),

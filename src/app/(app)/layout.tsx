@@ -18,7 +18,6 @@ import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getAvisos } from "@/lib/novedades";
-import { puedeVotarElMvp } from "@/lib/wipeos";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -98,31 +97,31 @@ export default async function AppLayout({
   ]);
 
   /**
-   * Lo que hace falta para el botón de apuntar y el punto de novedades: quién
-   * es uno en esta edición y si puede tocar cosas de los demás. Sin edición
-   * activa no hay ni una cosa ni la otra.
+   * Lo que hace falta para el botón de apuntar, el punto de novedades y los
+   * rótulos del menú. Sin edición activa no hace falta nada de esto.
+   *
+   * **Las cuatro de una vez.** Ninguna necesita a las otras, y pedidas en fila
+   * eran tres idas y vueltas en **todas** las pantallas, que esto es el layout:
+   * contra una base de datos en internet, eso es lo que se paga.
+   *
+   * El nombre del final sale de la tercera: no siempre se llama igual —"Final
+   * Four" de cuatro jugadores para arriba y "Jornada Final" de tres para
+   * abajo—, y el menú tiene que decir lo mismo que la pantalla.
    */
-  const yo = active ? await getMyParticipant(active.id, user.id) : null;
-  /**
-   * El final del locke no siempre se llama igual: "Final Four" de cuatro
-   * jugadores para arriba y "Jornada Final" de tres para abajo. El menú tiene
-   * que decir lo mismo que la pantalla.
-   */
-  const formatoFinal = active ? await getFormatoFinal(active.id) : null;
-  /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
-  const perfil = perfilDeLocke(active?.maxPlayers ?? 6);
-  const [puedeGestionar, avisos] = active
+  const [yo, formatoFinal, puedeGestionar, avisos] = active
     ? await Promise.all([
+        getMyParticipant(active.id, user.id),
+        getFormatoFinal(active.id),
         canManageCompetition(active.id, user),
         getAvisos({
           userId: user.id,
           competitionId: active.id,
-          participantId: yo?.id ?? null,
-          puedeVotar: yo ? puedeVotarElMvp(yo) : false,
           esAdmin: esCreador(user),
         }),
       ])
-    : [false, {} as Record<string, boolean>];
+    : [null, null, false, {} as Record<string, boolean>];
+  /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
+  const perfil = perfilDeLocke(active?.maxPlayers ?? 6);
 
   /**
    * Los atajos de apuntar: solo los que esa persona puede usar de verdad. Un

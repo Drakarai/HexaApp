@@ -1128,6 +1128,44 @@ Lo que **no** se tocó, porque no era desperdicio: el muro de actividad consulta
 cada fuente por separado a propósito (abajo), y el aviso de novedades ya estaba
 resuelto en una sola consulta con `EXISTS`.
 
+### Lo que se paga no son las consultas, son las tandas
+
+Contar consultas resultó ser **la medida equivocada**, y hubo que medirlo para
+verlo. Casi todas se piden con `Promise.all`, así que veinte a la vez cuestan
+**una** ida y vuelta, no veinte. Lo que se paga es cuántas veces hay que ir y
+volver **en fila**, esperando la anterior: las tandas.
+
+Para verlo aquí está `LATENCIA_FALSA=30`, que le suma 30 ms a cada consulta
+como si la base de datos estuviera lejos (`lib/db.ts`). Con `CONTAR_CONSULTAS=1`
+a la vez, cada consulta dice además **cuándo** empieza: las de la misma tanda
+salen con el mismo momento y la siguiente aparece 30 ms después. Es la única
+forma de ver en el ordenador lo que se va a notar en Neon.
+
+Con eso, la portada eran **42 consultas en 8 tandas**, y las tandas salían de
+cuatro sitios donde se pedía en fila algo que no dependía de lo anterior:
+
+- **El layout** pedía el participante, el nombre del final, el permiso y los
+  avisos en tres pasos. Ninguno necesita a los otros: ahora es un `Promise.all`
+  de cuatro. Esto lo notan **todas** las pantallas, que para eso es el layout.
+- **`getAvisos`** recibía el participante ya resuelto, así que no empezaba hasta
+  que aquello volvía. Ahora lo pide él con `getMyParticipant` —que va con
+  `cache()`, o sea que es la misma consulta que ya está en el aire— a la vez que
+  las marcas de visita.
+- **`getActivity`** esperaba a los jugadores para *luego* consultar sus siete
+  fuentes, y ninguna de las siete los necesita: todas filtran por la edición.
+- **`getStandings`** pedía dos números de la competición y *después* las seis
+  consultas gordas.
+- En `/jornadas`, los sprites y la votación del MVP se pedían en fila, y dentro
+  del MVP, "a quién he votado yo" esperaba a las imágenes sin necesitarlas.
+
+Medido con 30 ms por consulta, antes y después: portada 250 → 216 ms, `/puntos`
+217 → 185, `/actividad` 205 → 172, `/jornadas` 282 → 256. **La cuenta de
+consultas no bajó**: son las mismas, pedidas de otra manera.
+
+Lo que queda en fila ya es de verdad encadenado: para pedir la firma de una
+imagen hay que saber antes de qué fila es. `getParticipants` son dos tandas por
+eso mismo, y se lleva por delante a todo lo que espera por él.
+
 Lo que sigue pesando es **el HTML de `/jornadas`: 353 KB**, porque lleva los
 seis pokémon de cada lado de cada combate de todas las jornadas. No es lento,
 pero es lo que más datos móviles gasta de toda la aplicación.
@@ -2260,7 +2298,13 @@ Piezas con truco:
   las zonas del mapa agrupadas por tipo y la salida de "Otro sitio".
 - `components/roulette-wheel.tsx` — la rueda SVG; las etiquetas de la mitad
   izquierda se voltean para que se lean del derecho.
-- `lib/activity.ts` — junta las siete fuentes del muro en una cronología.
+- `lib/activity.ts` — junta las siete fuentes del muro en una cronología. Las
+  siete se piden **a la vez que los jugadores**, no después: ninguna los
+  necesita.
+- `lib/db.ts` — el cliente de Prisma, con el `omit` de las imágenes y **las dos
+  medidas**: `CONTAR_CONSULTAS=1` saca cada consulta y cuándo empieza, y
+  `LATENCIA_FALSA=30` le suma 30 ms a cada una para ver aquí lo que costará en
+  Neon. Las dos se encienden a mano y no se quedan encendidas.
 - `lib/themes.ts` — genera la paleta de cada tema a partir de un acento.
 - `components/image-carousel.tsx` — el fundido entre imágenes, tanto en primer
   plano como de fondo. `level-caps/level-cap-art.tsx` mete los dos en el mismo
@@ -2543,3 +2587,6 @@ lugar de destruir datos, y hay que avisar antes.
 61. **Segundo repaso de pantallas**: la pastilla entera del jugador lleva a su
     ficha, las acciones de retirar y demás se guardan detrás de un "⋯", el
     perfil va de dos en dos y la gráfica espera a tener dos jornadas.
+62. **Menos idas y vueltas a la base de datos**: no menos consultas, sino menos
+    tandas en fila. Con `LATENCIA_FALSA` se puede medir aquí lo que costará en
+    Neon.

@@ -47,6 +47,17 @@ export async function getMvpStates(
   const states = new Map<string, MvpState>();
   if (!matchdayIds.length) return states;
 
+  /**
+   * Se lanza aquí y se espera al final: solo necesita las jornadas y quién
+   * mira, que ya se saben, así que va en la misma tanda que el resto.
+   */
+  const votosMios = myParticipantId
+    ? prisma.mvpVote.findMany({
+        where: { matchdayId: { in: matchdayIds }, voterId: myParticipantId },
+        select: { matchdayId: true, matchPokemonId: true },
+      })
+    : Promise.resolve([]);
+
   const [pokemon, votes, matchdays, voterCount] = await Promise.all([
     prisma.matchPokemon.findMany({
       // Solo los de jornada: los equipos de un reto no optan a MVP
@@ -80,12 +91,9 @@ export async function getMvpStates(
     urlsDeImagen("equipo-ficha", ids),
   ]);
 
-  const myVotes = myParticipantId
-    ? await prisma.mvpVote.findMany({
-        where: { matchdayId: { in: matchdayIds }, voterId: myParticipantId },
-        select: { matchdayId: true, matchPokemonId: true },
-      })
-    : [];
+  // Ojo: esto va **arriba**, con las demás. Estaba aquí, después de las
+  // imágenes, y no necesita nada de ellas: era una ida y vuelta de más.
+  const myVotes = await votosMios;
   const myVoteByMatchday = new Map(
     myVotes.map((vote) => [vote.matchdayId, vote.matchPokemonId]),
   );

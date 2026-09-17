@@ -1,5 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { getMyParticipant } from "@/lib/competition";
+import { puedeVotarElMvp } from "@/lib/wipeos";
 
 /**
  * El punto de "hay algo nuevo aquí" de las pestañas.
@@ -30,27 +32,35 @@ const EPOCA = new Date(0);
 export async function getAvisos({
   userId,
   competitionId,
-  participantId,
-  puedeVotar = true,
   esAdmin = false,
 }: {
   userId: string;
   competitionId: string;
-  /** Su participante en esta edición, o null si no la juega */
-  participantId: string | null;
+  /** Administrador global: a él además le avisan las peticiones sin responder */
+  esAdmin?: boolean;
+}): Promise<Avisos> {
+  /**
+   * El participante se pide **aquí dentro y a la vez** que las marcas de
+   * visita. Antes lo pasaba el layout ya resuelto, así que esto no empezaba
+   * hasta que aquello volvía: una ida y vuelta de más en todas las pantallas.
+   * `getMyParticipant` va con `cache()`, así que pedirlo otra vez no es otro
+   * viaje —es el mismo que ya está en el aire—.
+   */
+  const [yo, marcas] = await Promise.all([
+    getMyParticipant(competitionId, userId),
+    prisma.tabSeen.findMany({
+      where: { userId, competitionId },
+      select: { tab: true, seenAt: true },
+    }),
+  ]);
+
+  const participantId = yo?.id ?? null;
   /**
    * Si le toca votar al MVP. El que se retiró no vota, y sin esto se quedaría
    * con el punto ámbar de "tienes algo que hacer" encendido **para siempre**,
    * porque lo que lo apaga es justamente votar. Ver `lib/wipeos.ts`.
    */
-  puedeVotar?: boolean;
-  /** Administrador global: a él además le avisan las peticiones sin responder */
-  esAdmin?: boolean;
-}): Promise<Avisos> {
-  const marcas = await prisma.tabSeen.findMany({
-    where: { userId, competitionId },
-    select: { tab: true, seenAt: true },
-  });
+  const puedeVotar = yo ? puedeVotarElMvp(yo) : false;
   const desde = (tab: PestanaConAviso) =>
     marcas.find((marca) => marca.tab === tab)?.seenAt ?? EPOCA;
 
@@ -59,9 +69,9 @@ export async function getAvisos({
   const loMioDesde = desde("Lo mío");
   // En SQL no hay "sin participante": se usa un id que no existe y las
   // subconsultas suyas se quedan vacías solas.
-  const yo = participantId ?? "";
+  const miId = participantId ?? "";
   /** El mismo truco para el voto: si no votas, la subconsulta se queda vacía */
-  const votante = puedeVotar ? yo : "";
+  const votante = puedeVotar ? miId : "";
 
   const [fila] = await prisma.$queryRaw<
     { combates: boolean; edicion: boolean; lomio: boolean }[]
@@ -116,7 +126,7 @@ export async function getAvisos({
         -- Lo único de "Lo mío" que cambia sin que lo toques tú: la bolsa, que
         -- la llena la organización
         EXISTS (SELECT 1 FROM "BagEntry"
-                 WHERE "participantId" = ${yo}
+                 WHERE "participantId" = ${miId}
                    AND "updatedAt" > ${loMioDesde})
       ) AS lomio
   `;
