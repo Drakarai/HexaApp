@@ -15,9 +15,24 @@ export type EnElPodio = {
 };
 
 const CAJONES = [
-  { alto: "h-24", medalla: "🥇", borde: "border-amber-400/40 bg-amber-400/10" },
-  { alto: "h-16", medalla: "🥈", borde: "border-slate-300/30 bg-slate-300/10" },
-  { alto: "h-11", medalla: "🥉", borde: "border-orange-400/30 bg-orange-400/10" },
+  {
+    alto: "h-24",
+    medalla: "🥇",
+    borde: "border-amber-400/40 bg-amber-400/10",
+    numero: "text-amber-300/70",
+  },
+  {
+    alto: "h-16",
+    medalla: "🥈",
+    borde: "border-slate-300/30 bg-slate-300/10",
+    numero: "text-slate-300/60",
+  },
+  {
+    alto: "h-11",
+    medalla: "🥉",
+    borde: "border-orange-400/30 bg-orange-400/10",
+    numero: "text-orange-300/60",
+  },
 ];
 
 /**
@@ -65,18 +80,35 @@ export function Podio({ podio }: { podio: EnElPodio[] }) {
               >
                 {quien.displayName}
               </p>
-              <p className="w-full truncate text-center text-[11px] text-slate-500">
+              {/* Sin truncar: "Tercero en la tabla" no cabe en una columna de
+                  un tercio de móvil y se quedaba en "Tercero en la ta…" */}
+              <p className="w-full text-center text-[11px] leading-tight text-slate-500">
                 {quien.titulo}
               </p>
-              {/* El cajón. Es decorativo: lo que se lee está arriba. */}
+              {/**
+               * El cajón, con su número dentro. Vacío eran tres rectángulos
+               * oscuros que parecían algo que no había cargado; con el número
+               * se lee de un vistazo que es un podio. Sigue siendo decorativo:
+               * lo que cuenta está escrito arriba.
+               */}
               <div
                 className={cx(
-                  "mt-2 w-full rounded-t-lg border border-b-0",
+                  "mt-2 flex w-full items-center justify-center rounded-t-lg border border-b-0",
                   cajon.alto,
                   cajon.borde,
                 )}
                 aria-hidden
-              />
+              >
+                <span
+                  className={cx(
+                    "font-black leading-none",
+                    quien.puesto === 1 ? "text-3xl" : "text-2xl",
+                    cajon.numero,
+                  )}
+                >
+                  {quien.puesto}
+                </span>
+              </div>
             </li>
           );
         })}

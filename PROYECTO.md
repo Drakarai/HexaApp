@@ -1971,6 +1971,37 @@ igual: conviene mirarlo cada vez que se pinta una imagen nueva.
 Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
 lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
 
+### El tercer repaso: jugar el locke hasta el final
+
+Los dos repasos anteriores miraban las mismas pantallas en el mismo estado —un
+locke a media carrera—, así que el tercero fue **jugar la partida de ejemplo
+hasta el final**: anotar las quince jornadas, generar el cuadro, jugarlo entero
+y rellenar el hall. Esas pantallas nunca se habían visto con datos, solo con su
+aviso de "aún no toca".
+
+Aguantan: el cuadro avanza solo llave a llave, sale el campeón con su
+subcampeón, el palmarés se entera y `/jornadas` de un locke terminado se queda
+en **una pantalla** porque todas las jornadas se pliegan. Lo que salió fue de
+mirar, y son tres cosas:
+
+- **El podio eran tres cajones vacíos.** El comentario decía "es decorativo, lo
+  que se lee está arriba", y lo era, pero sobre fondo oscuro tres rectángulos
+  sin nada dentro parecen algo que no ha cargado. Ahora llevan su número —1, 2,
+  3, cada uno del color de su medalla— y se lee de un vistazo que es un podio.
+- **"Tercero en la tabla" no cabía** en una columna de un tercio de móvil y se
+  quedaba en "Tercero en la ta…". Ya no se trunca: se parte en dos líneas.
+- **En el cuadro final, al nombre del ganador le quedaban cuatro letras**
+  ("👑 Adri…"): la columna es estrecha y la diferencia, la fecha y el lápiz se
+  llevaban el sitio. Con un ancho mínimo, lo que baja de línea es la fecha.
+- **Los huecos del equipo del hall** eran un "·" a opacidad 25 con un borde casi
+  invisible: se leían como tres puntos sueltos flotando. Ahora son un recuadro
+  punteado y nada dentro, como los del equipo de un combate.
+
+**Lo que no era un fallo**: el detector de desbordes marcó la gráfica de la
+clasificación con cinco jornadas. Es falso positivo suyo —el marco de la
+gráfica se desplaza en horizontal a propósito, así que lo de dentro se sale de
+la pantalla y se llega desplazando—. La página no desborda.
+
 ### El segundo repaso: lo que se toca y lo que estorba
 
 **Para abrir la ficha de un jugador había que acertarle a su foto**, un círculo
@@ -2326,6 +2357,13 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
+**Visto y sin hacer**: cuando el locke termina y ya hay campeón, **la portada no
+se entera**. Sigue diciendo "🟢 En curso", la tarjeta de *Próxima jornada* pone
+"no hay combates pendientes, crea una jornada nueva" y no hay ni una palabra del
+campeón. Lo suyo sería que al haber campeón la portada lo enseñe y lleve al hall,
+y que el estado deje de decir que está en curso. Se dejó a propósito para
+consultarlo: es cambiar la pantalla principal, no arreglar un fallo.
+
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
@@ -2590,3 +2628,6 @@ lugar de destruir datos, y hay que avisar antes.
 62. **Menos idas y vueltas a la base de datos**: no menos consultas, sino menos
     tandas en fila. Con `LATENCIA_FALSA` se puede medir aquí lo que costará en
     Neon.
+63. **El locke de ejemplo, jugado hasta el final** para mirar el cuadro y el
+    hall con datos: el podio ya no son tres cajones vacíos y se arreglaron tres
+    textos que se cortaban.

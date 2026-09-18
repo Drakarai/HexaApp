@@ -118,13 +118,14 @@ export function TeamSlots({
         ))}
 
         {Array.from({ length: huecos }).map((_, index) => (
+          /* Un recuadro punteado y nada dentro. Antes llevaba un "·" a opacidad
+             25, y con el borde tan tenue lo que se veía eran tres puntos
+             sueltos flotando, como suciedad en la pantalla. */
           <div
             key={`hueco-${index}`}
-            className="flex aspect-square items-center justify-center rounded-xl border border-dashed border-white/10 text-2xl opacity-25"
+            className="aspect-square rounded-xl border border-dashed border-white/[0.12]"
             aria-hidden
-          >
-            ·
-          </div>
+          />
         ))}
       </div>
 

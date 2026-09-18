@@ -121,7 +121,10 @@ function Combate({
         <span className="w-4 shrink-0 font-bold text-slate-600">
           {combate.numero}
         </span>
-        <span className="min-w-0 flex-1 truncate text-slate-300">
+        {/* Con un ancho mínimo: la columna del cuadro es estrecha y entre la
+            diferencia, la fecha y el lápiz al nombre le quedaban cuatro letras
+            ("👑 Adri…"). Como la fila se parte sola, lo que baja es la fecha */}
+        <span className="min-w-24 flex-1 truncate text-slate-300">
           {combate.sobra ? (
             <span className="italic text-slate-500">
               {ganador
