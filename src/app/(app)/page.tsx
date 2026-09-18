@@ -424,7 +424,8 @@ function StatCard({
     >
       <CarouselBackdrop
         images={images}
-        className="absolute -bottom-3 -right-3 -z-10 h-20 w-20 opacity-25 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]"
+        /* 35 y no 25: con las fotos de perfil oscuras no se veía casi nada */
+        className="absolute -bottom-3 -right-3 -z-10 h-20 w-20 opacity-35 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]"
       />
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 truncate text-2xl font-bold text-white">{value}</p>
