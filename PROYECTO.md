@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 17 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 18 de septiembre de 2026 (Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -61,7 +61,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
-| **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
+| **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
@@ -173,6 +173,26 @@ perderla.
   mirar arriba y abajo para saber cuál es la tuya, y de paso resuelve que
   alguien no distinga bien dos colores. Al tocar una línea (o una foto) se
   resalta y las demás se apagan.
+
+**Hay dos gráficas, con su pestaña: "Con todos" y "Sin los que se fueron".** La
+segunda contesta a otra pregunta: *cómo iría esto contando las retiradas y los
+lockes perdidos*. Desde la jornada en la que alguien se va deja de estar en la
+tabla y los de abajo suben, así que la línea de quien se fue **acaba ahí** y las
+demás se recolocan en esa misma columna.
+
+- **Se va en "su" jornada, no en la siguiente.** La fecha de salida se compara
+  con los cortes de cada jornada y se coge **la primera que termina después**:
+  esa es la que se estaba jugando cuando lo dejó. Si se retira jugándose la
+  tercera, en la tercera ya no sale.
+- **Los puntos no se tocan**, solo los puestos. Lo que cambia es quién está en
+  la tabla; recalcular los puntos quitando los combates contra el que se fue
+  sería reescribir lo que pasó, y no es lo que se pregunta.
+- **La pestaña solo aparece si se ha ido alguien.** Si no, las dos gráficas
+  serían idénticas y el botón sería ruido.
+- Las dos salen **de las mismas cuentas** (`fotos`, una por etapa) y viajan
+  juntas al navegador: cambiar de pestaña no pide nada al servidor.
+- El pie de la segunda dice quién se fue y cuándo, en orden de marcha y con su
+  icono: 🚪 retirada, 💥 locke perdido.
 - En el móvil **se desliza en horizontal** dentro de su tarjeta en vez de
   encogerse, porque con las letras a la mitad no se leería. El aviso de que hay
   más a la derecha solo sale si de verdad se sale, medido con un
@@ -2133,7 +2153,10 @@ Piezas con truco:
   los tocan.
 - `lib/grafico-clasificacion.ts` — rehace la clasificación al final de cada
   jornada y la convierte en carriles, con los empates compartiendo carril.
-  `components/points-chart.tsx` es el dibujo.
+  Devuelve **dos juegos de etapas**: el de siempre y el que descuenta a los que
+  se fueron (`etapasDeLosQueSiguen`), más `salidas` con quién se fue y en qué
+  jornada. `components/points-chart.tsx` es el dibujo y la pestaña que cambia
+  de uno a otro.
 - `lib/cara-a-cara.ts` — el marcador de un jugador contra cada rival, juntando
   jornadas y retos, y de ahí salen la presa favorita y la bestia negra.
   `components/head-to-head.tsx` es la casilla desplegable del perfil.
@@ -2631,3 +2654,5 @@ lugar de destruir datos, y hay que avisar antes.
 63. **El locke de ejemplo, jugado hasta el final** para mirar el cuadro y el
     hall con datos: el podio ya no son tres cajones vacíos y se arreglaron tres
     textos que se cortaban.
+64. **La gráfica, con dos vistas**: la de siempre y otra que descuenta a los que
+    se retiran o pierden el locke desde la jornada en la que se van.

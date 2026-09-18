@@ -35,8 +35,25 @@ export type JugadorDelGrafico = {
   avatarImage: string | null;
 };
 
+/** Quién se fue del locke y en qué jornada dejó de contar. */
+export type SalidaDelGrafico = {
+  participantId: string;
+  /** La etiqueta de la etapa desde la que ya no sale: "J3" */
+  etiqueta: string;
+  /** "retirada" o "wipeo", para decirlo con su palabra */
+  motivo: string | null;
+};
+
 export type GraficoClasificacion = {
   etapas: EtapaDelGrafico[];
+  /**
+   * La misma historia **descontando a los que se fueron**: desde la jornada en
+   * la que alguien se retira o pierde el locke, deja de estar en la tabla y los
+   * demás suben. `null` si no se ha ido nadie, que entonces sería la misma
+   * gráfica dos veces.
+   */
+  etapasDeLosQueSiguen: EtapaDelGrafico[] | null;
+  salidas: SalidaDelGrafico[];
   jugadores: JugadorDelGrafico[];
 };
 
@@ -278,17 +295,64 @@ export async function getGraficoClasificacion(
     return nodos;
   };
 
-  const etapas: EtapaDelGrafico[] = [
-    { etiqueta: "Inicio", titulo: "Antes de empezar", nodos: aNodos(foto(-1)) },
-    ...jugadas.map((jornada, indice) => ({
-      etiqueta: `J${indice + 1}`,
-      titulo: jornada.label,
-      nodos: aNodos(foto(indice)),
-    })),
-  ];
+  /** Las fotos, una sola vez: las dos gráficas salen de las mismas cuentas. */
+  const fotos = [foto(-1), ...jugadas.map((_, indice) => foto(indice))];
+  const etiquetaDe = (etapa: number) =>
+    etapa === 0 ? "Inicio" : `J${etapa}`;
+
+  /**
+   * En qué etapa deja de contar cada uno que se fue.
+   *
+   * Es **la jornada en la que se va**, no la siguiente: si se retira jugándose
+   * la tercera, en la tercera ya no está. Se busca la primera jornada que
+   * termina después de su fecha de salida, que es la que se estaba jugando
+   * cuando lo dejó. Y como el último corte es "ahora" (ver arriba), quien se va
+   * después de la última jornada cae en esa última columna.
+   */
+  const salidaEnEtapa = new Map<string, number>();
+  for (const jugador of participantes) {
+    if (!jugador.retiredAt) continue;
+    const cuando = jugador.retiredAt;
+    const indice = cortes.findIndex((corte) => corte >= cuando);
+    salidaEnEtapa.set(jugador.id, (indice === -1 ? cortes.length - 1 : indice) + 1);
+  }
+
+  const etapas: EtapaDelGrafico[] = fotos.map((corte, etapa) => ({
+    etiqueta: etiquetaDe(etapa),
+    titulo: etapa === 0 ? "Antes de empezar" : jugadas[etapa - 1].label,
+    nodos: aNodos(corte),
+  }));
+
+  /**
+   * La otra: en cada etapa se quedan solo los que seguían jugando entonces. Al
+   * caerse uno, los de abajo suben de puesto **en esa misma columna**, que es
+   * justo lo que se quiere mirar.
+   */
+  const etapasDeLosQueSiguen = salidaEnEtapa.size
+    ? fotos.map((corte, etapa) => ({
+        etiqueta: etiquetaDe(etapa),
+        titulo: etapa === 0 ? "Antes de empezar" : jugadas[etapa - 1].label,
+        nodos: aNodos(
+          corte.filter(
+            (fila) =>
+              (salidaEnEtapa.get(fila.participantId) ?? Infinity) > etapa,
+          ),
+        ),
+      }))
+    : null;
 
   return {
     etapas,
+    etapasDeLosQueSiguen,
+    // Por orden de marcha, que es como se cuenta: primero el que se fue antes
+    salidas: participantes
+      .filter((jugador) => salidaEnEtapa.has(jugador.id))
+      .sort((a, b) => salidaEnEtapa.get(a.id)! - salidaEnEtapa.get(b.id)!)
+      .map((jugador) => ({
+        participantId: jugador.id,
+        etiqueta: etiquetaDe(salidaEnEtapa.get(jugador.id)!),
+        motivo: jugador.motivoDeSalida,
+      })),
     jugadores: participantes.map((jugador) => ({
       participantId: jugador.id,
       displayName: jugador.displayName,

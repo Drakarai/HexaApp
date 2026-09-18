@@ -111,7 +111,12 @@ export default async function PointsPage() {
             toca una bola para ver por qué. Cuando van igualados de verdad en
             las tres cosas, comparten bola.
           </p>
-          <PointsChart etapas={grafico.etapas} jugadores={grafico.jugadores} />
+          <PointsChart
+            etapas={grafico.etapas}
+            etapasDeLosQueSiguen={grafico.etapasDeLosQueSiguen}
+            salidas={grafico.salidas}
+            jugadores={grafico.jugadores}
+          />
         </section>
       ) : null}
 

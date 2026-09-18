@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type {
   EtapaDelGrafico,
   JugadorDelGrafico,
+  SalidaDelGrafico,
 } from "@/lib/grafico-clasificacion";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
@@ -28,12 +29,25 @@ const RADIO_NODO = 12;
  */
 export function PointsChart({
   etapas,
+  etapasDeLosQueSiguen = null,
+  salidas = [],
   jugadores,
 }: {
   etapas: EtapaDelGrafico[];
+  /** La misma historia descontando a los que se fueron, si se fue alguien */
+  etapasDeLosQueSiguen?: EtapaDelGrafico[] | null;
+  salidas?: SalidaDelGrafico[];
   jugadores: JugadorDelGrafico[];
 }) {
   const [resaltado, setResaltado] = useState<string | null>(null);
+  /**
+   * Cuál de las dos se está viendo. Las dos vienen ya calculadas del servidor,
+   * así que cambiar de pestaña no pide nada: es la misma página.
+   */
+  const [modo, setModo] = useState<"todos" | "siguen">("todos");
+  const hayDosVistas = Boolean(etapasDeLosQueSiguen?.length);
+  const vista =
+    modo === "siguen" && etapasDeLosQueSiguen ? etapasDeLosQueSiguen : etapas;
 
   /**
    * En una pantalla estrecha el dibujo se sale de la tarjeta y hay que
@@ -54,25 +68,25 @@ export function PointsChart({
   }, []);
 
   const carriles = jugadores.length;
-  const ancho = MARGEN_IZQ + (etapas.length - 1) * ANCHO_ETAPA + MARGEN_DER;
+  const ancho = MARGEN_IZQ + (vista.length - 1) * ANCHO_ETAPA + MARGEN_DER;
   const alto = MARGEN_SUP + carriles * ALTO_CARRIL + MARGEN_INF;
 
   const x = (etapa: number) => MARGEN_IZQ + etapa * ANCHO_ETAPA;
   const y = (carril: number) => MARGEN_SUP + (carril - 0.5) * ALTO_CARRIL;
 
   const nodoDe = (etapa: number, participantId: string) =>
-    etapas[etapa].nodos.find((nodo) => nodo.participantId === participantId);
+    vista[etapa].nodos.find((nodo) => nodo.participantId === participantId);
 
   /** Cuántos comparten carril en esa etapa: si son varios, el nodo es uno solo. */
   const compartenCarril = (etapa: number, carril: number) =>
-    etapas[etapa].nodos.filter((nodo) => nodo.carril === carril).length;
+    vista[etapa].nodos.filter((nodo) => nodo.carril === carril).length;
 
   /**
    * La curva en ese de una etapa a la siguiente. Con líneas rectas esto se lee
    * como un diente de sierra; con la curva, como un adelantamiento.
    */
   const trazo = (participantId: string) =>
-    etapas
+    vista
       .map((_, etapa) => {
         const nodo = nodoDe(etapa, participantId);
         if (!nodo) return "";
@@ -86,16 +100,61 @@ export function PointsChart({
       })
       .join(" ");
 
-  const ultima = etapas.length - 1;
+  const ultima = vista.length - 1;
   const apagado = (participantId: string) =>
     resaltado !== null && resaltado !== participantId;
 
   const elResaltado = jugadores.find((j) => j.participantId === resaltado);
+  /**
+   * La última etapa **suya**, que no tiene por qué ser la última de todas:
+   * descontando a los que se fueron, su línea acaba donde lo dejó.
+   */
+  const ultimoNodoDe = (participantId: string) => {
+    for (let etapa = ultima; etapa >= 0; etapa--) {
+      const nodo = nodoDe(etapa, participantId);
+      if (nodo) return nodo;
+    }
+    return null;
+  };
   const suPrimero = resaltado ? nodoDe(0, resaltado) : null;
-  const suUltimo = resaltado ? nodoDe(ultima, resaltado) : null;
+  const suUltimo = resaltado ? ultimoNodoDe(resaltado) : null;
+  /** Si se fue, se dice dónde acaba su línea en vez de "acaba Nº" */
+  const suSalida = resaltado
+    ? (salidas.find((salida) => salida.participantId === resaltado) ?? null)
+    : null;
 
   return (
     <div>
+      {/**
+       * Las dos vistas. Solo salen si se ha ido alguien: con todo el mundo
+       * dentro las dos gráficas serían idénticas y la pestaña sobraría.
+       */}
+      {hayDosVistas ? (
+        <div className="mb-3 flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+          {(
+            [
+              ["todos", "Con todos"],
+              ["siguen", "Sin los que se fueron"],
+            ] as const
+          ).map(([cual, rotulo]) => (
+            <button
+              key={cual}
+              type="button"
+              onClick={() => setModo(cual)}
+              aria-pressed={modo === cual}
+              className={cx(
+                "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition",
+                modo === cual
+                  ? "bg-brand-600/25 text-white ring-1 ring-brand-500/40"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+              )}
+            >
+              {rotulo}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {/* En el móvil se desplaza en horizontal antes que encogerse: con las
           letras a la mitad de tamaño no se leería nada */}
       <div className="table-wrap" ref={marco}>
@@ -104,7 +163,7 @@ export function PointsChart({
             width={ancho}
             height={alto}
             role="img"
-            aria-label={`Puestos de la clasificación por jornada. Al final: ${etapas[ultima].nodos
+            aria-label={`Puestos de la clasificación por jornada. Al final: ${vista[ultima].nodos
               .slice()
               .sort((a, b) => a.puesto - b.puesto)
               .map(
@@ -141,7 +200,7 @@ export function PointsChart({
             ))}
 
             {/* Nombre de cada etapa */}
-            {etapas.map((etapa, indice) => (
+            {vista.map((etapa, indice) => (
               <text
                 key={etapa.etiqueta}
                 x={x(indice)}
@@ -192,7 +251,7 @@ export function PointsChart({
 
             {/* Los nodos, con los puntos dentro. Los que comparten carril se
                 pintan una sola vez: van empatados, es lo que hay que contar */}
-            {etapas.map((etapa, indice) => {
+            {vista.map((etapa, indice) => {
               const pintados = new Set<number>();
               return etapa.nodos.map((nodo) => {
                 const varios = compartenCarril(indice, nodo.carril) > 1;
@@ -295,13 +354,40 @@ export function PointsChart({
             </span>{" "}
             · {suPrimero.puntos} → {suUltimo.puntos} puntos · {suUltimo.muertes}{" "}
             caídos · {suUltimo.diff > 0 ? "+" : ""}
-            {suUltimo.diff} de diferencia · acaba {suUltimo.puesto}º
+            {suUltimo.diff} de diferencia ·{" "}
+            {modo === "siguen" && suSalida
+              ? `${suSalida.motivo === "wipeo" ? "pierde el locke" : "se retira"} en ${suSalida.etiqueta}, ${suUltimo.puesto}º`
+              : `acaba ${suUltimo.puesto}º`}
           </>
         ) : (
           <>
-            Cada línea es un jugador y cada carril un puesto. Toca una para
-            seguirla.
-            {seSale ? " Desliza para ver el resto de jornadas." : ""}
+            {modo === "siguen" ? (
+              <>
+                Desde la jornada en la que alguien se va, deja de estar en la
+                tabla y los de abajo suben.{" "}
+                {salidas.map((salida, posicion) => {
+                  const quien = jugadores.find(
+                    (j) => j.participantId === salida.participantId,
+                  );
+                  if (!quien) return null;
+                  return (
+                    <span key={salida.participantId}>
+                      {posicion > 0 ? " · " : ""}
+                      <span style={{ color: quien.color }}>
+                        {quien.displayName}
+                      </span>{" "}
+                      {salida.motivo === "wipeo" ? "💥" : "🚪"} {salida.etiqueta}
+                    </span>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                Cada línea es un jugador y cada carril un puesto. Toca una para
+                seguirla.
+                {seSale ? " Desliza para ver el resto de jornadas." : ""}
+              </>
+            )}
           </>
         )}
       </p>
