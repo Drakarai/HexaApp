@@ -10,6 +10,7 @@ import {
   llavesPosteriores,
 } from "@/lib/formatos-finales";
 import { enlaceSeguro } from "@/lib/utils";
+import { IMAGEN_SIN_CAMBIOS, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -150,4 +151,55 @@ export async function resetBracketAction(formData: FormData) {
   revalidatePath("/final-four");
   revalidatePath("/hall-de-la-fama");
   revalidatePath("/");
+}
+
+/**
+ * El cartel del final: las ilustraciones que salen de fondo en el resumen
+ * cuando ya no quedan level caps que superar.
+ *
+ * Se guardan en la competición y no en el cuadro porque se ponen **antes** de
+ * que haya cuadro, que es justo cuando la tarjeta empieza a enseñarlas. Las que
+ * ya estaban no vuelven a viajar enteras: ver `readImages` en los level caps.
+ */
+export async function guardarCartelDelFinalAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  try {
+    await requireCompetitionManager(competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const actuales = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { finalImages: true },
+  });
+  if (!actuales) return { error: "No encuentro esa edición." };
+
+  const finalImages = formData
+    .getAll("images")
+    .map((valor) => {
+      const texto = String(valor ?? "").trim();
+      if (texto.startsWith(`${IMAGEN_SIN_CAMBIOS}:`)) {
+        return actuales.finalImages[Number(texto.split(":")[1])] ?? null;
+      }
+      return sanitizeImageValue(texto);
+    })
+    .filter((valor): valor is string => Boolean(valor))
+    .slice(0, 8);
+
+  await prisma.competition.update({
+    where: { id: competitionId },
+    data: { finalImages },
+  });
+
+  revalidatePath("/final-four");
+  revalidatePath("/");
+  return {
+    success: finalImages.length
+      ? `Cartel guardado: ${finalImages.length} ${finalImages.length === 1 ? "imagen" : "imágenes"}.`
+      : "Cartel quitado.",
+  };
 }

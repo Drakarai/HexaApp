@@ -9,14 +9,18 @@ import {
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
-import { getFormatoFinal } from "@/lib/final-four";
+import {
+  getFinalFourState,
+  getFormatoFinal,
+  NOMBRE_POR_DEFECTO,
+} from "@/lib/final-four";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, EmptyState } from "@/components/ui";
 import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
-import { urlsDeMedallas } from "@/lib/imagenes";
+import { urlsDeCarteles, urlsDeMedallas } from "@/lib/imagenes";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
@@ -43,7 +47,7 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, marcador, castigos, canManage, progreso] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -73,6 +77,14 @@ export default async function DashboardPage() {
       getMyParticipant(competition.id, user.id),
       // Cuántos llevan medalla de clasificado depende del formato de la final
       getFormatoFinal(competition.id),
+      /**
+       * Cómo va el final. Se pide siempre, aunque casi nunca haga falta: va en
+       * la misma tanda que todo lo demás —o sea, no cuesta una ida y vuelta
+       * más— y sin él no se puede saber si la tarjeta del hito tiene que dejar
+       * de enseñar el último level cap. Por dentro reaprovecha `getStandings`,
+       * que esta página ya ha pedido.
+       */
+      getFinalFourState(competition.id),
       porJornadas ? getMarcador(competition.id) : null,
       // Los castigos de los retos perdidos, que son cosa de todos
       getCastigosPendientes(competition.id),
@@ -95,14 +107,99 @@ export default async function DashboardPage() {
   const retirados = totalPlayers - activos;
   const totalDeaths = standings.reduce((sum, row) => sum + row.deaths, 0);
   // Siguiente hito: el primero que no ha superado todo el mundo
-  const currentCap =
-    levelCaps.find((cap) => cap._count.clears < Math.max(1, activos)) ??
-    levelCaps[levelCaps.length - 1];
+  const capPendiente =
+    levelCaps.find((cap) => cap._count.clears < Math.max(1, activos)) ?? null;
+  /**
+   * Cuando ya no queda ningún level cap por superar, **la tarjeta cambia de
+   * tema**: deja de enseñar el último hito, que se quedaba ahí congelado
+   * diciendo lo mismo para siempre, y pasa a ser la del final del locke.
+   */
+  const tocaElFinal =
+    levelCaps.length > 0 &&
+    !capPendiente &&
+    /**
+     * …y que haya un final al que mirar. En un locke en solitario no lo hay, y
+     * sin jornadas jugadas tampoco: ahí se queda el último hito, que es lo
+     * único que se puede contar.
+     */
+    !perfil.enSolitario &&
+    estadoFinal.status !== "POCA_GENTE" &&
+    estadoFinal.status !== "SIN_JORNADAS";
+  const currentCap = capPendiente ?? levelCaps[levelCaps.length - 1];
 
-  // Direcciones de las medallas del level cap actual: ver lib/imagen-url.ts
-  const medallasDelCap = currentCap
-    ? (await urlsDeMedallas([currentCap.id]))(currentCap.id)
-    : [];
+  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
+  const [medallas, carteles] = await Promise.all([
+    urlsDeMedallas(currentCap ? [currentCap.id] : []),
+    tocaElFinal ? urlsDeCarteles([competition.id]) : null,
+  ]);
+  const medallasDelCap = currentCap ? medallas(currentCap.id) : [];
+
+  /**
+   * Lo que le toca a **quien mira**: su rival de la llave que tenga por jugar.
+   * Es lo que hacía la medalla —decirte qué tienes delante— ahora que los
+   * gimnasios se han acabado.
+   */
+  const miLlave =
+    tocaElFinal && myParticipant && estadoFinal.status === "EN_JUEGO"
+      ? (estadoFinal.llaves.find(
+          (llave) =>
+            !llave.winnerId &&
+            (llave.a?.participantId === myParticipant.id ||
+              llave.b?.participantId === myParticipant.id),
+        ) ?? null)
+      : null;
+  const miRival = miLlave
+    ? miLlave.a?.participantId === myParticipant?.id
+      ? miLlave.b
+      : miLlave.a
+    : null;
+  const campeon =
+    estadoFinal.status === "TERMINADA" ? estadoFinal.champion : null;
+
+  /** La tarjeta de la izquierda: el hito que toca, o el final si ya no hay */
+  const tarjetaDelHito = tocaElFinal
+    ? {
+        label: formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO,
+        value: campeon
+          ? campeon.displayName
+          : miRival
+          ? miRival.displayName
+          : miLlave
+          ? "Por saber"
+          : estadoFinal.status === "SIN_CUADRO"
+          ? "Sin cuadro"
+          : estadoFinal.status === "BLOQUEADA"
+          ? `${estadoFinal.jugados}/${estadoFinal.total}`
+          : "En juego",
+        hint: campeon
+          ? "Campeón del locke"
+          : miRival
+          ? `Tu rival · ${miLlave!.title}`
+          : miLlave
+          ? `${miLlave.aPending ?? miLlave.bPending ?? "Se sabrá pronto"} · ${miLlave.title}`
+          : estadoFinal.status === "SIN_CUADRO"
+          ? "Falta sembrarlo"
+          : estadoFinal.status === "BLOQUEADA"
+          ? "combates de jornada jugados"
+          : "Los gimnasios ya están todos",
+        /**
+         * La foto del rival manda sobre el cartel: es lo que hay que mirar. Sin
+         * rival —o acabado el locke— se enseña el cartel, y el campeón el suyo.
+         */
+        images: campeon?.avatarImage
+          ? [campeon.avatarImage]
+          : miRival?.avatarImage
+          ? [miRival.avatarImage]
+          : (carteles?.(competition.id) ?? []),
+        href: "/final-four",
+      }
+    : {
+        label: "Level cap actual",
+        value: currentCap ? String(currentCap.cap) : "—",
+        hint: currentCap?.label ?? "Sin level caps configurados",
+        images: medallasDelCap,
+        href: "/level-caps",
+      };
 
   return (
     <>
@@ -123,11 +220,11 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
-          label="Level cap actual"
-          value={currentCap ? String(currentCap.cap) : "—"}
-          hint={currentCap?.label ?? "Sin level caps configurados"}
-          href="/level-caps"
-          images={medallasDelCap}
+          label={tarjetaDelHito.label}
+          value={tarjetaDelHito.value}
+          hint={tarjetaDelHito.hint}
+          href={tarjetaDelHito.href}
+          images={tarjetaDelHito.images}
         />
         <StatCard
           label={perfil.enSolitario ? "Jugando" : "Jugadores"}

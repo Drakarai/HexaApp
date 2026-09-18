@@ -47,7 +47,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 | Sección | Qué hace |
 | --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
@@ -1991,6 +1991,41 @@ igual: conviene mirarlo cada vez que se pinta una imagen nueva.
 Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
 lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
 
+### La tarjeta del resumen: de los level caps al final
+
+La primera tarjeta del resumen enseñaba el level cap que tocaba… y cuando ya no
+quedaba ninguno **se quedaba congelada en el último para siempre**, repitiendo un
+número que ya no le decía nada a nadie. Ahora, con todos superados, esa tarjeta
+cambia de tema y pasa a ser la del final del locke.
+
+Lo que enseña depende de quién mira, que es la gracia:
+
+- **Si tienes llave por jugar**, tu rival con su foto: *"Álex · Tu rival · Por
+  el locke"*. Cada uno ve el suyo, igual que la medalla te decía qué gimnasio
+  tenías delante.
+- Si tu rival **aún no se sabe** —falta que se juegue el cruce de abajo—, el
+  hueco tal cual: *"Ganador de 3º-6º"*.
+- Si **no estás en el cuadro** o el cuadro no está sembrado, en qué anda la cosa.
+- **Acabado el locke**, el campeón con su foto.
+
+Y tiene **su propio cartel de imágenes**, como las medallas de un gimnasio: se
+suben desde la pantalla del final (`🖼️ Imágenes de Final Four`) y se alternan de
+fondo. La foto del rival manda sobre el cartel cuando hay rival: es lo que hay
+que mirar.
+
+Tres decisiones que no se ven:
+
+- **El cartel vive en `Competition.finalImages`, no en `FinalFour`.** La fila del
+  cuadro no existe hasta que se siembra, y las imágenes se quieren poder poner
+  antes —justo cuando la tarjeta empieza a enseñarlas—.
+- **La tarjeta no cambia si no hay final que mirar**: en un locke en solitario, o
+  sin jornadas jugadas, se queda el último hito. Sin eso, quien juega solo vería
+  una "Final Four" que no existe.
+- **`getFinalFourState` se pide siempre en el resumen**, aunque casi nunca haga
+  falta: va en la misma tanda que todo lo demás, así que **no cuesta una ida y
+  vuelta más** (medido: las mismas seis tandas), y por dentro reaprovecha
+  `getStandings`, que esa página ya pide.
+
 ### El tercer repaso: jugar el locke hasta el final
 
 Los dos repasos anteriores miraban las mismas pantallas en el mismo estado —un
@@ -2244,6 +2279,12 @@ Piezas con truco:
   *Diagnóstico*. **Al añadir una columna que guarde una imagen** hay que
   apuntarla en las tres listas: `COLUMNAS` de `deduplicar-imagenes.ts`, la de
   `ocupacion.ts` y `FUENTES` de `imagenes.ts`.
+  **Si guarda una lista** (`String[]`) el camino es otro, el de las medallas:
+  no entra en `FUENTES` —hay que sacarla del `Exclude` de su tipo— sino en
+  `LISTAS` de `deduplicar-imagenes.ts`, con su consulta de firmas propia en
+  `imagenes.ts`, su `urlDeX` en `imagen-url.ts` y su rama en
+  `api/imagen/[...partes]`. Hay tres así: las medallas de un level cap, las de
+  una plantilla y el **cartel del final** (`Competition.finalImages`).
 - `lib/ocupacion.ts` — mide lo que ocupa la base de datos y en qué se va,
   columna de imágenes a columna de imágenes. Lo enseña `/diagnostico`. Si se
   añade una columna que guarde una imagen, hay que apuntarla en su lista
@@ -2656,3 +2697,6 @@ lugar de destruir datos, y hay que avisar antes.
     textos que se cortaban.
 64. **La gráfica, con dos vistas**: la de siempre y otra que descuenta a los que
     se retiran o pierden el locke desde la jornada en la que se van.
+65. **La tarjeta del resumen releva a los level caps**: cuando están todos
+    superados pasa a ser la del final, con el rival de cada uno y su foto, y su
+    propio cartel de imágenes.

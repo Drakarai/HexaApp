@@ -29,7 +29,8 @@ export type TipoImagen =
   | "captura"
   | "sorteo"
   | "medalla"
-  | "medalla-plantilla";
+  | "medalla-plantilla"
+  | "cartel";
 
 /**
  * Dirección de una imagen, o null si esa fila no tiene ninguna (la firma solo
@@ -65,6 +66,18 @@ export function urlDeMedalla(
 ): string | null {
   if (!firma) return null;
   return urlDeContenido(firma) ?? `/api/imagen/medalla/${id}/${indice}?v=${firma}`;
+}
+
+/** Y el cartel del final del locke, que es otra lista, la de la competición. */
+export function urlDeCartel(
+  competitionId: string,
+  indice: number,
+  firma: string | null | undefined,
+): string | null {
+  if (!firma) return null;
+  return (
+    urlDeContenido(firma) ?? `/api/imagen/cartel/${competitionId}/${indice}?v=${firma}`
+  );
 }
 
 /** Y las de un hito de plantilla, que son la misma lista pero de la base. */

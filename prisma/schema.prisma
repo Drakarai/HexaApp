@@ -446,6 +446,14 @@ model Competition {
    * antes de tiempo. Sin rellenar se usa las que haya creadas.
    */
   jornadasPrevistas   Int?
+  /**
+   * Las ilustraciones del final del locke —el cartel de la Final Four—, que
+   * salen de fondo en el resumen cuando ya no quedan level caps que superar.
+   * Es una lista como las medallas de un gimnasio, y por lo mismo: se alternan.
+   * Viven aquí y no en `FinalFour` porque se pueden poner **antes** de que haya
+   * cuadro, que es justo cuando la tarjeta del resumen empieza a enseñarlas.
+   */
+  finalImages         String[]  @default([])
   startedAt           DateTime  @default(now())
   endedAt             DateTime?
   createdAt           DateTime  @default(now())

@@ -39,6 +39,7 @@ const COLUMNAS: [tabla: string, columna: string][] = [
 const LISTAS: [tabla: string, columna: string][] = [
   ["LevelCap", "images"],
   ["LevelCapTemplateItem", "images"],
+  ["Competition", "finalImages"],
 ];
 
 export type ResultadoDelReparto = {

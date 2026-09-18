@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
 import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
+import { urlsDeCarteles } from "@/lib/imagenes";
+import { CartelDelFinal } from "./cartel-form";
 import {
   getFinalFourState,
   MINIMO_DE_JUGADORES,
@@ -21,9 +23,11 @@ export default async function FinalFourPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, state] = await Promise.all([
+  const [canManage, state, carteles] = await Promise.all([
     canManageCompetition(competition.id, user),
     getFinalFourState(competition.id),
+    // Las direcciones del cartel, no las imágenes: ver lib/imagen-url.ts
+    urlsDeCarteles([competition.id]),
   ]);
 
   /**
@@ -178,6 +182,16 @@ export default async function FinalFourPage() {
             </form>
           ) : null}
         </>
+      ) : null}
+
+      {/* Va al final y fuera del `if` del cuadro: se puede poner desde el
+          primer día, aunque la final esté todavía bloqueada */}
+      {canManage ? (
+        <CartelDelFinal
+          competitionId={competition.id}
+          nombre={nombre}
+          imagenes={carteles(competition.id)}
+        />
       ) : null}
     </>
   );

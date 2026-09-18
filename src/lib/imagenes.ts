@@ -2,6 +2,7 @@ import "server-only";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import {
+  urlDeCartel,
   urlDeImagen,
   urlDeMedalla,
   urlDeMedallaDePlantilla,
@@ -30,7 +31,8 @@ export const FUENTES = {
   captura: { tabla: "Capture", columna: "image" },
   sorteo: { tabla: "SorteoPokemon", columna: "boxImage" },
 } as const satisfies Record<
-  Exclude<TipoImagen, "medalla" | "medalla-plantilla">,
+  // Fuera las que guardan una lista: esas tienen su propia consulta
+  Exclude<TipoImagen, "medalla" | "medalla-plantilla" | "cartel">,
   { tabla: string; columna: string }
 >;
 
@@ -196,6 +198,37 @@ export async function urlsDeMedallasDePlantilla(ids: string[]) {
   return (id: string) =>
     (firmas.get(id) ?? []).map(
       (firma, indice) => urlDeMedallaDePlantilla(id, indice, firma)!,
+    );
+}
+
+/**
+ * Las firmas del cartel del final, que vive en la competición. Mismo truco que
+ * las medallas: la lista entera resumida por Postgres.
+ */
+export async function firmasDeCarteles(
+  ids: string[],
+): Promise<Map<string, string[]>> {
+  const firmas = new Map<string, string[]>();
+  const unicos = [...new Set(ids)];
+  if (!unicos.length) return firmas;
+
+  const filas = await prisma.$queryRaw<{ id: string; v: string[] }[]>`
+    select "id", array(
+      select case when x like 'ref:%' then x else substr(md5(x), 1, 10) end
+      from unnest("finalImages") as x
+    ) as v
+    from "Competition"
+    where "id" in (${Prisma.join(unicos)})
+  `;
+  for (const fila of filas) firmas.set(fila.id, fila.v);
+  return firmas;
+}
+
+export async function urlsDeCarteles(ids: string[]) {
+  const firmas = await firmasDeCarteles(ids);
+  return (id: string) =>
+    (firmas.get(id) ?? []).map(
+      (firma, indice) => urlDeCartel(id, indice, firma)!,
     );
 }
 

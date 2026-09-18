@@ -90,6 +90,15 @@ async function buscarValor(
     return lista[Number(indice ?? 0)] ?? null;
   }
 
+  // El cartel del final: la lista de la competición
+  if (tipo === "cartel") {
+    const edicion = await prisma.competition.findUnique({
+      where: { id },
+      select: { finalImages: true },
+    });
+    return edicion?.finalImages[Number(indice ?? 0)] ?? null;
+  }
+
   // Las medallas de una plantilla son una lista, como las del level cap
   if (tipo === "medalla-plantilla") {
     const item = await prisma.levelCapTemplateItem.findUnique({
