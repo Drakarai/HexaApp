@@ -41,6 +41,11 @@ export type StandingRow = {
   position: number;
   /** Se retiró del locke: sale tachado y al final, y no ocupa puesto */
   retirado: boolean;
+  /**
+   * Cuándo se fue, si se fue. Hace falta para ordenar el hall de la fama: de
+   * los que no llegaron al final, arriba el que aguantó más.
+   */
+  retiredAt: Date | null;
   /** El que lleva puesto, si lleva alguno. Es solo adorno. */
   title: TituloPuesto | null;
 };
@@ -391,6 +396,7 @@ export const getStandings = cache(async (
       pokemonDiff: stat.diff,
       position: 0,
       retirado: participant.retiredAt !== null,
+      retiredAt: participant.retiredAt,
       motivoDeSalida: participant.motivoDeSalida,
       wipeos: wipeosPorParticipante.get(participant.id) ?? 0,
       title: titulos.get(participant.userId) ?? null,

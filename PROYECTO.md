@@ -72,7 +72,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
-| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
+| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -1086,15 +1086,29 @@ eso, una edición archivada aparecería como "en marcha" y sin campeón para
 siempre, justo en la pantalla que va de celebrarlos.
 
 **El hall de la fama se abre al haber campeón.** Cada jugador registra el
-equipo de 6 con el que terminó, con el mismo buscador de especie, y se ordena
-como una clasificación final: campeón, subcampeón y el resto por puntos. Se
-comprueba en el servidor que la Final Four esté decidida antes de admitir nada.
+equipo de 6 con el que terminó, con el mismo buscador de especie. Se comprueba
+en el servidor que la Final Four esté decidida antes de admitir nada.
+
+**Su orden no es la clasificación: es cómo acabó el locke.** Era la tabla con el
+campeón y el subcampeón puestos a mano encima, y eso estaba **mal**: los que
+están fuera llevan `position: 0` —no ocupan puesto en la tabla—, así que el que
+perdía el locke a media carrera salía **tercero**, por delante de los que
+jugaron la final. Ahora son tres grupos:
+
+1. **Los que jugaron el cuadro**, por lo lejos que llegaron. La ronda se mide
+   por el orden en que aparece en el cuadro (cruces → semifinales → final) y no
+   por la llave: si no, el que cae en la segunda semifinal quedaría por encima
+   del de la primera sin haber hecho nada distinto. Ganar la última suma medio
+   punto, que es el campeón. A igualdad de ronda decide la siembra.
+2. **Los que seguían jugando** y no se clasificaron, por la tabla.
+3. **Los que se fueron**, por quién aguantó más: arriba el último en irse. Para
+   esto `StandingRow` lleva `retiredAt`.
 
 Es **el cierre del locke**, así que cuenta cómo fue:
 
-- **El podio solo lo pisa quien jugó la final.** El 1º y el 2º salen de ella; el
-  3º sale de la tabla y se dice —"Tercero en la tabla"—, porque en el cuadro no
-  se juega un combate por el tercer puesto. Quién puede estar sale de
+- **El podio solo lo pisa quien jugó la final.** El 1º y el 2º salen de ella y
+  el 3º es **el que más lejos llegó de los demás**; como no se juega un combate
+  por el tercer puesto, a igualdad de ronda lo decide la siembra. Quién puede estar sale de
   `FinalFour.seeds`, **no de la clasificación entera**: mirando la tabla, en un
   locke de dos se colaba de tercero alguien que estaba fuera del locke y no
   había jugado la final. Con dos, el podio es de dos.
