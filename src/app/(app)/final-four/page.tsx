@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
-import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
-import { urlsDeCarteles } from "@/lib/imagenes";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getMyParticipant,
+} from "@/lib/competition";
+import { prisma } from "@/lib/db";
+import { urlsDeCarteles, urlsDeImagen } from "@/lib/imagenes";
+import { MatchTeams } from "@/components/match-team";
 import { CartelDelFinal } from "./cartel-form";
 import {
   getFinalFourState,
@@ -23,12 +29,39 @@ export default async function FinalFourPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, state, carteles] = await Promise.all([
+  const [canManage, state, carteles, yo] = await Promise.all([
     canManageCompetition(competition.id, user),
     getFinalFourState(competition.id),
     // Las direcciones del cartel, no las imágenes: ver lib/imagen-url.ts
     urlsDeCarteles([competition.id]),
+    getMyParticipant(competition.id, user.id),
   ]);
+
+  /**
+   * Los equipos de la final, si ya hay cuadro. Uno por jugador: se piden todos
+   * de una vez y se reparten aquí, que es una consulta en vez de cuatro.
+   */
+  const equipos =
+    "finalFourId" in state
+      ? await prisma.matchPokemon.findMany({
+          where: { finalFourId: state.finalFourId },
+          orderBy: { position: "asc" },
+        })
+      : [];
+  // Direcciones de los sprites, no las imágenes: ver lib/imagen-url.ts
+  const sprites = await urlsDeImagen(
+    "equipo",
+    equipos.map((pokemon) => pokemon.id),
+  );
+  const equipoDe = (participantId: string) =>
+    equipos
+      .filter((pokemon) => pokemon.participantId === participantId)
+      .map((pokemon) => ({
+        id: pokemon.id,
+        species: pokemon.species,
+        nickname: pokemon.nickname,
+        boxImage: sprites(pokemon.id),
+      }));
 
   /**
    * El nombre y la explicación salen del formato, que depende de cuántos
@@ -172,6 +205,59 @@ export default async function FinalFourPage() {
               </section>
             ))}
           </div>
+
+          {/**
+           * Los equipos del cuadro. **Uno por jugador y para toda la final**:
+           * en la Final Four cada uno se presenta con un equipo y con ese juega
+           * hasta que cae, así que no hay que apuntarlo combate a combate. De
+           * aquí se lo lleva luego el hall de la fama de una pieza.
+           */}
+          <section className="mt-8">
+            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-400">
+              Los equipos
+            </h2>
+            <p className="muted mb-3">
+              Con el que juega cada uno toda la final. Lo apunta su dueño, o la
+              organización, y al acabar se puede traer al hall de la fama.
+            </p>
+            <div className="grid gap-3 lg:grid-cols-2">
+              {state.seeds.map((jugador) => (
+                <div key={jugador.participantId} className="card">
+                  <div className="flex items-center gap-2">
+                    <span className="w-5 shrink-0 text-center text-xs text-slate-500">
+                      {jugador.seed}º
+                    </span>
+                    <Avatar
+                      name={jugador.displayName}
+                      color={jugador.color}
+                      image={jugador.avatarImage}
+                      size={24}
+                    />
+                    <span className="min-w-0 truncate text-sm font-semibold text-white">
+                      {jugador.displayName}
+                    </span>
+                  </div>
+                  <MatchTeams
+                    matchId={state.finalFourId}
+                    finalFourId={state.finalFourId}
+                    rotulo={`El equipo de ${jugador.displayName} para ${nombre}`}
+                    canManage={
+                      canManage || jugador.participantId === yo?.id
+                    }
+                    sides={[
+                      {
+                        participantId: jugador.participantId,
+                        displayName: jugador.displayName,
+                        color: jugador.color,
+                        avatarImage: jugador.avatarImage,
+                        team: equipoDe(jugador.participantId),
+                      },
+                    ]}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
 
           {canManage ? (
             <form action={resetBracketAction} className="mt-6">

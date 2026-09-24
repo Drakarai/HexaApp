@@ -36,6 +36,26 @@ export async function getUltimoEquipo(
   participantId: string,
   competitionId: string,
 ): Promise<UltimoEquipo | null> {
+  /**
+   * **Primero el de la final.** Si jugó el cuadro, ese es el equipo con el que
+   * acabó el locke de verdad; el del último combate de jornada es lo que había
+   * antes de que existiera esto y se queda de repuesto para quien no llegó a
+   * la final.
+   */
+  const deLaFinal = await prisma.matchPokemon.findMany({
+    where: { participantId, finalFour: { competitionId } },
+    orderBy: { position: "asc" },
+    select: {
+      species: true,
+      nickname: true,
+      boxImage: true,
+      detailImage: true,
+    },
+  });
+  if (deLaFinal.length) {
+    return { deDonde: "la final", pokemon: deLaFinal };
+  }
+
   const filas = await prisma.matchPokemon.findMany({
     where: {
       participantId,

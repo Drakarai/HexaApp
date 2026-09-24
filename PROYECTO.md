@@ -72,7 +72,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
-| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
+| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -1084,6 +1084,21 @@ cuando cada llave era un combate tienen la clave pelada (`FINAL` en vez de
 entera**, así que su ganador cuenta como si hubiera ganado los dos primeros. Sin
 eso, una edición archivada aparecería como "en marcha" y sin campeón para
 siempre, justo en la pantalla que va de celebrarlos.
+
+**Cada uno apunta el equipo con el que juega la final, y es uno para todo el
+cuadro.** En la Final Four te presentas con un equipo y con ese juegas hasta que
+caes, así que no hay que apuntarlo combate a combate como en las jornadas: la
+pantalla del final tiene su sección *Los equipos*, con una caja por sembrado.
+
+- **Lo apunta su dueño**, o quien administre (`assertCanActForParticipant`, el
+  mismo portero que el resto de lo que es de cada uno). En los otros equipos
+  —jornada, reto, royale— manda la organización, porque son datos del combate;
+  este es tuyo.
+- Cuelga de `FinalFour` (`MatchPokemon.finalFourId`, el **quinto** sitio del que
+  puede colgar un equipo) y se distingue por `participantId`.
+- **De ahí se lo lleva el hall**: `getUltimoEquipo` mira primero el de la final
+  —"⤵ Traer el equipo de la final"— y solo si no jugó el cuadro cae al último
+  combate de jornada, que es lo que había antes.
 
 **El hall de la fama se abre al haber campeón.** Cada jugador registra el
 equipo de 6 con el que terminó, con el mismo buscador de especie. Se comprueba
@@ -2714,3 +2729,5 @@ lugar de destruir datos, y hay que avisar antes.
 65. **La tarjeta del resumen releva a los level caps**: cuando están todos
     superados pasa a ser la del final, con el rival de cada uno y su foto, y su
     propio cartel de imágenes.
+66. **El hall se ordena por cómo acabó el locke** y no por la tabla, y **los
+    equipos de la final** se apuntan una vez en el cuadro y se traen de ahí.

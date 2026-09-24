@@ -75,6 +75,8 @@ export type FinalFourState =
   | { status: "SIN_CUADRO"; standings: StandingRow[]; formato: FormatoFinal }
   | {
       status: "EN_JUEGO" | "TERMINADA";
+      /** El cuadro del que cuelgan los equipos de la final */
+      finalFourId: string;
       formato: FormatoFinal;
       llaves: LlaveDelCuadro[];
       seeds: BracketPlayer[];
@@ -200,6 +202,7 @@ export async function getFinalFourState(
 
   return {
     status: champion ? "TERMINADA" : "EN_JUEGO",
+    finalFourId: finalFour.id,
     formato,
     llaves,
     seeds,

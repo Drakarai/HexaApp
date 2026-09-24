@@ -1050,6 +1050,13 @@ model MatchPokemon {
    * dos bandos sino cuatro jugadores en el mismo combate.
    */
   royaleId         String?
+  /**
+   * Y el quinto: **el equipo con el que alguien juega la final**. Es uno solo
+   * para todo el cuadro —no uno por llave ni por combate—, porque en la Final
+   * Four cada uno se presenta con un equipo y con ese juega hasta que cae. Por
+   * eso cuelga del `FinalFour` y se distingue por `participantId`.
+   */
+  finalFourId      String?
   participantId    String
   species          String
   nickname         String?
@@ -1067,6 +1074,7 @@ model MatchPokemon {
   challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
   levelCap       LevelCap?       @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
   royale         Royale?         @relation(fields: [royaleId], references: [id], onDelete: Cascade)
+  finalFour      FinalFour?      @relation(fields: [finalFourId], references: [id], onDelete: Cascade)
   participant    Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
   votes          MvpVote[]
   tiebreakOf     Matchday[]      @relation("MatchdayTiebreak")
@@ -1075,6 +1083,7 @@ model MatchPokemon {
   @@index([challengeMatchId])
   @@index([levelCapId, participantId])
   @@index([royaleId, participantId])
+  @@index([finalFourId, participantId])
   @@index([participantId])
 }
 
@@ -1348,8 +1357,10 @@ model FinalFour {
   jugadores     Int      @default(6)
   createdAt     DateTime @default(now())
 
-  competition Competition  @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  competition Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   matches     FinalMatch[]
+  // El equipo con el que cada uno juega el cuadro: uno por participante
+  equipos     MatchPokemon[]
 }
 
 /**

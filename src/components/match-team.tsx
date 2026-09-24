@@ -39,6 +39,7 @@ export function MatchTeams({
   esReto = false,
   levelCapId,
   royaleId,
+  finalFourId,
   rotulo,
   maximo = 6,
   aLaVez = 1,
@@ -56,6 +57,8 @@ export function MatchTeams({
   levelCapId?: string;
   /** Y si viene este, el de un Battle Royale */
   royaleId?: string;
+  /** Y este, el equipo con el que se juega la final entera */
+  finalFourId?: string;
   /** Qué poner en la cabecera del editor */
   rotulo?: string;
   /** Cuántos pokémon caben, que en VGC son cuatro y no seis */
@@ -122,7 +125,11 @@ export function MatchTeams({
               : "＋ Apuntar equipos"
             : hasTeams
             ? "✎ Cambiar el equipo"
-            : "＋ Apuntar con qué lo pasaste"}
+            : // En la final es "el equipo con el que juegas", no "con el que lo
+              // pasaste", que eso es del gimnasio de un locke en solitario
+              finalFourId
+              ? "＋ Apuntar el equipo"
+              : "＋ Apuntar con qué lo pasaste"}
         </button>
       ) : null}
 
@@ -132,6 +139,7 @@ export function MatchTeams({
           esReto={esReto}
           levelCapId={levelCapId}
           royaleId={royaleId}
+          finalFourId={finalFourId}
           rotulo={rotulo}
           maximo={maximo}
           aLaVez={aLaVez}
@@ -298,6 +306,7 @@ function TeamEditor({
   esReto,
   levelCapId,
   royaleId,
+  finalFourId,
   rotulo,
   maximo,
   aLaVez,
@@ -308,6 +317,7 @@ function TeamEditor({
   esReto: boolean;
   levelCapId?: string;
   royaleId?: string;
+  finalFourId?: string;
   rotulo?: string;
   maximo: number;
   aLaVez: number;
@@ -486,6 +496,9 @@ function TeamEditor({
           ) : null}
           {levelCapId ? (
             <input type="hidden" name="levelCapId" value={levelCapId} />
+          ) : null}
+          {finalFourId ? (
+            <input type="hidden" name="finalFourId" value={finalFourId} />
           ) : null}
           <SpeciesPicker key={limpiezas} />
           <div className="grid gap-3 sm:grid-cols-2">

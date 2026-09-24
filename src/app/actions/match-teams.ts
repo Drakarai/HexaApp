@@ -2,7 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireCompetitionManager } from "@/lib/competition";
+import {
+  assertCanActForParticipant,
+  requireCompetitionManager,
+} from "@/lib/competition";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { formatoDeCombate } from "@/lib/formatos-de-combate";
@@ -31,6 +34,10 @@ export async function addMatchPokemonAction(
   /** Y el cuarto: el equipo que alguien sacó a un Battle Royale. */
   const royaleId = String(formData.get("royaleId") ?? "");
   if (royaleId) return anadirAlEquipoDelRoyale(royaleId, formData);
+
+  /** Y el quinto: el equipo con el que alguien juega la final entera. */
+  const finalFourId = String(formData.get("finalFourId") ?? "");
+  if (finalFourId) return anadirAlEquipoDelFinal(finalFourId, formData);
 
   // El mismo editor sirve para los combates de jornada y para los retos
   const esReto = formData.get("esReto") === "1";
@@ -230,6 +237,67 @@ async function anadirAlEquipoDelRoyale(
   return { success: "Pokémon añadido al equipo." };
 }
 
+/**
+ * El equipo con el que alguien juega la Final Four.
+ *
+ * Es **uno para todo el cuadro**, no uno por llave: en la final cada uno se
+ * presenta con su equipo y con ese juega hasta que cae. Por eso no hay que
+ * apuntarlo combate a combate, y por eso luego se puede traer al hall de la
+ * fama de una pieza.
+ *
+ * Lo apunta **cada uno el suyo**, o quien administre: es su equipo, y obligar a
+ * que lo metiera la organización por los cuatro era trabajo de más para nada.
+ */
+async function anadirAlEquipoDelFinal(
+  finalFourId: string,
+  formData: FormData,
+): Promise<FormState> {
+  const cuadro = await prisma.finalFour.findUnique({
+    where: { id: finalFourId },
+    select: { competitionId: true, seeds: true },
+  });
+  if (!cuadro) return { error: "Ese cuadro ya no está." };
+
+  const participantId = String(formData.get("participantId") ?? "");
+  if (!cuadro.seeds.includes(participantId)) {
+    return { error: "Ese jugador no está en el cuadro." };
+  }
+
+  try {
+    await assertCanActForParticipant(participantId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const species = String(formData.get("species") ?? "").trim();
+  if (!species) return { error: "Elige la especie del pokémon." };
+
+  const count = await prisma.matchPokemon.count({
+    where: { finalFourId, participantId },
+  });
+  if (count >= MAX_TEAM) {
+    return { error: `Un equipo son ${MAX_TEAM} pokémon como mucho.` };
+  }
+
+  const sprites = await spritesDelFormulario(formData);
+
+  await prisma.matchPokemon.create({
+    data: {
+      finalFourId,
+      participantId,
+      species,
+      nickname: String(formData.get("nickname") ?? "").trim() || null,
+      boxImage: sprites?.boxImage ?? null,
+      detailImage: sprites?.detailImage ?? null,
+      position: count,
+    },
+  });
+
+  revalidatePath("/final-four");
+  revalidatePath("/hall-de-la-fama");
+  return { success: "Pokémon añadido al equipo." };
+}
+
 export async function removeMatchPokemonAction(formData: FormData) {
   const id = String(formData.get("matchPokemonId") ?? "");
   const pokemon = await prisma.matchPokemon.findUnique({
@@ -239,9 +307,22 @@ export async function removeMatchPokemonAction(formData: FormData) {
       challengeMatch: { select: { competitionId: true } },
       levelCap: { select: { competitionId: true } },
       royale: { include: { matchday: { select: { competitionId: true } } } },
+      finalFour: { select: { competitionId: true } },
     },
   });
   if (!pokemon) return;
+
+  /**
+   * El de la final lo puede quitar su dueño, igual que lo pone: los demás
+   * equipos son cosa de la organización, pero este es suyo.
+   */
+  if (pokemon.finalFourId) {
+    await assertCanActForParticipant(pokemon.participantId);
+    await prisma.matchPokemon.delete({ where: { id } });
+    revalidatePath("/final-four");
+    revalidatePath("/hall-de-la-fama");
+    return;
+  }
 
   // El pokémon cuelga de una jornada, de un reto, de un gimnasio o de un
   // royale: siempre de uno solo
