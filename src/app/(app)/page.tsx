@@ -30,6 +30,7 @@ import { getCastigosPendientes } from "@/lib/premios";
 import { Castigos } from "@/components/castigos";
 import { getProgresoEnSolitario } from "@/lib/solitario";
 import { ResumenEnSolitario } from "@/components/resumen-solitario";
+import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -93,18 +94,56 @@ export default async function DashboardPage() {
       perfil.enSolitario ? getProgresoEnSolitario(competition.id) : null,
     ]);
 
-  /** Quién va primero, dicho como toque: por puntos o por jornadas ganadas */
-  const lider = marcador ? marcador.jugadores[0] : standings[0];
+  /**
+   * Quién va primero, dicho como toque: por puntos o por jornadas ganadas.
+   *
+   * Con empate arriba no hay líder: antes salía el primero de la lista, que
+   * con todo a cero es el primero por orden alfabético —un dualocke recién
+   * empezado ya tenía "líder" con 0-0—. En la tabla cuenta como empate lo que
+   * no deshacen los desempates: puntos, caídos y diferencia.
+   */
+  const empatadosArriba = marcador
+    ? marcador.jugadores.filter(
+        (jugador) => jugador.ganadas === marcador.jugadores[0]?.ganadas,
+      ).length
+    : standings.filter(
+        (row) =>
+          !row.retirado &&
+          row.points === standings[0]?.points &&
+          row.deaths === standings[0]?.deaths &&
+          row.pokemonDiff === standings[0]?.pokemonDiff,
+      ).length;
+  const lider =
+    empatadosArriba > 1 ? null : marcador ? marcador.jugadores[0] : standings[0];
   const pieDelLider = marcador
-    ? `${marcador.jugadores[0]?.ganadas ?? 0} jornadas ganadas`
+    ? empatadosArriba > 1
+      ? `${marcador.jugadores[0]?.ganadas ?? 0} jornadas cada uno`
+      : `${marcador.jugadores[0]?.ganadas ?? 0} jornadas ganadas`
     : standings[0]
-    ? `${standings[0].points} puntos`
+    ? empatadosArriba > 1
+      ? `${empatadosArriba} empatados a ${standings[0].points} puntos`
+      : `${standings[0].points} puntos`
     : "Sin clasificación";
 
   const totalPlayers = standings.length;
   /** Los que siguen: un retirado ni avanza gimnasios ni tiene que esperar */
   const activos = standings.filter((row) => !row.retirado).length;
-  const retirados = totalPlayers - activos;
+  /**
+   * Los que están fuera, contados por su motivo: la aplicación distingue en
+   * todas partes entre retirarse y perder el locke, y aquí los metía a todos
+   * en "retirados".
+   */
+  const fuera = standings.filter((row) => row.retirado);
+  const perdidos = fuera.filter(
+    (row) => row.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO,
+  ).length;
+  const retirados = fuera.length - perdidos;
+  const quienesFaltan = [
+    retirados ? `${retirados} retirado${retirados === 1 ? "" : "s"}` : null,
+    perdidos ? `${perdidos} ${perdidos === 1 ? "lo perdió" : "lo perdieron"}` : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const totalDeaths = standings.reduce((sum, row) => sum + row.deaths, 0);
   // Siguiente hito: el primero que no ha superado todo el mundo
   const capPendiente =
@@ -155,6 +194,13 @@ export default async function DashboardPage() {
     : null;
   const campeon =
     estadoFinal.status === "TERMINADA" ? estadoFinal.champion : null;
+  /**
+   * Con campeón, el locke se ha acabado aunque nadie lo haya archivado todavía,
+   * y la portada lo tiene que decir: antes seguía poniendo "En curso" y pidiendo
+   * que se creara otra jornada.
+   */
+  const terminado =
+    Boolean(campeon) && competition.status !== COMPETITION_STATUS.ARCHIVED;
 
   /** La tarjeta de la izquierda: el hito que toca, o el final si ya no hay */
   const tarjetaDelHito = tocaElFinal
@@ -212,6 +258,8 @@ export default async function DashboardPage() {
         actions={
           competition.status === COMPETITION_STATUS.ARCHIVED ? (
             <span className="chip">🗄️ Archivada</span>
+          ) : terminado ? (
+            <span className="chip">🏆 Terminado</span>
           ) : (
             <span className="chip">🟢 En curso</span>
           )
@@ -236,8 +284,10 @@ export default async function DashboardPage() {
           hint={
             perfil.enSolitario
               ? perfil.nombre
-              : retirados
-              ? `${retirados} retirado${retirados === 1 ? "" : "s"} · empiezan con ${competition.startingPoints} puntos`
+              : quienesFaltan
+              ? // Con gente fuera, eso es lo que importa: los puntos de salida
+                // ya no le dicen nada a nadie y no cabían en la tarjeta
+                quienesFaltan
               : `Empiezan con ${competition.startingPoints} puntos`
           }
           href="/competiciones"
@@ -255,14 +305,16 @@ export default async function DashboardPage() {
             hint={
               progreso.siguiente
                 ? `Te toca ${progreso.siguiente.label}`
-                : "No queda ninguno"
+                : progreso.hitos.total
+                ? "No queda ninguno"
+                : "Sin level caps todavía"
             }
             href="/level-caps"
           />
         ) : (
           <StatCard
             label="Líder"
-            value={lider?.displayName ?? "—"}
+            value={lider?.displayName ?? (empatadosArriba > 1 ? "Empate" : "—")}
             hint={pieDelLider}
             href="/puntos"
           />
@@ -308,7 +360,15 @@ export default async function DashboardPage() {
             clasificación: con seis jugadores y dos combates, la tarjeta
             quedaba con media pantalla de vacío debajo. */}
         <section className={progreso ? "hidden" : "card self-start"}>
-          <h2 className="section-title mb-4">Próxima jornada</h2>
+          <h2 className="section-title mb-4">
+            {nextMatchday
+              ? "Próxima jornada"
+              : campeon
+              ? "Se acabó"
+              : estadoFinal.status === "EN_JUEGO"
+              ? (formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO)
+              : "Próxima jornada"}
+          </h2>
           {nextMatchday ? (
             <div className="space-y-3">
               <div>
@@ -338,10 +398,50 @@ export default async function DashboardPage() {
                 Ir a jornadas
               </Link>
             </div>
+          ) : campeon ? (
+            <div className="space-y-3 text-center">
+              <div className="flex justify-center">
+                <Avatar
+                  name={campeon.displayName}
+                  color={campeon.color}
+                  image={campeon.avatarImage}
+                  size={56}
+                  participantId={campeon.participantId}
+                />
+              </div>
+              <p className="text-sm text-slate-300">
+                🏆 <strong className="text-white">{campeon.displayName}</strong>{" "}
+                ha ganado el locke.
+              </p>
+              <Link
+                href="/hall-de-la-fama"
+                className="btn-ghost btn-sm w-full justify-center"
+              >
+                Ir al hall de la fama
+              </Link>
+            </div>
+          ) : estadoFinal.status === "EN_JUEGO" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-400">
+                Las jornadas están jugadas: lo que queda se decide en el cuadro.
+              </p>
+              <Link
+                href="/final-four"
+                className="btn-ghost btn-sm w-full justify-center"
+              >
+                Ir al cuadro
+              </Link>
+            </div>
           ) : (
             <EmptyState
               title="No hay combates pendientes"
-              hint="Crea una jornada nueva desde la sección Jornadas."
+              hint={
+                // Crear jornadas solo puede quien administra: al resto se le
+                // decía que lo hiciera él
+                canManage
+                  ? "Crea una jornada nueva desde la sección Jornadas."
+                  : "Cuando haya otra jornada, saldrá aquí."
+              }
             />
           )}
         </section>
@@ -363,7 +463,8 @@ export default async function DashboardPage() {
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">Ruleta</h2>
             <Link href="/ruleta" className="text-xs text-brand-400 hover:underline">
-              Girar →
+              {/* Un espectador no gira: para él es solo ir a mirar */}
+              {myParticipant || canManage ? "Girar →" : "Ver →"}
             </Link>
           </div>
           {recentSpins.length ? (

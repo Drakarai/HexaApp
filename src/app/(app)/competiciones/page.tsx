@@ -125,7 +125,7 @@ export default async function CompetitionsPage() {
     <>
       <PageHeader
         title="Competiciones"
-        subtitle="Cada edición es independiente: al crear una nueva, la anterior se archiva con todos sus datos intactos como recuerdo."
+        subtitle="Cada edición es independiente: al crear una nueva, la anterior puede archivarse y se queda con todos sus datos como recuerdo."
       />
 
       {active ? (

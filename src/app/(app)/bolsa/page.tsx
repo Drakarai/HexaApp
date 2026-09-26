@@ -63,7 +63,7 @@ export default async function BolsaPage() {
       ) : (
         <EmptyState
           title="La bolsa está vacía"
-          hint="Los objetos los reparte quien administra el locke. Píderselos."
+          hint="Los objetos los reparte quien administra el locke: pídeselos."
         />
       )}
 

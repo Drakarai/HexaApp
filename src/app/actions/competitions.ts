@@ -104,6 +104,32 @@ export async function createCompetitionAction(
   if (!Number.isFinite(startingPoints) || !Number.isFinite(maxPlayers)) {
     return { error: "Puntos iniciales y jugadores tienen que ser números." };
   }
+  const plazas = Math.max(2, Math.trunc(maxPlayers));
+
+  /**
+   * Si los jugadores del locke de origen no caben, no se crea nada. Antes se
+   * copiaban los primeros de la lista hasta llenarlo y el resto se quedaba
+   * fuera sin avisar: de un locke de seis a un dualocke entraban los dos
+   * primeros por orden de alta, que no tienen por qué ser los que juegan.
+   * Se cuenta antes de crear para no dejar un locke a medias.
+   */
+  if (copyFromId && copyParticipants) {
+    const aCopiar = await prisma.participant.count({
+      where: {
+        competitionId: copyFromId,
+        competition: filtroDeLockesVisibles(admin),
+        // El organizador entra por su cuenta (ver abajo): no se copia
+        ...(esAdminGlobal ? {} : { userId: { not: admin.id } }),
+      },
+    });
+    // …y ocupa plaza, así que al resto le queda una menos
+    const libres = esAdminGlobal ? plazas : plazas - 1;
+    if (aCopiar > libres) {
+      return {
+        error: `En el locke de origen hay ${aCopiar} jugadores y en este caben ${libres}. Desmarca "Jugadores" y apúntalos a mano, o sube el número de jugadores.`,
+      };
+    }
+  }
 
   const created = await prisma.competition.create({
     data: {
@@ -114,7 +140,7 @@ export async function createCompetitionAction(
       modality,
       description,
       startingPoints: Math.trunc(startingPoints),
-      maxPlayers: Math.max(2, Math.trunc(maxPlayers)),
+      maxPlayers: plazas,
       jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
       createdById: admin.id,
     },
@@ -212,7 +238,6 @@ export async function createCompetitionAction(
               (participant) =>
                 esAdminGlobal || participant.userId !== admin.id,
             )
-            .slice(0, created.maxPlayers)
             .map((participant) => ({
               competitionId: created.id,
               userId: participant.userId,

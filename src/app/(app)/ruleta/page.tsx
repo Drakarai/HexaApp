@@ -176,12 +176,14 @@ export default async function RoulettePage({
               balance={myTickets}
               isManager={canManage}
               rouletteName={selected.name}
+              soloMira={!myParticipant && !canManage}
             />
 
             <RouletteWheel
               rouletteId={selected.id}
               spinSeconds={selected.spinSeconds}
               canSpin={canSpin}
+              soloMira={!myParticipant && !canManage}
               options={selected.options
                 .filter((option) => option.enabled)
                 .map((option) => ({

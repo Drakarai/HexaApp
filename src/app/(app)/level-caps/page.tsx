@@ -115,7 +115,12 @@ export default async function LevelCapsPage({
     <>
       <PageHeader
         title="Level caps"
-        subtitle="Nivel máximo permitido antes de cada gimnasio. Marca tu casilla cuando te pases el combate: nadie sigue hasta que estén todas."
+        subtitle={
+          // En solitario no hay a quién esperar
+          perfil.enSolitario
+            ? "Nivel máximo permitido antes de cada gimnasio. Marca tu casilla cuando te pases el combate."
+            : "Nivel máximo permitido antes de cada gimnasio. Marca tu casilla cuando te pases el combate: nadie sigue hasta que estén todas."
+        }
       />
 
       {apuntar === "1" && miProximo ? (

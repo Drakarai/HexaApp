@@ -25,11 +25,14 @@ export function RouletteWheel({
   options,
   spinSeconds,
   canSpin,
+  soloMira = false,
 }: {
   rouletteId: string;
   options: WheelOption[];
   spinSeconds: number;
   canSpin: boolean;
+  /** Quien no juega: ni gira ni tiene a quién pedirle un ticket */
+  soloMira?: boolean;
 }) {
   const router = useRouter();
   const [rotation, setRotation] = useState(0);
@@ -180,7 +183,7 @@ export function RouletteWheel({
           >
             {spinning ? "Girando…" : "🎡 Girar la ruleta"}
           </button>
-        ) : (
+        ) : soloMira ? null : (
           <p className="muted">Necesitas un ticket para girar.</p>
         )}
 

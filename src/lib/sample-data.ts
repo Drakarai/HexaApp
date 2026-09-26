@@ -100,12 +100,12 @@ export const SAMPLE_RULES = [
 
 export const SAMPLE_LEVEL_CAPS = [
   { label: "Pegaso", cap: 13, kind: "GYM", badge: "Ciudad Malva" },
-  { label: "Antón", cap: 17, kind: "GYM", badge: "Ciudad Azalea" },
-  { label: "Blanca", cap: 19, kind: "GYM", badge: "Ciudad Iris" },
-  { label: "Morti", cap: 25, kind: "GYM", badge: "Pueblo Ecruteak" },
-  { label: "Aníbal", cap: 31, kind: "GYM", badge: "Ciudad Olivo" },
-  { label: "Yasmina", cap: 35, kind: "GYM", badge: "Ciudad Trigal" },
-  { label: "Fredo", cap: 36, kind: "GYM", badge: "Pueblo Caña" },
+  { label: "Antón", cap: 17, kind: "GYM", badge: "Pueblo Azalea" },
+  { label: "Blanca", cap: 19, kind: "GYM", badge: "Ciudad Trigal" },
+  { label: "Morti", cap: 25, kind: "GYM", badge: "Ciudad Iris" },
+  { label: "Aníbal", cap: 31, kind: "GYM", badge: "Ciudad Orquídea" },
+  { label: "Yasmina", cap: 35, kind: "GYM", badge: "Ciudad Olivo" },
+  { label: "Fredo", cap: 36, kind: "GYM", badge: "Pueblo Caoba" },
   { label: "Débora", cap: 41, kind: "GYM", badge: "Ciudad Endrino" },
   {
     label: "Alto Mando",

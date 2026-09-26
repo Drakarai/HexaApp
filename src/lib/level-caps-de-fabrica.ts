@@ -47,40 +47,40 @@ const KANTO: ItemDeFabrica[] = [
  */
 const JOHTO: ItemDeFabrica[] = [
   { label: "Pegaso", cap: 13, kind: GYM, notes: "Ciudad Malva · Volador" },
-  { label: "Antón", cap: 17, kind: GYM, notes: "Ciudad Azalea · Bicho" },
+  { label: "Antón", cap: 17, kind: GYM, notes: "Pueblo Azalea · Bicho" },
   { label: "Blanca", cap: 19, kind: GYM, notes: "Ciudad Trigal · Normal" },
-  { label: "Morti", cap: 25, kind: GYM, notes: "Pueblo Ecruteak · Fantasma" },
-  { label: "Aníbal", cap: 31, kind: GYM, notes: "Ciudad Olivo · Lucha" },
+  { label: "Morti", cap: 25, kind: GYM, notes: "Ciudad Iris · Fantasma" },
+  { label: "Aníbal", cap: 31, kind: GYM, notes: "Ciudad Orquídea · Lucha" },
   { label: "Yasmina", cap: 35, kind: GYM, notes: "Ciudad Olivo · Acero" },
-  { label: "Fredo", cap: 36, kind: GYM, notes: "Pueblo Caña · Hielo" },
+  { label: "Fredo", cap: 36, kind: GYM, notes: "Pueblo Caoba · Hielo" },
   { label: "Débora", cap: 41, kind: GYM, notes: "Ciudad Endrino · Dragón" },
-  { label: "Alto Mando", cap: 50, kind: ELITE_FOUR, notes: "Bruno, Karen, Aaron y Fátima" },
+  { label: "Alto Mando", cap: 50, kind: ELITE_FOUR, notes: "Mento, Koga, Bruno y Karen" },
   { label: "Liga Pokémon", cap: 50, kind: CHAMPION, notes: "Lance" },
 ];
 
 const HOENN: ItemDeFabrica[] = [
-  { label: "Petra", cap: 15, kind: GYM, notes: "Ciudad Petalia · Roca" },
-  { label: "Marcial", cap: 16, kind: GYM, notes: "Ciudad Férrica · Lucha" },
+  { label: "Petra", cap: 15, kind: GYM, notes: "Ciudad Férrica · Roca" },
+  { label: "Marcial", cap: 16, kind: GYM, notes: "Pueblo Azuliza · Lucha" },
   { label: "Erico", cap: 23, kind: GYM, notes: "Ciudad Malvalona · Eléctrico" },
   { label: "Candela", cap: 26, kind: GYM, notes: "Pueblo Lavacalda · Fuego" },
   { label: "Norman", cap: 31, kind: GYM, notes: "Ciudad Petalia · Normal" },
-  { label: "Alana", cap: 33, kind: GYM, notes: "Ciudad Arrecípolis · Volador" },
-  { label: "Vito y Leti", cap: 42, kind: GYM, notes: "Ciudad Calagua · Psíquico" },
-  { label: "Plubio", cap: 43, kind: GYM, notes: "Ciudad Algaria · Agua" },
-  { label: "Alto Mando", cap: 55, kind: ELITE_FOUR, notes: "Sixto, Fátima, Nívea y Dracoy" },
+  { label: "Alana", cap: 33, kind: GYM, notes: "Ciudad Arborada · Volador" },
+  { label: "Vito y Leti", cap: 42, kind: GYM, notes: "Ciudad Algaria · Psíquico" },
+  { label: "Plubio", cap: 43, kind: GYM, notes: "Arrecípolis · Agua (Galano en Esmeralda)" },
+  { label: "Alto Mando", cap: 55, kind: ELITE_FOUR, notes: "Sixto, Fátima, Nívea y Dracón" },
   { label: "Campeón", cap: 58, kind: CHAMPION, notes: "Máximo" },
 ];
 
 const SINNOH: ItemDeFabrica[] = [
   { label: "Roco", cap: 14, kind: GYM, notes: "Ciudad Pirita · Roca" },
   { label: "Gardenia", cap: 22, kind: GYM, notes: "Ciudad Vetusta · Planta" },
-  { label: "Mento", cap: 30, kind: GYM, notes: "Ciudad Pradera · Lucha" },
+  { label: "Brega", cap: 30, kind: GYM, notes: "Ciudad Rocavelo · Lucha" },
+  { label: "Mananti", cap: 30, kind: GYM, notes: "Ciudad Pradera · Agua" },
   { label: "Fantina", cap: 36, kind: GYM, notes: "Ciudad Corazón · Fantasma" },
-  { label: "Fausto", cap: 30, kind: GYM, notes: "Ciudad Canal · Agua" },
-  { label: "Acerón", cap: 39, kind: GYM, notes: "Ciudad Rocavelo · Acero" },
+  { label: "Acerón", cap: 39, kind: GYM, notes: "Ciudad Canal · Acero" },
   { label: "Inverna", cap: 42, kind: GYM, notes: "Ciudad Puntaneva · Hielo" },
   { label: "Lectro", cap: 49, kind: GYM, notes: "Ciudad Marina · Eléctrico" },
-  { label: "Alto Mando", cap: 63, kind: ELITE_FOUR, notes: "Alecrán, Fausto, Fátima y Lucio" },
+  { label: "Alto Mando", cap: 63, kind: ELITE_FOUR, notes: "Alecrán, Gaia, Fausto y Delos" },
   { label: "Campeona", cap: 66, kind: CHAMPION, notes: "Cintia" },
 ];
 
@@ -89,24 +89,24 @@ const TESELIA: ItemDeFabrica[] = [
   { label: "Aloe", cap: 20, kind: GYM, notes: "Ciudad Esmalte · Normal" },
   { label: "Camus", cap: 23, kind: GYM, notes: "Ciudad Porcelana · Bicho" },
   { label: "Camila", cap: 27, kind: GYM, notes: "Ciudad Mayólica · Eléctrico" },
-  { label: "Ciprián", cap: 31, kind: GYM, notes: "Ciudad Rombo · Tierra" },
-  { label: "Gerania", cap: 35, kind: GYM, notes: "Ciudad Fayenza · Volador" },
-  { label: "Junco", cap: 39, kind: GYM, notes: "Ciudad Loza · Hielo" },
-  { label: "Lirio", cap: 43, kind: GYM, notes: "Ciudad Ónice · Dragón" },
-  { label: "Alto Mando", cap: 50, kind: ELITE_FOUR, notes: "Aza, Aguacil, Lotto y Zenón" },
+  { label: "Yakón", cap: 31, kind: GYM, notes: "Ciudad Fayenza · Tierra" },
+  { label: "Gerania", cap: 35, kind: GYM, notes: "Ciudad Loza · Volador" },
+  { label: "Junco", cap: 39, kind: GYM, notes: "Ciudad Teja · Hielo" },
+  { label: "Lirio", cap: 43, kind: GYM, notes: "Ciudad Caolín · Dragón (Iris en Blanco)" },
+  { label: "Alto Mando", cap: 50, kind: ELITE_FOUR, notes: "Anís, Aza, Catleya y Lotto" },
   { label: "Campeón", cap: 54, kind: CHAMPION, notes: "N y Ghechis" },
 ];
 
 const KALOS: ItemDeFabrica[] = [
   { label: "Violeta", cap: 12, kind: GYM, notes: "Ciudad Novarte · Bicho" },
-  { label: "Amaro", cap: 25, kind: GYM, notes: "Ciudad Relieve · Roca" },
+  { label: "Lino", cap: 25, kind: GYM, notes: "Ciudad Relieve · Roca" },
   { label: "Corelia", cap: 32, kind: GYM, notes: "Ciudad Yantra · Lucha" },
-  { label: "Ramos", cap: 34, kind: GYM, notes: "Ciudad Fractal · Planta" },
+  { label: "Amaro", cap: 34, kind: GYM, notes: "Ciudad Témpera · Planta" },
   { label: "Lem", cap: 37, kind: GYM, notes: "Ciudad Luminalia · Eléctrico" },
   { label: "Valeria", cap: 42, kind: GYM, notes: "Ciudad Romantis · Hada" },
   { label: "Ástrid", cap: 48, kind: GYM, notes: "Ciudad Fluxus · Psíquico" },
-  { label: "Édel", cap: 59, kind: GYM, notes: "Ciudad Nimbasa · Hielo" },
-  { label: "Alto Mando", cap: 65, kind: ELITE_FOUR, notes: "Ástrid, Mestra, Narciso y Dracón" },
+  { label: "Édel", cap: 59, kind: GYM, notes: "Ciudad Fractal · Hielo" },
+  { label: "Alto Mando", cap: 65, kind: ELITE_FOUR, notes: "Tileo, Drácena, Malva y Narciso" },
   { label: "Campeona", cap: 68, kind: CHAMPION, notes: "Dianta" },
 ];
 
@@ -117,43 +117,43 @@ const KALOS: ItemDeFabrica[] = [
  * poner solo a los kahunas dejaba fuera la mitad del recorrido.
  *
  * Sol/Luna y Ultrasol/Ultraluna **no comparten lista**: cambian tres
- * dominantes y Ultrasol/Ultraluna añaden la prueba de Mina, así que cada par
+ * dominantes y Ultrasol/Ultraluna añaden la prueba de Rika, así que cada par
  * tiene la suya.
  */
 const ALOLA: ItemDeFabrica[] = [
-  { label: "Prueba de Iliman", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Sol) o Raticate de Alola (Luna)" },
-  { label: "Gran prueba de Hala", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
-  { label: "Prueba de Mayla", cap: 20, kind: OTHER, notes: "Akala · dominante Wishiwashi" },
+  { label: "Prueba de Liam", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Sol) o Raticate de Alola (Luna)" },
+  { label: "Gran prueba de Kaudan", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
+  { label: "Prueba de Nereida", cap: 20, kind: OTHER, notes: "Akala · dominante Wishiwashi" },
   { label: "Prueba de Kiawe", cap: 22, kind: OTHER, notes: "Akala · dominante Salazzle" },
   { label: "Prueba de Lulú", cap: 24, kind: OTHER, notes: "Akala · dominante Lurantis" },
-  { label: "Gran prueba de Olivia", cap: 27, kind: GYM, notes: "Akala · Roca" },
+  { label: "Gran prueba de Mayla", cap: 27, kind: GYM, notes: "Akala · Roca" },
   { label: "Prueba de Chris", cap: 29, kind: OTHER, notes: "Ula-Ula · dominante Vikavolt" },
-  { label: "Prueba de Acerola", cap: 33, kind: OTHER, notes: "Ula-Ula · dominante Mimikyu" },
-  { label: "Gran prueba de Nanu", cap: 38, kind: GYM, notes: "Ula-Ula · Siniestro" },
+  { label: "Prueba de Zarala", cap: 33, kind: OTHER, notes: "Ula-Ula · dominante Mimikyu" },
+  { label: "Gran prueba de Denio", cap: 38, kind: GYM, notes: "Ula-Ula · Siniestro" },
   { label: "Prueba del Cañón de Poni", cap: 45, kind: OTHER, notes: "Poni · dominante Kommo-o" },
-  { label: "Gran prueba de Hapu", cap: 49, kind: GYM, notes: "Poni · Tierra" },
+  { label: "Gran prueba de Hela", cap: 49, kind: GYM, notes: "Poni · Tierra" },
   { label: "Alto Mando", cap: 56, kind: ELITE_FOUR, notes: "Los cuatro de la Liga de Alola" },
   { label: "Campeón", cap: 60, kind: CHAMPION, notes: "El primer campeón de Alola" },
 ];
 
 /**
- * Ultrasol y Ultraluna. Cambian los dominantes de las pruebas de Mayla, Kiawe
- * y Chris, y aparece la **prueba de Mina**, que en Sol/Luna no se llega a
+ * Ultrasol y Ultraluna. Cambian los dominantes de las pruebas de Nereida, Kiawe
+ * y Chris, y aparece la **prueba de Rika**, que en Sol/Luna no se llega a
  * hacer. El orden del final de Poni conviene comprobarlo con el juego delante.
  */
 const ALOLA_ULTRA: ItemDeFabrica[] = [
-  { label: "Prueba de Iliman", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Ultrasol) o Raticate de Alola (Ultraluna)" },
-  { label: "Gran prueba de Hala", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
-  { label: "Prueba de Mayla", cap: 20, kind: OTHER, notes: "Akala · dominante Araquanid" },
+  { label: "Prueba de Liam", cap: 12, kind: OTHER, notes: "Melemele · dominante Gumshoos (Ultrasol) o Raticate de Alola (Ultraluna)" },
+  { label: "Gran prueba de Kaudan", cap: 16, kind: GYM, notes: "Melemele · Lucha" },
+  { label: "Prueba de Nereida", cap: 20, kind: OTHER, notes: "Akala · dominante Araquanid" },
   { label: "Prueba de Kiawe", cap: 22, kind: OTHER, notes: "Akala · dominante Marowak de Alola" },
   { label: "Prueba de Lulú", cap: 24, kind: OTHER, notes: "Akala · dominante Lurantis" },
-  { label: "Gran prueba de Olivia", cap: 27, kind: GYM, notes: "Akala · Roca" },
+  { label: "Gran prueba de Mayla", cap: 27, kind: GYM, notes: "Akala · Roca" },
   { label: "Prueba de Chris", cap: 29, kind: OTHER, notes: "Ula-Ula · dominante Togedemaru" },
-  { label: "Prueba de Acerola", cap: 35, kind: OTHER, notes: "Ula-Ula · dominante Mimikyu" },
-  { label: "Gran prueba de Nanu", cap: 38, kind: GYM, notes: "Ula-Ula · Siniestro" },
-  { label: "Gran prueba de Hapu", cap: 49, kind: GYM, notes: "Poni · Tierra" },
+  { label: "Prueba de Zarala", cap: 35, kind: OTHER, notes: "Ula-Ula · dominante Mimikyu" },
+  { label: "Gran prueba de Denio", cap: 38, kind: GYM, notes: "Ula-Ula · Siniestro" },
+  { label: "Gran prueba de Hela", cap: 49, kind: GYM, notes: "Poni · Tierra" },
   { label: "Prueba del Cañón de Poni", cap: 45, kind: OTHER, notes: "Poni · dominante Kommo-o" },
-  { label: "Prueba de Mina", cap: 51, kind: OTHER, notes: "Poni · dominante Ribombee" },
+  { label: "Prueba de Rika", cap: 51, kind: OTHER, notes: "Poni · dominante Ribombee" },
   { label: "Alto Mando", cap: 60, kind: ELITE_FOUR, notes: "Los cuatro de la Liga de Alola" },
   { label: "Campeón", cap: 63, kind: CHAMPION, notes: "El combate que cierra la Liga" },
 ];

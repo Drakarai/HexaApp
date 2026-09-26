@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "node scripts/preparar-build.mjs && prisma generate && prisma db push --skip-generate && next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "db:push": "prisma db push",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",

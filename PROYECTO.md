@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de septiembre de 2026 (la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 26 de septiembre de 2026 (el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -47,7 +47,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 | Sección | Qué hace |
 | --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
@@ -2084,6 +2084,61 @@ Tres decisiones que no se ven:
   vuelta más** (medido: las mismas seis tandas), y por dentro reaprovecha
   `getStandings`, que esa página ya pide.
 
+### El cuarto repaso: entrar con cada papel
+
+Los repasos anteriores miraban las pantallas con una sola cuenta. Este entró con
+**cinco** —Creador, jugador, retirado, con el locke perdido y espectador— y en
+**lockes raros** creados desde la propia interfaz: uno vacío, un dualocke y uno
+en solitario. Ningún papel da errores ni pantallas rotas; lo que salió fueron
+cosas que se le enseñaban **a quien no le tocaban**:
+
+- **La portada no se enteraba de que el locke había terminado** (estaba en
+  pendientes desde el tercer repaso). Con campeón pone *🏆 Terminado*, y la
+  tarjeta de la próxima jornada, que pedía crear otra, enseña al campeón y
+  lleva al hall. Con el cuadro en juego, lleva al cuadro.
+- **"Crea una jornada nueva" se le decía a todo el mundo**, espectadores
+  incluidos. Ahora solo a quien puede crearla; al resto, que ya saldrá.
+- **Al espectador se le ofrecía escribir notas** que el servidor luego le
+  rechazaba, y en la ruleta se le decía que pidiera un ticket que nadie le puede
+  dar. Ahora se le dice de entrada que está mirando, como ya hacían el mapa y la
+  bolsa. En la portada, su enlace a la ruleta dice *Ver* y no *Girar*.
+- **Líder con empate**: con todos igualados salía de líder el primero de la
+  lista, así que un dualocke recién creado ya tenía líder con 0-0. Si los
+  desempates (puntos, caídos, diferencia) no deshacen el empate de arriba, la
+  tarjeta dice *Empate*.
+- **Copiar jugadores de un locke que no cabe**: de uno de seis a un dualocke se
+  copiaban los dos primeros por orden de alta **sin avisar**, y un organizador
+  acababa con uno de más porque su propia ficha no contaba. Ahora, si no caben,
+  no se crea nada y se explica por qué.
+- **"Ha superado a Liga Pokémon"**: la actividad ponía "a" delante de cualquier
+  hito. Los que son cosas y no personas llevan su artículo ("la Liga Pokémon",
+  "al Alto Mando", "la Gran prueba de Kaudan"); se decide por cómo empieza el
+  nombre, y lo que no encaje sigue con "a".
+- En la tarjeta de jugadores se distinguen **retirados y lockes perdidos**, que
+  antes eran todos "retirados".
+- En solitario, sin level caps puestos, la portada decía "No queda ninguno" como
+  si ya estuviera acabado, y en Level caps salía "nadie sigue hasta que estén
+  todas", cuando juega uno.
+- `npm run lint` estaba roto: llamaba a `next lint`, que Next 16 quitó, y ESLint
+  no está instalado. Ahora comprueba los tipos (`tsc --noEmit`).
+
+**Las plantillas de level caps de fábrica tenían nombres mal en casi todas las
+regiones**, y eso se copia a cada locke nuevo: ciudades cambiadas (Aníbal en
+Ciudad Olivo, Morti en "Pueblo Ecruteak", en inglés), líderes que son del Alto
+Mando (Mento y Fausto como líderes de Sinnoh), Altos Mandos de otra región, y
+en Alola los nombres en inglés de capitanes y kahunas (en español son Liam,
+Nereida, Zarala, Rika, Kaudan, Mayla, Denio y Hela). Se comprobaron **uno a uno
+contra los títulos de WikiDex** y se corrigieron, con Sinnoh en el orden de
+Diamante y Perla, que es el de sus niveles. **Lo ya guardado no cambia solo**:
+una plantilla que ya se hubiera rellenado o un locke que ya los tenga siguen con
+los nombres viejos, y *Rellenar de fábrica* no lo arregla —solo añade los hitos
+cuyo nombre no esté, así que un líder renombrado entraría duplicado—. Eso se
+corrige a mano. Los datos de ejemplo (Johto) tenían el mismo problema.
+
+**Se miró y está bien**: todas las server actions comprueban permisos, y las que
+reciben un identificador sacan el locke **del registro** y no del formulario,
+así que el admin de un locke no puede tocar otro.
+
 ### El tercer repaso: jugar el locke hasta el final
 
 Los dos repasos anteriores miraban las mismas pantallas en el mismo estado —un
@@ -2392,6 +2447,9 @@ Piezas con truco:
   cada juego. El segundo es la semilla (por región); el primero, lo guardado
   (por juego). `admin/level-caps/` es el editor y
   `app/actions/plantillas.ts` las acciones, incluida la de traerlos a un locke.
+  **Los nombres van como en los juegos en español**, comprobados contra WikiDex:
+  si se añade una región, se comprueba igual y no de memoria (el primer
+  borrador tenía media Alola en inglés).
 - `lib/premios.ts` — los objetos que reparte un reto y los castigos que hay que
   anunciar. `sincronizarPremios()` es la que da y quita según quién gane;
   `components/castigos.tsx` es el bloque de la portada.
@@ -2485,12 +2543,15 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
-**Visto y sin hacer**: cuando el locke termina y ya hay campeón, **la portada no
-se entera**. Sigue diciendo "🟢 En curso", la tarjeta de *Próxima jornada* pone
-"no hay combates pendientes, crea una jornada nueva" y no hay ni una palabra del
-campeón. Lo suyo sería que al haber campeón la portada lo enseñe y lleve al hall,
-y que el estado deje de decir que está en curso. Se dejó a propósito para
-consultarlo: es cambiar la pantalla principal, no arreglar un fallo.
+**Visto y sin hacer**: un locke **archivado se sigue pudiendo tocar** entero
+—bajas, puntos, jornadas—. No es un fallo, porque "se conserva entero" es lo que
+se decidió, pero quien cambie de edición sin fijarse puede apuntar algo en la
+que no es. Si molesta, lo suyo sería dejar las archivadas de solo lectura salvo
+para quien la administra.
+
+**En la guía de uso**, la foto de los level caps enseña "Antón · Ciudad Azalea"
+(es Pueblo Azalea): viene de los datos de ejemplo de antes del cuarto repaso. Se
+arregla sola la próxima vez que se rehagan las fotos.
 
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
@@ -2769,3 +2830,6 @@ lugar de destruir datos, y hay que avisar antes.
 67. **Entrar y volver sin molestias**: la sesión se estira al usarla, tras
     entrar se vuelve a la pantalla que se pedía y la aplicación se refresca
     sola al volver a ella.
+68. **Cuarto repaso, con cada papel y en lockes raros**: la portada se entera
+    de que el locke ha terminado, cada uno ve solo lo que puede hacer, y las
+    plantillas de level caps pasan a tener los nombres de verdad.

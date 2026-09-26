@@ -168,7 +168,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       at: clear.clearedAt,
       icon: "🎯",
       color: jugador.color,
-      title: `${jugador.displayName} ha superado a ${clear.levelCap.label}`,
+      title: `${jugador.displayName} ha superado ${aQuienSeSupera(clear.levelCap.label)}`,
       detail: `Level cap ${clear.levelCap.cap}`,
       who: jugador.displayName,
       whoImage: avatares(jugador.userId),
@@ -254,4 +254,18 @@ export async function getActivity(competitionId: string, limit = 60) {
   return entries
     .sort((a, b) => b.at.getTime() - a.at.getTime())
     .slice(0, limit);
+}
+
+/**
+ * "A Pegaso" sí, pero "a Liga Pokémon" y "a Alto Mando" no: un hito puede ser
+ * una persona o una cosa, y las cosas llevan artículo. Se mira por cómo empieza
+ * el nombre, que es lo que traen las plantillas de todas las regiones; un nombre
+ * inventado que no encaje sale con "a", que es lo que salía siempre.
+ */
+function aQuienSeSupera(hito: string): string {
+  const nombre = hito.trim();
+  if (/^(alto mando|campeón)(?=\s|$)/i.test(nombre)) return `al ${nombre}`;
+  if (/^campeona(?=\s|$)/i.test(nombre)) return `a la ${nombre}`;
+  if (/^(liga|gran prueba|prueba)(?=\s|$)/i.test(nombre)) return `la ${nombre}`;
+  return `a ${nombre}`;
 }

@@ -12,6 +12,7 @@ import { getMyParticipant } from "@/lib/competition";
 import { generacionDelJuego, nombreDelJuego } from "@/lib/juegos";
 import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
 import { NewNoteForm, NoteCard } from "./note-forms";
+import { getAcceso } from "@/lib/acceso";
 
 export const metadata = { title: "Mis notas" };
 
@@ -25,8 +26,31 @@ export default async function NotesPage({
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { sobre } = await searchParams;
-  const participants = await getParticipants(competition.id);
-  const yo = await getMyParticipant(competition.id, user.id);
+  const [participants, yo, acceso] = await Promise.all([
+    getParticipants(competition.id),
+    getMyParticipant(competition.id, user.id),
+    getAcceso(competition.id),
+  ]);
+
+  /**
+   * Un espectador mira y no escribe: el servidor ya le rechaza la nota, pero
+   * se le enseñaba el formulario entero para luego decirle que no. Como con el
+   * mapa y la bolsa, se le dice de entrada.
+   */
+  if (acceso === "ESPECTADOR") {
+    return (
+      <>
+        <PageHeader
+          title="Mis notas"
+          subtitle="Cuaderno privado para planear estrategias. Nadie más puede leer estas notas, ni siquiera los administradores."
+        />
+        <EmptyState
+          title="No juegas esta edición"
+          hint="Las notas son de quien juega el locke; tú lo estás mirando."
+        />
+      </>
+    );
+  }
 
   /**
    * El equipo de la calculadora de tipos. Se pide por participante, igual que
