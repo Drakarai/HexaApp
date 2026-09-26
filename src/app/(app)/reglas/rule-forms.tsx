@@ -50,8 +50,11 @@ export function NewRuleForm({ competitionId }: { competitionId: string }) {
 
 export function EditRuleForm({
   rule,
+  empezado,
 }: {
   rule: { id: string; title: string; body: string; category: string | null };
+  /** Con el locke en marcha, un cambio se avisa a todos (si no se desmarca) */
+  empezado: boolean;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -100,6 +103,23 @@ export function EditRuleForm({
         />
         <p className="mt-1 text-xs text-slate-500">{BODY_HINT}</p>
       </div>
+      {empezado ? (
+        <label className="flex items-start gap-2 text-sm text-slate-300">
+          <input
+            type="checkbox"
+            name="avisar"
+            defaultChecked
+            className="mt-0.5 accent-indigo-500"
+          />
+          <span>
+            Avisar a todos del cambio
+            <span className="block text-xs text-slate-500">
+              Quítalo si solo corriges una errata: así no le sale a nadie como
+              regla cambiada.
+            </span>
+          </span>
+        </label>
+      ) : null}
       <div className="flex gap-2">
         <SubmitButton>Guardar</SubmitButton>
         <button

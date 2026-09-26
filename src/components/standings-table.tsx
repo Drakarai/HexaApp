@@ -1,4 +1,5 @@
 import type { StandingRow } from "@/lib/competition";
+import type { MovimientosEnLaTabla } from "@/lib/grafico-clasificacion";
 import { AceBadge } from "@/components/ace-badge";
 import { Avatar, EnlaceDeJugador } from "@/components/ui";
 import { TitleBadge } from "@/components/title-badge";
@@ -15,6 +16,8 @@ type Props = {
   /** Cuántos primeros puestos se marcan como clasificados directos. */
   qualifiedSlots?: number;
   compact?: boolean;
+  /** Lo que ha subido o bajado cada uno desde la jornada anterior */
+  movimientos?: MovimientosEnLaTabla | null;
 };
 
 /**
@@ -49,7 +52,7 @@ export function StandingsTable(props: Props) {
         <table className="data-table">
           <thead>
             <tr>
-              <th className="w-10">#</th>
+              <th className="w-14">#</th>
               <th>Jugador</th>
               <th className="text-right">Pts</th>
               <th className="text-right">💀</th>
@@ -86,6 +89,37 @@ function Puesto({
   if (position === 0) return <span title="Está fuera del locke">—</span>;
   if (position > qualifiedSlots) return <>{position}</>;
   return <span title="Clasificado directo">{MEDALS[position - 1] ?? position}</span>;
+}
+
+/**
+ * La flecha de lo que ha subido o bajado desde la jornada anterior. Quien se
+ * queda igual no lleva nada: una columna de "=" no dice nada y ensucia.
+ */
+function Movimiento({
+  participantId,
+  movimientos,
+}: {
+  participantId: string;
+  movimientos?: MovimientosEnLaTabla | null;
+}) {
+  const cambio = movimientos?.cambios[participantId] ?? 0;
+  if (!cambio) return null;
+  const sube = cambio > 0;
+  const puestos = Math.abs(cambio);
+  return (
+    <span
+      className={cx(
+        "text-[10px] font-semibold leading-none tabular-nums",
+        sube ? "text-emerald-400" : "text-rose-400",
+      )}
+      title={`${sube ? "Ha subido" : "Ha bajado"} ${puestos} ${
+        puestos === 1 ? "puesto" : "puestos"
+      } desde ${movimientos!.desde}`}
+    >
+      {sube ? "▲" : "▼"}
+      {puestos}
+    </span>
+  );
 }
 
 /**
@@ -192,6 +226,7 @@ function Ficha({
   editableParticipantIds,
   qualifiedSlots = 2,
   compact = false,
+  movimientos,
 }: Props & { row: StandingRow }) {
   return (
     <li
@@ -204,8 +239,11 @@ function Ficha({
       )}
     >
       <div className="flex items-center gap-2.5">
-        <span className="w-5 shrink-0 text-center text-sm text-slate-400">
+        {/* La flecha va debajo del puesto y no al lado: en la ficha el ancho
+            es para el nombre */}
+        <span className="flex w-6 shrink-0 flex-col items-center gap-0.5 text-sm text-slate-400">
           <Puesto position={row.position} qualifiedSlots={qualifiedSlots} />
+          <Movimiento participantId={row.participantId} movimientos={movimientos} />
         </span>
         <FotoConTitulo row={row} size={32} />
         <ElAs
@@ -303,6 +341,7 @@ function Fila({
   editableParticipantIds,
   qualifiedSlots = 2,
   compact = false,
+  movimientos,
 }: Props & { row: StandingRow }) {
   return (
     <tr
@@ -311,8 +350,9 @@ function Fila({
         row.retirado && "opacity-60",
       )}
     >
-      <td className="text-slate-400">
-        <Puesto position={row.position} qualifiedSlots={qualifiedSlots} />
+      <td className="whitespace-nowrap text-slate-400">
+        <Puesto position={row.position} qualifiedSlots={qualifiedSlots} />{" "}
+        <Movimiento participantId={row.participantId} movimientos={movimientos} />
       </td>
       <td>
         <div className="flex items-center gap-2.5">

@@ -21,6 +21,8 @@ import { TitlesSection } from "@/components/titles-section";
 import { comoEstaFuera } from "@/lib/wipeos";
 import { Wipeos } from "./wipeos-client";
 import { cx, formatDate } from "@/lib/utils";
+import { coronasDe } from "@/lib/coronas";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 export const metadata = { title: "Jugador" };
 
@@ -37,7 +39,9 @@ export default async function PlayerPage({
 
   const participant = await prisma.participant.findUnique({
     where: { id },
-    include: { competition: { select: { id: true, name: true } } },
+    include: {
+      competition: { select: { id: true, name: true, maxPlayers: true } },
+    },
   });
   if (!participant) notFound();
 
@@ -58,7 +62,12 @@ export default async function PlayerPage({
         where: { participantId: id },
         orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
       }),
-      prisma.gymClear.count({ where: { participantId: id } }),
+      // Las de todos y no solo las suyas: para saber si fue el primero en
+      // pasarse cada gimnasio hay que ver cuándo se lo pasaron los demás
+      prisma.gymClear.findMany({
+        where: { levelCap: { competitionId } },
+        select: { participantId: true, levelCapId: true, clearedAt: true },
+      }),
       prisma.levelCap.count({ where: { competitionId } }),
       prisma.favoritePokemon.findMany({
         where: { participantId: id },
@@ -71,6 +80,11 @@ export default async function PlayerPage({
     ]);
 
   const fila = standings.find((row) => row.participantId === id);
+  const misGimnasios = clears.filter((clear) => clear.participantId === id).length;
+  // En solitario no hay a quién ganarle la carrera
+  const coronas = perfilDeLocke(participant.competition.maxPlayers).enSolitario
+    ? 0
+    : coronasDe(id, clears);
   const combates = await getResumenDeCombates(competitionId, id);
   const esMio = participant.userId === user.id;
   const editable = esMio || canManage;
@@ -185,8 +199,13 @@ export default async function PlayerPage({
             bestiaNegra={combates.bestiaNegra}
           />
           <Cifra
-            valor={`${clears}/${capsTotales}`}
+            valor={`${misGimnasios}/${capsTotales}`}
             etiqueta="Gimnasios superados"
+            nota={
+              coronas
+                ? `👑 ${coronas} ${coronas === 1 ? "vez" : "veces"} el primero`
+                : undefined
+            }
           />
         </div>
       </section>
@@ -285,9 +304,12 @@ export default async function PlayerPage({
 function Cifra({
   valor,
   etiqueta,
+  nota,
 }: {
   valor: string | number;
   etiqueta: string;
+  /** Una línea más debajo del rótulo, cuando hay algo que añadir */
+  nota?: string;
 }) {
   return (
     <div className={cx("rounded-xl border border-white/5 bg-white/[0.03] p-3")}>
@@ -295,6 +317,7 @@ function Cifra({
       <p className="text-[11px] uppercase tracking-wide text-slate-500">
         {etiqueta}
       </p>
+      {nota ? <p className="mt-1 text-xs text-amber-300/90">{nota}</p> : null}
     </div>
   );
 }

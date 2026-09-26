@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
+import { lockeEmpezado } from "@/lib/reglas";
 
 export async function createRuleAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const competitionId = String(formData.get("competitionId") ?? "");
-  await requireCompetitionManager(competitionId);
+  const manager = await requireCompetitionManager(competitionId);
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();
@@ -29,6 +30,10 @@ export async function createRuleAction(
       body,
       category: String(formData.get("category") ?? "").trim() || null,
       position: (last?.position ?? 0) + 1,
+      // Una regla que aparece a mitad de locke es un cambio como otro cualquiera
+      ...((await lockeEmpezado(competitionId))
+        ? { cambiadaAt: new Date(), cambiadaPorId: manager.id }
+        : {}),
     },
   });
 
@@ -40,14 +45,35 @@ export async function updateRuleAction(formData: FormData) {
   const id = String(formData.get("ruleId") ?? "");
   const rule = await prisma.ruleSection.findUnique({ where: { id } });
   if (!rule) return;
-  await requireCompetitionManager(rule.competitionId);
+  const manager = await requireCompetitionManager(rule.competitionId);
+
+  const title = String(formData.get("title") ?? "").trim() || rule.title;
+  const body = String(formData.get("body") ?? "");
+  /**
+   * Se avisa si ha cambiado lo que dice —el título o el texto, no la categoría
+   * ni el orden—, el locke ya ha empezado y quien lo edita no ha quitado la
+   * casilla, que está para corregir una errata sin que salte a todo el mundo.
+   */
+  const cambiaLoQueDice = title !== rule.title || body.trim() !== rule.body.trim();
+  const avisar =
+    cambiaLoQueDice &&
+    formData.get("avisar") === "on" &&
+    (await lockeEmpezado(rule.competitionId));
 
   await prisma.ruleSection.update({
     where: { id },
     data: {
-      title: String(formData.get("title") ?? "").trim() || rule.title,
-      body: String(formData.get("body") ?? ""),
+      title,
+      body,
       category: String(formData.get("category") ?? "").trim() || null,
+      ...(avisar
+        ? {
+            cambiadaAt: new Date(),
+            cambiadaPorId: manager.id,
+            tituloAnterior: title !== rule.title ? rule.title : null,
+            textoAnterior: rule.body,
+          }
+        : {}),
     },
   });
 

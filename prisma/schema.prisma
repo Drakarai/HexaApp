@@ -595,6 +595,22 @@ model RuleSection {
   position      Int      @default(0)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  /**
+   * Cuándo cambió **de verdad** con el locke ya en marcha: la regla que se
+   * añade o se reescribe cuando ya se está jugando. Enciende el punto de
+   * novedades de Reglas. No sirve `updatedAt`, que también cambia al
+   * reordenar, al corregir una errata sin avisar o al montar las reglas antes
+   * de empezar, y eso no es noticia para nadie.
+   */
+  cambiadaAt    DateTime?
+  /** Quién la cambió: a él no hace falta avisarle */
+  cambiadaPorId String?
+  /**
+   * Lo que decía antes del último cambio, para poder enseñarlo. Vacío en una
+   * sección añadida con el locke empezado: antes no decía nada.
+   */
+  tituloAnterior String?
+  textoAnterior  String?
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
 

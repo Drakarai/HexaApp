@@ -16,7 +16,10 @@ import {
   quickAdjustPointsAction,
 } from "@/app/actions/points";
 import { PointsForms } from "./points-forms";
-import { getGraficoClasificacion } from "@/lib/grafico-clasificacion";
+import {
+  getGraficoClasificacion,
+  movimientosEnLaTabla,
+} from "@/lib/grafico-clasificacion";
 import { PointsChart } from "@/components/points-chart";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
@@ -128,6 +131,7 @@ export default async function PointsPage() {
           rows={standings}
           highlightUserId={user.id}
           editableParticipantIds={editableAces}
+          movimientos={movimientosEnLaTabla(grafico, standings)}
         />
 
         {canManage ? (

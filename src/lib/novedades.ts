@@ -19,7 +19,20 @@ import { puedeVotarElMvp } from "@/lib/wipeos";
 
 /** Los grupos del menú que pueden llevar aviso. Los demás no tienen novedades. */
 export const PESTANAS_CON_AVISO = ["Combates", "La edición", "Lo mío"] as const;
-export type PestanaConAviso = (typeof PESTANAS_CON_AVISO)[number];
+
+/**
+ * Los apartados que llevan **su propio** punto, además del de su grupo. Hasta
+ * ahora el aviso era solo de grupo, y para una regla cambiada no basta: el
+ * punto de "La edición" se apaga al entrar en la clasificación, y la regla se
+ * quedaba sin leer. Cada uno apunta su visita aparte, con el rótulo del menú
+ * como nombre, y se apaga solo al entrar en él.
+ */
+export const APARTADOS_CON_AVISO = { "/reglas": "Reglas" } as const;
+
+type ApartadoConAviso = (typeof APARTADOS_CON_AVISO)[keyof typeof APARTADOS_CON_AVISO];
+export type PestanaConAviso =
+  | (typeof PESTANAS_CON_AVISO)[number]
+  | ApartadoConAviso;
 
 export type Avisos = Record<string, boolean>;
 
@@ -67,6 +80,7 @@ export async function getAvisos({
   const combatesDesde = desde("Combates");
   const edicionDesde = desde("La edición");
   const loMioDesde = desde("Lo mío");
+  const reglasDesde = desde("Reglas");
   // En SQL no hay "sin participante": se usa un id que no existe y las
   // subconsultas suyas se quedan vacías solas.
   const miId = participantId ?? "";
@@ -74,7 +88,7 @@ export async function getAvisos({
   const votante = puedeVotar ? miId : "";
 
   const [fila] = await prisma.$queryRaw<
-    { combates: boolean; edicion: boolean; lomio: boolean }[]
+    { combates: boolean; edicion: boolean; lomio: boolean; reglas: boolean }[]
   >`
     SELECT
       (
@@ -128,7 +142,15 @@ export async function getAvisos({
         EXISTS (SELECT 1 FROM "BagEntry"
                  WHERE "participantId" = ${miId}
                    AND "updatedAt" > ${loMioDesde})
-      ) AS lomio
+      ) AS lomio,
+      (
+        -- Una regla que ha cambiado con el locke en marcha. La de quien la
+        -- cambió no cuenta: ya sabe lo que ha escrito.
+        EXISTS (SELECT 1 FROM "RuleSection"
+                 WHERE "competitionId" = ${competitionId}
+                   AND "cambiadaAt" > ${reglasDesde}
+                   AND "cambiadaPorId" IS DISTINCT FROM ${userId})
+      ) AS reglas
   `;
 
   /**
@@ -145,10 +167,14 @@ export async function getAvisos({
     esAdmin &&
     (await prisma.lockeRequest.count({ where: { estado: "PENDIENTE" } })) > 0;
 
+  const reglas = Boolean(fila?.reglas);
   return {
     Combates: Boolean(fila?.combates),
-    "La edición": Boolean(fila?.edicion) || peticiones,
+    // Reglas vive en "La edición": su punto enciende también el del grupo, o
+    // desde fuera no habría forma de enterarse
+    "La edición": Boolean(fila?.edicion) || peticiones || reglas,
     "Lo mío": Boolean(fila?.lomio),
+    Reglas: reglas,
   };
 }
 
@@ -158,7 +184,11 @@ export async function marcarVista(
   competitionId: string,
   tab: string,
 ) {
-  if (!PESTANAS_CON_AVISO.includes(tab as PestanaConAviso)) return;
+  const validas: string[] = [
+    ...PESTANAS_CON_AVISO,
+    ...Object.values(APARTADOS_CON_AVISO),
+  ];
+  if (!validas.includes(tab)) return;
   const ahora = new Date();
   await prisma.tabSeen.upsert({
     where: { userId_competitionId_tab: { userId, competitionId, tab } },

@@ -17,7 +17,7 @@ import { Avatar } from "@/components/ui";
 import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
-import { getAvisos } from "@/lib/novedades";
+import { APARTADOS_CON_AVISO, getAvisos } from "@/lib/novedades";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -369,7 +369,11 @@ export default async function AppLayout({
         }}
       />
 
-      <MarcarVisto rutas={rutasDeGrupo} avisos={avisos} />
+      <MarcarVisto
+        rutas={rutasDeGrupo}
+        apartados={APARTADOS_CON_AVISO}
+        avisos={avisos}
+      />
     </div>
   );
 }

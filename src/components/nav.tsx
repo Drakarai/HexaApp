@@ -48,6 +48,7 @@ export function Nav({
             grupo={entrada}
             activo={activo}
             aviso={Boolean(avisos[entrada.label])}
+            avisos={avisos}
           />
         ) : (
           <Enlace
@@ -64,9 +65,12 @@ export function Nav({
 function Enlace({
   item,
   activo,
+  aviso = false,
 }: {
   item: NavItem;
   activo: boolean;
+  /** Este apartado tiene algo nuevo él solo (ver APARTADOS_CON_AVISO) */
+  aviso?: boolean;
 }) {
   return (
     <Link
@@ -83,6 +87,14 @@ function Enlace({
         {item.icon}
       </span>
       {item.label}
+      {/* Estando dentro no se avisa, como en los grupos */}
+      {aviso && !activo ? (
+        <span
+          aria-label="Hay algo nuevo"
+          title="Hay algo nuevo"
+          className="ml-auto h-2 w-2 rounded-full bg-amber-400 ring-2 ring-amber-400/25"
+        />
+      ) : null}
     </Link>
   );
 }
@@ -91,11 +103,14 @@ function Grupo({
   grupo,
   activo,
   aviso,
+  avisos,
 }: {
   grupo: NavGroup;
   activo: (href: string) => boolean;
   /** Hay algo nuevo dentro desde la última vez que se miró */
   aviso: boolean;
+  /** Los de cada apartado, que pueden llevar el suyo */
+  avisos: Record<string, boolean>;
 }) {
   const pathname = usePathname();
   const alguienActivo = grupo.children.some((hijo) => activo(hijo.href));
@@ -160,7 +175,12 @@ function Grupo({
         // El filete de la izquierda ata los hijos a su grupo
         <div className="flex gap-1 lg:mt-0.5 lg:ml-4 lg:flex-col lg:border-l lg:border-white/5 lg:pl-2">
           {grupo.children.map((hijo) => (
-            <Enlace key={hijo.href} item={hijo} activo={activo(hijo.href)} />
+            <Enlace
+              key={hijo.href}
+              item={hijo}
+              activo={activo(hijo.href)}
+              aviso={Boolean(avisos[hijo.label])}
+            />
           ))}
         </div>
       ) : null}

@@ -361,3 +361,61 @@ export async function getGraficoClasificacion(
     })),
   };
 }
+
+export type MovimientosEnLaTabla = {
+  /** Desde cuándo se cuenta: "J4" */
+  desde: string;
+  /** Puestos que ha subido (positivo) o bajado (negativo) cada uno */
+  cambios: Record<string, number>;
+};
+
+/**
+ * Cuántos puestos ha subido o bajado cada uno **desde la jornada anterior**,
+ * para las flechas de la clasificación.
+ *
+ * Se compara el puesto de ahora —el de la tabla, tal cual se ve— con el que
+ * tenía al acabar la penúltima jornada jugada, ordenado **con el mismo criterio
+ * que la tabla**, desempate por nombre incluido. Si se ordenara distinto, dos
+ * empatados que no se han movido saldrían con flecha solo porque la tabla los
+ * pone uno detrás de otro por orden alfabético.
+ *
+ * El puesto de antes se calcula **solo entre los que siguen jugando**: si no,
+ * que alguien se retire haría subir a todos los de debajo sin haber jugado.
+ *
+ * Con una sola jornada jugada no hay nada: antes de la primera estaban todos
+ * empatados, y las flechas dirían que todo el mundo menos el líder ha bajado.
+ */
+export function movimientosEnLaTabla(
+  grafico: GraficoClasificacion | null,
+  tabla: {
+    participantId: string;
+    displayName: string;
+    position: number;
+    retirado: boolean;
+  }[],
+): MovimientosEnLaTabla | null {
+  if (!grafico || grafico.etapas.length < 3) return null;
+  const penultima = grafico.etapas[grafico.etapas.length - 2];
+
+  const siguen = tabla.filter((fila) => !fila.retirado);
+  const nombre = new Map(siguen.map((fila) => [fila.participantId, fila.displayName]));
+  const antes = penultima.nodos
+    .filter((nodo) => nombre.has(nodo.participantId))
+    .sort(
+      (a, b) =>
+        b.puntos - a.puntos ||
+        a.muertes - b.muertes ||
+        b.diff - a.diff ||
+        nombre.get(a.participantId)!.localeCompare(nombre.get(b.participantId)!, "es"),
+    );
+  const puestoDeAntes = new Map(
+    antes.map((nodo, indice) => [nodo.participantId, indice + 1]),
+  );
+
+  const cambios: Record<string, number> = {};
+  for (const fila of siguen) {
+    const previo = puestoDeAntes.get(fila.participantId);
+    if (previo) cambios[fila.participantId] = previo - fila.position;
+  }
+  return { desde: penultima.etiqueta, cambios };
+}

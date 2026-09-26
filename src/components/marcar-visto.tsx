@@ -26,23 +26,31 @@ const yaApuntadas = new Set<string>();
 export function MarcarVisto({
   /** De qué grupo del menú es cada dirección: { "/jornadas": "Combates", … } */
   rutas,
+  /** Los apartados con punto propio: { "/reglas": "Reglas" } */
+  apartados = {},
   avisos,
 }: {
   rutas: Record<string, string>;
+  apartados?: Record<string, string>;
   avisos: Record<string, boolean>;
 }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const entrada = Object.entries(rutas).find(([href]) =>
-      pathname.startsWith(href),
-    );
-    const tab = entrada?.[1];
-    if (!tab || !avisos[tab] || yaApuntadas.has(pathname)) return;
+    // Una misma página puede apagar dos puntos: el de su grupo y el suyo
+    const tabs = [rutas, apartados]
+      .map((mapa) =>
+        Object.entries(mapa).find(([href]) => pathname.startsWith(href))?.[1],
+      )
+      .filter((tab): tab is string => Boolean(tab && avisos[tab]));
 
-    yaApuntadas.add(pathname);
-    void marcarVistaAction(tab);
-  }, [pathname, rutas, avisos]);
+    for (const tab of tabs) {
+      const clave = `${tab}:${pathname}`;
+      if (yaApuntadas.has(clave)) continue;
+      yaApuntadas.add(clave);
+      void marcarVistaAction(tab);
+    }
+  }, [pathname, rutas, apartados, avisos]);
 
   return null;
 }

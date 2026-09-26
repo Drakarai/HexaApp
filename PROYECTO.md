@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de septiembre de 2026 (el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 26 de septiembre de 2026 (flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -48,8 +48,8 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | Sección | Qué hace |
 | --- | --- |
 | **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
-| **Reglas** | Secciones por categorías, editables y reordenables por administradores. |
-| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
+| **Reglas** | Secciones por categorías, editables y reordenables por administradores. **Un cambio con el locke en marcha se avisa**: punto ámbar en *Reglas*, la sección marcada como *Cambiada el…* o *Añadida el…* —resaltada para quien no la ha visto— y un desplegable con **qué líneas ganó y perdió**, más cómo estaba entera. Al editar hay una casilla para no avisar, para las erratas. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
@@ -61,7 +61,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
-| **Puntos** / **Marcador** | Clasificación con desempates, el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
+| **Puntos** / **Marcador** | Clasificación con desempates y **flechas ▲▼ de lo que ha subido o bajado cada uno desde la jornada anterior** (también en la portada), el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
@@ -80,7 +80,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Diagnóstico** | Pantalla del Creador. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
 | **Organizador** | Un permiso que da el Creador (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
-| **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. |
+| **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. Algún apartado lleva **punto propio** además del de su grupo: *Reglas*, cuando cambia una. |
 
 Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
 **administrador de locke** (participante con mando en *esa* edición y en nada
@@ -2084,6 +2084,53 @@ Tres decisiones que no se ven:
   vuelta más** (medido: las mismas seis tandas), y por dentro reaprovecha
   `getStandings`, que esa página ya pide.
 
+### Flechas, coronas y reglas que avisan
+
+Tres ideas que eligió el usuario de una ronda de propuestas, las tres hechas
+con datos que ya se guardaban.
+
+**Las flechas de la clasificación** comparan el puesto de ahora con el de al
+acabar la penúltima jornada jugada, y salen de las mismas fotos que la gráfica
+(`movimientosEnLaTabla` en `lib/grafico-clasificacion.ts`). Dos cuidados: el
+puesto de antes se ordena **exactamente como la tabla**, desempate por nombre
+incluido, porque si no dos empatados que no se han movido llevarían flecha; y
+se cuenta **solo entre los que siguen**, para que una retirada no haga subir a
+todos los de debajo sin haber jugado. Con una sola jornada no hay flechas:
+antes de la primera estaban todos empatados y dirían que todo el mundo ha
+bajado. Quien se queda igual no lleva nada; una columna de "=" no dice nada.
+
+**La corona** sale de la fecha de cada marca de gimnasio (`lib/coronas.ts`).
+Si dos lo marcan en el mismo instante, corona para los dos. Cuenta aunque luego
+se retirara: fue el primero igual. En solitario no hay corona, que siendo uno
+sería primero siempre. Si alguien desmarca y vuelve a marcar, vale la fecha
+nueva: si lo marcó por error, no se lo había pasado.
+
+**Las reglas que cambian** guardan cuándo (`cambiadaAt`), quién (para no
+avisarle a él) y **lo que decían antes del último cambio** (`tituloAnterior`,
+`textoAnterior`). No sirve `updatedAt`, que también se mueve al reordenar.
+Tres decisiones:
+
+- **Solo cuenta con el locke en marcha** (hay una jornada o alguien se ha
+  pasado un gimnasio, ver `lib/reglas.ts`). Antes, las reglas se están
+  montando, y avisar de cada una llenaría de puntos a todo el mundo antes de la
+  primera ruta. Copiar reglas de otra edición tampoco avisa.
+- **Al editar hay una casilla, marcada, de "avisar a todos"**. Se quita para
+  corregir una errata, que no es una regla nueva.
+- Lo que se enseña es **qué líneas ganó y perdió** la regla —una línea
+  retocada sale como una quitada y otra añadida, que es como se cuenta un
+  cambio de reglas—, y debajo, plegado, el texto de antes entero. Solo se
+  guarda **el último** texto anterior: si cambia dos veces, el primero se
+  pierde. Para un grupo de amigos basta; si hiciera falta el historial
+  completo, sería una tabla aparte.
+
+El punto de novedades era **solo de grupo** y para esto no bastaba: el de "La
+edición" se apaga al entrar en la clasificación, y la regla se quedaba sin
+leer. Ahora hay **apartados con punto propio** (`APARTADOS_CON_AVISO` en
+`lib/novedades.ts`), que llevan su visita aparte en `TabSeen` con el rótulo del
+menú como nombre, encienden también el de su grupo y se pintan en el menú del
+PC y en la hoja del móvil. De momento solo *Reglas*; otro apartado entra
+añadiéndolo ahí y a la consulta.
+
 ### El cuarto repaso: entrar con cada papel
 
 Los repasos anteriores miraban las pantallas con una sola cuenta. Este entró con
@@ -2507,6 +2554,10 @@ Piezas con truco:
   y el modelo `TabSeen` (una fecha por persona, edición y pestaña).
   `components/marcar-visto.tsx` es quien apunta la visita, y va **en el layout**
   para que una sección nueva entre sola con solo aparecer en el menú.
+  `APARTADOS_CON_AVISO` son los apartados con punto propio (hoy, Reglas).
+- `lib/reglas.ts` — si el locke ya ha empezado (de eso depende que un cambio de
+  reglas se avise) y qué líneas ha ganado y perdido una regla.
+- `lib/coronas.ts` — quién se pasó cada gimnasio antes que nadie.
 - `components/boton-apuntar.tsx` — el "＋" flotante. Los atajos los arma el
   layout según lo que esa persona pueda hacer de verdad, y cada página se ocupa
   de su `?apuntar=1` (`muertes/death-form.tsx`, `mapa/mapa-client.tsx` y
@@ -2542,6 +2593,11 @@ Piezas con truco:
 **Pendiente ahora mismo**: el usuario todavía no ha desplegado. El siguiente
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
+
+**Para la próxima vez que se rehagan las guías**: no cuentan todavía las
+flechas de la clasificación, la corona de los gimnasios ni el aviso de reglas
+cambiadas (este, con su casilla de no avisar, va en la del administrador). Se
+dejó para juntarlo con más cosas, porque rehacerlas mueve los índices.
 
 **Visto y sin hacer**: un locke **archivado se sigue pudiendo tocar** entero
 —bajas, puntos, jornadas—. No es un fallo, porque "se conserva entero" es lo que
@@ -2833,3 +2889,6 @@ lugar de destruir datos, y hay que avisar antes.
 68. **Cuarto repaso, con cada papel y en lockes raros**: la portada se entera
     de que el locke ha terminado, cada uno ve solo lo que puede hacer, y las
     plantillas de level caps pasan a tener los nombres de verdad.
+69. **Flechas, coronas y reglas que avisan**: ▲▼ en la clasificación, 👑 para
+    el primero en pasarse cada gimnasio, y las reglas que cambian con el locke
+    en marcha encienden su propio punto y enseñan qué ha cambiado.

@@ -166,6 +166,14 @@ export function MobileTabBar({
                       {item.icon}
                     </span>
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {/* El apartado que tiene algo nuevo él solo: sin esto, al
+                        abrir el grupo no se sabría en cuál está */}
+                    {avisos[item.label] && !activo(item.href) ? (
+                      <span
+                        aria-label="Hay algo nuevo"
+                        className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400"
+                      />
+                    ) : null}
                     <span aria-hidden className="text-xs text-slate-600">
                       ›
                     </span>

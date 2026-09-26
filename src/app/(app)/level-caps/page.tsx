@@ -13,6 +13,7 @@ import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 import { grupoDePlantillaDeJuego } from "@/lib/juegos";
 import { urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { primerosEnPasar } from "@/lib/coronas";
 import { MatchTeams } from "@/components/match-team";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
@@ -70,6 +71,18 @@ export default async function LevelCapsPage({
     "equipo",
     equiposPorHito.map((pokemon) => pokemon.id),
   );
+
+  /**
+   * La corona de quien se pasó cada gimnasio antes que nadie. En solitario no:
+   * siendo uno, sería primero siempre.
+   */
+  const coronas = perfil.enSolitario
+    ? new Map<string, Set<string>>()
+    : primerosEnPasar(
+        levelCaps.flatMap((cap) =>
+          cap.clears.map((clear) => ({ ...clear, levelCapId: cap.id })),
+        ),
+      );
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>
@@ -248,6 +261,10 @@ export default async function LevelCapsPage({
                           superado={cleared}
                           editable={editable}
                           retirado={retirado}
+                          primero={
+                            cleared &&
+                            (coronas.get(levelCap.id)?.has(participant.id) ?? false)
+                          }
                         />
                       );
                     })}

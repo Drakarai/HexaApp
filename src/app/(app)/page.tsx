@@ -30,6 +30,10 @@ import { getCastigosPendientes } from "@/lib/premios";
 import { Castigos } from "@/components/castigos";
 import { getProgresoEnSolitario } from "@/lib/solitario";
 import { ResumenEnSolitario } from "@/components/resumen-solitario";
+import {
+  getGraficoClasificacion,
+  movimientosEnLaTabla,
+} from "@/lib/grafico-clasificacion";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 
 export default async function DashboardPage() {
@@ -48,7 +52,7 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso] =
+  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -92,6 +96,14 @@ export default async function DashboardPage() {
       canManageCompetition(competition.id, user),
       // En solitario la portada enseña el progreso de la run, no una tabla
       perfil.enSolitario ? getProgresoEnSolitario(competition.id) : null,
+      /**
+       * Para las flechas de la tabla: cómo iba cada uno la jornada anterior.
+       * Va en la misma tanda que el resto, así que no se espera más por ella.
+       * Sin tabla —dualocke o solitario— no hace falta.
+       */
+      porJornadas || perfil.enSolitario
+        ? null
+        : getGraficoClasificacion(competition.id),
     ]);
 
   /**
@@ -343,6 +355,7 @@ export default async function DashboardPage() {
                 qualifiedSlots={formatoFinal?.esperan ?? 2}
                 rows={standings}
                 highlightUserId={user.id}
+                movimientos={movimientosEnLaTabla(grafico, standings)}
                 editableParticipantIds={
                   myParticipant ? [myParticipant.id] : []
                 }

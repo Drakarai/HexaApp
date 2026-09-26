@@ -25,6 +25,7 @@ export function MarcarGimnasio({
   superado,
   editable,
   retirado,
+  primero = false,
 }: {
   levelCapId: string;
   participantId: string;
@@ -35,6 +36,8 @@ export function MarcarGimnasio({
   superado: boolean;
   editable: boolean;
   retirado: boolean;
+  /** Se lo pasó antes que nadie: lleva la corona */
+  primero?: boolean;
 }) {
   const [enCola, setEnCola] = useState<boolean | null>(null);
   const [enviando, empezar] = useTransition();
@@ -82,13 +85,14 @@ export function MarcarGimnasio({
       onClick={alPulsar}
       disabled={!editable || enviando}
       title={
-        retirado
+        (primero ? `👑 ${nombre} fue el primero en pasárselo. ` : "") +
+        (retirado
           ? `${nombre} se retiró del locke`
           : editable
             ? marcado
               ? "Marcar como no superado"
               : "Marcar como superado"
-            : "Solo puedes marcar tus propios gimnasios"
+            : "Solo puedes marcar tus propios gimnasios")
       }
       className={cx(
         "chip transition",
@@ -106,6 +110,8 @@ export function MarcarGimnasio({
         style={{ background: color }}
         aria-hidden
       />
+      {/* Mientras está en la cola no se sabe si sigue siendo el primero */}
+      {primero && enCola === null ? <span aria-hidden>👑</span> : null}
       {nombre}
       <span aria-hidden>
         {retirado ? "—" : enCola !== null ? "⏳" : marcado ? "✓" : "○"}
