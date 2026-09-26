@@ -12,6 +12,7 @@ import {
 } from "@/components/boton-apuntar";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type MobileUser = {
   displayName: string;
@@ -129,7 +130,9 @@ export function MobileTabBar({
                   </Link>
                 ) : (
                   <p className="flex min-w-0 flex-1 items-center gap-2 text-base font-semibold text-white">
-                    <span aria-hidden>{hoja.icon}</span>
+                    <span aria-hidden>
+                      <Icono emoji={hoja.icon} />
+                    </span>
                     {hoja.label}
                   </p>
                 )}
@@ -163,7 +166,7 @@ export function MobileTabBar({
                       aria-hidden
                       className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-base"
                     >
-                      {item.icon}
+                      <Icono emoji={item.icon} />
                     </span>
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
                     {/* El apartado que tiene algo nuevo él solo: sin esto, al
@@ -267,12 +270,13 @@ function Pastilla({
     <span className="relative flex w-full justify-center">
       <span
         aria-hidden
+        data-encendida={encendida || undefined}
         className={cx(
-          "flex h-7 w-full max-w-14 items-center justify-center rounded-full text-lg leading-none transition",
+          "pastilla flex h-7 w-full max-w-14 items-center justify-center rounded-full text-lg leading-none transition",
           encendida && "bg-brand-600/25",
         )}
       >
-        {icono}
+        <Icono emoji={icono} tamano={20} />
       </span>
       {/* El punto va pegado al icono y no al rótulo: en una barra de cuatro
           pestañas el rótulo se trunca, y el aviso se perdería con él */}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type NavItem = { href: string; label: string; icon: string };
 
@@ -84,7 +85,7 @@ function Enlace({
       )}
     >
       <span aria-hidden className="text-base">
-        {item.icon}
+        <Icono emoji={item.icon} />
       </span>
       {item.label}
       {/* Estando dentro no se avisa, como en los grupos */}
@@ -144,7 +145,7 @@ function Grupo({
         )}
       >
         <span aria-hidden className="text-base">
-          {grupo.icon}
+          <Icono emoji={grupo.icon} />
         </span>
         <span className="flex-1 text-left">{grupo.label}</span>
         {/* El punto de novedades, que manda sobre el otro: si hay algo nuevo

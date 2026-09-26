@@ -286,10 +286,10 @@ export default async function AppLayout({
       {/* Cabecera compacta en móvil */}
       <header className="flex items-center justify-between gap-3 lg:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl" aria-hidden>
+          <span className="logo-marca text-xl" aria-hidden>
             ⬢
           </span>
-          <span className="text-base font-black tracking-tight text-white">
+          <span className="logo text-base font-black tracking-tight text-white">
             HexaApp
           </span>
         </Link>
@@ -312,10 +312,10 @@ export default async function AppLayout({
       <aside className="hidden lg:block lg:w-64 lg:shrink-0">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl" aria-hidden>
+            <span className="logo-marca text-2xl" aria-hidden>
               ⬢
             </span>
-            <span className="text-lg font-black tracking-tight text-white">
+            <span className="logo text-lg font-black tracking-tight text-white">
               HexaApp
             </span>
           </Link>

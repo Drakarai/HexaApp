@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de septiembre de 2026 (flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 26 de septiembre de 2026 (un **aspecto nuevo de prueba**, que se elige en Mi perfil sin tocar el de siempre; antes: flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -80,6 +80,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Diagnóstico** | Pantalla del Creador. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
 | **Organizador** | Un permiso que da el Creador (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
+| **Aspecto** | Dos pintas para la misma aplicación, que se eligen en *Mi perfil*: la **clásica** de siempre y una **nueva, de prueba**, más sobria y deportiva —letra condensada de marcador en títulos y cifras, superficies planas en grises neutros, etiquetas cuadradas en vez de píldoras e iconos de línea en el menú en vez de emojis—. El color sigue siendo el del tema. Se guarda **por dispositivo** y, mientras nadie la active, la aplicación se ve igual que antes. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. Algún apartado lleva **punto propio** además del de su grupo: *Reglas*, cuando cambia una. |
 
 Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
@@ -2084,6 +2085,51 @@ Tres decisiones que no se ven:
   vuelta más** (medido: las mismas seis tandas), y por dentro reaprovecha
   `getStandings`, que esa página ya pide.
 
+### El aspecto nuevo, de prueba y al lado del de siempre
+
+El usuario pidió probar un look "que no se note tanto que está hecho con IA"
+**sin perder el de siempre**. Lo que delataba la pinta de plantilla era el
+cristal esmerilado con halos de colores de fondo, todo en píldoras redondas,
+los emojis como iconos y la letra del sistema. El aspecto nuevo va de
+**marcador deportivo**: Barlow Condensed en títulos, rótulos y cifras (Barlow
+en el texto), tarjetas planas sin sombra ni desenfoque, grises neutros en vez
+del azul marino y el color del tema solo en los acentos, títulos de página
+grandes en mayúsculas, rótulos de sección con una tilde de color, botones con
+canto de tecla e iconos de línea (Lucide) en los menús.
+
+**Cómo está montado, para poder quitarlo de un tirón**:
+
+- Se elige en *Mi perfil → Aspecto* y se guarda en una **cookie del
+  dispositivo** (`lib/estilo.ts`, `actions/estilo.ts`), no en la cuenta: es una
+  prueba, y así no toca la base de datos.
+- El `<html>` lleva `data-estilo="clasico"` o `"nuevo"`, y **todo el aspecto
+  nuevo vive en `globals.css`** bajo ese atributo: un bloque al final y, dentro
+  de cada utilidad (`card`, `btn`, `chip`…), su versión con
+  `:where(html[data-estilo="nuevo"]) &`. El `:where()` es para no ganar
+  especificidad: una tarjeta que lleva su propio `bg-emerald` (un gimnasio que
+  han pasado todos) tiene que seguir mandando igual que en el clásico.
+- Casi todo sale de **cambiar variables** y no clases: las de letra
+  (`--font-sans`), esquinas (`--radius-*`), grises (`--color-slate-*`) y
+  superficies (`--color-ink-*`). Las superficies llevan `!important` porque el
+  tema las pone en el `style` del `<html>`, que si no ganaría; se mezclan con un
+  pelo del acento del tema para que cada juego siga notándose.
+- Los iconos del menú se pintan **dobles** (`components/icono.tsx`): el emoji
+  y su icono de línea, y el CSS esconde uno según el aspecto. Así ningún
+  componente tiene que saber qué aspecto lleva quien mira.
+- Unos pocos ganchos sin estilo propio en el clásico: `.logo`, `.logo-marca`,
+  `.pastilla[data-encendida]` en la barra del móvil, `.boton-apuntar`, y
+  `tabular-nums` en las cifras de la portada.
+- Las letras vienen de `@fontsource` y se importan en el layout raíz: un
+  `@font-face` que ningún texto usa no descarga nada, así que al clásico no le
+  cuestan.
+
+**Para quedarse con uno**: si gusta el nuevo, basta con que `getEstilo`
+devuelva `"nuevo"` por defecto (o quitar el atributo y dejar las reglas sin
+condición). Si no gusta, se borra el bloque final de `globals.css`, los
+`:where(html[data-estilo="nuevo"])` de las utilidades, `components/icono.tsx`
+(volviendo a pintar `item.icon`), `lib/estilo.ts`, `actions/estilo.ts`, la
+sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`.
+
 ### Flechas, coronas y reglas que avisan
 
 Tres ideas que eligió el usuario de una ronda de propuestas, las tres hechas
@@ -2558,6 +2604,9 @@ Piezas con truco:
 - `lib/reglas.ts` — si el locke ya ha empezado (de eso depende que un cambio de
   reglas se avise) y qué líneas ha ganado y perdido una regla.
 - `lib/coronas.ts` — quién se pasó cada gimnasio antes que nadie.
+- `lib/estilo.ts` y `components/icono.tsx` — el aspecto elegido (clásico o
+  nuevo, por cookie) y los iconos dobles del menú. El CSS del nuevo está al
+  final de `globals.css`.
 - `components/boton-apuntar.tsx` — el "＋" flotante. Los atajos los arma el
   layout según lo que esa persona pueda hacer de verdad, y cada página se ocupa
   de su `?apuntar=1` (`muertes/death-form.tsx`, `mapa/mapa-client.tsx` y
@@ -2892,3 +2941,5 @@ lugar de destruir datos, y hay que avisar antes.
 69. **Flechas, coronas y reglas que avisan**: ▲▼ en la clasificación, 👑 para
     el primero en pasarse cada gimnasio, y las reglas que cambian con el locke
     en marcha encienden su propio punto y enseñan qué ha cambiado.
+70. **Un aspecto nuevo, de prueba**: más sobrio y deportivo, se elige en Mi
+    perfil y el de siempre sigue intacto.

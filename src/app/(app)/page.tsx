@@ -542,7 +542,7 @@ function StatCard({
         className="absolute -bottom-3 -right-3 -z-10 h-20 w-20 opacity-35 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]"
       />
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-2xl font-bold text-white">{value}</p>
+      <p className="mt-1 truncate text-2xl font-bold text-white tabular-nums">{value}</p>
       {hint ? <p className="mt-0.5 truncate text-xs text-slate-500">{hint}</p> : null}
     </Link>
   );

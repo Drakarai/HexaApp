@@ -14,6 +14,9 @@ import { logoutAction } from "@/app/actions/auth";
 import { ROLES } from "@/lib/constants";
 import { ProfileForms } from "./profile-forms";
 import { ThemePicker } from "./theme-picker";
+import { getEstilo } from "@/lib/estilo";
+import { cambiarEstiloAction } from "@/app/actions/estilo";
+import { cx } from "@/lib/utils";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
@@ -22,6 +25,7 @@ export const metadata = { title: "Mi perfil" };
 
 export default async function ProfilePage() {
   const user = await requireUser();
+  const estilo = await getEstilo();
   const competition = await getActiveCompetition();
   const myParticipant = competition
     ? await getMyParticipant(competition.id, user.id)
@@ -156,6 +160,28 @@ export default async function ProfilePage() {
       </div>
 
       <section className="card">
+        <h2 className="section-title mb-1">Aspecto</h2>
+        <p className="muted mb-4">
+          La forma de la aplicación: letras, tarjetas e iconos. El nuevo está de
+          prueba y solo cambia en este dispositivo.
+        </p>
+        <form action={cambiarEstiloAction} className="grid gap-3 sm:grid-cols-2">
+          <BotonDeAspecto
+            valor="clasico"
+            actual={estilo}
+            nombre="Clásico"
+            detalle="El de siempre: tarjetas redondeadas, brillos y emojis."
+          />
+          <BotonDeAspecto
+            valor="nuevo"
+            actual={estilo}
+            nombre="Nuevo"
+            detalle="Más sobrio y deportivo: letras de marcador, superficies planas e iconos de línea."
+          />
+        </form>
+      </section>
+
+      <section className="card">
         <h2 className="section-title mb-1">Tema</h2>
         <p className="muted mb-4">
           Un color por juego. Pincha en cualquiera para verlo al momento.
@@ -224,5 +250,61 @@ export default async function ProfilePage() {
         </button>
       </form>
     </>
+  );
+}
+
+/**
+ * Una de las dos opciones de aspecto. Cada una se enseña **con su propia
+ * pinta** —la muestra de arriba lleva la tipografía y las esquinas de ese
+ * aspecto—, porque "clásico" y "nuevo" escritos no dicen nada.
+ */
+function BotonDeAspecto({
+  valor,
+  actual,
+  nombre,
+  detalle,
+}: {
+  valor: "clasico" | "nuevo";
+  actual: string;
+  nombre: string;
+  detalle: string;
+}) {
+  const elegido = actual === valor;
+  return (
+    <button
+      type="submit"
+      name="estilo"
+      value={valor}
+      aria-pressed={elegido}
+      className={cx(
+        "rounded-xl border p-3 text-left transition",
+        elegido
+          ? "border-brand-500/60 bg-brand-600/15"
+          : "border-white/10 bg-white/[0.03] hover:border-white/20",
+      )}
+    >
+      <span
+        aria-hidden
+        className={cx(
+          "mb-3 flex h-16 items-end justify-between border px-3 pb-2",
+          valor === "clasico"
+            ? "rounded-2xl border-white/10 bg-gradient-to-br from-indigo-500/25 to-emerald-500/10 font-sans text-2xl font-black text-white"
+            : "rounded-md border-white/15 bg-[#141418] font-[Barlow_Condensed] text-3xl font-bold uppercase tracking-wide text-white",
+        )}
+      >
+        {valor === "clasico" ? "Aa ✨" : "AA 01"}
+        <span
+          className={cx(
+            "mb-1 h-2 w-8",
+            valor === "clasico" ? "rounded-full bg-indigo-400" : "rounded-sm bg-brand-500",
+          )}
+        />
+      </span>
+      <span className="flex items-center justify-between gap-2 text-sm font-semibold text-white">
+        {nombre}
+        {elegido ? <span className="text-xs font-medium text-brand-400">✓ En uso</span> : null}
+      </span>
+      <span className="mt-0.5 block text-xs text-slate-400">{detalle}</span>
+    </button>
   );
 }

@@ -61,18 +61,45 @@ body {
    culpa de su contenido (tablas anchas), que provocaba scroll horizontal */
 @utility card {
   @apply min-w-0 rounded-2xl border border-white/10 bg-ink-900/70 p-5 shadow-lg shadow-black/30 backdrop-blur;
+
+  /* Aspecto nuevo: plana, sin cristal ni sombra, con un filo de luz arriba */
+  :where(html[data-estilo="nuevo"]) & {
+    background-color: var(--color-ink-900);
+    border-color: var(--color-ink-700);
+    border-radius: 0.75rem;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.03);
+    backdrop-filter: none;
+  }
 }
 
 @utility card-tight {
   @apply min-w-0 rounded-xl border border-white/10 bg-ink-900/70 p-4;
+
+  :where(html[data-estilo="nuevo"]) & {
+    background-color: var(--color-ink-900);
+    border-color: var(--color-ink-700);
+    border-radius: 0.625rem;
+  }
 }
 
 @utility label {
   @apply mb-1 block text-xs font-medium uppercase tracking-wide text-slate-400;
+
+  :where(html[data-estilo="nuevo"]) & {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: 0.09em;
+  }
 }
 
 @utility input {
   @apply w-full rounded-lg border border-white/10 bg-ink-850 px-3 py-2 text-sm text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30;
+
+  :where(html[data-estilo="nuevo"]) & {
+    background-color: var(--color-ink-950);
+    border-color: var(--color-ink-700);
+    border-radius: 0.5rem;
+  }
 }
 
 @utility textarea {
@@ -81,14 +108,38 @@ body {
 
 @utility btn {
   @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+
+  /* Letra de marcador, en mayúsculas: es lo que más cambia la pinta */
+  :where(html[data-estilo="nuevo"]) & {
+    font-family: var(--font-display);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-radius: 0.5rem;
+  }
 }
 
 @utility btn-primary {
   @apply btn bg-brand-600 text-white hover:bg-brand-500;
+
+  /* Un canto más oscuro abajo, como los botones de una consola */
+  :where(html[data-estilo="nuevo"]) & {
+    box-shadow:
+      inset 0 -2px 0 rgb(0 0 0 / 0.28),
+      inset 0 1px 0 rgb(255 255 255 / 0.12);
+  }
 }
 
 @utility btn-ghost {
   @apply btn border border-white/10 bg-white/5 text-slate-200 hover:bg-white/10;
+
+  :where(html[data-estilo="nuevo"]) & {
+    background-color: transparent;
+    border-color: var(--color-ink-600);
+  }
+  :where(html[data-estilo="nuevo"]) &:hover {
+    background-color: var(--color-ink-800);
+  }
 }
 
 @utility btn-danger {
@@ -101,10 +152,37 @@ body {
 
 @utility chip {
   @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300;
+
+  /* Etiqueta, no píldora */
+  :where(html[data-estilo="nuevo"]) & {
+    border-radius: 0.375rem;
+    background-color: var(--color-ink-850);
+    border-color: var(--color-ink-700);
+  }
 }
 
 @utility section-title {
   @apply text-lg font-semibold text-white;
+
+  /* Rótulo de sección de marcador: condensado, en mayúsculas y con su tilde
+     de color delante */
+  :where(html[data-estilo="nuevo"]) & {
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 1.2rem;
+  }
+  :where(html[data-estilo="nuevo"]) &::before {
+    content: "";
+    display: inline-block;
+    width: 0.3rem;
+    height: 0.95em;
+    margin-right: 0.55rem;
+    border-radius: 1px;
+    background: var(--color-brand-500);
+    vertical-align: -0.08em;
+  }
 }
 
 @utility muted {
@@ -126,6 +204,18 @@ body {
 
   & td {
     @apply border-b border-white/5 px-3 py-2.5 align-middle text-slate-200;
+  }
+
+  :where(html[data-estilo="nuevo"]) & th {
+    font-family: var(--font-display);
+    letter-spacing: 0.09em;
+    border-color: var(--color-ink-600);
+  }
+  :where(html[data-estilo="nuevo"]) & td {
+    border-color: var(--color-ink-800);
+  }
+  :where(html[data-estilo="nuevo"]) & tbody tr:hover td {
+    background-color: rgb(255 255 255 / 0.015);
   }
 }
 
@@ -165,4 +255,200 @@ body {
 .roulette-wheel {
   transition-property: transform;
   transition-timing-function: cubic-bezier(0.12, 0.75, 0.15, 1);
+}
+
+/* ==========================================================================
+   ASPECTO NUEVO (de prueba)
+
+   Todo lo que hay debajo solo vale con `data-estilo="nuevo"` en el <html>, que
+   se elige en Mi perfil (ver lib/estilo.ts). El clásico no lleva nada de esto:
+   para quitar el aspecto nuevo basta con borrar este bloque, los trozos
+   `:where(html[data-estilo="nuevo"])` de las utilidades de arriba y el
+   componente de iconos dobles.
+
+   La idea: menos "app de plantilla" —cristal, halos de colores, píldoras,
+   emojis— y más marcador deportivo: letra condensada para títulos y cifras,
+   superficies planas en grises neutros y el color del tema solo en los
+   acentos.
+   ========================================================================== */
+
+html[data-estilo="nuevo"] {
+  --font-sans: "Barlow", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, Arial, sans-serif;
+  --font-display: "Barlow Condensed", "Barlow", ui-sans-serif, system-ui,
+    sans-serif;
+
+  /* Esquinas más contenidas. Las redondas del todo (fotos, puntos) no se tocan */
+  --radius-2xl: 0.75rem;
+  --radius-xl: 0.625rem;
+  --radius-lg: 0.5rem;
+
+  /* Grises neutros en vez del gris azulado de siempre */
+  --color-slate-100: #f1f1f3;
+  --color-slate-200: #e3e3e7;
+  --color-slate-300: #c8c8ce;
+  --color-slate-400: #9c9ca5;
+  --color-slate-500: #74747d;
+  --color-slate-600: #55555d;
+  --color-slate-700: #3b3b42;
+
+  /*
+   * Las superficies, casi negras y neutras con **un pelo del color del tema**.
+   * Llevan !important porque el tema las pone en el style del <html>, que
+   * ganaría a cualquier regla; así el tema sigue mandando en el acento y aquí
+   * solo se deciden los fondos.
+   */
+  --color-ink-950: color-mix(in oklab, #0b0b0d 94%, var(--color-brand-600)) !important;
+  --color-ink-900: color-mix(in oklab, #131316 94%, var(--color-brand-600)) !important;
+  --color-ink-850: color-mix(in oklab, #18181c 94%, var(--color-brand-600)) !important;
+  --color-ink-800: color-mix(in oklab, #1e1e23 94%, var(--color-brand-600)) !important;
+  --color-ink-700: color-mix(in oklab, #28282e 94%, var(--color-brand-600)) !important;
+  --color-ink-600: color-mix(in oklab, #36363d 94%, var(--color-brand-600)) !important;
+  --glow-a: transparent !important;
+  --glow-b: transparent !important;
+}
+
+/* Fondo plano con una retícula de puntos muy tenue arriba, como la pantalla de
+   una Pokédex, que se apaga al bajar */
+html[data-estilo="nuevo"] body {
+  background:
+    radial-gradient(rgb(255 255 255 / 0.05) 1px, transparent 1.2px) 0 0 / 22px 22px,
+    var(--color-ink-950);
+  background-attachment: fixed;
+  -webkit-mask-image: none;
+  letter-spacing: 0.005em;
+}
+html[data-estilo="nuevo"] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(to bottom, transparent 0, var(--color-ink-950) 55%);
+}
+
+html[data-estilo="nuevo"] ::selection {
+  background: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
+}
+
+/* Títulos: los de página, grandes y en mayúsculas; los de dentro, condensados */
+:where(html[data-estilo="nuevo"]) :is(h1, h2, h3) {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+html[data-estilo="nuevo"] main > header h1,
+html[data-estilo="nuevo"] main > * > header h1 {
+  font-size: 2.35rem;
+  line-height: 1;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+@media (min-width: 640px) {
+  html[data-estilo="nuevo"] main > header h1,
+  html[data-estilo="nuevo"] main > * > header h1 {
+    font-size: 2.9rem;
+  }
+}
+html[data-estilo="nuevo"] main > header p,
+html[data-estilo="nuevo"] main > * > header p {
+  margin-top: 0.5rem;
+}
+
+/* Las cifras, en letra de marcador */
+:where(html[data-estilo="nuevo"]) .tabular-nums {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+:where(html[data-estilo="nuevo"]) .text-2xl.tabular-nums {
+  font-size: 1.85rem;
+  line-height: 1.1;
+}
+
+/* Los rótulos pequeños en mayúsculas de toda la aplicación */
+:where(html[data-estilo="nuevo"]) :is(.uppercase.tracking-wide, .uppercase.tracking-widest) {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+
+/* La marca */
+html[data-estilo="nuevo"] .logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+html[data-estilo="nuevo"] .logo-marca {
+  color: var(--color-brand-500);
+}
+
+/* Iconos: emojis en el clásico, de línea en el nuevo (components/icono.tsx) */
+.icono-linea {
+  display: none;
+}
+html[data-estilo="nuevo"] .icono-emoji {
+  display: none;
+}
+html[data-estilo="nuevo"] .icono-linea {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Menú del PC: lo activo con una barra de color a la izquierda y no con una
+   pastilla con aro */
+html[data-estilo="nuevo"] aside nav a,
+html[data-estilo="nuevo"] aside nav button {
+  font-weight: 500;
+}
+html[data-estilo="nuevo"] aside nav a[aria-current="page"] {
+  background-color: var(--color-ink-850);
+  box-shadow: inset 3px 0 0 var(--color-brand-500);
+  border-radius: 0.375rem;
+  color: #fff;
+}
+html[data-estilo="nuevo"] aside nav a[aria-current="page"] .icono-linea {
+  color: var(--color-brand-400);
+}
+
+/* Barra de abajo del móvil: sin pastilla; lo activo se enciende de color y
+   lleva una rayita encima */
+html[data-estilo="nuevo"] nav.fixed {
+  background-color: color-mix(in oklab, var(--color-ink-950) 94%, transparent);
+  border-top-color: var(--color-ink-700);
+}
+html[data-estilo="nuevo"] .pastilla {
+  background: none !important;
+  position: relative;
+  color: var(--color-slate-400);
+}
+html[data-estilo="nuevo"] .pastilla[data-encendida] {
+  color: var(--color-brand-400);
+}
+html[data-estilo="nuevo"] .pastilla[data-encendida]::before {
+  content: "";
+  position: absolute;
+  top: -0.5rem;
+  left: 50%;
+  width: 1.5rem;
+  height: 3px;
+  margin-left: -0.75rem;
+  border-radius: 0 0 3px 3px;
+  background: var(--color-brand-500);
+}
+html[data-estilo="nuevo"] .pestana > span:last-child {
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* El botón de apuntar: cuadrado de esquinas suaves, como una tecla */
+html[data-estilo="nuevo"] .boton-apuntar {
+  border-radius: 0.9rem;
+  box-shadow:
+    inset 0 -3px 0 rgb(0 0 0 / 0.3),
+    inset 0 1px 0 rgb(255 255 255 / 0.15),
+    0 8px 20px -6px rgb(0 0 0 / 0.6);
 }

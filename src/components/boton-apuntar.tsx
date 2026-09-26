@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type AtajoDeApunte = {
   href: string;
@@ -108,7 +109,7 @@ export function BotonApuntar({ atajos }: { atajos: AtajoDeApunte[] }) {
                 aria-hidden
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] text-base"
               >
-                {atajo.icon}
+                <Icono emoji={atajo.icon} />
               </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-slate-100">
@@ -131,7 +132,8 @@ export function BotonApuntar({ atajos }: { atajos: AtajoDeApunte[] }) {
         aria-expanded={abierto}
         aria-label={abierto ? "Cerrar el menú de apuntar" : "Apuntar algo"}
         className={cx(
-          "flex items-center justify-center rounded-full text-2xl leading-none shadow-lg transition",
+          // `boton-apuntar` no pinta nada: es el gancho del aspecto nuevo
+          "boton-apuntar flex items-center justify-center rounded-full text-2xl leading-none shadow-lg transition",
           /**
            * El aro del color de la barra es lo que hace que se lea como un
            * botón **montado encima** y no como un círculo suelto flotando: sin
