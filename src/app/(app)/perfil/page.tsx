@@ -162,21 +162,21 @@ export default async function ProfilePage() {
       <section className="card">
         <h2 className="section-title mb-1">Aspecto</h2>
         <p className="muted mb-4">
-          La forma de la aplicación: letras, tarjetas e iconos. El nuevo está de
-          prueba y solo cambia en este dispositivo.
+          La forma de la aplicación: letras, tarjetas e iconos. Solo cambia en
+          este dispositivo.
         </p>
         <form action={cambiarEstiloAction} className="grid gap-3 sm:grid-cols-2">
+          <BotonDeAspecto
+            valor="nuevo"
+            actual={estilo}
+            nombre="Actual"
+            detalle="El de ahora: letras de marcador, superficies planas e iconos de línea."
+          />
           <BotonDeAspecto
             valor="clasico"
             actual={estilo}
             nombre="Clásico"
-            detalle="El de siempre: tarjetas redondeadas, brillos y emojis."
-          />
-          <BotonDeAspecto
-            valor="nuevo"
-            actual={estilo}
-            nombre="Nuevo"
-            detalle="Más sobrio y deportivo: letras de marcador, superficies planas e iconos de línea."
+            detalle="El de antes: tarjetas redondeadas, brillos y emojis."
           />
         </form>
       </section>

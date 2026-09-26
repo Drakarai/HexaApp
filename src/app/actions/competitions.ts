@@ -19,6 +19,8 @@ import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { slugify } from "@/lib/utils";
+import { imagenEditada } from "@/lib/image";
+import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import type { FormState } from "@/app/actions/auth";
 
 /** Un número entero de un formulario, o null si viene vacío o mal. */
@@ -309,6 +311,9 @@ export async function updateCompetitionAction(
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }
         : {}),
+      // Al almacén como todas: si no se ha tocado llega "sin cambios" y se
+      // queda la que había; vacío es quitarlo
+      logo: await guardarPorContenido(imagenEditada(formData.get("logo"))),
     },
   });
 

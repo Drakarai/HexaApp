@@ -110,10 +110,15 @@ export default async function CompetitionsPage() {
     admin || Boolean(mando?.has(competitionId));
 
   // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
-  const avatares = await urlsDeImagen(
-    "avatar",
-    participants.map((participant) => participant.user.id),
-  );
+  const [avatares, logos] = await Promise.all([
+    urlsDeImagen(
+      "avatar",
+      participants.map((participant) => participant.user.id),
+    ),
+    // El logo de la edición, para verlo en su formulario
+    urlsDeImagen("logo", active ? [active.id] : []),
+  ]);
+  const logoActual = active ? logos(active.id) : null;
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
@@ -402,6 +407,7 @@ export default async function CompetitionsPage() {
                   description: active.description,
                   startingPoints: active.startingPoints,
                   jornadasPrevistas: active.jornadasPrevistas,
+                  logo: logoActual,
                 }}
               />
 

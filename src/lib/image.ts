@@ -10,6 +10,8 @@ export const IMAGE_SIZES = {
   badge: 320,
   /** Objeto de la bolsa. Los del juego son de 30×30, así que sobra de largo. */
   objeto: 128,
+  /** Logo de una edición: sale grande de fondo en el resumen */
+  logo: 640,
 } as const;
 
 /** Límite de lo que aceptamos guardar, para no inflar la base de datos. */

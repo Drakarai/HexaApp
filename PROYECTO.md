@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de septiembre de 2026 (un **aspecto nuevo de prueba**, que se elige en Mi perfil sin tocar el de siempre; antes: flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 26 de septiembre de 2026 (el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -47,7 +47,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 | Sección | Qué hace |
 | --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. Cada edición puede llevar **su logo**, que sale de fondo junto al nombre, fundido hacia el título; se sube en *Ediciones → Editar datos* y sin él la cabecera es la de siempre. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. **Un cambio con el locke en marcha se avisa**: punto ámbar en *Reglas*, la sección marcada como *Cambiada el…* o *Añadida el…* —resaltada para quien no la ha visto— y un desplegable con **qué líneas ganó y perdió**, más cómo estaba entera. Al editar hay una casilla para no avisar, para las erratas. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
@@ -80,7 +80,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Diagnóstico** | Pantalla del Creador. Mide lo que tarda la base de datos en contestar y **cuánto ocupa**: el total, en qué se va (columna a columna de imágenes), lo que pesa cada locke y **cuántos cabrían** en el plan gratis. Desde aquí se lanza también el mantenimiento del almacén de imágenes. |
 | **Organizador** | Un permiso que da el Creador (botón 🎪 en la lista de usuarios) y que deja a alguien **montar sus propios lockes y dar de alta a su gente**, sin ver los de los demás ni tocar los mapas, el catálogo, las plantillas ni las copias. Al crear un locke entra en él como administrador de esa edición. |
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
-| **Aspecto** | Dos pintas para la misma aplicación, que se eligen en *Mi perfil*: la **clásica** de siempre y una **nueva, de prueba**, más sobria y deportiva —letra condensada de marcador en títulos y cifras, superficies planas en grises neutros, etiquetas cuadradas en vez de píldoras e iconos de línea en el menú en vez de emojis—. El color sigue siendo el del tema. Se guarda **por dispositivo** y, mientras nadie la active, la aplicación se ve igual que antes. |
+| **Aspecto** | Sobrio y deportivo —letra condensada de marcador en títulos y cifras, superficies planas en grises neutros, etiquetas cuadradas en vez de píldoras e iconos de línea en el menú en vez de emojis—, con el color del tema en los acentos. **Es el de todo el mundo.** El de antes, el *clásico*, se puede seguir eligiendo en *Mi perfil*, y se guarda por dispositivo. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. Algún apartado lleva **punto propio** además del de su grupo: *Reglas*, cuando cambia una. |
 
 Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
@@ -2123,12 +2123,33 @@ canto de tecla e iconos de línea (Lucide) en los menús.
   `@font-face` que ningún texto usa no descarga nada, así que al clásico no le
   cuestan.
 
-**Para quedarse con uno**: si gusta el nuevo, basta con que `getEstilo`
-devuelva `"nuevo"` por defecto (o quitar el atributo y dejar las reglas sin
-condición). Si no gusta, se borra el bloque final de `globals.css`, los
+**Gustó, y es el de todos desde el mismo día.** `getEstilo` devuelve `"nuevo"`
+si no hay nada elegido, y **la cookie cambió de nombre** (`hexaapp_estilo` →
+`hexaapp_aspecto`) para que nadie se quedara en el clásico por lo que pulsó
+probando. El clásico sigue elegible en Mi perfil como *Clásico*. Si algún día
+se quiere quitar del todo, se borra el bloque final de `globals.css`, los
 `:where(html[data-estilo="nuevo"])` de las utilidades, `components/icono.tsx`
 (volviendo a pintar `item.icon`), `lib/estilo.ts`, `actions/estilo.ts`, la
-sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`.
+sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`
+—eso era quitar el nuevo—; para quitar el clásico, al revés: dejar las reglas
+del nuevo sin la condición y borrar los emojis de `components/icono.tsx`.
+
+### El logo de cada edición
+
+El grupo se está haciendo logos para cada competición, y el usuario pidió
+ponerlo **de fondo junto al nombre de la edición** en el resumen. Es una imagen
+suelta en `Competition.logo`, dada de alta donde todas (`FUENTES` y
+`TipoImagen`, las listas del reparto y de la ocupación, y `SIN_IMAGENES` para
+que no viaje en cada consulta de la competición), y se sube desde *Ediciones →
+Editar datos*, reducida en el navegador a 640 px en WebP, que **conserva la
+transparencia** de un logo recortado.
+
+La pinta la cabecera de página (`PageHeader`, prop `fondo`): a la derecha,
+**fundida hacia la izquierda** con una máscara para que el título pase por
+encima y se siga leyendo, y a un 45 % de opacidad. Con logo la cabecera guarda
+un alto mínimo para que se vea entero, centra el título en ese alto y baja la
+etiqueta de *Terminado / En curso* debajo del subtítulo, porque a la derecha se
+montaba encima de la imagen. Sin logo no cambia nada.
 
 ### Flechas, coronas y reglas que avisan
 
@@ -2645,7 +2666,10 @@ Hasta entonces la aplicación solo corre en su ordenador.
 
 **Para la próxima vez que se rehagan las guías**: no cuentan todavía las
 flechas de la clasificación, la corona de los gimnasios ni el aviso de reglas
-cambiadas (este, con su casilla de no avisar, va en la del administrador). Se
+cambiadas (este, con su casilla de no avisar, va en la del administrador), ni
+el logo de la edición (en la del administrador). Y **todas sus fotos son del
+aspecto clásico**: al rehacerlas saldrán solas con el nuevo, que es el de por
+defecto. Se
 dejó para juntarlo con más cosas, porque rehacerlas mueve los índices.
 
 **Visto y sin hacer**: un locke **archivado se sigue pudiendo tocar** entero
@@ -2943,3 +2967,5 @@ lugar de destruir datos, y hay que avisar antes.
     en marcha encienden su propio punto y enseñan qué ha cambiado.
 70. **Un aspecto nuevo, de prueba**: más sobrio y deportivo, se elige en Mi
     perfil y el de siempre sigue intacto.
+71. **El aspecto nuevo, para todos**, y **el logo de cada edición** de fondo
+    junto a su nombre en el resumen.

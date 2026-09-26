@@ -61,6 +61,7 @@ export const COLUMNAS: [
   ["HallOfFameEntry", "detailImage", "Hall de la fama"],
   ["FavoritePokemon", "image", "Favoritos"],
   ["User", "avatarImage", "Fotos de perfil"],
+  ["Competition", "logo", "Logos de las ediciones"],
   ["Item", "image", "Objetos", true],
   ["ItemOption", "image", "Objetos · variantes", true],
 ];

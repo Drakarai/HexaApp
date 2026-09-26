@@ -454,6 +454,11 @@ model Competition {
    * cuadro, que es justo cuando la tarjeta del resumen empieza a enseñarlas.
    */
   finalImages         String[]  @default([])
+  /**
+   * El logo de la edición, que sale de fondo junto a su nombre en el resumen.
+   * Una imagen suelta, al almacén como las demás (ver lib/imagenes.ts).
+   */
+  logo                String?
   startedAt           DateTime  @default(now())
   endedAt             DateTime?
   createdAt           DateTime  @default(now())

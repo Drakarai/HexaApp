@@ -30,7 +30,8 @@ export type TipoImagen =
   | "sorteo"
   | "medalla"
   | "medalla-plantilla"
-  | "cartel";
+  | "cartel"
+  | "logo";
 
 /**
  * Dirección de una imagen, o null si esa fila no tiene ninguna (la firma solo

@@ -12,6 +12,8 @@ import { copiarDeOtraEdicionAction } from "@/app/actions/copiar-edicion";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
+import { ImageInput } from "@/components/image-input";
+import { IMAGE_SIZES } from "@/lib/image";
 
 export function NewCompetitionForm({
   competitions,
@@ -157,6 +159,8 @@ export function EditCompetitionForm({
     description: string | null;
     startingPoints: number;
     jornadasPrevistas: number | null;
+    /** Dirección del logo que ya tiene, para verlo: ver lib/imagen-url.ts */
+    logo: string | null;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -222,6 +226,13 @@ export function EditCompetitionForm({
             defaultValue={competition.description ?? ""}
           />
         </div>
+        <ImageInput
+          name="logo"
+          label="Logo de la edición"
+          defaultValue={competition.logo}
+          maxSize={IMAGE_SIZES.logo}
+          hint="Sale de fondo junto al nombre, en el resumen. Mejor con el fondo transparente."
+        />
         <FormMessage state={state} />
         <SubmitButton>Guardar</SubmitButton>
       </form>

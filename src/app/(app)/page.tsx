@@ -20,7 +20,7 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
-import { urlsDeCarteles, urlsDeMedallas } from "@/lib/imagenes";
+import { urlsDeCarteles, urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
@@ -179,9 +179,11 @@ export default async function DashboardPage() {
   const currentCap = capPendiente ?? levelCaps[levelCaps.length - 1];
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
-  const [medallas, carteles] = await Promise.all([
+  const [medallas, carteles, logos] = await Promise.all([
     urlsDeMedallas(currentCap ? [currentCap.id] : []),
     tocaElFinal ? urlsDeCarteles([competition.id]) : null,
+    // El logo de la edición, de fondo junto al nombre
+    urlsDeImagen("logo", [competition.id]),
   ]);
   const medallasDelCap = currentCap ? medallas(currentCap.id) : [];
 
@@ -263,6 +265,7 @@ export default async function DashboardPage() {
     <>
       <PageHeader
         title={competition.name}
+        fondo={logos(competition.id)}
         subtitle={
           [competition.game, competition.modality].filter(Boolean).join(" · ") ||
           undefined

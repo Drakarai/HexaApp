@@ -19,7 +19,7 @@ const SIN_IMAGENES = {
   hallOfFameEntry: { image: true, detailImage: true },
   favoritePokemon: { image: true },
   levelCap: { images: true, image: true },
-  competition: { finalImages: true },
+  competition: { finalImages: true, logo: true },
   levelCapTemplateItem: { images: true },
   // Se quedaron fuera de la lista al añadirlas y se colaban enteras en su
   // página: el mapa con 60 capturas eran 800 KB, y el fondo de una isla, 300

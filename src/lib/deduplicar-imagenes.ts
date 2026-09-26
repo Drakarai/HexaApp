@@ -31,6 +31,7 @@ const COLUMNAS: [tabla: string, columna: string][] = [
   ["LevelCap", "image"],
   ["MapRegion", "image"],
   ["User", "avatarImage"],
+  ["Competition", "logo"],
   // Los objetos no entran: hay un dibujo por objeto del catálogo, no uno por
   // uso, y la bolsa los pinta directamente desde la fila.
 ];
