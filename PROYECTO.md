@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 18 de septiembre de 2026 (Alola repartida en sus cuatro
+Última actualización: 26 de septiembre de 2026 (la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2020,6 +2020,35 @@ igual: conviene mirarlo cada vez que se pinta una imagen nueva.
 Meter y sacar cosas de una bolsa se movió a `lib/bolsa-entregas.ts`, que ahora
 lo usan los dos sitios que reparten solos —los premios de un reto y esto—.
 
+### Tres molestias de entrar y volver
+
+**La sesión caduca a los 30 días sin entrar, no a los 30 de iniciarla.** Antes
+se firmaba al entrar y ya no se tocaba, así que a cada uno le echaba un día
+cualquiera a mitad de locke aunque la usara a diario. Ahora `src/proxy.ts` (lo
+que en Next 16 sustituye al middleware) la vuelve a firmar cuando tiene más de
+un día: cada día que se entra, otros 30 por delante. Una vez al día y no en
+cada petición, para no mandar una cookie nueva con cada toque. Como las
+sesiones no se pueden anular una a una, **una sesión robada vive mientras se
+use**; antes vivía como mucho un mes. Si algún día hace falta echar a alguien,
+lo suyo es guardar en la cuenta una "versión de sesión" y subirla al cambiar la
+contraseña.
+
+**Después de entrar se vuelve a donde se iba.** Quien abría un enlace sin
+sesión acababa en la portada tras meter la contraseña. Las páginas no saben en
+qué dirección están, así que el proxy la apunta en una cabecera,
+`requireUser` la pasa al login en `?volver=` y el login lleva ahí. **Solo si es
+de esta aplicación** (`destinoSeguro` en `lib/volver.ts`): la URL la escribe
+cualquiera, y sin ese filtro el login serviría para mandar a la gente a otra web
+justo después de meter la contraseña.
+
+**Al volver a la aplicación se traen los cambios.** Instalada en el móvil no se
+cierra: se queda de fondo y al volver enseñaba lo de hacía horas hasta cambiar
+de pestaña. `estado-conexion.tsx`, al volver a estar visible tras más de 30
+segundos fuera y con línea, sube lo que quedara en la cola y hace
+`router.refresh()`, que trae los datos **sin recargar**: lo que se estuviera
+escribiendo sigue ahí. Menos de 30 segundos (ir a WhatsApp a copiar algo) no
+merece una ronda de consultas.
+
 ### La tarjeta del resumen: de los level caps al final
 
 La primera tarjeta del resumen enseñaba el level cap que tocaba… y cuando ya no
@@ -2286,6 +2315,11 @@ Piezas con truco:
   mismo y conviene no confundirlos**. Al añadir una acción, la pregunta es si lo
   que toca vale para toda la casa (`requireCreador`) o solo para una edición
   (`requireCompetitionManager`).
+- `lib/session.ts` y `lib/sesion-token.ts` — la cookie de la sesión. El token
+  se firma y se lee **solo** en `sesion-token.ts`, porque lo usan también
+  `src/proxy.ts` (que la estira una vez al día) y este no puede tirar de
+  `next/headers`. `lib/volver.ts` es lo de volver a la pantalla pedida tras
+  entrar; el proxy es quien apunta la dirección en la cabecera.
 - `lib/wipeos.ts` — los dos motivos de estar fuera y cómo se cuenta cada uno.
   `actions/wipeos.ts` son las marcas y el estado; `jugador/[id]/wipeos-client.tsx`
   la sección del perfil. **Al mirar si alguien sigue jugando se pregunta por
@@ -2322,7 +2356,8 @@ Piezas con truco:
 - `lib/cola.ts` — la cola de apuntes sin subir, en el `localStorage` del móvil.
   `lib/acciones-sin-conexion.ts` envuelve un formulario para que, si el envío no
   sale, acabe ahí en vez de perderse; `components/estado-conexion.tsx` es el
-  aviso de abajo y quien la sube (al volver la línea y al abrir la aplicación), y
+  aviso de abajo y quien la sube (al volver la línea, al abrir la aplicación y
+  al volver a ella tras un rato de fondo, que además refresca la pantalla), y
   `components/pendientes.tsx` la lista dentro de cada pantalla.
   `api/sincronizar/route.ts` es la puerta del servidor, que reutiliza las server
   actions de siempre. **Cuidado al cambiar una de esas acciones**: los apuntes
@@ -2731,3 +2766,6 @@ lugar de destruir datos, y hay que avisar antes.
     propio cartel de imágenes.
 66. **El hall se ordena por cómo acabó el locke** y no por la tabla, y **los
     equipos de la final** se apuntan una vez en el cuadro y se traen de ahí.
+67. **Entrar y volver sin molestias**: la sesión se estira al usarla, tras
+    entrar se vuelve a la pantalla que se pedía y la aplicación se refresca
+    sola al volver a ella.

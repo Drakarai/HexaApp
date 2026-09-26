@@ -7,6 +7,7 @@ import { createSession, destroySession } from "@/lib/session";
 import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import { getTheme, isThemeId } from "@/lib/themes";
+import { destinoSeguro } from "@/lib/volver";
 
 export type FormState = { error?: string; success?: string } | null;
 
@@ -34,7 +35,7 @@ export async function loginAction(
     username: user.username,
     role: user.role,
   });
-  redirect("/");
+  redirect(destinoSeguro(formData.get("volver")));
 }
 
 export async function logoutAction() {

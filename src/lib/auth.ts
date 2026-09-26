@@ -1,11 +1,13 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { readSession } from "@/lib/session";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { ROLES } from "@/lib/constants";
+import { CABECERA_DE_RUTA, destinoSeguro } from "@/lib/volver";
 
 export type CurrentUser = {
   id: string;
@@ -52,10 +54,16 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   return { ...resto, avatarImage: urlDeImagen("avatar", user.id, firma) };
 });
 
-/** Igual que getCurrentUser pero redirige al login si no hay sesión. */
+/**
+ * Igual que getCurrentUser pero redirige al login si no hay sesión, diciéndole
+ * de dónde venía para que después de entrar lleve ahí y no a la portada.
+ */
 export async function requireUser(): Promise<CurrentUser> {
   const user = await getCurrentUser();
-  if (!user) redirect("/login");
+  if (!user) {
+    const ruta = destinoSeguro((await headers()).get(CABECERA_DE_RUTA));
+    redirect(ruta === "/" ? "/login" : `/login?volver=${encodeURIComponent(ruta)}`);
+  }
   return user;
 }
 

@@ -3,12 +3,20 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { LoginForm } from "./login-form";
 import { OlvidarLoGuardado } from "@/components/service-worker";
+import { destinoSeguro } from "@/lib/volver";
 
 export const metadata = { title: "Entrar" };
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ volver?: string | string[] }>;
+}) {
+  // A dónde iba antes de que le pidieran entrar (ver lib/volver.ts)
+  const volver = destinoSeguro((await searchParams).volver);
+
   const user = await getCurrentUser();
-  if (user) redirect("/");
+  if (user) redirect(volver);
 
   // Aplicación recién instalada: aún no hay ninguna cuenta que crear
   if ((await prisma.user.count()) === 0) redirect("/instalacion");
@@ -26,7 +34,7 @@ export default async function LoginPage() {
           </p>
         </div>
         <div className="card">
-          <LoginForm />
+          <LoginForm volver={volver} />
           {/* Aquí se acaba al cerrar sesión: fuera las pantallas guardadas */}
           <OlvidarLoGuardado />
         </div>

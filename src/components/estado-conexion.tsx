@@ -95,6 +95,38 @@ export function EstadoDeConexion({ rutas = [] }: { rutas?: string[] }) {
   }, [contar, subir, precalentar]);
 
   /**
+   * Al volver a la aplicación, traer lo que haya cambiado mientras tanto.
+   *
+   * Instalada en el móvil, la aplicación no se cierra: se queda de fondo con la
+   * pantalla tal cual, y al volver horas después seguía enseñando lo de
+   * entonces —el resultado que ya había metido el admin o la baja de otro no
+   * salían hasta cambiar de pestaña—. `router.refresh()` vuelve a pedir los
+   * datos sin recargar la página, así que no se pierde lo que haya a medio
+   * escribir ni lo que haya abierto.
+   *
+   * Solo si ha estado fuera un rato: cambiar a WhatsApp a copiar algo y volver
+   * no merece una ronda de consultas. Y sin línea no, que el plan B de Next al
+   * fallar es recargar la página entera.
+   */
+  useEffect(() => {
+    let seFueA = 0;
+    const alCambiar = () => {
+      if (document.visibilityState === "hidden") {
+        seFueA = Date.now();
+        return;
+      }
+      const fuera = seFueA ? Date.now() - seFueA : 0;
+      seFueA = 0;
+      if (fuera < AL_VOLVER.minimoFuera || !navigator.onLine) return;
+      // Lo que quedara en la cola va primero: así lo que se pinta ya lo lleva
+      subir().finally(() => router.refresh());
+    };
+
+    document.addEventListener("visibilitychange", alCambiar);
+    return () => document.removeEventListener("visibilitychange", alCambiar);
+  }, [router, subir]);
+
+  /**
    * Sin conexión, los enlaces se pulsan a lo bruto: recargando la página.
    *
    * Por dentro Next cambia de pantalla sin recargar, pidiendo solo el trozo
@@ -190,4 +222,9 @@ function cuantos(n: number) {
 const CADA_CUANTO = {
   llave: "hexaapp.precalentado",
   milisegundos: 10 * 60 * 1000,
+};
+
+/** Cuánto tiene que estar la aplicación de fondo para refrescarla al volver. */
+const AL_VOLVER = {
+  minimoFuera: 30 * 1000,
 };

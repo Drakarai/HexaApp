@@ -1,61 +1,29 @@
 import "server-only";
 import { cookies } from "next/headers";
-import { SignJWT, jwtVerify } from "jose";
+import {
+  COOKIE_DE_SESION,
+  firmarSesion,
+  leerSesion,
+  opcionesDeLaCookie,
+  type SessionPayload,
+} from "@/lib/sesion-token";
 
-const COOKIE_NAME = "hexaapp_session";
-const MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 días
-
-function getSecret() {
-  const secret = process.env.AUTH_SECRET;
-  if (!secret || secret.length < 16) {
-    throw new Error(
-      "Falta AUTH_SECRET (mínimo 16 caracteres). Copia .env.example a .env y define una clave.",
-    );
-  }
-  return new TextEncoder().encode(secret);
-}
-
-export type SessionPayload = {
-  userId: string;
-  username: string;
-  role: string;
-};
+export type { SessionPayload };
 
 export async function createSession(payload: SessionPayload) {
-  const token = await new SignJWT({ ...payload })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(`${MAX_AGE_SECONDS}s`)
-    .sign(getSecret());
-
+  const token = await firmarSesion(payload);
   const store = await cookies();
-  store.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: MAX_AGE_SECONDS,
-  });
+  store.set(COOKIE_DE_SESION, token, opcionesDeLaCookie);
 }
 
 export async function destroySession() {
   const store = await cookies();
-  store.delete(COOKIE_NAME);
+  store.delete(COOKIE_DE_SESION);
 }
 
 export async function readSession(): Promise<SessionPayload | null> {
   const store = await cookies();
-  const token = store.get(COOKIE_NAME)?.value;
+  const token = store.get(COOKIE_DE_SESION)?.value;
   if (!token) return null;
-  try {
-    const { payload } = await jwtVerify(token, getSecret());
-    if (!payload.userId || typeof payload.userId !== "string") return null;
-    return {
-      userId: payload.userId,
-      username: String(payload.username ?? ""),
-      role: String(payload.role ?? "PLAYER"),
-    };
-  } catch {
-    return null;
-  }
+  return (await leerSesion(token))?.sesion ?? null;
 }

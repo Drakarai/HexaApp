@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { loginAction, type FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 
-export function LoginForm() {
+export function LoginForm({ volver }: { volver: string }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     loginAction,
     null,
@@ -12,6 +12,7 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
+      <input type="hidden" name="volver" value={volver} />
       <div>
         <label className="label" htmlFor="username">
           Usuario
