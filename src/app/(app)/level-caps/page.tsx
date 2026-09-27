@@ -7,6 +7,7 @@ import {
   getActiveCompetition,
   getParticipants,
   soloActivos,
+  soloLectura,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -61,6 +62,9 @@ export default async function LevelCapsPage({
     }),
     getJornadasParaCheckpoints(competition.id),
   ]);
+
+  // Archivada y sin administrarla: se ve quién pasó qué, pero no se marca nada
+  const cerrada = soloLectura(competition, canManage);
 
   /** Los que siguen jugando: son los que tienen que superar cada gimnasio */
   const activos = soloActivos(participants);
@@ -150,7 +154,7 @@ export default async function LevelCapsPage({
         displayName: participante.displayName,
         color: participante.color,
         url: puestos.get(participante.id) ?? null,
-        editable: canManage || participante.userId === user.id,
+        editable: !cerrada && (canManage || participante.userId === user.id),
       }));
   };
 
@@ -259,20 +263,29 @@ export default async function LevelCapsPage({
                     {perfil.enSolitario ? null : (
                       <form action={toggleJornadaDespuesAction}>
                         <input type="hidden" name="levelCapId" value={levelCap.id} />
+                        {/* Solo el icono, encendido cuando está puesto: con
+                            rótulo empujaba la cabecera a dos filas en el móvil.
+                            Lo que hace se lee en la franja de debajo */}
                         <button
                           type="submit"
                           className={cx(
                             "btn-ghost btn-sm",
-                            levelCap.jornadaDespues && "text-brand-300",
+                            levelCap.jornadaDespues &&
+                              "border-brand-400/50 bg-brand-600/20 text-brand-200",
                           )}
+                          aria-pressed={levelCap.jornadaDespues}
+                          aria-label={
+                            levelCap.jornadaDespues
+                              ? "Quitar la jornada de después de este hito"
+                              : "Poner jornada después de este hito"
+                          }
                           title={
                             levelCap.jornadaDespues
                               ? "Quitar la jornada de después de este hito"
-                              : "Cuando todos pasen este hito, toca jornada"
+                              : "Jornada después: cuando todos pasen este hito, toca jornada"
                           }
                         >
-                          <Icono emoji="⚔️" />{" "}
-                          {levelCap.jornadaDespues ? "Quitar jornada" : "Jornada después"}
+                          <Icono emoji="⚔️" />
                         </button>
                       </form>
                     )}
@@ -304,7 +317,9 @@ export default async function LevelCapsPage({
                       );
                       const retirado = participant.retiredAt !== null;
                       const editable =
-                        !retirado && (canManage || participant.userId === user.id);
+                        !retirado &&
+                        !cerrada &&
+                        (canManage || participant.userId === user.id);
 
                       return (
                         <MarcarGimnasio
@@ -333,7 +348,7 @@ export default async function LevelCapsPage({
                     matchId={levelCap.id}
                     levelCapId={levelCap.id}
                     rotulo={levelCap.label}
-                    canManage={canManage || yo.userId === user.id}
+                    canManage={!cerrada && (canManage || yo.userId === user.id)}
                     sides={[
                       {
                         participantId: yo.id,
@@ -359,7 +374,7 @@ export default async function LevelCapsPage({
                   levelCapId={levelCap.id}
                   label={levelCap.label}
                   jugadores={videosDe(levelCap)}
-                  mio={yo?.id ?? null}
+                  mio={cerrada ? null : (yo?.id ?? null)}
                 />
 
                 {canManage ? (

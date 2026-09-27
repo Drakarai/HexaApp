@@ -5,6 +5,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getStandings,
+  soloLectura,
 } from "@/lib/competition";
 import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { urlsDeImagen } from "@/lib/imagenes";
@@ -190,12 +191,15 @@ export default async function HallOfFamePage() {
         url={`/api/resumen/${competition.id}?v=${entries.length}-${resumen.bajas}-${resumen.combates}-${resumen.wipeos}`}
         fichero={`resumen-${competition.slug}.png`}
         titulo={competition.name}
+        alto={perfil.enSolitario ? 1080 : 1350}
       />
 
       <div className="space-y-4">
         {jugadores.map((row, index) => {
           const team = teamOf(row.participantId);
-          const editable = canManage || row.userId === user.id;
+          const editable =
+            !soloLectura(competition, canManage) &&
+            (canManage || row.userId === user.id);
           const esCampeon = elFinal?.champion?.participantId === row.participantId;
 
           /**

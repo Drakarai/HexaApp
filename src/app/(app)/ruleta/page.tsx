@@ -6,6 +6,7 @@ import {
   getActiveCompetition,
   getParticipants,
   getTicketBalances,
+  soloLectura,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -63,7 +64,9 @@ export default async function RoulettePage({
   const myTickets =
     myParticipant && selectedId ? balances.get(myParticipant.id, selectedId) : 0;
   // Los administradores giran siempre; el resto, solo con ticket de esta ruleta
-  const canSpin = canManage || myTickets > 0;
+  // Archivada: la ruleta se ve con su historial, pero ya no gira nadie más
+  const cerrada = soloLectura(competition, canManage);
+  const canSpin = canManage || (!cerrada && myTickets > 0);
 
   const selected = selectedId
     ? await prisma.roulette.findUnique({
@@ -177,14 +180,15 @@ export default async function RoulettePage({
               balance={myTickets}
               isManager={canManage}
               rouletteName={selected.name}
-              soloMira={!myParticipant && !canManage}
+              soloMira={(!myParticipant || cerrada) && !canManage}
+              archivada={cerrada}
             />
 
             <RouletteWheel
               rouletteId={selected.id}
               spinSeconds={selected.spinSeconds}
               canSpin={canSpin}
-              soloMira={!myParticipant && !canManage}
+              soloMira={(!myParticipant || cerrada) && !canManage}
               options={selected.options
                 .filter((option) => option.enabled)
                 .map((option) => ({

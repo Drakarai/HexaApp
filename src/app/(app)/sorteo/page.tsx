@@ -6,6 +6,7 @@ import {
   getMyParticipant,
   getParticipants,
   soloActivos,
+  soloLectura,
 } from "@/lib/competition";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
@@ -76,7 +77,10 @@ export default async function SorteoPage() {
               <Sorteo
                 key={sorteo.id}
                 canManage={canManage}
-                miParticipantId={yo?.id ?? null}
+                miParticipantId={
+                  // Archivada: el bote se queda como quedó
+                  soloLectura(competition, canManage) ? null : (yo?.id ?? null)
+                }
                 sorteo={{
                   id: sorteo.id,
                   label: sorteo.label,

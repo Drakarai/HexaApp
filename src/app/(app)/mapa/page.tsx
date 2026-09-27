@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
-import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getMyParticipant,
+  soloLectura,
+} from "@/lib/competition";
 import { getMapa, getMisBajasPorZona, getMisCapturas } from "@/lib/mapas";
 import { nombreDeRegion, regionesDelJuego } from "@/lib/juegos";
 import { PageHeader } from "@/components/page-header";
@@ -69,6 +74,9 @@ export default async function MapaPage({
     );
   }
 
+  // Archivada y sin administrarla: se ve lo apuntado, sin formularios
+  const cerrada = soloLectura(competition, await canManageCompetition(competition.id, user));
+
   const [mapa, capturas, bajas] = await Promise.all([
     getMapa(region),
     getMisCapturas(participant.id),
@@ -125,10 +133,12 @@ export default async function MapaPage({
         )}
         bajas={bajasDeAqui}
         buscarDeEntrada={apuntar === "1"}
+        soloMirar={cerrada}
       />
       <CapturasExtra
         capturas={capturas.filter((captura) => !captura.zoneId)}
         competitionId={competition.id}
+        soloMirar={cerrada}
       />
     </>
   );

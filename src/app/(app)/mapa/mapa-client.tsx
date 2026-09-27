@@ -30,6 +30,7 @@ export function MapaDeCapturas({
   bajas,
   competitionId,
   buscarDeEntrada = false,
+  soloMirar = false,
 }: {
   mapa: MapaDeRegion;
   capturas: CapturaApuntada[];
@@ -43,6 +44,8 @@ export function MapaDeCapturas({
   competitionId: string;
   /** Llega con el buscador enfocado, desde el botón de apuntar */
   buscarDeEntrada?: boolean;
+  /** Edición archivada: se ve lo apuntado, pero ya no se apunta ni se borra */
+  soloMirar?: boolean;
 }) {
   const [abierta, setAbierta] = useState<ZonaDelMapa | null>(null);
   /** Grupo cuyo contenido se está enseñando para elegir */
@@ -260,6 +263,7 @@ export function MapaDeCapturas({
           capturas={capturas.filter((c) => c.zoneId === abierta.id)}
           caidos={bajas[abierta.id] ?? 0}
           competitionId={competitionId}
+          soloMirar={soloMirar}
           onClose={() => setAbierta(null)}
         />
       ) : null}
@@ -462,6 +466,7 @@ function FichaDeZona({
   capturas,
   caidos,
   competitionId,
+  soloMirar,
   onClose,
 }: {
   zona: ZonaDelMapa;
@@ -469,6 +474,7 @@ function FichaDeZona({
   /** Pokémon tuyos que han caído ahí, según el cementerio */
   caidos: number;
   competitionId: string;
+  soloMirar: boolean;
   onClose: () => void;
 }) {
   const apuntarAunqueNoHayaLinea = useMemo(
@@ -536,15 +542,16 @@ function FichaDeZona({
         {capturas.length ? (
           <ul className="mb-4 space-y-2">
             {capturas.map((captura) => (
-              <Capturado key={captura.id} captura={captura} />
+              <Capturado key={captura.id} captura={captura} soloMirar={soloMirar} />
             ))}
           </ul>
         ) : (
           <p className="mb-4 text-sm text-slate-500">
-            Todavía no has apuntado nada aquí.
+            {soloMirar ? "Aquí no apuntaste nada." : "Todavía no has apuntado nada aquí."}
           </p>
         )}
 
+        {soloMirar ? null : (
         <form
           action={async (formData) => {
             await apuntar(formData);
@@ -576,13 +583,20 @@ function FichaDeZona({
           <FormMessage state={estado} />
           <SubmitButton className="btn-primary btn-sm">Apuntar</SubmitButton>
         </form>
+        )}
       </div>
     </div>,
     document.body,
   );
 }
 
-function Capturado({ captura }: { captura: CapturaApuntada }) {
+function Capturado({
+  captura,
+  soloMirar = false,
+}: {
+  captura: CapturaApuntada;
+  soloMirar?: boolean;
+}) {
   return (
     <li
       className={cx(
@@ -641,15 +655,17 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
           )}
         </p>
       </div>
-      <form action={borrarCapturaAction} className="shrink-0">
-        <input type="hidden" name="captureId" value={captura.id} />
-        <ConfirmSubmit
-          className="btn-ghost btn-sm text-red-300"
-          message={`¿Borrar ${captura.nickname ?? captura.species}?`}
-        >
-          ✕
-        </ConfirmSubmit>
-      </form>
+      {soloMirar ? null : (
+        <form action={borrarCapturaAction} className="shrink-0">
+          <input type="hidden" name="captureId" value={captura.id} />
+          <ConfirmSubmit
+            className="btn-ghost btn-sm text-red-300"
+            message={`¿Borrar ${captura.nickname ?? captura.species}?`}
+          >
+            ✕
+          </ConfirmSubmit>
+        </form>
+      )}
     </li>
   );
 }
@@ -662,9 +678,11 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
 export function CapturasExtra({
   capturas,
   competitionId,
+  soloMirar = false,
 }: {
   capturas: CapturaApuntada[];
   competitionId: string;
+  soloMirar?: boolean;
 }) {
   const apuntarAunqueNoHayaLinea = useMemo(
     () => capturaConCola(competitionId, null),
@@ -687,13 +705,15 @@ export function CapturasExtra({
             reto…
           </p>
         </div>
-        <button
-          type="button"
-          className="btn-ghost btn-sm"
-          onClick={() => setAbierto(!abierto)}
-        >
-          {abierto ? "Cerrar" : "＋ Apuntar una"}
-        </button>
+        {soloMirar ? null : (
+          <button
+            type="button"
+            className="btn-ghost btn-sm"
+            onClick={() => setAbierto(!abierto)}
+          >
+            {abierto ? "Cerrar" : "＋ Apuntar una"}
+          </button>
+        )}
       </div>
 
       {abierto ? (
@@ -732,7 +752,7 @@ export function CapturasExtra({
       {capturas.length ? (
         <ul className="grid gap-2 sm:grid-cols-2">
           {capturas.map((captura) => (
-            <Capturado key={captura.id} captura={captura} />
+            <Capturado key={captura.id} captura={captura} soloMirar={soloMirar} />
           ))}
         </ul>
       ) : abierto ? null : (

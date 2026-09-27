@@ -6,6 +6,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getParticipants,
+  soloLectura,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -138,8 +139,10 @@ export default async function DeathsPage({
     return sum + Math.max(0, row._count._all - cuantas);
   }, 0);
 
+  // Archivada y sin administrarla: la caja se mira, pero no se toca
+  const cerrada = soloLectura(competition, canManage);
   const esMio = (participantId: string) =>
-    canManage || porId.get(participantId)?.userId === user.id;
+    !cerrada && (canManage || porId.get(participantId)?.userId === user.id);
 
   const fichaDeJugador = (participantId: string) => {
     const jugador = porId.get(participantId)!;
@@ -220,7 +223,7 @@ export default async function DeathsPage({
 
       {mortiferas.length ? <RutasMortiferas zonas={mortiferas} /> : null}
 
-      {participants.length && (myParticipant || canManage) ? (
+      {participants.length && !cerrada && (myParticipant || canManage) ? (
         <div className="mb-6">
           <NewDeathForm
             participants={participants.map((participant) => ({

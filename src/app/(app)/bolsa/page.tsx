@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
+  soloLectura,
   getActiveCompetition,
   getMyParticipant,
 } from "@/lib/competition";
@@ -63,7 +64,7 @@ export default async function BolsaPage() {
           botón de deshacer vive dentro de ella y tiene que seguir ahí */}
       <Bolsa
         objetos={objetos}
-        puedoUsar
+        puedoUsar={!soloLectura(competition, admin)}
         vacia={
           <EmptyState
             title="La bolsa está vacía"

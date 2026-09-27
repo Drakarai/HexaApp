@@ -6,6 +6,7 @@ import {
   getMyParticipant,
   getParticipants,
   soloActivos,
+  soloLectura,
 } from "@/lib/competition";
 import { getMvpStates } from "@/lib/mvp";
 import { combatesEsperandoRetirada } from "@/lib/retiradas";
@@ -249,7 +250,10 @@ export default async function MatchdaysPage() {
                           // El que perdió el locke sigue votando; el que se
                           // retiró, no: ver lib/wipeos.ts
                           canVote: Boolean(
-                            myParticipant && puedeVotarElMvp(myParticipant),
+                            myParticipant &&
+                              puedeVotarElMvp(myParticipant) &&
+                              // Archivada: la votación se queda como quedó
+                              !soloLectura(competition, canManage),
                           ),
                           canManage,
                         }}
@@ -325,7 +329,11 @@ export default async function MatchdaysPage() {
                         <Royale
                           key={royale.id}
                           canManage={canManage}
-                          miParticipanteId={myParticipant?.id ?? null}
+                          miParticipanteId={
+                            soloLectura(competition, canManage)
+                              ? null
+                              : (myParticipant?.id ?? null)
+                          }
                           maximo={formato.equipo}
                           royale={{
                             id: royale.id,

@@ -4,6 +4,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getStandings,
+  soloLectura,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -72,9 +73,11 @@ export default async function PointsPage() {
   // Cada uno puede tocar su propio as; los administradores, el de todos
   const editableAces = canManage
     ? standings.map((row) => row.participantId)
-    : standings
-        .filter((row) => row.userId === user.id)
-        .map((row) => row.participantId);
+    : soloLectura(competition, canManage)
+      ? [] // archivada: el as de cada uno se queda como estaba
+      : standings
+          .filter((row) => row.userId === user.id)
+          .map((row) => row.participantId);
 
   return (
     <>

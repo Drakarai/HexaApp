@@ -44,7 +44,10 @@ sin abrir el PDF.
 
 `datos.mjs` **no se puede pasar dos veces**: elige el juego y sube el logo de
 la edición (`logo-ejemplo.svg`), rellena los mapas, apunta capturas, bajas y
-gimnasios —en un orden que reparte las coronas—, cambia una regla, deja una
+los tres primeros gimnasios de todos —en un orden que reparte las
+coronas—, pone un checkpoint de jornada tras cada uno (así la 3ª jornada es
+la que toca), cambia una regla, crea una cuenta sin locke (`lara`, para la
+foto de la bienvenida), deja una
 nota, un reto, objetos y **las dos primeras jornadas** enteras (con una sola no
 salen las flechas de la clasificación), y repetirlo lo duplicaría todo. Si algo
 sale torcido, vuelve a sembrar la base de datos y empieza de nuevo.

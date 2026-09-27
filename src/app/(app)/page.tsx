@@ -6,6 +6,7 @@ import {
   getActiveCompetition,
   getMyParticipant,
   getStandings,
+  soloLectura,
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
@@ -426,7 +427,9 @@ export default async function DashboardPage() {
                 highlightUserId={user.id}
                 movimientos={movimientosEnLaTabla(grafico, standings)}
                 editableParticipantIds={
-                  myParticipant ? [myParticipant.id] : []
+                  myParticipant && !soloLectura(competition, canManage)
+                    ? [myParticipant.id]
+                    : []
                 }
               />
               <p className="mt-3 text-xs text-slate-500">

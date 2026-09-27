@@ -4,6 +4,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getMyParticipant,
+  soloLectura,
 } from "@/lib/competition";
 import { prisma } from "@/lib/db";
 import { urlsDeCarteles, urlsDeImagen } from "@/lib/imagenes";
@@ -243,7 +244,10 @@ export default async function FinalFourPage() {
                     finalFourId={state.finalFourId}
                     rotulo={`El equipo de ${jugador.displayName} para ${nombre}`}
                     canManage={
-                      canManage || jugador.participantId === yo?.id
+                      canManage ||
+                      // Su equipo del cuadro, salvo que la edición esté archivada
+                      (jugador.participantId === yo?.id &&
+                        !soloLectura(competition, canManage))
                     }
                     sides={[
                       {

@@ -137,23 +137,39 @@ async function apuntarBaja(especie, mote, causa, zona) {
 await apuntarBaja("Caterpie", "Fideo", "Crítico de Rattata", "Ruta 31");
 await apuntarBaja("Zubat", "Colmillo", "Confusión", "Ruta 32");
 
-// --- Gimnasios superados, para que la pantalla no salga en blanco. Van en
-// este orden para que las coronas del primero en pasar se repartan: Draka el
-// primero y Pablo el segundo. Se busca por el nombre sin anclar, porque al que
-// ya lleva corona el botón le empieza por ella
+// --- Los tres primeros gimnasios, pasados por todos. En este orden para que
+// las coronas del primero en pasar se repartan: Draka, Pablo y Héctor. Se busca por
+// el nombre sin anclar, porque al que ya lleva corona el botón le empieza por
+// ella
 await p.goto(BASE + "/level-caps", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1200);
-for (const [quien, gimnasio] of [
-  ["Draka", 0],
-  ["Pablo", 0],
-  ["Héctor", 0],
-  ["Pablo", 1],
-  ["Draka", 1],
-]) {
-  await p.locator("button.chip", { hasText: quien }).nth(gimnasio).click();
-  await p.waitForTimeout(2000);
+const ORDEN_EN_CADA_GIMNASIO = [
+  ["Draka", "Pablo", "Héctor", "Álex", "Enzo", "Rodri"],
+  ["Pablo", "Draka", "Héctor", "Álex", "Enzo", "Rodri"],
+  ["Héctor", "Draka", "Pablo", "Álex", "Enzo", "Rodri"],
+];
+for (const [gimnasio, orden] of ORDEN_EN_CADA_GIMNASIO.entries()) {
+  for (const quien of orden) {
+    // Solo los chips de marcar, que llevan el punto de color: los de "+ vídeo"
+    // de cada gimnasio también son chips con el nombre y abrían su ventana
+    await p
+      .locator("button.chip:has(span.rounded-full)", { hasText: quien })
+      .nth(gimnasio)
+      .click();
+    await p.waitForTimeout(1500);
+  }
 }
 console.log("gimnasios marcados");
+
+// --- Checkpoints de jornada tras esos tres gimnasios: la 1ª y la 2ª jornada
+// quedan jugadas más abajo, así que la que toca es la 3ª, que es lo que la
+// portada enseña con el rival de cada uno. Siempre el primer botón sin poner,
+// que después de cada clic es el del gimnasio siguiente
+for (let vez = 0; vez < 3; vez++) {
+  await p.locator('button[aria-label="Poner jornada después de este hito"]').first().click();
+  await p.waitForTimeout(1800);
+}
+console.log("checkpoints de jornada");
 
 // --- Una regla cambiada con el locke ya en marcha, que es lo que avisa a
 // todos. La casilla de avisar viene marcada, así que basta con guardar
@@ -351,6 +367,18 @@ for (const especie of ["Lapras", "Arcanine", "Snorlax", "Gengar", "Ampharos", "S
 await p.locator("button", { hasText: "Repartir" }).first().click();
 await p.waitForTimeout(2500);
 console.log("sorteo repartido");
+
+// --- Una cuenta sin ningún locke, para la foto de la bienvenida
+await p.goto(BASE + "/admin", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(1200);
+await p.locator("summary", { hasText: "Crear usuario" }).first().click();
+await p.waitForTimeout(400);
+await p.fill('input[name="username"]', "lara");
+await p.fill('input[name="displayName"]', "Lara");
+await p.fill('input[name="password"]', CLAVE);
+await p.locator("button", { hasText: "Crear usuario" }).click();
+await p.waitForTimeout(2000);
+console.log("cuenta sin locke: lara");
 
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");

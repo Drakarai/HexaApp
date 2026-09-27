@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2489,8 +2489,12 @@ equipos, wipeos, hall, as, favoritos, royales) y el resto usa
 vídeos, MVP, bote del sorteo, gastar objetos, girar la ruleta). **Las notas y
 la cobertura de tipos no**: son privadas y no apuntan nada del locke. Quien
 administra sí puede, para corregir lo que se quedó mal al cerrarla. En la
-pantalla hay un aviso arriba y desaparece el botón de apuntar; los formularios
-se siguen viendo y, si se envían, dicen por qué no.
+pantalla hay un aviso arriba, desaparece el botón de apuntar y **no se enseñan
+los formularios** de jugador: cada pantalla lo decide con
+`soloLectura(competition, canManage)` —bolsa, mapa, caja, level caps, hall,
+ficha, tabla (el as), jornadas (voto y línea del royale), ruleta, sorteo,
+cuadro final y el as y los favoritos de Mi perfil—. Los títulos no: son de la
+persona, no del locke.
 
 **Deshacer al gastar vive en la bolsa entera, no en la ficha.** Al gastar el
 último de algo, la ficha desaparece, y con ella se iba el aviso y el botón de
@@ -2506,7 +2510,9 @@ organización con su apunte.
 Tres cosas con truco: las imágenes se leen de la base de datos y no por
 `/api/imagen`, porque satori las pediría sin sesión (`buscarValor` salió de esa
 ruta a `lib/imagen-por-tipo.ts` para compartirla); van en WebP y satori no las
-pinta, así que se pasan a PNG con sharp; y Next no deja `react-dom/server` en
+pinta, así que se pasan a PNG con sharp; en solitario la imagen es cuadrada
+y cuenta días, hitos, zonas y caídos (sin jornadas ni combates que contar), y
+el final del locke sale del último gimnasio si no hay combates; y Next no deja `react-dom/server` en
 una ruta, así que los seis iconos van con sus trazos copiados de lucide. El orden
 del hall y el podio salieron de la página a `lib/hall.ts` para que la imagen y
 el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
@@ -2927,7 +2933,7 @@ porque reaprovecha el mismo Playwright y la misma forma de entrar. Se usa antes
 y después de tocar algo (`node guia/medir.mjs /jornadas /level-caps`).
 
 Hay **dos guías**: la de uso (26 páginas, para todos) y la del administrador
-(14, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
+(15, para quien lleva un locke; la 7 es la de los checkpoints de jornada). Comparten el estilo en `guia/estilo.css` para
 que salgan idénticas. Rehacerlas mueve los números de página del índice escrito
 a mano, así que conviene juntar varias novedades y hacerlo de una vez.
 
@@ -3171,3 +3177,7 @@ lugar de destruir datos, y hay que avisar antes.
     mandar al grupo desde el hall.
 78. **Bienvenida sin locke**: quien no juega ninguno ya no ve doce pantallas
     con un candado, sino cómo entrar en uno, con el formulario de pedirlo.
+79. **Rematar lo de antes y fotos nuevas en las guías**: las archivadas ya no
+    enseñan formularios a los jugadores, y las guías tienen fotos de la jornada
+    que toca, los checkpoints, deshacer y la bienvenida, con una página nueva
+    en la del administrador para los checkpoints.

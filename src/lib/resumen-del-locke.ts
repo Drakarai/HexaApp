@@ -162,11 +162,14 @@ export async function getResumenDelLocke(
 
   /**
    * Cuándo se jugó lo último. Manda la fecha de cierre si la hay; si no, el
-   * último combate, que es lo que de verdad pasó.
+   * último combate o el último gimnasio, que es lo que de verdad pasó. Los
+   * gimnasios cuentan porque en solitario no hay combates: sin ellos, un locke
+   * de una persona no sabía cuánto había durado.
    */
-  const jugados = combates
-    .map((combate) => combate.playedAt)
-    .filter((fecha): fecha is Date => fecha !== null);
+  const jugados = [
+    ...combates.map((combate) => combate.playedAt),
+    ...marcas.map((marca) => marca.clearedAt),
+  ].filter((fecha): fecha is Date => fecha !== null);
   const ultimo = jugados.length
     ? new Date(Math.max(...jugados.map((fecha) => fecha.getTime())))
     : null;

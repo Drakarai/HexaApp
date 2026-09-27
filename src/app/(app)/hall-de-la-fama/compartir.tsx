@@ -13,8 +13,11 @@ export function CompartirResumen({
   url,
   fichero,
   titulo,
+  alto = 1350,
 }: {
   url: string;
+  /** Alto de la imagen: la de un locke en solitario es cuadrada */
+  alto?: number;
   /** Con qué nombre se guarda: "resumen-hexalocke-2.png" */
   fichero: string;
   titulo: string;
@@ -66,7 +69,7 @@ export function CompartirResumen({
           className="mx-auto block w-44 shrink-0 overflow-hidden rounded-xl border border-white/10 sm:mx-0"
         >
           {/* eslint-disable-next-line @next/next/no-img-element -- es una imagen generada, no hay nada que optimizar */}
-          <img src={url} alt={`Resumen de ${titulo}`} width={1080} height={1350} loading="lazy" className="h-auto w-full" />
+          <img src={url} alt={`Resumen de ${titulo}`} width={1080} height={alto} loading="lazy" className="h-auto w-full" />
         </a>
         <div className="min-w-0 flex-1">
           <h2 className="section-title mb-1">Para el grupo</h2>

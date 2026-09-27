@@ -176,6 +176,7 @@ export function MyTickets({
   isManager,
   rouletteName,
   soloMira = false,
+  archivada = false,
 }: {
   balance: number;
   isManager: boolean;
@@ -185,6 +186,8 @@ export function MyTickets({
    * era mandarle a por algo que no le pueden dar.
    */
   soloMira?: boolean;
+  /** La edición está archivada: por eso no se gira, no por ser espectador */
+  archivada?: boolean;
 }) {
   if (isManager) {
     return (
@@ -197,7 +200,9 @@ export function MyTickets({
   if (soloMira) {
     return (
       <p className="mb-4 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-xs text-slate-400">
-        Estás mirando este locke: la ruleta la giran los que lo juegan.
+        {archivada
+          ? "Esta edición está archivada: su ruleta ya no se gira."
+          : "Estás mirando este locke: la ruleta la giran los que lo juegan."}
       </p>
     );
   }

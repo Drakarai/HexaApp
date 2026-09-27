@@ -229,6 +229,32 @@ async function foto(pagina, nombre, ruta, prepara) {
     await p.evaluate(() => window.scrollBy(0, 160));
     await p.waitForTimeout(500);
   });
+  // Lo último: la jornada que toca en la portada, su franja en los level caps
+  // y el aviso de deshacer al gastar algo de la bolsa
+  await foto(pagina, "toca-jornada", "/", async (p) => {
+    await arriba(p, p.locator("section", { has: p.locator("h2", { hasText: "Toca jornada" }) }).first(), 90);
+  });
+  await foto(pagina, "checkpoint", "/level-caps", async (p) => {
+    await arriba(p, p.locator("a", { hasText: "toca ahora" }).first(), 420);
+  });
+  await foto(pagina, "deshacer", "/bolsa", async (p) => {
+    await p.locator("button", { hasText: /^Usar$/ }).first().click();
+    await p.waitForTimeout(2500);
+  });
+  // Y se deshace, para que la bolsa se quede como estaba si se repiten las fotos
+  const deshacer = pagina.locator("button", { hasText: "Deshacer" });
+  if (await deshacer.count()) {
+    await deshacer.click();
+    await pagina.waitForTimeout(2000);
+  }
+  await contexto.close();
+}
+
+// --- Una cuenta que todavía no juega ningún locke: lo que ve al entrar
+{
+  const { contexto, pagina } = await abrirMovil();
+  await entrar(pagina, "lara");
+  await foto(pagina, "bienvenida", "/");
   await contexto.close();
 }
 

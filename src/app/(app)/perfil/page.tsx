@@ -1,5 +1,10 @@
 import { esCreador, requireUser } from "@/lib/auth";
-import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import {
+  canManageCompetition,
+  getActiveCompetition,
+  getMyParticipant,
+  soloLectura,
+} from "@/lib/competition";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { AceBadge } from "@/components/ace-badge";
@@ -31,6 +36,11 @@ export default async function ProfilePage() {
   const myParticipant = competition
     ? await getMyParticipant(competition.id, user.id)
     : null;
+  // Archivada y sin administrarla: el as y los favoritos de esa edición se ven
+  // pero se quedan como estaban
+  const cerrada = competition
+    ? soloLectura(competition, await canManageCompetition(competition.id, user))
+    : false;
 
   // Direcciones de las imágenes del as, que ya no viajan dentro de la página
   const miAs = myParticipant
@@ -130,13 +140,15 @@ export default async function ProfilePage() {
               reason: myParticipant.aceReason,
               image: miAs.image,
               detailImage: miAs.detailImage,
-              editable: true,
+              editable: !cerrada,
             }}
           />
           <p className="mt-2 text-xs text-slate-500">
-            {myParticipant.aceSpecies
-              ? `${myParticipant.aceNickname ?? myParticipant.aceSpecies} · pincha para cambiarlo`
-              : "Pincha en el hueco para elegirlo"}
+            {cerrada
+              ? "La edición está archivada: se queda como estaba."
+              : myParticipant.aceSpecies
+                ? `${myParticipant.aceNickname ?? myParticipant.aceSpecies} · pincha para cambiarlo`
+                : "Pincha en el hueco para elegirlo"}
           </p>
         </section>
       ) : null}
@@ -159,7 +171,7 @@ export default async function ProfilePage() {
           <FavoritesGrid
             participantId={myParticipant.id}
             favoritos={misFavoritos}
-            editable
+            editable={!cerrada}
           />
         </section>
       ) : null}

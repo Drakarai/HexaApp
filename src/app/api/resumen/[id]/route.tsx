@@ -26,7 +26,9 @@ import { formatDate } from "@/lib/utils";
  */
 
 const ANCHO = 1080;
-const ALTO = 1350;
+/** Vertical para el de grupo; en solitario hay menos que contar y va cuadrada */
+const ALTO_DE_GRUPO = 1350;
+const ALTO_EN_SOLITARIO = 1080;
 
 const TINTA = "#0b0b0e";
 const TARJETA = "#16161b";
@@ -171,12 +173,23 @@ export async function GET(
     .filter(Boolean)
     .join(" ");
 
-  const cifras = [
-    { valor: resumen.dias ?? "—", rotulo: resumen.dias === 1 ? "día" : "días" },
-    { valor: resumen.jornadas, rotulo: resumen.jornadas === 1 ? "jornada" : "jornadas" },
-    { valor: resumen.combates, rotulo: resumen.combates === 1 ? "combate" : "combates" },
-    { valor: resumen.bajas, rotulo: resumen.bajas === 1 ? "caído" : "caídos" },
-  ];
+  const ALTO = perfil.enSolitario ? ALTO_EN_SOLITARIO : ALTO_DE_GRUPO;
+  const dias = { valor: resumen.dias ?? "—", rotulo: resumen.dias === 1 ? "día" : "días" };
+  const caidos = { valor: resumen.bajas, rotulo: resumen.bajas === 1 ? "caído" : "caídos" };
+  // En solitario no hay jornadas ni combates: se cuenta su partida
+  const cifras = progreso
+    ? [
+        dias,
+        { valor: progreso.hitos.hechos, rotulo: progreso.hitos.hechos === 1 ? "hito" : "hitos" },
+        { valor: progreso.zonas.visitadas, rotulo: progreso.zonas.visitadas === 1 ? "zona" : "zonas" },
+        caidos,
+      ]
+    : [
+        dias,
+        { valor: resumen.jornadas, rotulo: resumen.jornadas === 1 ? "jornada" : "jornadas" },
+        { valor: resumen.combates, rotulo: resumen.combates === 1 ? "combate" : "combates" },
+        caidos,
+      ];
 
   const hayRivales = resumen.jugadores > 1;
   const menciones = [
@@ -452,7 +465,11 @@ export async function GET(
             ? `Lo que más mató: «${resumen.causaMasRepetida.texto}» (${resumen.causaMasRepetida.veces})`
             : competition.modality ?? ""}
         </span>
-        <span>{plural(resumen.wipeos, "wipeo")} · {plural(resumen.retos, "reto")}</span>
+        <span>
+          {perfil.enSolitario
+            ? plural(resumen.wipeos, "wipeo")
+            : `${plural(resumen.wipeos, "wipeo")} · ${plural(resumen.retos, "reto")}`}
+        </span>
       </div>
     </div>
   );

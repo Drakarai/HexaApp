@@ -246,6 +246,15 @@ export async function assertCanActForParticipant(participantId: string) {
   return { user, participant };
 }
 
+/**
+ * Para las pantallas: la edición está archivada y quien mira no la administra,
+ * así que no se le enseñan los formularios de apuntar. Es solo la cara visible
+ * de `assertEdicionAbierta`: la comprobación de verdad está en cada acción.
+ */
+export function soloLectura(competition: { status: string }, canManage: boolean) {
+  return competition.status === COMPETITION_STATUS.ARCHIVED && !canManage;
+}
+
 export const MENSAJE_EDICION_ARCHIVADA =
   "Esta edición está archivada: se puede mirar, pero ya no se apunta nada. Si hay que corregir algo, pídeselo a quien la administra.";
 

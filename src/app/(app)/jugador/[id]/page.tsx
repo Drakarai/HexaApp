@@ -7,6 +7,7 @@ import {
   canManageCompetition,
   getActiveCompetition,
   getStandings,
+  soloLectura,
 } from "@/lib/competition";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
@@ -41,7 +42,7 @@ export default async function PlayerPage({
   const participant = await prisma.participant.findUnique({
     where: { id },
     include: {
-      competition: { select: { id: true, name: true, maxPlayers: true } },
+      competition: { select: { id: true, name: true, maxPlayers: true, status: true } },
     },
   });
   if (!participant) notFound();
@@ -88,7 +89,10 @@ export default async function PlayerPage({
     : coronasDe(id, clears);
   const combates = await getResumenDeCombates(competitionId, id);
   const esMio = participant.userId === user.id;
+  // Los títulos son de la persona y se pueden elegir siempre; lo del locke
+  // (as, favoritos, wipeos) no, si la edición está archivada y no la administras
   const editable = esMio || canManage;
+  const editableDelLocke = editable && !soloLectura(participant.competition, canManage);
 
   // Los títulos son de la persona, no del participante: la siguen de una
   // edición a otra
@@ -179,7 +183,7 @@ export default async function PlayerPage({
                   reason: fila.ace.reason,
                   image: fila.ace.image,
                   detailImage: fila.ace.detailImage,
-                  editable,
+                  editable: editableDelLocke,
                 }}
               />
               <p className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">
@@ -216,7 +220,7 @@ export default async function PlayerPage({
       <Wipeos
         participantId={id}
         nombre={participant.displayName}
-        editable={editable}
+        editable={editableDelLocke}
         wipeos={wipeos.map((wipeo) => ({
           id: wipeo.id,
           ocurridoAt: formatDate(wipeo.ocurridoAt),
@@ -228,14 +232,14 @@ export default async function PlayerPage({
       <section className="card mb-4">
         <h2 className="section-title mb-1">Pokémon favoritos</h2>
         <p className="muted mb-4">
-          {editable
+          {editableDelLocke
             ? "Los que te han hecho el locke, vivos o muertos. Caben seis."
             : `Los pokémon del locke de ${participant.displayName}.`}
         </p>
         <FavoritesGrid
           participantId={id}
           favoritos={misFavoritos}
-          editable={editable}
+          editable={editableDelLocke}
         />
       </section>
 
