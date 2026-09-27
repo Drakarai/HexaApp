@@ -120,6 +120,8 @@ export async function copiarDeOtraEdicionAction(
         images: true,
         image: true,
         position: true,
+        // Los checkpoints de jornada son parte de cómo se juega, no de lo que pasó
+        jornadaDespues: true,
       },
     });
     if (caps.length) {

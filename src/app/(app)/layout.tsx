@@ -19,6 +19,8 @@ import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { APARTADOS_CON_AVISO, getAvisos } from "@/lib/novedades";
 import { Logo } from "@/components/logo";
+import { Icono } from "@/components/icono";
+import { COMPETITION_STATUS } from "@/lib/constants";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -130,7 +132,16 @@ export default async function AppLayout({
    * gimnasios propios que marcar.
    */
   const atajos: AtajoDeApunte[] = [];
-  if (active && (yo || puedeGestionar)) {
+  /**
+   * Una edición archivada es de solo lectura para quien no la administra (ver
+   * assertEdicionAbierta): sin atajos de apuntar, y con un aviso arriba para
+   * que se note antes de rellenar nada.
+   */
+  const archivadaParaMi =
+    active?.status === COMPETITION_STATUS.ARCHIVED && !puedeGestionar;
+  if (archivadaParaMi) {
+    // nada que apuntar
+  } else if (active && (yo || puedeGestionar)) {
     atajos.push({
       href: "/muertes?apuntar=1",
       icon: "💀",
@@ -138,7 +149,7 @@ export default async function AppLayout({
       hint: "Se abre el formulario de la Caja",
     });
   }
-  if (yo && regionDelJuego(active?.gameId)) {
+  if (!archivadaParaMi && yo && regionDelJuego(active?.gameId)) {
     atajos.push({
       href: "/mapa?apuntar=1",
       icon: "🗺️",
@@ -146,7 +157,7 @@ export default async function AppLayout({
       hint: "Busca la ruta y apunta lo que salió",
     });
   }
-  if (yo) {
+  if (!archivadaParaMi && yo) {
     atajos.push({
       href: "/level-caps?apuntar=1",
       icon: "🎯",
@@ -347,7 +358,19 @@ export default async function AppLayout({
        * apuntar**, que sobresale por encima de ella: con el `pb-24` de antes
        * el botón se comía la última fila de la pantalla.
        */}
-      <main className="min-w-0 flex-1 pb-32 lg:pb-16">{children}</main>
+      <main className="min-w-0 flex-1 pb-32 lg:pb-16">
+        {archivadaParaMi ? (
+          <div className="mb-5 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+            <Icono emoji="🗄️" className="mt-0.5 shrink-0 text-slate-400" />
+            <p>
+              <strong className="text-white">{active?.name} está archivada.</strong>{" "}
+              Se puede mirar entera, pero ya no se apunta nada. Para jugar, cambia
+              de edición en el selector de arriba.
+            </p>
+          </div>
+        ) : null}
+        {children}
+      </main>
 
       <EstadoDeConexion rutas={rutasParaGuardar} />
 

@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import {
+  assertEdicionAbierta,
   canManageCompetition,
+  edicionCerradaPara,
   getMyParticipant,
   requireCompetitionManager,
 } from "@/lib/competition";
@@ -100,7 +102,9 @@ export async function anadirAlBoteAction(
   if (!sorteo) return { error: "Ese sorteo ya no está." };
 
   try {
-    await assertPuedeTocarLocke(sorteo.competitionId);
+    const acceso = await assertPuedeTocarLocke(sorteo.competitionId);
+    // Un jugador no echa nada al bote de una edición archivada
+    if (acceso === "JUGADOR") await assertEdicionAbierta(sorteo.competitionId);
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -148,6 +152,8 @@ export async function quitarDelBoteAction(formData: FormData) {
   if (!esSuyo && !(await canManageCompetition(pokemon.sorteo.competitionId, user))) {
     return;
   }
+  // Lo suyo, pero en una edición archivada ya no (salvo que la administre)
+  if (await edicionCerradaPara(pokemon.sorteo.competitionId, user)) return;
 
   await prisma.sorteoPokemon.delete({ where: { id } });
   refrescar();

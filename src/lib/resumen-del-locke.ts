@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { getZonasMasMortiferas } from "@/lib/mapas";
 import { getMvpStates } from "@/lib/mvp";
+import { primerosEnPasar } from "@/lib/coronas";
 
 /**
  * Las cifras de un locke entero, para cerrarlo en el hall de la fama.
@@ -35,12 +36,21 @@ export type ResumenDelLocke = {
   masMvps: { displayName: string; color: string; cuantas: number } | null;
   /** Cuántos wipeos se comieron entre todos */
   wipeos: number;
+  /** Quién llegó primero a más gimnasios (la corona de los level caps) */
+  masCoronas: { displayName: string; color: string; cuantas: number } | null;
+  /**
+   * La causa de muerte que más se repite, tal y como se escribió la primera
+   * vez. Solo si se repite de verdad: una causa suelta no es una tendencia.
+   */
+  causaMasRepetida: { texto: string; veces: number } | null;
+  /** Cuánta gente jugó: con uno solo, "el que más" no compite con nadie */
+  jugadores: number;
 };
 
 export async function getResumenDelLocke(
   competitionId: string,
 ): Promise<ResumenDelLocke> {
-  const [competition, jornadas, combates, retos, bajasPorJugador, wipeos, zonas] =
+  const [competition, jornadas, combates, retos, bajasPorJugador, wipeos, zonas, marcas, causas] =
     await Promise.all([
       prisma.competition.findUnique({
         where: { id: competitionId },
@@ -63,6 +73,15 @@ export async function getResumenDelLocke(
       }),
       prisma.wipeo.count({ where: { participant: { competitionId } } }),
       getZonasMasMortiferas(competitionId, 1),
+      prisma.gymClear.findMany({
+        where: { levelCap: { competitionId } },
+        select: { participantId: true, levelCapId: true, clearedAt: true },
+      }),
+      prisma.death.findMany({
+        where: { participant: { competitionId }, cause: { not: null } },
+        select: { cause: true },
+        orderBy: { createdAt: "asc" },
+      }),
     ]);
 
   const participantes = await prisma.participant.findMany({
@@ -112,6 +131,31 @@ export async function getResumenDelLocke(
   // cuentan como cero: sin esto, el que acabó intacto no podría ganarlo
   for (const p of participantes) if (!bajas.has(p.id)) bajas.set(p.id, 0);
 
+  // Coronas: cuántos gimnasios pasó cada uno antes que nadie
+  const coronasPorJugador = new Map<string, number>();
+  for (const quienes of primerosEnPasar(marcas).values()) {
+    for (const id of quienes) {
+      coronasPorJugador.set(id, (coronasPorJugador.get(id) ?? 0) + 1);
+    }
+  }
+  const coronas = elQueMas(coronasPorJugador, (a, b) => b - a);
+
+  /**
+   * La causa más repetida. Se compara sin mayúsculas ni espacios de más
+   * ("Crítico de Scyther" y "crítico de scyther " son la misma), pero se
+   * enseña como la escribió el primero.
+   */
+  const porCausa = new Map<string, { texto: string; veces: number }>();
+  for (const { cause } of causas) {
+    const texto = cause!.trim();
+    if (!texto) continue;
+    const clave = texto.toLocaleLowerCase("es").replace(/\s+/g, " ");
+    const cuenta = porCausa.get(clave) ?? { texto, veces: 0 };
+    cuenta.veces += 1;
+    porCausa.set(clave, cuenta);
+  }
+  const causa = [...porCausa.values()].sort((a, b) => b.veces - a.veces)[0];
+
   const mas = elQueMas(bajas, (a, b) => b - a);
   const menos = elQueMas(bajas, (a, b) => a - b);
   const mvp = elQueMas(mvpsPorJugador, (a, b) => b - a);
@@ -149,5 +193,8 @@ export async function getResumenDelLocke(
     menosBajas: menos,
     masMvps: mvp && mvp.cuantas > 0 ? mvp : null,
     wipeos,
+    masCoronas: coronas && coronas.cuantas > 0 ? coronas : null,
+    causaMasRepetida: causa && causa.veces >= 2 ? causa : null,
+    jugadores: participantes.length,
   };
 }

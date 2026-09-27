@@ -21,7 +21,7 @@ import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
 import { urlsDeCarteles, urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { cx, formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
@@ -36,6 +36,14 @@ import {
 } from "@/lib/grafico-clasificacion";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { Icono } from "@/components/icono";
+import {
+  checkpointAbierto,
+  checkpointsDelLocke,
+  combatesPorJugar,
+  getJornadasParaCheckpoints,
+  jornadaJugada,
+  miParteDeLaJornada,
+} from "@/lib/checkpoints";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -53,7 +61,7 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, nextMatchday, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico] =
+  const [standings, levelCaps, activity, recentSpins, jornadas, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -68,16 +76,9 @@ export default async function DashboardPage() {
         take: 5,
         include: { roulette: { select: { name: true } } },
       }),
-      prisma.matchday.findFirst({
-        where: { competitionId: competition.id, matches: { some: { winnerId: null } } },
-        orderBy: { position: "asc" },
-        include: {
-          matches: {
-            orderBy: { position: "asc" },
-            include: { participantA: true, participantB: true },
-          },
-        },
-      }),
+      // Todas, y no solo la próxima: los checkpoints necesitan saber cuáles
+      // están jugadas para saber cuál toca
+      getJornadasParaCheckpoints(competition.id),
       // El mismo que ya ha pedido el layout: `getMyParticipant` va con
       // `cache()`, así que esto no es otro viaje a la base de datos
       getMyParticipant(competition.id, user.id),
@@ -179,6 +180,42 @@ export default async function DashboardPage() {
     estadoFinal.status !== "SIN_JORNADAS";
   const currentCap = capPendiente ?? levelCaps[levelCaps.length - 1];
 
+  /**
+   * Los checkpoints de jornada (ver lib/checkpoints.ts). Con uno abierto, la
+   * tarjeta del hito deja de enseñar el siguiente level cap y pasa a decir
+   * contra quién te toca: mientras no se juegue, no se sigue.
+   */
+  const pasadosPorTodos = capPendiente
+    ? levelCaps.indexOf(capPendiente)
+    : levelCaps.length;
+  const checkpoints = perfil.enSolitario ? [] : checkpointsDelLocke(levelCaps, jornadas);
+  const abierto = checkpointAbierto(checkpoints, pasadosPorTodos);
+
+  /** La jornada de la tarjeta de la derecha: la que toca, o la próxima por jugar */
+  const nextMatchday =
+    abierto?.jornada ??
+    jornadas.find(
+      (jornada) =>
+        !jornadaJugada(jornada) && (jornada.matches.length > 0 || jornada.royales.length > 0),
+    ) ??
+    null;
+  /** El checkpoint de esa jornada, para decir cuántos gimnasios faltan */
+  const checkpointDeLaProxima = nextMatchday
+    ? checkpoints.find((punto) => punto.jornada?.id === nextMatchday.id)
+    : undefined;
+  const gimnasiosQueFaltan =
+    checkpointDeLaProxima && !abierto
+      ? checkpointDeLaProxima.indiceDelHito - pasadosPorTodos + 1
+      : 0;
+
+  const fichaDe = new Map(standings.map((row) => [row.participantId, row]));
+  const miParte =
+    nextMatchday && myParticipant
+      ? miParteDeLaJornada(nextMatchday, myParticipant.id)
+      : null;
+  const rivalDeJornada =
+    miParte?.tipo === "rival" ? (fichaDe.get(miParte.rivalId) ?? null) : null;
+
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
   const [medallas, carteles, logos] = await Promise.all([
     urlsDeMedallas(currentCap ? [currentCap.id] : []),
@@ -217,8 +254,36 @@ export default async function DashboardPage() {
   const terminado =
     Boolean(campeon) && competition.status !== COMPETITION_STATUS.ARCHIVED;
 
-  /** La tarjeta de la izquierda: el hito que toca, o el final si ya no hay */
-  const tarjetaDelHito = tocaElFinal
+  /**
+   * La tarjeta de la izquierda: la jornada si hay un checkpoint abierto, si no
+   * el hito que toca, o el final si ya no hay.
+   */
+  const porJugarEnLaJornada = abierto?.jornada ? combatesPorJugar(abierto.jornada) : 0;
+  const tarjetaDelHito = abierto
+    ? {
+        label: "Toca jornada",
+        value: !abierto.jornada
+          ? "Sin crear"
+          : rivalDeJornada
+            ? rivalDeJornada.displayName
+            : miParte?.tipo === "royale"
+              ? "Royale"
+              : miParte?.tipo === "hecho"
+                ? "Jugado"
+                : `${porJugarEnLaJornada} por jugar`,
+        hint: !abierto.jornada
+          ? `Jornada ${abierto.numero} · tras ${abierto.hito.label}`
+          : rivalDeJornada
+            ? `Tu rival · ${abierto.jornada.label}`
+            : miParte?.tipo === "royale"
+              ? `Todos contra todos · ${abierto.jornada.label}`
+              : miParte?.tipo === "hecho"
+                ? `${abierto.jornada.label} · faltan ${porJugarEnLaJornada}`
+                : abierto.jornada.label,
+        images: rivalDeJornada?.avatarImage ? [rivalDeJornada.avatarImage] : [],
+        href: "/jornadas",
+      }
+    : tocaElFinal
     ? {
         label: formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO,
         value: campeon
@@ -376,9 +441,16 @@ export default async function DashboardPage() {
             El `self-start` es para que no se estire hasta lo que mida la
             clasificación: con seis jugadores y dos combates, la tarjeta
             quedaba con media pantalla de vacío debajo. */}
-        <section className={progreso ? "hidden" : "card self-start"}>
+        <section
+          className={cx(
+            progreso ? "hidden" : "card self-start",
+            abierto && "border-brand-400/50 ring-1 ring-brand-400/20",
+          )}
+        >
           <h2 className="section-title mb-4">
-            {nextMatchday
+            {abierto
+              ? "Toca jornada"
+              : nextMatchday
               ? "Próxima jornada"
               : campeon
               ? "Se acabó"
@@ -386,25 +458,104 @@ export default async function DashboardPage() {
               ? (formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO)
               : "Próxima jornada"}
           </h2>
-          {nextMatchday ? (
+          {abierto && !abierto.jornada ? (
+            <div className="space-y-3">
+              <p className="text-sm text-slate-300">
+                Todos habéis pasado <strong className="text-white">{abierto.hito.label}</strong>:
+                toca la jornada {abierto.numero}, pero todavía no está creada.
+              </p>
+              <Link href="/jornadas" className="btn-ghost btn-sm w-full justify-center">
+                {canManage ? "Crearla" : "Ir a jornadas"}
+              </Link>
+            </div>
+          ) : nextMatchday ? (
             <div className="space-y-3">
               <div>
                 <p className="font-medium text-white">{nextMatchday.label}</p>
                 {nextMatchday.milestone ? (
                   <p className="text-xs text-slate-500">{nextMatchday.milestone}</p>
                 ) : null}
+                {abierto ? (
+                  <p className="mt-1 text-xs text-brand-300">
+                    Todos habéis pasado {abierto.hito.label}: se juega antes de seguir.
+                  </p>
+                ) : gimnasiosQueFaltan > 0 && checkpointDeLaProxima ? (
+                  <p className="mt-1 text-xs text-slate-400">
+                    Se juega al pasar {checkpointDeLaProxima.hito.label} · falta
+                    {gimnasiosQueFaltan === 1 ? " 1 hito" : `n ${gimnasiosQueFaltan} hitos`}
+                  </p>
+                ) : null}
               </div>
-              <ul className="space-y-2">
-                {nextMatchday.matches.map((match) => (
-                  <li
-                    key={match.id}
-                    className="flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm"
-                  >
-                    <span className="truncate">{match.participantA.displayName}</span>
-                    <span className="text-xs text-slate-500">vs</span>
-                    <span className="truncate text-right">
-                      {match.participantB.displayName}
+
+              {/* Lo tuyo, arriba y en grande: es lo que se viene a mirar */}
+              {rivalDeJornada && myParticipant ? (
+                <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-300">
+                    Tu combate
+                  </p>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Avatar
+                        name={myParticipant.displayName}
+                        color={myParticipant.color}
+                        image={fichaDe.get(myParticipant.id)?.avatarImage ?? null}
+                        size={36}
+                      />
+                      <span className="truncate font-semibold text-white">
+                        {myParticipant.displayName}
+                      </span>
                     </span>
+                    <span className="shrink-0 text-xs text-slate-400">vs</span>
+                    <span className="flex min-w-0 items-center justify-end gap-2">
+                      <span className="truncate text-right font-semibold text-white">
+                        {rivalDeJornada.displayName}
+                      </span>
+                      <Avatar
+                        name={rivalDeJornada.displayName}
+                        color={rivalDeJornada.color}
+                        image={rivalDeJornada.avatarImage}
+                        size={36}
+                        participantId={rivalDeJornada.participantId}
+                      />
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+
+              <ul className="space-y-2">
+                {nextMatchday.matches
+                  .filter(
+                    (match) =>
+                      !(
+                        miParte?.tipo === "rival" && match.id === miParte.combateId
+                      ),
+                  )
+                  .map((match) => (
+                    <li
+                      key={match.id}
+                      className={cx(
+                        "flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm",
+                        match.winnerId && "opacity-50",
+                      )}
+                    >
+                      <span className="truncate">
+                        {fichaDe.get(match.participantAId)?.displayName ?? "—"}
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        {match.winnerId ? "jugado" : "vs"}
+                      </span>
+                      <span className="truncate text-right">
+                        {fichaDe.get(match.participantBId)?.displayName ?? "—"}
+                      </span>
+                    </li>
+                  ))}
+                {nextMatchday.royales.map((royale, indice) => (
+                  <li
+                    key={indice}
+                    className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm"
+                  >
+                    Battle Royale · {royale.participantes.length} jugadores
+                    {royale.ganado ? " · jugado" : ""}
                   </li>
                 ))}
               </ul>

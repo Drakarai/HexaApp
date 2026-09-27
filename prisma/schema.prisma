@@ -639,6 +639,12 @@ model LevelCap {
   // respaldo si "images" está vacío, y se vacía al guardar desde el formulario.
   image         String?
   position      Int      @default(0)
+  /**
+   * Checkpoint de jornada: cuando todos hayan pasado este hito, toca jugar la
+   * jornada antes de seguir, y la portada enseña el rival en vez del level cap
+   * siguiente. Qué jornada es sale del orden (ver lib/checkpoints.ts).
+   */
+  jornadaDespues Boolean @default(false)
 
   competition Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   clears      GymClear[]

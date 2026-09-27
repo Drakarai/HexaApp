@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { urlDeYouTube, videoDeYouTube } from "@/lib/youtube";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
-import { requireCompetitionManager } from "@/lib/competition";
+import { edicionCerradaPara, requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import {
   IMAGEN_SIN_CAMBIOS,
@@ -121,6 +121,24 @@ export async function deleteLevelCapAction(formData: FormData) {
 }
 
 /**
+ * Pone o quita el checkpoint de jornada de un level cap (ver lib/checkpoints.ts).
+ * La portada cambia con él, así que se refresca también.
+ */
+export async function toggleJornadaDespuesAction(formData: FormData) {
+  const id = String(formData.get("levelCapId") ?? "");
+  const levelCap = await prisma.levelCap.findUnique({ where: { id } });
+  if (!levelCap) return;
+  await requireCompetitionManager(levelCap.competitionId);
+
+  await prisma.levelCap.update({
+    where: { id },
+    data: { jornadaDespues: !levelCap.jornadaDespues },
+  });
+  revalidatePath("/level-caps");
+  revalidatePath("/");
+}
+
+/**
  * Comprueba que quien mira puede tocar lo de ese participante: o es suyo, o es
  * administrador. Lo usan la casilla de "superado" y el vídeo del gimnasio.
  */
@@ -142,6 +160,8 @@ async function puedoTocarLoDe(participantId: string) {
     });
     if (!myParticipant?.isAdmin) return null;
   }
+  // Lo suyo, pero no en una edición archivada, salvo que la administre
+  if (await edicionCerradaPara(participant.competitionId, me)) return null;
   return participant;
 }
 

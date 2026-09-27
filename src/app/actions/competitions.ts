@@ -228,6 +228,7 @@ export async function createCompetitionAction(
             badge: cap.badge,
             notes: cap.notes,
             position: cap.position,
+            jornadaDespues: cap.jornadaDespues,
           })),
         });
       }

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (**checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -47,9 +47,9 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 | Sección | Qué hace |
 | --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. Cada edición puede llevar **su logo**, que sale de fondo junto al nombre, fundido hacia el título; se sube en *Ediciones → Editar datos* y sin él la cabecera es la de siempre. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
+| **Resumen** | Level cap actual, clasificación, próxima jornada, actividad reciente y últimos giros. **Cuando toca jornada** (un checkpoint de los level caps), la primera cifra deja de ser el level cap y pasa a ser *Toca jornada* con **tu rival**, y en la tarjeta de la jornada tu combate sale arriba y en grande; si no toca aún, dice cuántos hitos faltan. Cada edición puede llevar **su logo**, que sale de fondo junto al nombre, fundido hacia el título; se sube en *Ediciones → Editar datos* y sin él la cabecera es la de siempre. **Cuando hay campeón, lo dice**: pone *Terminado* y la tarjeta de la próxima jornada pasa a ser la del ganador, con un enlace al hall de la fama. Cuando ya no queda ningún level cap por superar, esa primera tarjeta **pasa a ser la del final**: enseña a cada uno **su rival** de la llave que tenga por jugar, con su foto, y al acabar, el campeón. |
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. **Un cambio con el locke en marcha se avisa**: punto ámbar en *Reglas*, la sección marcada como *Cambiada el…* o *Añadida el…* —resaltada para quien no la ha visto— y un desplegable con **qué líneas ganó y perdió**, más cómo estaba entera. Al editar hay una casilla para no avisar, para las erratas. |
-| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
+| **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan. El administrador marca en un gimnasio **Jornada después** (checkpoint): entre ese gimnasio y el siguiente sale una franja con su jornada —jugada, *toca ahora* o cuándo toca—; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
 | **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
@@ -64,15 +64,15 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Puntos** / **Marcador** | Clasificación con desempates y **flechas ▲▼ de lo que ha subido o bajado cada uno desde la jornada anterior** (también en la portada), el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
-| **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
+| **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón, y **durante un minuto puede deshacerlo** (el servidor deja cinco). Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Sin conexión** | Las pantallas por las que ya se ha pasado **se siguen viendo** sin internet, con un aviso de que son de la última vez. Y lo que se apunta —capturas, bajas, gimnasios y notas— se guarda en el móvil y **se sube solo** al volver la línea, sin duplicarse aunque se reintente. Mientras tanto sale en su pantalla como "sin subir todavía". |
 | **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 26 páginas con fotos de cada pantalla, con su página de **lo nuevo** y una **chuleta de qué es cada icono**. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar (una edición archivada es **de solo lectura para los jugadores**: se ve entera, con un aviso arriba, pero no se apunta nada; quien la administra sí puede), gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
-| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. |
+| **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. Entre las menciones, **quién se llevó más coronas** y la **causa de muerte más repetida**. Y **Para el grupo**: el locke entero en **una imagen** —campeón con su equipo, podio, cifras y menciones— con botón de compartir (el menú del móvil) o descargar. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
 | **Instalación** | Pantalla de primer arranque que crea el administrador. |
@@ -2460,6 +2460,48 @@ botón lleva texto de verdad, ese texto manda. Comprobado después: no queda
 ningún botón de icono sin nombre accesible (los demás ya lo tenían por `title`,
 que es nombre válido).
 
+**Los checkpoints de jornada van por orden, no enlazados a una jornada.** Se
+marcan en el level cap con un sí/no (`jornadaDespues`) y el primero es la
+primera jornada, el segundo la segunda… (`lib/checkpoints.ts`). Guardar qué
+jornada es no valía: se ponen al montar el locke, cuando las jornadas aún no
+existen. La pantalla de level caps enseña en cada franja qué jornada le ha
+tocado, así que si alguien mete una jornada de más se ve al momento. Manda
+**el primero que todos han pasado y sigue sin jugar**, no el último: si una
+jornada se quedó sin jugar y el grupo siguió, esa se sigue debiendo. Y una
+jornada está jugada cuando no le queda ningún combate ni royale sin ganador.
+
+**Archivada es solo lectura, pero comprobado en el servidor.** La primera idea
+fue esconder los formularios, y no basta: la cola sin conexión y cualquier
+pestaña vieja siguen mandando. Así que va dentro de cada acción de jugador:
+`assertCanActForParticipant` lo mira para todo lo que pasa por ella (bajas,
+equipos, wipeos, hall, as, favoritos, royales) y el resto usa
+`assertPuedeApuntarEn` o `edicionCerradaPara` (capturas, gimnasios y sus
+vídeos, MVP, bote del sorteo, gastar objetos, girar la ruleta). **Las notas y
+la cobertura de tipos no**: son privadas y no apuntan nada del locke. Quien
+administra sí puede, para corregir lo que se quedó mal al cerrarla. En la
+pantalla hay un aviso arriba y desaparece el botón de apuntar; los formularios
+se siguen viendo y, si se envían, dicen por qué no.
+
+**Deshacer al gastar vive en la bolsa entera, no en la ficha.** Al gastar el
+último de algo, la ficha desaparece, y con ella se iba el aviso y el botón de
+deshacer; por eso el estado de gastar es uno para toda la bolsa, y la bolsa se
+pinta aunque esté vacía. Deshacer borra el apunte del uso —así se va también
+del muro— y devuelve una unidad. Un minuto en pantalla, cinco en el servidor:
+pasado ese rato lo gastado gastado está, y si hay que devolverlo lo hace la
+organización con su apunte.
+
+**La imagen del resumen se dibuja en el servidor con `next/og`** (satori), en
+`api/resumen/[id]`, con las letras de la app leídas de `node_modules`
+(`outputFileTracingIncludes` en `next.config.ts` para que viajen al desplegar).
+Tres cosas con truco: las imágenes se leen de la base de datos y no por
+`/api/imagen`, porque satori las pediría sin sesión (`buscarValor` salió de esa
+ruta a `lib/imagen-por-tipo.ts` para compartirla); van en WebP y satori no las
+pinta, así que se pasan a PNG con sharp; y Next no deja `react-dom/server` en
+una ruta, así que los seis iconos van con sus trazos copiados de lucide. El orden
+del hall y el podio salieron de la página a `lib/hall.ts` para que la imagen y
+el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
+`private` en la caché.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -2634,6 +2676,10 @@ Piezas con truco:
   `api/sincronizar/route.ts` es la puerta del servidor, que reutiliza las server
   actions de siempre. **Cuidado al cambiar una de esas acciones**: los apuntes
   que estén en cola llevan los campos de la versión anterior.
+- `lib/checkpoints.ts` — los checkpoints de jornada: qué jornada toca tras cada
+  level cap marcado, cuál está abierto y qué le toca a cada uno.
+- `lib/hall.ts` — el orden del hall y el podio; lo usan el hall y la imagen.
+- `app/api/resumen/[id]/route.tsx` — la imagen del resumen del locke (satori).
 - `public/sw.js` — el service worker: guarda cada pantalla al visitarla (pidiendo
   siempre al servidor primero) y los sprites y mapas, que son inmutables, y las
   guías en PDF por su huella (ver `unaGuia`; la versión va en v5). Al
@@ -2770,12 +2816,6 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
-**Visto y sin hacer**: un locke **archivado se sigue pudiendo tocar** entero
-—bajas, puntos, jornadas—. No es un fallo, porque "se conserva entero" es lo que
-se decidió, pero quien cambie de edición sin fijarse puede apuntar algo en la
-que no es. Si molesta, lo suyo sería dejar las archivadas de solo lectura salvo
-para quien la administra.
-
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
 Mapas; las zonas no se mueven, porque se guardan en unidades del lienzo y no en
@@ -2806,11 +2846,10 @@ Ideas comentadas y no hechas:
 - **Enlace público de solo lectura** para que gente de fuera vea la
   clasificación sin cuenta. Hoy no hay nada visible sin sesión.
 - **Resumen de jornada como imagen** para pegarlo en el grupo de WhatsApp.
-- **Exportar una edición archivada** a PDF o imagen como recuerdo, ahora que
-  el hall de la fama da un buen cierre. (Distinto de las copias de seguridad,
-  que son para restaurar y no para enseñar.)
-- **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
-  sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
+- **Avisos en el móvil** (notificaciones push) de resultados, retos, reglas
+  cambiadas y votaciones. Necesita dos claves en Vercel.
+- **Logros automáticos** además de los títulos a mano ("sin bajas hasta la 4ª
+  medalla", "tres coronas"…).
 
 Hay una **guía de uso en PDF** hecha con capturas de la aplicación (26
 páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
@@ -3115,3 +3154,8 @@ lugar de destruir datos, y hay que avisar antes.
     los datos de la edición (14).
 76. **La guía ya no se queda vieja**: el PDF va con la huella de su contenido
     en la dirección y el service worker guarda solo la última.
+77. **Checkpoints de jornada, archivadas de solo lectura, deshacer y resumen
+    en imagen**: tras qué gimnasios toca jornada (y la portada enseña tu
+    rival), las ediciones archivadas ya no se tocan salvo quien las lleva, un
+    minuto para deshacer un gasto, y el locke terminado en una imagen para
+    mandar al grupo desde el hall.

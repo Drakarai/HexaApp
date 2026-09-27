@@ -54,19 +54,23 @@ export default async function BolsaPage() {
       <Cabecera admin={admin} />
 
       {objetos.length ? (
-        <>
-          <p className="mb-3 text-xs uppercase tracking-wide text-slate-500">
-            {objetos.length} {objetos.length === 1 ? "objeto" : "objetos"} ·{" "}
-            {unidades} {unidades === 1 ? "unidad" : "unidades"}
-          </p>
-          <Bolsa objetos={objetos} puedoUsar />
-        </>
-      ) : (
-        <EmptyState
-          title="La bolsa está vacía"
-          hint="Los objetos los reparte quien administra el locke: pídeselos."
-        />
-      )}
+        <p className="mb-3 text-xs uppercase tracking-wide text-slate-500">
+          {objetos.length} {objetos.length === 1 ? "objeto" : "objetos"} ·{" "}
+          {unidades} {unidades === 1 ? "unidad" : "unidades"}
+        </p>
+      ) : null}
+      {/* La bolsa se pinta también vacía: al gastar lo último, el aviso con el
+          botón de deshacer vive dentro de ella y tiene que seguir ahí */}
+      <Bolsa
+        objetos={objetos}
+        puedoUsar
+        vacia={
+          <EmptyState
+            title="La bolsa está vacía"
+            hint="Los objetos los reparte quien administra el locke: pídeselos."
+          />
+        }
+      />
 
       {usos.length ? (
         <section className="mt-8">

@@ -3,7 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireCreador, requireUser } from "@/lib/auth";
-import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
+import {
+  assertPuedeApuntarEn,
+  getActiveCompetition,
+  getMyParticipant,
+} from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
 import {
   guardarPorContenido,
@@ -376,14 +380,23 @@ async function miParticipante() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return null;
-  return getMyParticipant(competition.id, user.id);
+  const participante = await getMyParticipant(competition.id, user.id);
+  if (!participante) return null;
+  // En una edición archivada el mapa ya no se toca (ver assertEdicionAbierta)
+  await assertPuedeApuntarEn(competition.id, user);
+  return participante;
 }
 
 export async function apuntarCapturaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const participante = await miParticipante();
+  let participante;
+  try {
+    participante = await miParticipante();
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
   if (!participante) {
     return { error: "No juegas esta edición, así que no tienes mapa." };
   }

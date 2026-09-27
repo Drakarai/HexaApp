@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser, requireCreador, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
+  edicionCerradaPara,
   requireCompetitionManager,
 } from "@/lib/competition";
 import { imagenEditada, sanitizeImageValue } from "@/lib/image";
@@ -257,10 +258,22 @@ export async function quitarObjetoAction(formData: FormData) {
  * Si el objeto tiene opciones hay que decir cuál se elige; el menú lo enseña la
  * página, pero que la opción sea de ese objeto se comprueba aquí.
  */
+/**
+ * Lo que devuelve gastar algo: además del mensaje, **qué ficha** lo pidió
+ * —el estado es uno para toda la bolsa, y el error tiene que salir debajo del
+ * objeto que era— y el apunte del gasto, para poder deshacerlo.
+ */
+export type EstadoDeUso =
+  | { error?: string; success?: string; entryId?: string; usoId?: string }
+  | null;
+
+/** Cuánto tiempo hay para arrepentirse de gastar algo */
+const MINUTOS_PARA_DESHACER = 5;
+
 export async function usarObjetoAction(
-  _prev: FormState,
+  _prev: EstadoDeUso,
   formData: FormData,
-): Promise<FormState> {
+): Promise<EstadoDeUso> {
   const usuario = await getCurrentUser();
   if (!usuario) return { error: "Tienes que iniciar sesión." };
 
@@ -293,6 +306,9 @@ export async function usarObjetoAction(
   ) {
     return { error: "Esa bolsa no es tuya." };
   }
+  if (await edicionCerradaPara(entrada.participant.competitionId, usuario)) {
+    return { error: "Esta edición está archivada: lo de su bolsa ya no se gasta." };
+  }
 
   const opcionId = String(formData.get("optionId") ?? "").trim() || null;
   const opciones = entrada.item.options;
@@ -318,7 +334,7 @@ export async function usarObjetoAction(
    * Bajar la cantidad y apuntar el gasto van juntos: si se apuntara el uso y
    * fallara el descuento, el objeto se podría gastar dos veces.
    */
-  await prisma.$transaction([
+  const [, uso] = await prisma.$transaction([
     entrada.quantity <= 1
       ? prisma.bagEntry.delete({ where: { id: entryId } })
       : prisma.bagEntry.update({
@@ -341,5 +357,56 @@ export async function usarObjetoAction(
     success: opcion
       ? `Has usado ${entrada.item.name} y te quedas con ${opcion.name}.`
       : `Has usado ${entrada.item.name}.`,
+    entryId,
+    usoId: uso.id,
   };
+}
+
+/**
+ * Deshacer un gasto hecho sin querer: el objeto vuelve a la bolsa y el apunte
+ * se borra, así que desaparece también del muro de actividad. Solo durante
+ * unos minutos: pasado ese rato, lo gastado gastado está —ya se habrá visto en
+ * el muro y alguien habrá contado con ello—, y si hay que devolverlo lo hace
+ * la organización a mano, con su apunte.
+ */
+export async function deshacerUsoAction(usoId: string): Promise<FormState> {
+  const usuario = await getCurrentUser();
+  if (!usuario) return { error: "Tienes que iniciar sesión." };
+
+  const uso = await prisma.bagUse.findUnique({
+    where: { id: usoId },
+    include: { participant: { select: { userId: true, competitionId: true } } },
+  });
+  if (!uso) return { error: "Ese gasto ya estaba deshecho." };
+
+  const suyo = uso.participant.userId === usuario.id;
+  if (!suyo && !(await canManageCompetition(uso.participant.competitionId, usuario))) {
+    return { error: "Ese gasto no es tuyo." };
+  }
+  if (await edicionCerradaPara(uso.participant.competitionId, usuario)) {
+    return { error: "Esta edición está archivada: ya no se deshace nada." };
+  }
+  if (Date.now() - uso.usedAt.getTime() > MINUTOS_PARA_DESHACER * 60_000) {
+    return {
+      error: `Solo se puede deshacer durante ${MINUTOS_PARA_DESHACER} minutos. Pídeselo a quien administra.`,
+    };
+  }
+  // Si el objeto se ha borrado del catálogo mientras tanto, no hay qué devolver
+  if (!uso.itemId) {
+    return { error: "Ese objeto ya no existe en el catálogo: no se puede devolver." };
+  }
+
+  await prisma.$transaction([
+    prisma.bagEntry.upsert({
+      where: {
+        participantId_itemId: { participantId: uso.participantId, itemId: uso.itemId },
+      },
+      update: { quantity: { increment: 1 } },
+      create: { participantId: uso.participantId, itemId: uso.itemId, quantity: 1 },
+    }),
+    prisma.bagUse.delete({ where: { id: uso.id } }),
+  ]);
+
+  refrescar();
+  return { success: `${uso.itemName} vuelve a la bolsa.` };
 }

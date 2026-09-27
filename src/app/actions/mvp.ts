@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import {
+  edicionCerradaPara,
   getMyParticipant,
   requireCompetitionManager,
 } from "@/lib/competition";
@@ -29,6 +30,8 @@ export async function castMvpVoteAction(formData: FormData) {
   // que están fuera, solo los que perdieron el locke: ver lib/wipeos.ts
   const voter = await getMyParticipant(matchday.competitionId, me.id);
   if (!voter || !puedeVotarElMvp(voter)) return;
+  // En una edición archivada la votación se queda como quedó
+  if (await edicionCerradaPara(matchday.competitionId, me)) return;
 
   // El candidato tiene que ser de esa misma jornada
   const candidate = await prisma.matchPokemon.findFirst({
@@ -58,6 +61,7 @@ export async function clearMvpVoteAction(formData: FormData) {
 
   const voter = await getMyParticipant(matchday.competitionId, me.id);
   if (!voter || !puedeVotarElMvp(voter)) return;
+  if (await edicionCerradaPara(matchday.competitionId, me)) return;
 
   await prisma.mvpVote.deleteMany({ where: { matchdayId, voterId: voter.id } });
   revalidatePath("/jornadas");

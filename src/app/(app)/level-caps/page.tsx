@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
@@ -17,7 +19,15 @@ import { primerosEnPasar } from "@/lib/coronas";
 import { MatchTeams } from "@/components/match-team";
 import { cx, readableTextColor } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
-import { deleteLevelCapAction } from "@/app/actions/level-caps";
+import {
+  deleteLevelCapAction,
+  toggleJornadaDespuesAction,
+} from "@/app/actions/level-caps";
+import {
+  checkpointAbierto,
+  checkpointsDelLocke,
+  getJornadasParaCheckpoints,
+} from "@/lib/checkpoints";
 import { MarcarGimnasio } from "./marcar-gimnasio";
 import { Pendientes } from "@/components/pendientes";
 import {
@@ -41,7 +51,7 @@ export default async function LevelCapsPage({
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, participants, levelCaps] = await Promise.all([
+  const [canManage, participants, levelCaps, jornadas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getParticipants(competition.id),
     prisma.levelCap.findMany({
@@ -49,6 +59,7 @@ export default async function LevelCapsPage({
       orderBy: { position: "asc" },
       include: { clears: true, videos: true },
     }),
+    getJornadasParaCheckpoints(competition.id),
   ]);
 
   /** Los que siguen jugando: son los que tienen que superar cada gimnasio */
@@ -84,6 +95,24 @@ export default async function LevelCapsPage({
           cap.clears.map((clear) => ({ ...clear, levelCapId: cap.id })),
         ),
       );
+
+  /**
+   * Los checkpoints de jornada. En solitario no hay jornadas, así que ni se
+   * enseñan ni se pueden poner.
+   */
+  const checkpoints = perfil.enSolitario
+    ? []
+    : checkpointsDelLocke(levelCaps, jornadas);
+  const pasadoPorTodos = (levelCap: (typeof levelCaps)[number]) =>
+    activos.length > 0 &&
+    activos.every((jugador) =>
+      levelCap.clears.some((clear) => clear.participantId === jugador.id),
+    );
+  const primeroSinPasar = levelCaps.findIndex((cap) => !pasadoPorTodos(cap));
+  const abierto = checkpointAbierto(
+    checkpoints,
+    primeroSinPasar === -1 ? levelCaps.length : primeroSinPasar,
+  );
 
   const clearedSet = new Set(
     levelCaps.flatMap((cap) =>
@@ -185,9 +214,13 @@ export default async function LevelCapsPage({
               activos.length > 0 && clearedCount === activos.length;
             const images = medallas(levelCap.id);
 
+            const checkpoint = checkpoints.find(
+              (punto) => punto.hito.id === levelCap.id,
+            );
+
             return (
+              <Fragment key={levelCap.id}>
               <article
-                key={levelCap.id}
                 id={`cap-${levelCap.id}`}
                 className={cx(
                   "card relative isolate overflow-hidden transition",
@@ -222,6 +255,27 @@ export default async function LevelCapsPage({
                   </div>
 
                   {canManage ? (
+                    <div className="flex shrink-0 items-center gap-1">
+                    {perfil.enSolitario ? null : (
+                      <form action={toggleJornadaDespuesAction}>
+                        <input type="hidden" name="levelCapId" value={levelCap.id} />
+                        <button
+                          type="submit"
+                          className={cx(
+                            "btn-ghost btn-sm",
+                            levelCap.jornadaDespues && "text-brand-300",
+                          )}
+                          title={
+                            levelCap.jornadaDespues
+                              ? "Quitar la jornada de después de este hito"
+                              : "Cuando todos pasen este hito, toca jornada"
+                          }
+                        >
+                          <Icono emoji="⚔️" />{" "}
+                          {levelCap.jornadaDespues ? "Quitar jornada" : "Jornada después"}
+                        </button>
+                      </form>
+                    )}
                     <form action={deleteLevelCapAction}>
                       <input
                         type="hidden"
@@ -234,6 +288,7 @@ export default async function LevelCapsPage({
                         ✕
                       </ConfirmSubmit>
                     </form>
+                    </div>
                   ) : null}
                 </div>
 
@@ -321,6 +376,23 @@ export default async function LevelCapsPage({
                   />
                 ) : null}
               </article>
+              {checkpoint ? (
+                <FranjaDeJornada
+                  numero={checkpoint.numero}
+                  hito={levelCap.label}
+                  jornada={checkpoint.jornada?.label ?? null}
+                  estado={
+                    checkpoint.jugada
+                      ? "jugada"
+                      : abierto?.hito.id === levelCap.id
+                        ? "toca"
+                        : pasadoPorTodos(levelCap)
+                          ? "debida"
+                          : "espera"
+                  }
+                />
+              ) : null}
+              </Fragment>
             );
           })}
         </div>
@@ -357,5 +429,59 @@ export default async function LevelCapsPage({
         </p>
       ) : null}
     </>
+  );
+}
+
+/**
+ * La franja que separa los gimnasios donde toca jornada. Va a lo ancho de la
+ * rejilla para que se lea como un corte en el camino, no como otra tarjeta.
+ */
+function FranjaDeJornada({
+  numero,
+  hito,
+  jornada,
+  estado,
+}: {
+  numero: number;
+  hito: string;
+  /** El nombre de su jornada, o null si todavía no está creada */
+  jornada: string | null;
+  /** toca: es la de ahora · debida: todos pasaron pero manda otra de antes */
+  estado: "jugada" | "toca" | "debida" | "espera";
+}) {
+  const nombre = jornada ?? `Jornada ${numero}`;
+  return (
+    <Link
+      href="/jornadas"
+      className={cx(
+        "flex items-center gap-3 rounded-xl border border-dashed px-4 py-2.5 text-sm transition xl:col-span-2",
+        estado === "toca"
+          ? "border-brand-400/60 bg-brand-600/15 text-white hover:bg-brand-600/25"
+          : estado === "jugada"
+            ? "border-emerald-500/25 text-slate-400 hover:border-emerald-500/40"
+            : "border-white/10 text-slate-400 hover:border-white/20",
+      )}
+    >
+      <Icono emoji="⚔️" />
+      <span className="min-w-0 flex-1">
+        <strong className="font-semibold text-slate-100">{nombre}</strong>
+        <span className="text-slate-500">
+          {" · "}
+          {estado === "jugada"
+            ? "jugada"
+            : estado === "toca"
+              ? "toca ahora, antes del siguiente gimnasio"
+              : estado === "debida"
+                ? "pendiente, después de la de antes"
+                : `cuando todos pasen ${hito}`}
+          {jornada ? "" : " · sin crear todavía"}
+        </span>
+      </span>
+      {estado === "toca" ? (
+        <span className="chip shrink-0 border-brand-400/40 text-brand-200">Ahora</span>
+      ) : estado === "jugada" ? (
+        <span className="shrink-0 text-emerald-400">✓</span>
+      ) : null}
+    </Link>
   );
 }

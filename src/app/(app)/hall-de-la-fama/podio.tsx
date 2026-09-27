@@ -2,18 +2,8 @@ import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 
-export type EnElPodio = {
-  participantId: string;
-  displayName: string;
-  color: string;
-  avatarImage: string | null;
-  /** 1, 2 o 3 */
-  puesto: number;
-  /** "Campeón", "Subcampeón", "Tercero" */
-  titulo: string;
-  /** De qué sale ese puesto: de la final o de la clasificación */
-  comoLoGano: string;
-};
+export type { EnElPodio } from "@/lib/hall";
+import type { EnElPodio } from "@/lib/hall";
 
 const CAJONES = [
   {

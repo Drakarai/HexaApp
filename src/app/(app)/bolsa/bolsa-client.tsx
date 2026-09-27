@@ -1,8 +1,12 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
-import { usarObjetoAction } from "@/app/actions/bolsa";
+import {
+  deshacerUsoAction,
+  usarObjetoAction,
+  type EstadoDeUso,
+} from "@/app/actions/bolsa";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import type { ObjetoEnBolsa, OpcionDeObjeto } from "@/lib/bolsa";
@@ -20,34 +24,114 @@ import { Icono } from "@/components/icono";
 export function Bolsa({
   objetos,
   puedoUsar,
+  vacia = null,
 }: {
   objetos: ObjetoEnBolsa[];
   puedoUsar: boolean;
+  /** Lo que se enseña si no queda nada */
+  vacia?: React.ReactNode;
 }) {
+  /**
+   * Gastar va con **un solo estado para toda la bolsa**, no uno por ficha: si
+   * era el último, la ficha desaparece en cuanto se gasta, y con ella se iba
+   * el aviso —y ahora, el botón de deshacer—. Se apunta qué ficha lo pidió
+   * para enseñar los errores debajo de la suya.
+   */
+  const [estado, usar] = useActionState<EstadoDeUso, FormData>(
+    usarObjetoAction,
+    null,
+  );
+  const [ficha, setFicha] = useState<string | null>(null);
+  const enviar = (datos: FormData) => {
+    setFicha(String(datos.get("entryId") ?? ""));
+    usar(datos);
+  };
+
   return (
-    <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {objetos.map((objeto) => (
-        <FichaDeObjeto
-          key={objeto.entryId}
-          objeto={objeto}
-          puedoUsar={puedoUsar}
-        />
-      ))}
-    </ul>
+    <>
+      {estado?.usoId ? <Deshacer key={estado.usoId} estado={estado} /> : null}
+      {objetos.length ? null : vacia}
+      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        {objetos.map((objeto) => (
+          <FichaDeObjeto
+            key={objeto.entryId}
+            objeto={objeto}
+            puedoUsar={puedoUsar}
+            usar={enviar}
+            estado={ficha === objeto.entryId && estado?.error ? estado : null}
+            usoReciente={estado?.entryId === objeto.entryId ? estado.usoId : undefined}
+          />
+        ))}
+      </ul>
+    </>
+  );
+}
+
+/** Cuánto se enseña el botón de deshacer (el servidor deja algo más) */
+const SEGUNDOS_PARA_DESHACER = 60;
+
+/**
+ * El aviso de lo que se acaba de gastar, con su botón de arrepentirse durante
+ * un minuto: gastar se hace de un toque, y darle sin querer no tenía vuelta
+ * atrás.
+ */
+function Deshacer({ estado }: { estado: NonNullable<EstadoDeUso> }) {
+  const [resultado, setResultado] = useState<FormState>(null);
+  const [deshaciendo, empezar] = useTransition();
+  const [aTiempo, setATiempo] = useState(true);
+
+  useEffect(() => {
+    const reloj = setTimeout(() => setATiempo(false), SEGUNDOS_PARA_DESHACER * 1000);
+    return () => clearTimeout(reloj);
+  }, []);
+
+  if (resultado?.success) {
+    return (
+      <p className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+        <Icono emoji="↩️" /> {resultado.success}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] px-4 py-3 text-sm">
+      <p className="min-w-0 text-emerald-100">
+        <Icono emoji="✅" /> {estado.success}
+        {resultado?.error ? (
+          <span className="mt-1 block text-rose-300">{resultado.error}</span>
+        ) : null}
+      </p>
+      {aTiempo ? (
+        <button
+          type="button"
+          className="btn-ghost btn-sm shrink-0"
+          disabled={deshaciendo}
+          onClick={() =>
+            empezar(async () => setResultado(await deshacerUsoAction(estado.usoId!)))
+          }
+        >
+          {deshaciendo ? "Deshaciendo…" : "Deshacer"}
+        </button>
+      ) : null}
+    </div>
   );
 }
 
 function FichaDeObjeto({
   objeto,
   puedoUsar,
+  usar,
+  estado,
+  usoReciente,
 }: {
   objeto: ObjetoEnBolsa;
   puedoUsar: boolean;
+  usar: (datos: FormData) => void;
+  /** El error de gastar esta, si lo hubo */
+  estado: EstadoDeUso;
+  /** El último gasto de esta ficha: al llegar uno nuevo, el menú de elegir sobra */
+  usoReciente?: string;
 }) {
-  const [estado, usar] = useActionState<FormState, FormData>(
-    usarObjetoAction,
-    null,
-  );
   const [eligiendo, setEligiendo] = useState(false);
   const esGrupo = objeto.item.isGroup;
   const dentro = objeto.item.options;
@@ -59,8 +143,8 @@ function FichaDeObjeto({
 
   // Elegida una opción, el menú sobra: la fila ya se ha ido o ha bajado
   useEffect(() => {
-    if (estado?.success) setEligiendo(false);
-  }, [estado]);
+    if (usoReciente) setEligiendo(false);
+  }, [usoReciente]);
 
   return (
     <li className="card flex flex-col gap-3">

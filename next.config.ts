@@ -25,6 +25,19 @@ function huella(fichero: string) {
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["@prisma/client", "bcryptjs"],
+  /**
+   * Las letras de la imagen del resumen del locke se leen del disco al
+   * dibujarla. Sin decírselo, al desplegar no viajarían con esa ruta: Next solo
+   * se lleva los ficheros que ve importados.
+   */
+  outputFileTracingIncludes: {
+    "/api/resumen/[id]": [
+      "./node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff",
+      "./node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff",
+      "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff",
+      "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff",
+    ],
+  },
   env: {
     HUELLA_GUIA_USO: huella("guia-de-uso.pdf"),
     HUELLA_GUIA_ADMIN: huella("guia-de-administrador.pdf"),

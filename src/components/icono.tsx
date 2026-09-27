@@ -65,6 +65,8 @@ import {
   WifiOff,
   Wrench,
   Zap,
+  Undo2,
+  Share2,
   type LucideIcon,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -157,6 +159,8 @@ const LINEA: Record<string, Linea> = {
   "✨": { icono: Sparkles },
   "🖼️": { icono: ImagePlus },
   "⬇️": { icono: Download },
+  "↩️": { icono: Undo2 },
+  "📤": { icono: Share2 },
   "👁": { icono: Eye },
   "🚫": { icono: EyeOff },
   // Gestión

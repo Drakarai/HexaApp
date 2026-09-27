@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import {
   canManageCompetition,
+  edicionCerradaPara,
   requireCompetitionManager,
 } from "@/lib/competition";
 import { PALETTE } from "@/lib/constants";
@@ -296,6 +297,9 @@ export async function spinRouletteAction(
     });
     if (!participant) {
       return { ok: false, error: "No eres jugador de esta competición." };
+    }
+    if (await edicionCerradaPara(roulette.competitionId, me)) {
+      return { ok: false, error: "Esta edición está archivada: su ruleta ya no se gira." };
     }
     // Los tickets son de cada ruleta: el de otra no vale aquí
     const balance = await prisma.rouletteTicket.aggregate({

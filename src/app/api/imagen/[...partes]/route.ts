@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { FUENTES, type TipoConsultable } from "@/lib/imagenes";
 import { resolverImagen } from "@/lib/almacen-de-imagenes";
-import { effectiveImages } from "@/lib/image";
+import { buscarValor } from "@/lib/imagen-por-tipo";
 
 /**
  * Sirve una imagen guardada en la base de datos como un archivo de verdad.
@@ -61,68 +60,6 @@ function respuestaDeImagen(valor: string) {
       "Cache-Control": CACHE,
     },
   });
-}
-
-async function buscarValor(
-  tipo: string,
-  id: string,
-  indice: string | undefined,
-): Promise<string | null> {
-  /**
-   * `/api/imagen/c/<clave>`: la imagen del almacén, directa. No hace falta
-   * pasar por ninguna fila, y por eso la comparten todas las que la usen.
-   */
-  if (tipo === "c") {
-    const imagen = await prisma.imagen.findUnique({
-      where: { clave: decodeURIComponent(id) },
-      select: { datos: true },
-    });
-    return imagen?.datos ?? null;
-  }
-
-  if (tipo === "medalla") {
-    const cap = await prisma.levelCap.findUnique({
-      where: { id },
-      select: { images: true, image: true },
-    });
-    if (!cap) return null;
-    const lista = effectiveImages(cap);
-    return lista[Number(indice ?? 0)] ?? null;
-  }
-
-  // El cartel del final: la lista de la competición
-  if (tipo === "cartel") {
-    const edicion = await prisma.competition.findUnique({
-      where: { id },
-      select: { finalImages: true },
-    });
-    return edicion?.finalImages[Number(indice ?? 0)] ?? null;
-  }
-
-  // Las medallas de una plantilla son una lista, como las del level cap
-  if (tipo === "medalla-plantilla") {
-    const item = await prisma.levelCapTemplateItem.findUnique({
-      where: { id },
-      select: { images: true },
-    });
-    if (!item) return null;
-    return item.images[Number(indice ?? 0)] ?? null;
-  }
-
-  const fuente = FUENTES[tipo as TipoConsultable];
-  if (!fuente) return null;
-
-  // El modelo de Prisma es el nombre de la tabla con la primera en minúscula
-  const modelo = (fuente.tabla.charAt(0).toLowerCase() +
-    fuente.tabla.slice(1)) as "user";
-  const fila = (await (prisma[modelo] as {
-    findUnique: (args: unknown) => Promise<Record<string, string | null> | null>;
-  }).findUnique({
-    where: { id },
-    select: { [fuente.columna]: true },
-  })) as Record<string, string | null> | null;
-
-  return fila?.[fuente.columna] ?? null;
 }
 
 export async function GET(

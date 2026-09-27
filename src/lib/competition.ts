@@ -237,11 +237,59 @@ export async function assertCanActForParticipant(participantId: string) {
   });
   if (!participant) throw new Error("Participante no encontrado.");
 
-  if (participant.userId === user.id) return { user, participant };
-  if (await canManageCompetition(participant.competitionId, user)) {
-    return { user, participant };
+  const mando = await canManageCompetition(participant.competitionId, user);
+  if (participant.userId !== user.id && !mando) {
+    throw new Error("No puedes modificar los datos de otro jugador.");
   }
-  throw new Error("No puedes modificar los datos de otro jugador.");
+  // Lo tuyo sí, pero no en una edición archivada, salvo que la lleves tú
+  if (!mando) await assertEdicionAbierta(participant.competitionId);
+  return { user, participant };
+}
+
+export const MENSAJE_EDICION_ARCHIVADA =
+  "Esta edición está archivada: se puede mirar, pero ya no se apunta nada. Si hay que corregir algo, pídeselo a quien la administra.";
+
+/**
+ * Una edición archivada es **de solo lectura para los jugadores**. Se conserva
+ * entera, que es lo que se decidió, pero antes se podía seguir tocando todo, y
+ * quien cambiaba de edición sin fijarse acababa apuntando una baja o una
+ * captura en la que no era. Quien la administra sí puede, para corregir algo
+ * que se quedó mal al cerrarla.
+ *
+ * Se comprueba **en cada acción** de las que hace un jugador, no escondiendo
+ * botones: la cola sin conexión y cualquier formulario viejo llegan igual.
+ * Quien llama ya ha decidido que no administra; aquí solo se mira la edición.
+ */
+export async function assertEdicionAbierta(competitionId: string) {
+  const competition = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { status: true },
+  });
+  if (competition?.status === COMPETITION_STATUS.ARCHIVED) {
+    throw new Error(MENSAJE_EDICION_ARCHIVADA);
+  }
+}
+
+/**
+ * Lo mismo pero con la comprobación de quién manda dentro, para las acciones
+ * que no pasan por `assertCanActForParticipant`: si administra, puede.
+ */
+export async function assertPuedeApuntarEn(competitionId: string, user: CurrentUser) {
+  if (await canManageCompetition(competitionId, user)) return;
+  await assertEdicionAbierta(competitionId);
+}
+
+/**
+ * Para las acciones que no devuelven nada y, si algo no cuadra, simplemente no
+ * hacen nada: dice si la edición está cerrada para esta persona.
+ */
+export async function edicionCerradaPara(competitionId: string, user: CurrentUser) {
+  try {
+    await assertPuedeApuntarEn(competitionId, user);
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 /**

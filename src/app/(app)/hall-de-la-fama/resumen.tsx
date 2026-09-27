@@ -104,6 +104,16 @@ export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
           detalle: `${resumen.menosBajas.cuantas} ${plural(resumen.menosBajas.cuantas, "caído")}`,
         }
       : null,
+    // En solitario las coronas serían todas suyas: no es mención de nada
+    resumen.masCoronas && resumen.jugadores > 1
+      ? {
+          emoji: "👑",
+          rotulo: "El primero en los gimnasios",
+          nombre: resumen.masCoronas.displayName,
+          color: resumen.masCoronas.color,
+          detalle: `${resumen.masCoronas.cuantas} ${plural(resumen.masCoronas.cuantas, "corona")}`,
+        }
+      : null,
   ].filter((mencion) => mencion !== null);
 
   return (
@@ -136,8 +146,16 @@ export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
         />
       </div>
 
+      {resumen.causaMasRepetida ? (
+        <p className="mt-3 text-sm text-slate-400">
+          La causa que más se repite en la caja:{" "}
+          <strong className="text-slate-200">«{resumen.causaMasRepetida.texto}»</strong>,{" "}
+          {resumen.causaMasRepetida.veces} veces.
+        </p>
+      ) : null}
+
       {menciones.length ? (
-        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           {menciones.map((mencion) => (
             <Mencion key={mencion.rotulo} {...mencion} />
           ))}
