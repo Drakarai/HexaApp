@@ -13,10 +13,13 @@ import { IMAGE_SIZES } from "@/lib/image";
 export function ProfileForms({
   displayName,
   avatarColor,
+  sinLocke = false,
   avatarImage,
 }: {
   displayName: string;
   avatarColor: string;
+  /** Todavía no juega ninguno: la foto no sale en ninguna tabla aún */
+  sinLocke?: boolean;
   avatarImage: string | null;
 }) {
   const [profileState, profileAction] = useActionState<FormState, FormData>(
@@ -48,7 +51,11 @@ export function ProfileForms({
             defaultValue={avatarImage}
             maxSize={IMAGE_SIZES.avatar}
             shape="circle"
-            hint="Se verá en la clasificación, el cementerio y las jornadas."
+            hint={
+              sinLocke
+                ? "Se verá en la clasificación, el cementerio y las jornadas cuando juegues un locke."
+                : "Se verá en la clasificación, el cementerio y las jornadas."
+            }
           />
           <div className="w-28">
             <label className="label">Color</label>

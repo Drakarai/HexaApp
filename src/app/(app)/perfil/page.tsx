@@ -89,7 +89,14 @@ export default async function ProfilePage() {
           ) : null}
           <p className="muted mt-0.5">
             @{user.username} ·{" "}
-            {esCreador(user) ? "Creador" : "Jugador"}
+            {/* Lo mismo que dice el menú de Lo mío: qué eres aquí ahora */}
+            {esCreador(user)
+              ? "Creador"
+              : !competition
+                ? "Sin locke todavía"
+                : myParticipant
+                  ? "Jugador"
+                  : "Espectador"}
           </p>
         </div>
       </div>
@@ -98,6 +105,7 @@ export default async function ProfilePage() {
         displayName={user.displayName}
         avatarColor={user.avatarColor}
         avatarImage={user.avatarImage}
+        sinLocke={!competition}
       />
 
       {/* En pantalla ancha, de dos en dos: son seis tarjetas cortas y en una
@@ -227,8 +235,18 @@ export default async function ProfilePage() {
           </p>
         ) : (
           <p className="muted mt-3 text-xs">
-            En <strong>Ediciones</strong> ves quién juega cada locke y puedes
-            cambiar de uno a otro.
+            {competition ? (
+              <>
+                En <strong>Ediciones</strong> ves quién juega cada locke y puedes
+                cambiar de uno a otro.
+              </>
+            ) : (
+              // Sin locke, Ediciones es donde se pide uno y se ve cómo va
+              <>
+                En <strong>Ediciones</strong> pides tu locke y ves cómo va la
+                petición.
+              </>
+            )}
           </p>
         )}
       </section>
