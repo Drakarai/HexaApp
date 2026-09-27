@@ -36,6 +36,7 @@ import { ChapaDeFormato } from "@/components/formato";
 import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { Royale } from "./royale";
 import { NuevoRoyale } from "./matchday-forms";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Jornadas" };
 
@@ -225,7 +226,7 @@ export default async function MatchdaysPage() {
                       </p>
                       {matchday.condiciones ? (
                         <p className="mt-1 text-xs text-amber-200/80">
-                          📋 {matchday.condiciones}
+                          <Icono emoji="📋" /> {matchday.condiciones}
                         </p>
                       ) : null}
                     </div>
@@ -409,7 +410,7 @@ export default async function MatchdaysPage() {
                                   demás y tiene que verse de un vistazo */}
                               {match.porRetirada ? (
                                 <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-200">
-                                  🏳️ Por retirada de{" "}
+                                  <Icono emoji="🏳️" /> Por retirada de{" "}
                                   {match.winnerId === match.participantAId
                                     ? match.participantB.displayName
                                     : match.participantA.displayName}
@@ -422,7 +423,7 @@ export default async function MatchdaysPage() {
                                   className="inline-flex items-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 py-0.5 text-xs text-sky-200/90"
                                   title="Uno de los dos está fuera del locke y lo juega con permiso de la organización. No se dará por retirada."
                                 >
-                                  🤝 Con permiso
+                                  <Icono emoji="🤝" /> Con permiso
                                 </span>
                               ) : null}
                               {/* Esperando a que acabe el resto de la jornada
@@ -432,7 +433,7 @@ export default async function MatchdaysPage() {
                                   className="inline-flex items-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-200/90"
                                   title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
                                 >
-                                  🏳️ Por retirada, al acabar la jornada
+                                  <Icono emoji="🏳️" /> Por retirada, al acabar la jornada
                                 </span>
                               ) : null}
                               {match.pokemonDiff !== null ? (
@@ -470,7 +471,7 @@ export default async function MatchdaysPage() {
                                   >
                                     {match.excepcion
                                       ? "Quitar el permiso"
-                                      : "🤝 Dejar que lo jueguen"}
+                                      : <><Icono emoji="🤝" /> Dejar que lo jueguen</>}
                                   </ConfirmSubmit>
                                 </form>
                               ) : null}
@@ -619,7 +620,7 @@ function PlayerChip({
     >
       <Avatar name={name} color={color} image={image} size={20} />
       <span className="truncate">{name}</span>
-      {winner ? <span aria-hidden>👑</span> : null}
+      {winner ? <span aria-hidden><Icono emoji="👑" /></span> : null}
     </EnlaceDeJugador>
   );
 }

@@ -7,6 +7,7 @@ import { AL_MEJOR_DE } from "@/lib/formatos-finales";
 import { Avatar, SubmitButton } from "@/components/ui";
 import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * Una llave del cuadro: los dos contendientes, cómo va la serie y sus tres
@@ -133,7 +134,7 @@ function Combate({
             </span>
           ) : ganador ? (
             <>
-              <span aria-hidden>👑</span> {ganador.displayName}
+              <span aria-hidden><Icono emoji="👑" /></span> {ganador.displayName}
             </>
           ) : (
             <span className="italic text-slate-500">Sin jugar</span>
@@ -296,7 +297,7 @@ function Side({
         participantId={player.participantId}
       />
       <span className="min-w-0 flex-1 truncate">{player.displayName}</span>
-      {winner ? <span aria-hidden>👑</span> : null}
+      {winner ? <span aria-hidden><Icono emoji="👑" /></span> : null}
       {/* Cómo va la serie: el marcador manda sobre todo lo demás */}
       <span
         className={cx(

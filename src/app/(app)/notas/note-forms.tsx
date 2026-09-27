@@ -12,6 +12,7 @@ import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { RichText } from "@/components/rich-text";
 import { Pendientes } from "@/components/pendientes";
 import { conCola } from "@/lib/acciones-sin-conexion";
+import { Icono } from "@/components/icono";
 
 export function NewNoteForm({
   competitionId,
@@ -146,7 +147,7 @@ export function NoteCard({
     <article className="card flex flex-col">
       <div className="mb-2 flex items-start justify-between gap-2">
         <h3 className="font-semibold text-white">
-          {note.pinned ? "📌 " : ""}
+          {note.pinned ? <><Icono emoji="📌" /> </> : null}
           {note.title}
         </h3>
         <div className="flex shrink-0 gap-1">
@@ -157,7 +158,7 @@ export function NoteCard({
               className="btn-ghost btn-sm"
               title={note.pinned ? "Dejar de fijar" : "Fijar"}
             >
-              {note.pinned ? "📌" : "📍"}
+              <Icono emoji={note.pinned ? "📌" : "📍"} />
             </button>
           </form>
           <button

@@ -12,6 +12,7 @@ import { Avatar, ConfirmSubmit, FormMessage, SubmitButton } from "@/components/u
 import { MatchTeams, type TeamPokemon } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type JugadorDeRoyale = {
   puestoId: string;
@@ -68,7 +69,7 @@ export function Royale({
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="text-lg" aria-hidden>
-            👑
+            <Icono emoji="👑" />
           </span>
           <div>
             <h3 className="text-sm font-bold text-white">
@@ -107,7 +108,7 @@ export function Royale({
               )}
             >
               <span className="w-6 shrink-0 text-center text-sm font-bold text-slate-300">
-                {MEDALLAS[indice] ?? `${indice + 1}º`}
+                {MEDALLAS[indice] ? <Icono emoji={MEDALLAS[indice]} /> : `${indice + 1}º`}
               </span>
               <Avatar
                 name={jugador.displayName}
@@ -145,7 +146,7 @@ export function Royale({
           className="btn-ghost btn-sm mt-3"
           onClick={() => setOrdenando(true)}
         >
-          {enOrden.length ? "✎ Cambiar el orden" : "🏁 Apuntar el orden"}
+          {enOrden.length ? "✎ Cambiar el orden" : <><Icono emoji="🏁" /> Apuntar el orden</>}
         </button>
       ) : null}
 
@@ -244,7 +245,7 @@ function Ordenador({
               className="flex items-center gap-2 rounded-lg bg-white/[0.04] px-2.5 py-1.5"
             >
               <span className="w-6 text-center text-sm font-bold text-slate-300">
-                {MEDALLAS[indice] ?? `${indice + 1}º`}
+                {MEDALLAS[indice] ? <Icono emoji={MEDALLAS[indice]} /> : `${indice + 1}º`}
               </span>
               <Avatar
                 name={jugador.displayName}
@@ -341,7 +342,7 @@ function MiLinea({
   return (
     <details className="mt-3 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
       <summary className="cursor-pointer list-none text-xs font-semibold text-slate-300">
-        ✍️ Contar cómo me fue
+        <Icono emoji="✍️" /> Contar cómo me fue
       </summary>
       <form action={guardar} className="mt-2 space-y-2">
         <input type="hidden" name="puestoId" value={quien.puestoId} />
@@ -400,7 +401,7 @@ function Cronica({
       {canManage ? (
         <details className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-2.5">
           <summary className="cursor-pointer list-none text-xs font-semibold text-slate-300">
-            {royale.cronica ? "✎ Cambiar la crónica" : "📜 Escribir la crónica"}
+            {royale.cronica ? "✎ Cambiar la crónica" : <><Icono emoji="📜" /> Escribir la crónica</>}
           </summary>
           <form action={guardar} className="mt-2 space-y-2">
             <input type="hidden" name="royaleId" value={royale.id} />

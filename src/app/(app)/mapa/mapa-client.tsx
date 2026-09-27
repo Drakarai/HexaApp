@@ -15,6 +15,7 @@ import { Pendientes } from "@/components/pendientes";
 import { conCola } from "@/lib/acciones-sin-conexion";
 import type { CapturaApuntada, MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx, formatDateTime } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * El mapa de capturas de una persona.
@@ -166,7 +167,7 @@ export function MapaDeCapturas({
                 : "text-slate-400 hover:text-slate-200",
             )}
           >
-            🗺️ Mapa
+            <Icono emoji="🗺️" /> Mapa
           </button>
         </div>
         <p className="text-xs text-slate-500">
@@ -298,7 +299,7 @@ function FilaDeZona({
           title={`Aquí has perdido ${caidos} ${caidos === 1 ? "pokémon" : "pokémon"}`}
           className="shrink-0 rounded-md bg-red-500/10 px-1.5 py-0.5 text-xs text-red-300"
         >
-          💀{caidos > 1 ? ` ${caidos}` : ""}
+          <Icono emoji="💀" />{caidos > 1 ? ` ${caidos}` : ""}
         </span>
       ) : null}
       {capturas.length ? (
@@ -412,7 +413,7 @@ function ListaDelGrupo({
                   </span>
                   {bajas[hija.id] ? (
                     <span className="shrink-0 text-xs text-red-300">
-                      💀{bajas[hija.id] > 1 ? ` ${bajas[hija.id]}` : ""}
+                      <Icono emoji="💀" />{bajas[hija.id] > 1 ? ` ${bajas[hija.id]}` : ""}
                     </span>
                   ) : null}
                   <span className="shrink-0 text-xs text-slate-500">
@@ -527,7 +528,7 @@ function FichaDeZona({
             se cuenta y no se puede tocar desde esta ventana */}
         {caidos ? (
           <p className="mb-3 rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-sm text-red-200">
-            💀 Aquí has perdido {caidos} {caidos === 1 ? "pokémon" : "pokémon"}.{" "}
+            <Icono emoji="💀" /> Aquí has perdido {caidos} {caidos === 1 ? "pokémon" : "pokémon"}.{" "}
             <span className="text-red-300/70">Se apunta en la Caja.</span>
           </p>
         ) : null}
@@ -610,7 +611,7 @@ function Capturado({ captura }: { captura: CapturaApuntada }) {
             className="h-9 w-9 object-contain"
           />
         ) : (
-          <span aria-hidden>❔</span>
+          <span aria-hidden><Icono emoji="❔" /></span>
         )}
       </span>
       <div className="min-w-0 flex-1">

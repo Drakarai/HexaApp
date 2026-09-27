@@ -3,6 +3,7 @@ import { Avatar, EmptyState } from "@/components/ui";
 import type { Marcador } from "@/lib/marcador";
 import type { CampeonDeLiga } from "@/lib/liga";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * El marcador de un locke de dos.
@@ -68,7 +69,7 @@ export function MarcadorDual({
                 </p>
                 <p className="mt-1 text-xs text-slate-500">
                   {jugador.participantId === campeonId
-                    ? "🏆 Gana el locke"
+                    ? <><Icono emoji="🏆" /> Gana el locke</>
                     : jugador.leFaltan === 1
                     ? "Le vale una más"
                     : `Le faltan ${jugador.leFaltan}`}
@@ -125,7 +126,7 @@ export function MarcadorDual({
                 </p>
                 <span className="chip shrink-0">
                   {jornada.ganadorId
-                    ? `🏅 ${nombreDe(jornada.ganadorId)}`
+                    ? <><Icono emoji="🏅" /> {nombreDe(jornada.ganadorId)}</>
                     : jornada.faltan
                     ? `Faltan ${jornada.faltan}`
                     : "Sin decidir"}
@@ -161,7 +162,7 @@ export function BolaDePartido({
 
   return (
     <p className="flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-      <span aria-hidden>⚡</span>
+      <span aria-hidden><Icono emoji="⚡" /></span>
       <span>
         <strong className="font-semibold">Bola de partido.</strong>{" "}
         {quienes.length === 1

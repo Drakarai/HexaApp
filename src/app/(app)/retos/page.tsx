@@ -30,6 +30,7 @@ import {
   ChallengeResultForm,
   PremioEnObjetos,
 } from "./challenge-forms";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Retos" };
 
@@ -175,7 +176,7 @@ export default async function RetosPage() {
                     {reto.prize ? (
                       <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 text-sm text-emerald-100">
                         <span className="mr-1" aria-hidden>
-                          🏅
+                          <Icono emoji="🏅" />
                         </span>
                         <span className="text-emerald-300/80">Premio: </span>
                         {reto.prize}
@@ -185,7 +186,7 @@ export default async function RetosPage() {
                       <div className="rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2 text-sm text-red-100">
                         <p>
                           <span className="mr-1" aria-hidden>
-                            ☠️
+                            <Icono emoji="☠️" />
                           </span>
                           <span className="text-red-300/80">Castigo: </span>
                           {reto.punishment}
@@ -214,7 +215,7 @@ export default async function RetosPage() {
 
                 {reto.premios.length && !canManage ? (
                   <p className="mt-2 text-xs text-emerald-300/80">
-                    🎒 También se lleva:{" "}
+                    <Icono emoji="🎒" /> También se lleva:{" "}
                     {reto.premios
                       .map(
                         (premio) =>
@@ -324,7 +325,7 @@ function Jugador({
     >
       <Avatar name={name} color={color} image={image} size={20} />
       <span className="truncate">{name}</span>
-      {winner ? <span aria-hidden>👑</span> : null}
+      {winner ? <span aria-hidden><Icono emoji="👑" /></span> : null}
     </EnlaceDeJugador>
   );
 }

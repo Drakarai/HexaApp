@@ -9,6 +9,7 @@ import {
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export function NewRouletteForm({ competitionId }: { competitionId: string }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -113,19 +114,19 @@ export function AddOptionForm({
         <label className="label">Nueva casilla</label>
         <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
           <Pestana activa={clase === "texto"} onClick={() => setClase("texto")}>
-            ✍️ Texto
+            <Icono emoji="✍️" /> Texto
           </Pestana>
           <Pestana
             activa={clase === "objeto"}
             onClick={() => setClase("objeto")}
           >
-            🎒 Objeto
+            <Icono emoji="🎒" /> Objeto
           </Pestana>
           <Pestana
             activa={clase === "tickets"}
             onClick={() => setClase("tickets")}
           >
-            🎟️ Tickets
+            <Icono emoji="🎟️" /> Tickets
           </Pestana>
         </div>
       </div>
@@ -271,7 +272,7 @@ export function RouletteSettingsForm({
         className="btn-ghost btn-sm"
         onClick={() => setOpen(true)}
       >
-        ⚙ Ajustes de la ruleta
+        <Icono emoji="⚙" /> Ajustes de la ruleta
       </button>
     );
   }

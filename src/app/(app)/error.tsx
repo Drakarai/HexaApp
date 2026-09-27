@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect } from "react";
+import { Icono } from "@/components/icono";
 
 /**
  * Cuando algo falla dentro de la aplicación. Antes salía la pantalla gris de
@@ -26,7 +27,7 @@ export default function ErrorDeLaAplicacion({
   return (
     <section className="card mx-auto max-w-lg text-center">
       <p className="text-4xl" aria-hidden>
-        💥
+        <Icono emoji="💥" />
       </p>
       <h1 className="section-title mt-3">Se ha roto algo</h1>
       <p className="muted mt-2">

@@ -37,6 +37,7 @@ import {
   CopiarDeOtraEdicionForm,
 } from "./competition-forms";
 import { AccionesDeJugador } from "./acciones-de-jugador";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Competiciones" };
 
@@ -148,9 +149,11 @@ export default async function CompetitionsPage() {
               </p>
             </div>
             <span className="chip">
-              {active.status === COMPETITION_STATUS.ACTIVE
-                ? "🟢 En curso"
-                : "🗄️ Archivada"}
+              {active.status === COMPETITION_STATUS.ACTIVE ? (
+                <><Icono emoji="🟢" /> En curso</>
+              ) : (
+                <><Icono emoji="🗄️" /> Archivada</>
+              )}
             </span>
           </div>
 
@@ -206,7 +209,7 @@ export default async function CompetitionsPage() {
                               comoEstaFuera(participant)!.color,
                             )}
                           >
-                            {comoEstaFuera(participant)!.icono}{" "}
+                            <Icono emoji={comoEstaFuera(participant)!.icono} />{" "}
                             {comoEstaFuera(participant)!.etiqueta}
                           </span>
                         ) : null}
@@ -278,7 +281,7 @@ export default async function CompetitionsPage() {
                             className="btn-ghost btn-sm text-red-300"
                             message={`¿${participant.displayName} pierde el locke? Queda fuera igual que quien se retira —sus combates sin jugar los gana el rival— pero se enseña como locke perdido, no como retirada. Se puede deshacer.`}
                           >
-                            💥 Perdió el locke
+                            <Icono emoji="💥" /> Perdió el locke
                           </ConfirmSubmit>
                           )}
                         </form>
@@ -469,9 +472,9 @@ export default async function CompetitionsPage() {
                   </p>
                 </div>
                 <span className="chip shrink-0">
-                  {competition.status === COMPETITION_STATUS.ACTIVE
-                    ? "🟢"
-                    : "🗄️"}
+                  <Icono
+                    emoji={competition.status === COMPETITION_STATUS.ACTIVE ? "🟢" : "🗄️"}
+                  />
                 </span>
               </div>
 

@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/wipeos";
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
+import { Icono } from "@/components/icono";
 
 export type WipeoVista = {
   id: string;
@@ -71,7 +72,7 @@ export function Wipeos({
               className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/[0.06] px-3 py-2"
             >
               <span aria-hidden className="text-base leading-6">
-                💥
+                <Icono emoji="💥" />
               </span>
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-slate-200">
@@ -131,7 +132,7 @@ export function Wipeos({
             <FormMessage state={estado} />
             <div className="flex flex-wrap gap-2">
               <SubmitButton className="btn-primary btn-sm">
-                💥 Apuntar el wipeo
+                <Icono emoji="💥" /> Apuntar el wipeo
               </SubmitButton>
               <button
                 type="button"

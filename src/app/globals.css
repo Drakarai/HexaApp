@@ -279,6 +279,7 @@ html[data-estilo="nuevo"] {
     sans-serif;
 
   /* Esquinas más contenidas. Las redondas del todo (fotos, puntos) no se tocan */
+  --radius-3xl: 1rem;
   --radius-2xl: 0.75rem;
   --radius-xl: 0.625rem;
   --radius-lg: 0.5rem;
@@ -389,7 +390,10 @@ html[data-estilo="nuevo"] .icono-emoji {
 }
 html[data-estilo="nuevo"] .icono-linea {
   display: inline-block;
-  vertical-align: middle;
+  /* Sobre la línea del texto, como iría una letra: centrado a secas quedaba
+     un pelo alto al lado de un rótulo */
+  vertical-align: -0.18em;
+  flex-shrink: 0;
 }
 
 /* Menú del PC: lo activo con una barra de color a la izquierda y no con una
@@ -448,4 +452,42 @@ html[data-estilo="nuevo"] .boton-apuntar {
     inset 0 -3px 0 rgb(0 0 0 / 0.3),
     inset 0 1px 0 rgb(255 255 255 / 0.15),
     0 8px 20px -6px rgb(0 0 0 / 0.6);
+}
+
+/* La casilla del nivel de un gimnasio sin imagen: una baldosa de marcador, con
+   su rótulo encima, en vez del recuadro azulado del clásico */
+html[data-estilo="nuevo"] .casilla-nivel {
+  flex-direction: column;
+  gap: 0.1rem;
+  background: var(--color-ink-850);
+  box-shadow: inset 0 0 0 1px var(--color-ink-600), inset 0 -3px 0 var(--color-brand-600);
+  border-radius: 0.6rem;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1;
+}
+html[data-estilo="nuevo"] .casilla-nivel::before {
+  content: "Nivel";
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-slate-500);
+}
+html[data-estilo="nuevo"] .chapa-nivel {
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 0.35rem;
+  letter-spacing: 0.02em;
+}
+
+/* La etiqueta del tipo de combate (Singles, Dobles…): cuadrada como las demás */
+html[data-estilo="nuevo"] .etiqueta-formato {
+  border-radius: 0.375rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }

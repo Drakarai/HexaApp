@@ -19,6 +19,7 @@ import { getProgresoEnSolitario } from "@/lib/solitario";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
 import { Podio, type EnElPodio } from "./podio";
 import { ResumenDelLocke } from "./resumen";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Hall de la fama" };
 
@@ -52,7 +53,7 @@ export default async function HallOfFamePage() {
         <PageHeader title="Hall de la fama" />
         <section className="card text-center">
           <p className="text-4xl" aria-hidden>
-            🏅
+            <Icono emoji="🏅" />
           </p>
           <h2 className="mt-3 text-lg font-semibold text-white">
             Todavía no te has pasado la Liga
@@ -75,7 +76,7 @@ export default async function HallOfFamePage() {
         <PageHeader title="Hall de la fama" />
         <section className="card text-center">
           <p className="text-4xl" aria-hidden>
-            🏅
+            <Icono emoji="🏅" />
           </p>
           <h2 className="mt-3 text-lg font-semibold text-white">
             El locke todavía no ha terminado
@@ -274,7 +275,7 @@ export default async function HallOfFamePage() {
       ) : (
         <section className="card mb-6 text-center">
           <p className="text-5xl" aria-hidden>
-            🏆
+            <Icono emoji="🏆" />
           </p>
           <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
             Locke terminado
@@ -321,7 +322,7 @@ export default async function HallOfFamePage() {
                 )}
               >
                 <span className="w-6 text-center text-lg">
-                  {MEDALS[index] ?? (
+                  {MEDALS[index] ? <Icono emoji={MEDALS[index]} /> : (
                     <span className="text-sm text-slate-500">{index + 1}º</span>
                   )}
                 </span>

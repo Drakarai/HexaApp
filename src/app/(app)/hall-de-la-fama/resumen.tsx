@@ -1,5 +1,6 @@
 import type { ResumenDelLocke } from "@/lib/resumen-del-locke";
 import { formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /** "1 jornada" / "6 jornadas". Todo lo de aquí acaba en vocal o en o. */
 const plural = (cuantos: number, palabra: string) =>
@@ -45,7 +46,7 @@ function Mencion({
   return (
     <li className="flex items-center gap-3 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2">
       <span className="text-lg" aria-hidden>
-        {emoji}
+        <Icono emoji={emoji} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] uppercase tracking-wide text-slate-500">

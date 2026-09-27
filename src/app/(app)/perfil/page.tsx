@@ -20,6 +20,7 @@ import { cx } from "@/lib/utils";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mi perfil" };
 
@@ -203,15 +204,15 @@ export default async function ProfilePage() {
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/competiciones" className="btn-ghost">
-            🗂️ Ediciones
+            <Icono emoji="🗂️" /> Ediciones
           </Link>
           {esCreador(user) ? (
             <>
               <Link href="/admin" className="btn-ghost">
-                ⚙️ Administración
+                <Icono emoji="⚙️" /> Administración
               </Link>
               <Link href="/diagnostico" className="btn-ghost">
-                🩺 Diagnóstico
+                <Icono emoji="🩺" /> Diagnóstico
               </Link>
             </>
           ) : null}

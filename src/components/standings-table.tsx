@@ -5,6 +5,7 @@ import { Avatar, EnlaceDeJugador } from "@/components/ui";
 import { TitleBadge } from "@/components/title-badge";
 import { comoEstaFuera } from "@/lib/wipeos";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -55,7 +56,7 @@ export function StandingsTable(props: Props) {
               <th className="w-14">#</th>
               <th>Jugador</th>
               <th className="text-right">Pts</th>
-              <th className="text-right">💀</th>
+              <th className="text-right"><Icono emoji="💀" /></th>
               {props.compact ? null : (
                 <>
                   <th className="text-right">V-D</th>
@@ -88,7 +89,11 @@ function Puesto({
 }) {
   if (position === 0) return <span title="Está fuera del locke">—</span>;
   if (position > qualifiedSlots) return <>{position}</>;
-  return <span title="Clasificado directo">{MEDALS[position - 1] ?? position}</span>;
+  return (
+    <span title="Clasificado directo">
+      {MEDALS[position - 1] ? <Icono emoji={MEDALS[position - 1]} /> : position}
+    </span>
+  );
 }
 
 /**
@@ -149,7 +154,7 @@ function Wipeos({ cuantos }: { cuantos: number }) {
       className="ml-2 text-[11px] font-semibold text-red-400/90"
       title={`${cuantos} ${cuantos === 1 ? "wipeo" : "wipeos"}`}
     >
-      💥{cuantos}
+      <Icono emoji="💥" />{cuantos}
     </span>
   );
 }
@@ -292,7 +297,7 @@ function Ficha({
         )}
       >
         <Cifra valor={row.points} etiqueta="Pts" fuerte />
-        <Cifra valor={row.deaths} etiqueta="💀" />
+        <Cifra valor={row.deaths} etiqueta={<Icono emoji="💀" />} />
         {compact ? null : (
           <>
             <Cifra valor={`${row.wins}-${row.losses}`} etiqueta="V-D" />
@@ -314,7 +319,7 @@ function Cifra({
   fuerte = false,
 }: {
   valor: string | number;
-  etiqueta: string;
+  etiqueta: React.ReactNode;
   /** Los puntos, que son lo que de verdad ordena la tabla */
   fuerte?: boolean;
 }) {

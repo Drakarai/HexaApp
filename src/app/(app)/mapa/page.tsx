@@ -8,6 +8,7 @@ import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx } from "@/lib/utils";
 import { CapturasExtra, MapaDeCapturas } from "./mapa-client";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mapa de capturas" };
 
@@ -173,7 +174,7 @@ function Cabecera({
       actions={
         admin ? (
           <Link href="/admin/mapas" className="btn-ghost btn-sm">
-            🗺️ Editar mapas
+            <Icono emoji="🗺️" /> Editar mapas
           </Link>
         ) : null
       }

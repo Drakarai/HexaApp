@@ -3,6 +3,7 @@ import { esCreador, requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Guía de uso" };
 
@@ -64,7 +65,7 @@ export default async function GuiaPage({
                   : "opacity-60",
               )}
             >
-              {GUIAS[clave].pestana}
+              <Icono emoji={GUIAS[clave].icono} /> {GUIAS[clave].pestana}
             </Link>
           ))}
         </nav>
@@ -80,7 +81,7 @@ export default async function GuiaPage({
             rel="noreferrer"
             className="btn-primary"
           >
-            📖 Abrirla
+            <Icono emoji="📖" /> Abrirla
           </a>
           <a href={guia.pdf} download className="btn-ghost">
             ⬇️ Guardarla en el móvil
@@ -149,6 +150,7 @@ type Cual = "uso" | "admin";
 const GUIAS: Record<
   Cual,
   {
+    icono: string;
     pestana: string;
     titulo: string;
     de: string;
@@ -158,7 +160,8 @@ const GUIAS: Record<
   }
 > = {
   uso: {
-    pestana: "📖 Guía de uso",
+    icono: "📖",
+    pestana: "Guía de uso",
     titulo: "Guía de uso",
     de: "Para todo el mundo: apuntar capturas y bajas, llevar tus gimnasios y no perderte nada.",
     pdf: "/guia-de-uso.pdf",
@@ -188,7 +191,8 @@ const GUIAS: Record<
     ],
   },
   admin: {
-    pestana: "🛠️ Llevar un locke",
+    icono: "🛠️",
+    pestana: "Llevar un locke",
     titulo: "Guía del administrador",
     de: "Para quien lleva una edición: montarla, emparejar las jornadas, anotar resultados y repartir premios.",
     pdf: "/guia-de-administrador.pdf",

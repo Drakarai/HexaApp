@@ -21,7 +21,7 @@ export function LevelCapArt({
 }) {
   if (!images.length) {
     return (
-      <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-600/20 text-2xl font-black text-brand-400 ring-1 ring-brand-500/30">
+      <span className="casilla-nivel flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-600/20 text-2xl font-black text-brand-400 ring-1 ring-brand-500/30">
         {cap}
       </span>
     );
@@ -51,7 +51,7 @@ export function LevelCapArt({
         </span>
 
         {/* Con imagen, el nivel se queda como chapita en la esquina */}
-        <span className="absolute -bottom-1.5 -right-1.5 rounded-lg bg-brand-600 px-1.5 py-0.5 text-xs font-black text-white shadow-lg shadow-black/40 ring-1 ring-brand-400/40">
+        <span className="chapa-nivel absolute -bottom-1.5 -right-1.5 rounded-lg bg-brand-600 px-1.5 py-0.5 text-xs font-black text-white shadow-lg shadow-black/40 ring-1 ring-brand-400/40">
           {cap}
         </span>
 

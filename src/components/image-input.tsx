@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { IMAGEN_SIN_CAMBIOS, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * Selector de imagen con dos vías: subir un archivo del ordenador (se
@@ -74,7 +75,7 @@ export function ImageInput({
             />
           ) : (
             <span className="text-2xl opacity-40" aria-hidden>
-              🖼️
+              <Icono emoji="🖼️" />
             </span>
           )}
         </div>

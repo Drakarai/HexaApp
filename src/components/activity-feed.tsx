@@ -1,6 +1,7 @@
 import type { ActivityEntry } from "@/lib/activity";
 import { Avatar, EmptyState } from "@/components/ui";
 import { formatDateTime, relativeTime } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /** Cronología de lo que ha ido pasando, con una línea vertical uniendo todo. */
 export function ActivityFeed({
@@ -29,7 +30,7 @@ export function ActivityFeed({
             style={{ background: `${entry.color}33` }}
             aria-hidden
           >
-            {entry.icon}
+            <Icono emoji={entry.icon} />
           </span>
 
           <div className="min-w-0 flex-1 rounded-xl border border-white/5 bg-white/[0.03] px-3 py-2">

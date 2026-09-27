@@ -9,6 +9,7 @@ import { getActiveCompetition } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, EmptyState } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Palmarés" };
 
@@ -84,7 +85,7 @@ export default async function PalmaresPage() {
               <div className="flex items-center gap-3">
                 <span className="w-6 text-center text-lg">
                   {fila.ganados > 0 && index < 3 ? (
-                    MEDALS[index]
+                    <Icono emoji={MEDALS[index]} />
                   ) : (
                     <span className="text-sm text-slate-500">{index + 1}º</span>
                   )}
@@ -111,12 +112,12 @@ export default async function PalmaresPage() {
               {/* Las cifras debajo y no al lado: con cuatro columnas en un
                   móvil el nombre se quedaba en dos letras */}
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <Cifra valor={fila.ganados} rotulo="🏆 Lockes" />
+                <Cifra valor={fila.ganados} rotulo={<><Icono emoji="🏆" /> Lockes</>} />
                 <Cifra
                   valor={`${fila.victorias}-${fila.derrotas}`}
                   rotulo="V-D"
                 />
-                <Cifra valor={fila.bajas} rotulo="💀 Caídos" />
+                <Cifra valor={fila.bajas} rotulo={<><Icono emoji="💀" /> Caídos</>} />
               </div>
             </li>
           ))}
@@ -199,7 +200,7 @@ export default async function PalmaresPage() {
   );
 }
 
-function Cifra({ valor, rotulo }: { valor: string | number; rotulo: string }) {
+function Cifra({ valor, rotulo }: { valor: string | number; rotulo: React.ReactNode }) {
   return (
     <div className="rounded-lg bg-white/[0.03] px-2 py-1.5">
       <p className="text-base font-black text-white">{valor}</p>
@@ -215,7 +216,7 @@ function Ficha({ edicion }: { edicion: CampeonDeUnLocke }) {
   return (
     <>
       <span className="text-xl" aria-hidden>
-        {edicion.deAntes ? "📜" : edicion.terminado ? "🏆" : "⏳"}
+        <Icono emoji={edicion.deAntes ? "📜" : edicion.terminado ? "🏆" : "⏳"} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-white">{edicion.nombre}</p>

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toggleGymClearAction } from "@/app/actions/level-caps";
 import { encolar } from "@/lib/cola";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * La casilla de "me lo he pasado" de cada jugador en cada hito.
@@ -111,10 +112,10 @@ export function MarcarGimnasio({
         aria-hidden
       />
       {/* Mientras está en la cola no se sabe si sigue siendo el primero */}
-      {primero && enCola === null ? <span aria-hidden>👑</span> : null}
+      {primero && enCola === null ? <span aria-hidden><Icono emoji="👑" /></span> : null}
       {nombre}
       <span aria-hidden>
-        {retirado ? "—" : enCola !== null ? "⏳" : marcado ? "✓" : "○"}
+        {retirado ? "—" : enCola !== null ? <Icono emoji="⏳" /> : marcado ? "✓" : "○"}
       </span>
     </button>
   );

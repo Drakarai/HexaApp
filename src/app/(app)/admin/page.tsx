@@ -21,6 +21,7 @@ import {
   COPIAS_QUE_SE_GUARDAN,
   HORAS_ENTRE_COPIAS,
 } from "@/lib/copias";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Administración" };
 /**
@@ -106,7 +107,7 @@ export default async function AdminPage() {
           locke.
         </p>
         <Link href="/admin/mapas" className="btn-ghost btn-sm">
-          🗺️ Editar los mapas
+          <Icono emoji="🗺️" /> Editar los mapas
         </Link>
       </section>
 
@@ -118,7 +119,7 @@ export default async function AdminPage() {
           una edición se traen con un botón y se ajustan allí.
         </p>
         <Link href="/admin/level-caps" className="btn-ghost btn-sm">
-          🎯 Editar las plantillas
+          <Icono emoji="🎯" /> Editar las plantillas
         </Link>
       </section>
 
@@ -131,7 +132,7 @@ export default async function AdminPage() {
           ahí se guarda también cada imagen una sola vez.
         </p>
         <Link href="/diagnostico" className="btn-ghost btn-sm">
-          🩺 Ver el diagnóstico
+          <Icono emoji="🩺" /> Ver el diagnóstico
         </Link>
       </section>
 
@@ -184,7 +185,7 @@ export default async function AdminPage() {
                         : "Hacerle Creador: le da acceso a todo"
                     }
                   >
-                    {esCreador(user) ? "👑 Creador" : "Jugador"}
+                    {esCreador(user) ? <><Icono emoji="👑" /> Creador</> : "Jugador"}
                   </button>
                 </form>
 
@@ -204,7 +205,7 @@ export default async function AdminPage() {
                           : "Darle permiso para montar sus propios lockes"
                       }
                     >
-                      {user.puedeCrearLockes ? "🎪 Organiza" : "🎪 No organiza"}
+                      <Icono emoji="🎪" />{user.puedeCrearLockes ? " Organiza" : " No organiza"}
                     </button>
                   </form>
                 )}

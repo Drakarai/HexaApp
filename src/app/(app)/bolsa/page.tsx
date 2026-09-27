@@ -12,6 +12,7 @@ import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { formatDateTime } from "@/lib/utils";
 import { Bolsa } from "./bolsa-client";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Bolsa" };
 
@@ -102,7 +103,7 @@ function Cabecera({ admin }: { admin: boolean }) {
       actions={
         admin ? (
           <Link href="/bolsa/todas" className="btn-ghost btn-sm">
-            🎒 Bolsas de todos
+            <Icono emoji="🎒" /> Bolsas de todos
           </Link>
         ) : null
       }

@@ -21,6 +21,7 @@ import { cx } from "@/lib/utils";
 import { resetBracketAction } from "@/app/actions/final-four";
 import { BracketCard } from "./bracket";
 import { GenerateBracketForm } from "./generate-form";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Final Four" };
 
@@ -98,7 +99,7 @@ export default async function FinalFourPage() {
       {state.status === "BLOQUEADA" ? (
         <section className="card text-center">
           <p className="text-4xl" aria-hidden>
-            🔒
+            <Icono emoji="🔒" />
           </p>
           <h2 className="mt-3 text-lg font-semibold text-white">
             Aún no toca
@@ -148,7 +149,7 @@ export default async function FinalFourPage() {
           {state.champion ? (
             <section className="card mb-6 text-center">
               <p className="text-5xl" aria-hidden>
-                🏆
+                <Icono emoji="🏆" />
               </p>
               <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
                 Campeón del {competition.name}
@@ -170,7 +171,7 @@ export default async function FinalFourPage() {
                 </p>
               ) : null}
               <Link href="/hall-de-la-fama" className="btn-primary mt-5">
-                🏅 Ir al hall de la fama
+                <Icono emoji="🏅" /> Ir al hall de la fama
               </Link>
             </section>
           ) : null}

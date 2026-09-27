@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { spinRouletteAction } from "@/app/actions/roulette";
 import { readableTextColor } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type WheelOption = {
   id: string;
@@ -122,7 +123,7 @@ export function RouletteWheel({
           role="img"
           aria-label="Ruleta"
         >
-          <circle r={RADIUS + 6} fill="#0b1020" stroke="#2c3855" strokeWidth={3} />
+          <circle r={RADIUS + 6} fill="var(--color-ink-900, #0b1020)" stroke="var(--color-ink-600, #2c3855)" strokeWidth={3} />
           {sectors.length === 1 ? (
             <circle r={RADIUS} fill={sectors[0].option.color} />
           ) : (
@@ -135,7 +136,7 @@ export function RouletteWheel({
                   key={option.id}
                   d={`M 0 0 L ${from.x} ${from.y} A ${RADIUS} ${RADIUS} 0 ${largeArc} 1 ${to.x} ${to.y} Z`}
                   fill={option.color}
-                  stroke="#0b1020"
+                  stroke="var(--color-ink-900, #0b1020)"
                   strokeWidth={0.8}
                 />
               );
@@ -169,7 +170,7 @@ export function RouletteWheel({
               </g>
             );
           })}
-          <circle r={12} fill="#10162b" stroke="#2c3855" strokeWidth={2} />
+          <circle r={12} fill="var(--color-ink-850, #10162b)" stroke="var(--color-ink-600, #2c3855)" strokeWidth={2} />
         </svg>
       </div>
 
@@ -181,7 +182,7 @@ export function RouletteWheel({
             onClick={handleSpin}
             disabled={spinning}
           >
-            {spinning ? "Girando…" : "🎡 Girar la ruleta"}
+            {spinning ? "Girando…" : <><Icono emoji="🎡" /> Girar la ruleta</>}
           </button>
         ) : soloMira ? null : (
           <p className="muted">Necesitas un ticket para girar.</p>
@@ -202,9 +203,10 @@ export function RouletteWheel({
           >
             {/* "Te llevas" y no "ya es tuyo": vale igual para un objeto que
                 para tres tickets, sin tener que concordar el número */}
+            <Icono emoji="🎁" />{" "}
             {premio.pendiente
-              ? `🎁 ${premio.que}. Di abajo, en el historial, para quién es.`
-              : `🎁 Te llevas ${premio.que}.`}
+              ? `${premio.que}. Di abajo, en el historial, para quién es.`
+              : `Te llevas ${premio.que}.`}
           </p>
         ) : null}
         {error ? (

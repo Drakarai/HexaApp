@@ -10,6 +10,7 @@ import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
 import { formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * Abrir un locke en solitario.
@@ -34,7 +35,7 @@ export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto:
     <details className="card group">
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
-        🎮 {puedeCrearDirecto ? "Crear mi locke en solitario" : "Pedir un locke"}
+        <Icono emoji="🎮" /> {puedeCrearDirecto ? "Crear mi locke en solitario" : "Pedir un locke"}
       </summary>
 
       <p className="muted mt-3">
@@ -160,5 +161,5 @@ function Estado({ estado }: { estado: string }) {
   if (estado === "RECHAZADA") {
     return <span className="chip border-red-500/40 text-red-200">✕ Rechazada</span>;
   }
-  return <span className="chip text-amber-300">⏳ Esperando</span>;
+  return <span className="chip text-amber-300"><Icono emoji="⏳" /> Esperando</span>;
 }

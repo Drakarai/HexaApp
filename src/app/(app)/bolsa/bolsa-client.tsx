@@ -7,6 +7,7 @@ import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import type { ObjetoEnBolsa, OpcionDeObjeto } from "@/lib/bolsa";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * La bolsa de alguien. Cada objeto con su cantidad y, si es tuya, su botón de
@@ -83,13 +84,13 @@ function FichaDeObjeto({
             </p>
           ) : null}
           {objeto.note ? (
-            <p className="mt-1 text-xs text-slate-500">📝 {objeto.note}</p>
+            <p className="mt-1 text-xs text-slate-500"><Icono emoji="📝" /> {objeto.note}</p>
           ) : null}
           {esGrupo ? (
             <p className="mt-1 text-[11px] uppercase tracking-wide text-brand-300/80">
-              {grupoVacio
-                ? "📦 Grupo · todavía vacío"
-                : `📦 Grupo · eliges 1 de ${dentro.length}`}
+              <Icono emoji="📦" /> {grupoVacio
+                ? "Grupo · todavía vacío"
+                : `Grupo · eliges 1 de ${dentro.length}`}
             </p>
           ) : null}
         </div>
@@ -258,7 +259,7 @@ export function Dibujo({
         />
       ) : (
         <span className={pequeno ? "text-base" : "text-xl"} aria-hidden>
-          🎁
+          <Icono emoji="🎁" />
         </span>
       )}
     </span>

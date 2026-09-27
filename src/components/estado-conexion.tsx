@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { alCambiarLaCola, leerCola, subirLaCola } from "@/lib/cola";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * La barra de estado de la conexión, encima de todo.
@@ -183,7 +184,9 @@ export function EstadoDeConexion({ rutas = [] }: { rutas?: string[] }) {
               : "border-emerald-400/30 bg-emerald-950/85 text-emerald-200",
         )}
       >
-        <span aria-hidden>{!hayLinea ? "📴" : pendientes ? "⏫" : "✅"}</span>
+        <span aria-hidden>
+          <Icono emoji={!hayLinea ? "📴" : pendientes ? "⏫" : "✅"} />
+        </span>
         <span className="min-w-0 flex-1">
           {!hayLinea ? (
             <>

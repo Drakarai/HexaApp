@@ -1,5 +1,6 @@
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type EnElPodio = {
   participantId: string;
@@ -61,7 +62,7 @@ export function Podio({ podio }: { podio: EnElPodio[] }) {
               style={{ order: orden[quien.puesto - 1] ?? quien.puesto }}
             >
               <span className="text-2xl sm:text-3xl" aria-hidden>
-                {cajon.medalla}
+                <Icono emoji={cajon.medalla} />
               </span>
               <div className="my-2">
                 <Avatar

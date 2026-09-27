@@ -12,6 +12,7 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import type { ObjetoDelCatalogo } from "@/lib/bolsa";
 import { cx } from "@/lib/utils";
 import { Dibujo } from "../bolsa-client";
+import { Icono } from "@/components/icono";
 
 /** Crear algo del catálogo: un objeto de los juegos, uno propio o un grupo. */
 export function NuevoObjeto({ yaPuestos }: { yaPuestos: string[] }) {
@@ -210,7 +211,7 @@ export function FichaDeCatalogo({
         <Dibujo src={objeto.image} nombre={objeto.name} pequeno />
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-slate-100">
-            {objeto.isGroup ? "📦 " : ""}
+            {objeto.isGroup ? <><Icono emoji="📦" /> </> : null}
             {objeto.name}
           </p>
           <p className="text-xs text-slate-500">

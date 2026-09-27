@@ -10,6 +10,7 @@ import {
   type TipoDeApunte,
 } from "@/lib/cola";
 import { formatDateTime } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * Lo que se apuntó sin conexión y todavía no ha subido, en la propia pantalla
@@ -33,7 +34,9 @@ export function Pendientes({ tipo }: { tipo: TipoDeApunte }) {
   return (
     <section className="mt-4 rounded-xl border border-amber-400/25 bg-amber-950/20 p-3">
       <p className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-300/90">
-        <span aria-hidden>{TIPOS[tipo].icono}</span>
+        <span aria-hidden>
+          <Icono emoji={TIPOS[tipo].icono} />
+        </span>
         Sin subir todavía
       </p>
       <ul className="space-y-1.5">

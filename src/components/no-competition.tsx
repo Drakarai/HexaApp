@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
+import { Icono } from "@/components/icono";
 
 /**
  * Lo que se ve cuando no hay ninguna edición delante. Son dos situaciones
@@ -14,7 +15,7 @@ export async function NoCompetition({ canCreate }: { canCreate: boolean }) {
     return (
       <div className="card text-center">
         <p className="text-4xl" aria-hidden>
-          🔒
+          <Icono emoji="🔒" />
         </p>
         <h2 className="mt-3 text-lg font-semibold text-white">
           Aquí no hay nada tuyo
@@ -31,7 +32,7 @@ export async function NoCompetition({ canCreate }: { canCreate: boolean }) {
   return (
     <div className="card text-center">
       <p className="text-4xl" aria-hidden>
-        🗂️
+        <Icono emoji="🗂️" />
       </p>
       <h2 className="mt-3 text-lg font-semibold text-white">
         Todavía no hay ninguna competición

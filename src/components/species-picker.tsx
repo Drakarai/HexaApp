@@ -8,6 +8,7 @@ import {
   type PokedexSpecies,
 } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * Busca el pokémon por su nombre en español y manda al servidor **qué** pokémon
@@ -159,7 +160,7 @@ export function SpeciesPicker({
               checked={shiny}
               onChange={(event) => setShiny(event.target.checked)}
             />
-            ✨ Shiny
+            <Icono emoji="✨" /> Shiny
           </label>
         </div>
       </div>

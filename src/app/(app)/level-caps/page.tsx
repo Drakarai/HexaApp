@@ -27,6 +27,7 @@ import {
 } from "./level-cap-forms";
 import { GymVideos, type VideoDeGimnasio } from "./gym-videos";
 import { Resaltar } from "./resaltar";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Level caps" };
 
@@ -146,7 +147,7 @@ export default async function LevelCapsPage({
       {levelCaps.length === 0 ? (
         <div className="card text-center">
           <p className="text-4xl" aria-hidden>
-            🎯
+            <Icono emoji="🎯" />
           </p>
           <h2 className="mt-3 text-lg font-semibold text-white">
             No hay level caps configurados

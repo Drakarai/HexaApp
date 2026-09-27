@@ -9,6 +9,7 @@ import { deleteRuleAction, moveRuleAction } from "@/app/actions/rules";
 import { NewRuleForm, EditRuleForm } from "./rule-forms";
 import { lockeEmpezado, queHaCambiado } from "@/lib/reglas";
 import { cx, formatDate } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Reglas" };
 
@@ -102,7 +103,8 @@ export default async function RulesPage() {
                               )}
                             >
                               {/* Sin texto de antes es que no existía: se añadió */}
-                              {rule.textoAnterior === null ? "🆕 Añadida" : "✏️ Cambiada"}{" "}
+                              <Icono emoji={rule.textoAnterior === null ? "🆕" : "✏️"} />{" "}
+                              {rule.textoAnterior === null ? "Añadida" : "Cambiada"}{" "}
                               el {formatDate(rule.cambiadaAt)}
                               {esNuevaParaMi(rule) ? " · no la habías visto" : ""}
                             </p>

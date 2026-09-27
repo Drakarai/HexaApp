@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type RivalView = {
   participantId: string;
@@ -157,7 +158,9 @@ function Destaque({
   return (
     <div className="min-w-0">
       <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-slate-500">
-        <span aria-hidden>{icono}</span>
+        <span aria-hidden>
+          <Icono emoji={icono} />
+        </span>
         {etiqueta}
       </dt>
       <dd

@@ -28,6 +28,7 @@ import { MyTickets, TicketsPanel } from "./tickets";
 import { EntregarPremio } from "./entregar-premio";
 import { describirPremio } from "@/lib/premios-de-ruleta";
 import { urlsDeImagen } from "@/lib/imagenes";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Ruleta" };
 
@@ -134,10 +135,10 @@ export default async function RoulettePage({
                   "border-brand-500/40 bg-brand-600/20 text-white",
               )}
             >
-              🎡 {roulette.name} ({roulette._count.options})
+              <Icono emoji="🎡" /> {roulette.name} ({roulette._count.options})
               {myParticipant && balances.get(myParticipant.id, roulette.id) > 0 ? (
                 <span className="text-amber-300">
-                  🎟️ {balances.get(myParticipant.id, roulette.id)}
+                  <Icono emoji="🎟️" /> {balances.get(myParticipant.id, roulette.id)}
                 </span>
               ) : null}
             </Link>
@@ -236,9 +237,9 @@ export default async function RoulettePage({
                           className="h-5 w-5 shrink-0 object-contain"
                         />
                       ) : option.itemId ? (
-                        <span aria-hidden>🎒</span>
+                        <span aria-hidden><Icono emoji="🎒" /></span>
                       ) : option.ticketsDeId ? (
-                        <span aria-hidden>🎟️</span>
+                        <span aria-hidden><Icono emoji="🎟️" /></span>
                       ) : null}
                       <span className="min-w-0 flex-1 truncate text-sm text-white">
                         {option.label}
@@ -257,7 +258,7 @@ export default async function RoulettePage({
                               className="btn-ghost btn-sm"
                               title={option.enabled ? "Desactivar" : "Activar"}
                             >
-                              {option.enabled ? "👁" : "🚫"}
+                              <Icono emoji={option.enabled ? "👁" : "🚫"} />
                             </button>
                           </form>
                           <form action={deleteOptionAction}>
@@ -360,7 +361,7 @@ export default async function RoulettePage({
 
                         {premio && spin.entregado ? (
                           <p className="mt-1 text-xs text-emerald-300/90">
-                            🎁 {premio} para{" "}
+                            <Icono emoji="🎁" /> {premio} para{" "}
                             <span style={{ color: spin.entregado.color }}>
                               {spin.entregado.displayName}
                             </span>
@@ -379,7 +380,7 @@ export default async function RoulettePage({
                           />
                         ) : premio && !spin.entregadoA ? (
                           <p className="mt-1 text-xs text-amber-200/80">
-                            🎁 {premio}, pendiente de que lo reparta la
+                            <Icono emoji="🎁" /> {premio}, pendiente de que lo reparta la
                             organización.
                           </p>
                         ) : null}

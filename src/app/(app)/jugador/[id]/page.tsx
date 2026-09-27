@@ -23,6 +23,7 @@ import { Wipeos } from "./wipeos-client";
 import { cx, formatDate } from "@/lib/utils";
 import { coronasDe } from "@/lib/coronas";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Jugador" };
 
@@ -149,7 +150,7 @@ export default async function PlayerPage({
                   )}
                   title={comoEstaFuera(participant)!.largo}
                 >
-                  {comoEstaFuera(participant)!.icono}{" "}
+                  <Icono emoji={comoEstaFuera(participant)!.icono} />{" "}
                   {comoEstaFuera(participant)!.etiqueta}
                 </span>
               ) : null}
@@ -202,9 +203,11 @@ export default async function PlayerPage({
             valor={`${misGimnasios}/${capsTotales}`}
             etiqueta="Gimnasios superados"
             nota={
-              coronas
-                ? `👑 ${coronas} ${coronas === 1 ? "vez" : "veces"} el primero`
-                : undefined
+              coronas ? (
+                <>
+                  <Icono emoji="👑" /> {coronas} {coronas === 1 ? "vez" : "veces"} el primero
+                </>
+              ) : undefined
             }
           />
         </div>
@@ -279,7 +282,7 @@ export default async function PlayerPage({
                     />
                   ) : (
                     <span className="text-lg opacity-30" aria-hidden>
-                      💀
+                      <Icono emoji="💀" />
                     </span>
                   )}
                 </div>
@@ -309,7 +312,7 @@ function Cifra({
   valor: string | number;
   etiqueta: string;
   /** Una línea más debajo del rótulo, cuando hay algo que añadir */
-  nota?: string;
+  nota?: React.ReactNode;
 }) {
   return (
     <div className={cx("rounded-xl border border-white/5 bg-white/[0.03] p-3")}>

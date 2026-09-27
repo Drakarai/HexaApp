@@ -8,6 +8,7 @@ import type {
 } from "@/lib/grafico-clasificacion";
 import { Avatar } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /** Medidas del dibujo, en píxeles del SVG. */
 const ANCHO_ETAPA = 86;
@@ -376,7 +377,7 @@ export function PointsChart({
                       <span style={{ color: quien.color }}>
                         {quien.displayName}
                       </span>{" "}
-                      {salida.motivo === "wipeo" ? "💥" : "🚪"} {salida.etiqueta}
+                      <Icono emoji={salida.motivo === "wipeo" ? "💥" : "🚪"} /> {salida.etiqueta}
                     </span>
                   );
                 })}

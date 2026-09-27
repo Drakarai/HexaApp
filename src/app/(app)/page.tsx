@@ -35,6 +35,7 @@ import {
   movimientosEnLaTabla,
 } from "@/lib/grafico-clasificacion";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { Icono } from "@/components/icono";
 
 export default async function DashboardPage() {
   const user = await requireUser();
@@ -272,11 +273,11 @@ export default async function DashboardPage() {
         }
         actions={
           competition.status === COMPETITION_STATUS.ARCHIVED ? (
-            <span className="chip">🗄️ Archivada</span>
+            <span className="chip"><Icono emoji="🗄️" /> Archivada</span>
           ) : terminado ? (
-            <span className="chip">🏆 Terminado</span>
+            <span className="chip"><Icono emoji="🏆" /> Terminado</span>
           ) : (
-            <span className="chip">🟢 En curso</span>
+            <span className="chip"><Icono emoji="🟢" /> En curso</span>
           )
         }
       />
@@ -426,7 +427,7 @@ export default async function DashboardPage() {
                 />
               </div>
               <p className="text-sm text-slate-300">
-                🏆 <strong className="text-white">{campeon.displayName}</strong>{" "}
+                <Icono emoji="🏆" /> <strong className="text-white">{campeon.displayName}</strong>{" "}
                 ha ganado el locke.
               </p>
               <Link

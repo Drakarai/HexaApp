@@ -7,6 +7,7 @@ import {
   FORMATOS_DE_DOS,
 } from "@/lib/formatos-de-combate";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * La chapa que dice de qué va un combate: "🏆 VGC", "👑 Battle Royale".
@@ -31,7 +32,8 @@ export function ChapaDeFormato({
   return (
     <span
       className={cx(
-        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
+        // `etiqueta-formato` no pinta nada: es el gancho del aspecto de ahora
+        "etiqueta-formato inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold",
         className,
       )}
       style={{
@@ -41,7 +43,9 @@ export function ChapaDeFormato({
       }}
       title={ficha.resumen}
     >
-      <span aria-hidden>{ficha.icono}</span>
+      <span aria-hidden>
+        <Icono emoji={ficha.icono} />
+      </span>
       {ficha.nombre}
       {detalle ? (
         <span className="font-normal opacity-80">· {comoSeJuega(ficha.id)}</span>

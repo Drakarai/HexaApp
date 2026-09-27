@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (**logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2134,6 +2134,40 @@ sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`
 —eso era quitar el nuevo—; para quitar el clásico, al revés: dejar las reglas
 del nuevo sin la condición y borrar los emojis de `components/icono.tsx`.
 
+### Rematar el aspecto: emojis e iconos, y restos del estilo antiguo
+
+Con el aspecto nuevo de todos quedaban dos cosas que lo delataban: **los emojis
+de color dentro de las pantallas** (🏆 Terminado, 🏳️ Dar por retirada, 🥇 en la
+tabla…) al lado de los iconos de línea del menú, y **piezas que seguían con el
+azul marino del clásico**.
+
+- **Todos los emojis que hacen de icono pasan por `components/icono.tsx`**, el
+  mismo del menú: pinta el emoji y su icono de línea, y el CSS de cada aspecto
+  esconde uno. El clásico sigue con sus emojis. El mapa de emojis a iconos está
+  ahí, y **cada icono puede llevar su color**, para los que dicen algo con él:
+  oro, plata y bronce en las medallas, dorado en la corona y el trofeo, rojo en
+  el wipeo, verde en "en curso". Por defecto mide como la letra de alrededor
+  (`1.15em`), para ir dentro de un texto.
+- **Los que vienen de datos** —el icono de cada entrada de la actividad, de cada
+  tipo de combate, de cada apunte pendiente, de las salidas del locke, las
+  medallas del podio— se siguen guardando como emoji y se pasan por `Icono`
+  **donde se pintan**. Así una lista nueva de iconos no obliga a tocar datos.
+- **Se quedan en emoji a propósito**: el icono que cada uno elige para sus
+  títulos (es suyo), los textos de `title`, las confirmaciones y las etiquetas
+  pintadas dentro de la rueda de la ruleta (no admiten iconos), las opciones de
+  un `<select>` (el navegador no pinta nada que no sea texto) y la muestra del
+  aspecto clásico en Mi perfil. Los símbolos tipográficos (✕ ✎ ✓ ▸ →) también
+  se quedan: son de un color y ya casan con el trazo.
+- **Restos del estilo antiguo**: la casilla del nivel de un gimnasio sin imagen
+  pasa a ser una baldosa de marcador con su rótulo "Nivel" (`.casilla-nivel`);
+  la rueda de la ruleta y las chapas del mapa usaban el azul marino escrito a
+  mano y ahora toman `--color-ink-*`; la etiqueta del tipo de combate deja de
+  ser píldora (`.etiqueta-formato`); la página de error y la de sin conexión
+  pasan al fondo y las mayúsculas del aspecto nuevo; y la hoja del menú del
+  móvil redondea como el resto (`--radius-3xl`).
+- Las ventanas emergentes siguen con el fondo desenfocado detrás: ahí tiene
+  sentido, es lo que dice que están encima.
+
 ### El logo de la aplicación: la media ball
 
 Se propusieron siete logos y el usuario pidió **fusionar el de siempre** (un
@@ -3006,3 +3040,6 @@ lugar de destruir datos, y hay que avisar antes.
     junto a su nombre en el resumen.
 72. **Logo nuevo**: la media ball, fusión del hexágono de siempre y una ball de
     captura, en la aplicación, la pestaña y los iconos del móvil.
+73. **Rematar el aspecto**: los emojis de dentro de las pantallas pasan a iconos
+    de línea (con su color cuando lo necesitan) y fuera los últimos restos del
+    azul marino del clásico.

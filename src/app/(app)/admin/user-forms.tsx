@@ -8,6 +8,7 @@ import {
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { ROLES } from "@/lib/constants";
+import { Icono } from "@/components/icono";
 
 /**
  * Alta de una cuenta. El desplegable de rol **solo lo ve un administrador
@@ -99,7 +100,7 @@ export function ResetPasswordForm({
         className="btn-ghost btn-sm mt-2"
         onClick={() => setOpen(true)}
       >
-        🔑 Cambiar contraseña
+        <Icono emoji="🔑" /> Cambiar contraseña
       </button>
     );
   }

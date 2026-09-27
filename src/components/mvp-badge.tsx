@@ -11,6 +11,7 @@ import {
 import type { FormState } from "@/app/actions/auth";
 import { Avatar, FormMessage, SubmitButton } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type MvpCandidateView = {
   id: string;
@@ -87,7 +88,7 @@ export function MvpBadge({ mvp }: { mvp: MvpView }) {
             />
           ) : (
             <span className="text-sm opacity-60" aria-hidden>
-              🗳️
+              <Icono emoji="🗳️" />
             </span>
           )}
         </span>

@@ -16,6 +16,7 @@ import { SpeciesPicker } from "@/components/species-picker";
 import { Sprite } from "@/components/match-team";
 import { POR_PERSONA } from "@/lib/sorteo";
 import { cx, formatDateTime } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type PokemonDelBote = {
   id: string;
@@ -316,7 +317,7 @@ export function Sorteo({
           <form action={repartir}>
             <input type="hidden" name="sorteoId" value={sorteo.id} />
             <SubmitButton className="btn-primary btn-sm">
-              🎲 {repartido ? "Repartir otra vez" : "Repartir"}
+              <Icono emoji="🎲" /> {repartido ? "Repartir otra vez" : "Repartir"}
             </SubmitButton>
           </form>
           {repartido ? (

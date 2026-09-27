@@ -13,6 +13,7 @@ import {
   SubmitButton,
 } from "@/components/ui";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type TicketRow = {
   participantId: string;
@@ -99,7 +100,7 @@ export function TicketsPanel({
                 row.balance > 0 ? "text-amber-300" : "text-slate-600",
               )}
             >
-              🎟️ {row.balance}
+              <Icono emoji="🎟️" /> {row.balance}
             </span>
 
             <form action={quickGrantTicketAction}>
@@ -212,7 +213,7 @@ export function MyTickets({
     >
       {balance > 0 ? (
         <>
-          🎟️ Tienes <strong>{balance}</strong>{" "}
+          <Icono emoji="🎟️" /> Tienes <strong>{balance}</strong>{" "}
           {balance === 1 ? "ticket" : "tickets"} de {rouletteName}: cada tirada
           gasta uno.
         </>

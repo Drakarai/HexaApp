@@ -11,6 +11,7 @@ import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type HallPokemon = {
   id: string;
@@ -207,7 +208,7 @@ function FichaEnGrande({
           <p className="text-sm text-slate-400">{pokemon.species}</p>
         ) : null}
         <p className="mt-2 text-xs text-slate-500">
-          {destacado ? "🏆 Del equipo campeón · " : ""}
+          {destacado ? <><Icono emoji="🏆" /> Del equipo campeón · </> : null}
           {duenoName}
         </p>
 

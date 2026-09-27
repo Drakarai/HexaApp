@@ -6,6 +6,7 @@ import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { ImageListInput } from "@/components/image-list-input";
 import { IMAGE_SIZES } from "@/lib/image";
+import { Icono } from "@/components/icono";
 
 /**
  * Las ilustraciones del final del locke.
@@ -34,7 +35,7 @@ export function CartelDelFinal({
     <details className="card group mt-6">
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
-        🖼️ Imágenes de {nombre}
+        <Icono emoji="🖼️" /> Imágenes de {nombre}
       </summary>
       <form action={formAction} className="mt-4 space-y-3">
         <input type="hidden" name="competitionId" value={competitionId} />

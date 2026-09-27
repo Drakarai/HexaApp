@@ -12,6 +12,7 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import { ElegirFormato } from "@/components/formato";
 import { crearRoyaleAction } from "@/app/actions/royales";
 import { esRoyale } from "@/lib/formatos-de-combate";
+import { Icono } from "@/components/icono";
 
 type Option = { id: string; displayName: string };
 
@@ -77,7 +78,7 @@ export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
 
         {royale ? (
           <p className="rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-xs text-red-200/90">
-            👑 Se creará <strong>un Battle Royale con todos los jugadores</strong>{" "}
+            <Icono emoji="👑" /> Se creará <strong>un Battle Royale con todos los jugadores</strong>{" "}
             dentro de la jornada. No hay emparejamientos: al terminar se apunta
             en qué orden quedaron, y el primero se lleva los puntos.
           </p>
@@ -185,7 +186,7 @@ export function MatchResultForm({
           className="btn-ghost btn-sm text-amber-300"
           onClick={() => setRetirada(true)}
         >
-          🏳️ Dar por retirada
+          <Icono emoji="🏳️" /> Dar por retirada
         </button>
       </div>
     );
@@ -288,7 +289,7 @@ function FormularioDeRetirada({
       <input type="hidden" name="matchId" value={match.id} />
       <div className="sm:col-span-3">
         <p className="text-sm font-semibold text-amber-200">
-          🏳️ Dar el combate por retirada
+          <Icono emoji="🏳️" /> Dar el combate por retirada
         </p>
       </div>
       <div>
@@ -338,7 +339,7 @@ export function NuevoRoyale({ matchdayId }: { matchdayId: string }) {
         <label className="label">Otro royale</label>
         <input name="label" className="input" placeholder="Ronda 2" maxLength={60} />
       </div>
-      <SubmitButton className="btn-ghost btn-sm">👑 Añadir royale</SubmitButton>
+      <SubmitButton className="btn-ghost btn-sm"><Icono emoji="👑" /> Añadir royale</SubmitButton>
       <FormMessage state={state} />
     </form>
   );

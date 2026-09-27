@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { generateBracketAction } from "@/app/actions/final-four";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { Icono } from "@/components/icono";
 
 /**
  * Todas las jornadas están jugadas pero el cuadro no existe todavía: se enseña
@@ -37,7 +38,7 @@ export function GenerateBracketForm({
   return (
     <section className="card">
       <p className="text-center text-4xl" aria-hidden>
-        🎬
+        <Icono emoji="🎬" />
       </p>
       <h2 className="mt-3 text-center text-lg font-semibold text-white">
         Jornadas terminadas
@@ -60,7 +61,7 @@ export function GenerateBracketForm({
               {row.displayName}
             </span>
             <span className="shrink-0 text-xs text-slate-500">
-              {row.points} pts · {row.deaths} 💀
+              {row.points} pts · {row.deaths} <Icono emoji="💀" />
             </span>
             {/**
              * A dónde entra cada uno depende del formato: con seis esperan

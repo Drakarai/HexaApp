@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/almacen";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { Icono } from "@/components/icono";
 
 /**
  * Los dos botones del almacén de imágenes.
@@ -43,12 +44,12 @@ export function MantenimientoDelAlmacen({
       <div className="flex flex-wrap gap-2">
         <form action={repartir}>
           <SubmitButton className="btn-primary btn-sm">
-            📦 Guardar cada imagen una sola vez
+            <Icono emoji="📦" /> Guardar cada imagen una sola vez
           </SubmitButton>
         </form>
         <form action={limpiar}>
           <SubmitButton className="btn-ghost btn-sm">
-            🧹 Tirar las que ya no usa nadie
+            <Icono emoji="🧹" /> Tirar las que ya no usa nadie
           </SubmitButton>
         </form>
       </div>
@@ -70,7 +71,7 @@ export function MantenimientoDelAlmacen({
           </p>
           <form action={aligerar} className="mt-2">
             <SubmitButton className="btn-primary btn-sm">
-              🪶 Aligerar una copia
+              <Icono emoji="🪶" /> Aligerar una copia
             </SubmitButton>
           </form>
           <p className="mt-2 text-xs text-slate-400">

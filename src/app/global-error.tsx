@@ -1,5 +1,6 @@
 "use client";
 
+import { Icono } from "@/components/icono";
 /**
  * El último cortafuegos: si lo que falla es la propia plantilla de la página
  * (por ejemplo, leer el tema del usuario), ni siquiera hay hojas de estilo, así
@@ -26,12 +27,12 @@ export default function ErrorGlobal({
           gap: "1rem",
           padding: "1.5rem",
           textAlign: "center",
-          background: "#070a13",
+          background: "#0b0b0e",
           color: "#e2e8f0",
           fontFamily: "system-ui, sans-serif",
         }}
       >
-        <p style={{ fontSize: "2.5rem", margin: 0 }}>💥</p>
+        <p style={{ fontSize: "2.5rem", margin: 0 }}><Icono emoji="💥" /></p>
         <h1 style={{ fontSize: "1.5rem", margin: 0 }}>
           La aplicación no ha podido arrancar
         </h1>

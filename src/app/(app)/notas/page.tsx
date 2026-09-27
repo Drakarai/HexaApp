@@ -13,6 +13,7 @@ import { generacionDelJuego, nombreDelJuego } from "@/lib/juegos";
 import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
 import { NewNoteForm, NoteCard } from "./note-forms";
 import { getAcceso } from "@/lib/acceso";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mis notas" };
 
@@ -106,7 +107,7 @@ export default async function NotesPage({
             <span className="mr-2 inline-block transition group-open:rotate-90">
               ▸
             </span>
-            🛡️ Cobertura de tipos
+            <Icono emoji="🛡️" /> Cobertura de tipos
             <span className="ml-2 font-normal text-slate-500">
               — monta un equipo de 6 y mira qué le hace daño
             </span>
@@ -132,7 +133,7 @@ export default async function NotesPage({
             scope === "general" && "border-brand-500/40 bg-brand-600/20 text-white",
           )}
         >
-          📋 Generales ({countFor(null)})
+          <Icono emoji="📋" /> Generales ({countFor(null)})
         </Link>
         {participants.map((participant) => (
           <Link

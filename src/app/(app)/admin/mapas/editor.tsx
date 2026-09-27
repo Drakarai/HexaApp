@@ -17,6 +17,7 @@ import { FORMAS, TIPOS_DE_ZONA, colorDeZona } from "@/lib/zonas";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * El editor del mapa de una región.
@@ -186,7 +187,7 @@ export function DetectarZonas({
       </p>
       <FormMessage state={estado} />
       <SubmitButton className="btn-ghost btn-sm" pendingLabel="Mirando la imagen…">
-        🔍 Sacar las zonas de la imagen
+        <Icono emoji="🔍" /> Sacar las zonas de la imagen
       </SubmitButton>
       {!hayImagen ? (
         <p className="text-xs text-amber-300/90">
@@ -212,7 +213,7 @@ export function FondoDelMapa({ mapa }: { mapa: MapaDeRegion }) {
         className="btn-ghost btn-sm"
         onClick={() => setAbierto(true)}
       >
-        🖼️ {mapa.image ? "Cambiar el mapa de fondo" : "Ponerle el mapa de fondo"}
+        <Icono emoji="🖼️" /> {mapa.image ? "Cambiar el mapa de fondo" : "Ponerle el mapa de fondo"}
       </button>
     );
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icono } from "@/components/icono";
 
 /**
  * Registra el service worker, que es lo que hace la app instalable y lo que
@@ -144,7 +145,7 @@ export function RepararLaAplicacion() {
         disabled={estado === "trabajando"}
         className="btn-ghost btn-sm mt-2"
       >
-        {estado === "trabajando" ? "Reparando…" : "🧹 Reparar la aplicación"}
+        {estado === "trabajando" ? "Reparando…" : <><Icono emoji="🧹" /> Reparar la aplicación</>}
       </button>
     </div>
   );

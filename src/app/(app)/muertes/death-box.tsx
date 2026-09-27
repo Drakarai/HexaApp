@@ -21,6 +21,7 @@ import { SitioPicker } from "@/components/sitio-picker";
 import { IMAGE_SIZES } from "@/lib/image";
 import type { ZonaParaElegir } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 export type AceSummary = {
   species: string | null;
@@ -426,7 +427,7 @@ function DeathDetail({
                 className="btn-primary btn-sm"
                 onClick={() => setEditing(true)}
               >
-                🖼️ Editar ficha e imágenes
+                <Icono emoji="🖼️" /> Editar ficha e imágenes
               </button>
               <form action={deleteDeathAction} onSubmit={() => onClose()}>
                 <input type="hidden" name="deathId" value={death.id} />

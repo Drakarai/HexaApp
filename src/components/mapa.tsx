@@ -376,7 +376,7 @@ export function Mapa({
                     dominantBaseline="central"
                     fontSize={Math.min(26, caja.h * 0.7)}
                     fontWeight="700"
-                    fill={soloFallos ? "#ffffff" : "#0b1020"}
+                    fill={soloFallos ? "#ffffff" : "var(--color-ink-900, #0b1020)"}
                     pointerEvents="none"
                   >
                     {hechas || "✕"}
@@ -411,7 +411,7 @@ export function Mapa({
                         height={18}
                         rx={4}
                         fill="#ffffff"
-                        stroke="#0b1020"
+                        stroke="var(--color-ink-900, #0b1020)"
                         strokeWidth={2}
                         className="cursor-nwse-resize"
                         onPointerDown={(evento) => {
@@ -450,7 +450,7 @@ export function Mapa({
                       cy={tiradorY}
                       r={11}
                       fill="#ffffff"
-                      stroke="#0b1020"
+                      stroke="var(--color-ink-900, #0b1020)"
                       strokeWidth={2}
                       className="cursor-grab"
                       onPointerDown={(evento) => {
@@ -478,7 +478,7 @@ export function Mapa({
                       textAnchor="middle"
                       dominantBaseline="central"
                       fontSize={13}
-                      fill="#0b1020"
+                      fill="var(--color-ink-900, #0b1020)"
                       pointerEvents="none"
                     >
                       ↻

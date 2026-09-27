@@ -11,6 +11,7 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import { ImageListInput } from "@/components/image-list-input";
 import { IMAGE_SIZES } from "@/lib/image";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
+import { Icono } from "@/components/icono";
 
 const KINDS = Object.entries(LEVEL_CAP_KIND_LABELS);
 
@@ -205,7 +206,7 @@ export function TraerPlantilla({
     <form action={formAction} className={hayAlguno ? "mt-4" : "mt-3"}>
       <input type="hidden" name="competitionId" value={competitionId} />
       <SubmitButton className={hayAlguno ? "btn-ghost btn-sm" : "btn-primary btn-sm"}>
-        🎯 Traer los de {nombreDelJuego}
+        <Icono emoji="🎯" /> Traer los de {nombreDelJuego}
       </SubmitButton>
       <p className="mt-1 text-xs text-slate-500">
         {hayAlguno

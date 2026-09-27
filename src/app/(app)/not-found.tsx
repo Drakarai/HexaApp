@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icono } from "@/components/icono";
 
 /**
  * Para los `notFound()` de dentro de la aplicación: el perfil de un jugador que
@@ -9,7 +10,7 @@ export default function NoEncontrado() {
   return (
     <section className="card mx-auto max-w-lg text-center">
       <p className="text-4xl" aria-hidden>
-        🔍
+        <Icono emoji="🔍" />
       </p>
       <h1 className="section-title mt-3">Aquí no hay nada</h1>
       <p className="muted mt-2">

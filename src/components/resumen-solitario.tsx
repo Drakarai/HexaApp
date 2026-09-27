@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ProgresoEnSolitario } from "@/lib/solitario";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 /**
  * La portada de una partida en solitario.
@@ -24,7 +25,7 @@ export function ResumenEnSolitario({
     <>
       {ligaSuperada ? (
         <p className="mb-4 flex items-start gap-2 rounded-xl border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
-          <span aria-hidden>🏆</span>
+          <span aria-hidden><Icono emoji="🏆" /></span>
           <span>
             <strong className="font-semibold">Locke terminado.</strong> Te has
             pasado la Liga con {caidos}{" "}
@@ -111,7 +112,7 @@ function Dato({
     >
       <p className="text-xs uppercase tracking-wide text-slate-500">
         <span className="mr-1" aria-hidden>
-          {icono}
+          <Icono emoji={icono} />
         </span>
         {etiqueta}
       </p>

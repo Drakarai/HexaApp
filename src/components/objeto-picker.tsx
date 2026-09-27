@@ -9,6 +9,7 @@ import {
   type ObjetoDelJuego,
 } from "@/lib/objetos";
 import { cx } from "@/lib/utils";
+import { Icono } from "@/components/icono";
 
 type Tipo = "juegos" | "inventado" | "grupo";
 
@@ -44,17 +45,17 @@ export function ObjetoPicker({
 
       <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
         <Pestana activa={tipo === "juegos"} onClick={() => setTipo("juegos")}>
-          🎒 De los juegos
+          <Icono emoji="🎒" /> De los juegos
         </Pestana>
         <Pestana
           activa={tipo === "inventado"}
           onClick={() => setTipo("inventado")}
         >
-          ✨ Propio
+          <Icono emoji="✨" /> Propio
         </Pestana>
         {permitirGrupo ? (
           <Pestana activa={tipo === "grupo"} onClick={() => setTipo("grupo")}>
-            📦 Grupo
+            <Icono emoji="📦" /> Grupo
           </Pestana>
         ) : null}
       </div>
