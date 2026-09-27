@@ -13,6 +13,9 @@
  * No es idempotente: pasarlo dos veces duplica capturas y bajas.
  */
 
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
 
 const { chromium } = await cargarPlaywright();
@@ -54,9 +57,19 @@ await p.waitForTimeout(900);
     await p.waitForTimeout(500);
     await bloque.locator('select[name="gameId"]').first().selectOption("heartgold");
     await p.waitForTimeout(400);
+    // Y el logo, para que la portada salga con su emblema de fondo. Se pasa a
+    // PNG aquí porque el navegador no sabe reducir un SVG a imagen
+    const sharp = (await import("sharp")).default;
+    const aqui = dirname(fileURLToPath(import.meta.url));
+    await bloque.locator('input[type="file"]').first().setInputFiles({
+      name: "logo.png",
+      mimeType: "image/png",
+      buffer: await sharp(join(aqui, "logo-ejemplo.svg")).resize(640).png().toBuffer(),
+    });
+    await p.waitForTimeout(1500);
     await bloque.locator("button[type=submit]").first().click();
     await p.waitForTimeout(2400);
-    console.log("juego: HeartGold");
+    console.log("juego: HeartGold, y el logo");
   }
 }
 
@@ -124,14 +137,44 @@ async function apuntarBaja(especie, mote, causa, zona) {
 await apuntarBaja("Caterpie", "Fideo", "Crítico de Rattata", "Ruta 31");
 await apuntarBaja("Zubat", "Colmillo", "Confusión", "Ruta 32");
 
-// --- Dos gimnasios superados, para que la pantalla no salga en blanco
+// --- Gimnasios superados, para que la pantalla no salga en blanco. Van en
+// este orden para que las coronas del primero en pasar se repartan: Draka el
+// primero y Pablo el segundo. Se busca por el nombre sin anclar, porque al que
+// ya lleva corona el botón le empieza por ella
 await p.goto(BASE + "/level-caps", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1200);
-for (const indice of [0, 1]) {
-  await p.locator("button", { hasText: /^Draka/ }).nth(indice).click();
+for (const [quien, gimnasio] of [
+  ["Draka", 0],
+  ["Pablo", 0],
+  ["Héctor", 0],
+  ["Pablo", 1],
+  ["Draka", 1],
+]) {
+  await p.locator("button.chip", { hasText: quien }).nth(gimnasio).click();
   await p.waitForTimeout(2000);
 }
 console.log("gimnasios marcados");
+
+// --- Una regla cambiada con el locke ya en marcha, que es lo que avisa a
+// todos. La casilla de avisar viene marcada, así que basta con guardar
+await p.goto(BASE + "/reglas", { waitUntil: "domcontentloaded" });
+await p.waitForTimeout(1200);
+{
+  const regla = p.locator("article", { hasText: "Añadidos a las reglas generales" }).first();
+  await regla.locator("button", { hasText: "Editar" }).click();
+  await p.waitForTimeout(500);
+  const cuerpo = regla.locator('textarea[name="body"]');
+  const antes = await cuerpo.inputValue();
+  await cuerpo.fill(
+    antes.replace(
+      /^- Cada combate de gimnasio .*$/m,
+      "- Cada combate de gimnasio **se graba** y el enlace se pega debajo de su gimnasio, en Level caps.\n- Quien no suba el vídeo en dos días **repite el gimnasio**.",
+    ),
+  );
+  await regla.locator("button", { hasText: "Guardar" }).click();
+  await p.waitForTimeout(2200);
+  console.log("regla cambiada");
+}
 
 // --- Una nota
 await p.goto(BASE + "/notas", { waitUntil: "domcontentloaded" });
@@ -216,11 +259,16 @@ await p
 await p.waitForTimeout(2000);
 console.log("casilla con tickets");
 
-// --- La primera jornada, jugada entera
+// --- Las dos primeras jornadas, jugadas enteras. Dos y no una: las flechas de
+// la clasificación comparan con la jornada anterior, y con una sola no hay
+// con qué. La segunda le da la vuelta a la primera para que se muevan
 const resultados = [
   { ganador: 1, diferencia: 2 },
   { ganador: 1, diferencia: 1 },
   { ganador: 2, diferencia: 3 },
+  { ganador: 2, diferencia: 2 },
+  { ganador: 2, diferencia: 1 },
+  { ganador: 2, diferencia: 4 },
 ];
 for (const resultado of resultados) {
   await p.goto(BASE + "/jornadas", { waitUntil: "domcontentloaded" });
@@ -241,8 +289,11 @@ await p.goto(BASE + "/jornadas", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1500);
 // La jornada acaba de terminarse, así que está plegada y hay que abrirla: los
 // botones de dentro existen pero no se ven, y el clic se quedaba esperando
-for (const plegada of await p.locator("section.card details:not([open]) summary").all()) {
-  await plegada.click();
+// De una en una y volviendo a buscar: al abrir una, la lista de plegadas
+// cambia, y recorrerla entera de golpe se quedaba esperando a la que ya no está
+const plegadas = p.locator("section.card details:not([open]) summary");
+while (await plegadas.count()) {
+  await plegadas.first().click();
   await p.waitForTimeout(400);
 }
 await p.locator("button", { hasText: "Apuntar equipos" }).first().click();

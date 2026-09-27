@@ -2,187 +2,407 @@
  * El estilo de las guías en PDF. Lo comparten `guia.html` (la de todos) y
  * `guia-admin.html` (la de quien lleva un locke) para que salgan idénticas:
  * si se toca un margen aquí, se toca en las dos a la vez.
+ *
+ * Va con el **aspecto de ahora** de la aplicación: las mismas letras (Barlow
+ * para leer, Barlow Condensed en mayúsculas para los títulos), el mismo añil y
+ * grises neutros. El papel sigue siendo blanco a propósito: es para leerlo en
+ * el móvil de día y, si alguien la imprime, que no se gaste el tóner entero.
+ * Lo oscuro se queda para la portada y para los marcos de las fotos, que ya son
+ * de la app y así parecen la pantalla de verdad.
  */
 @page { size: A4; margin: 0; }
 
-  :root {
-    --tinta: #14162b;
-    --suave: #5a5f7d;
-    --marca: #5b53e6;
-    --marca-flojo: #eeecfd;
-    --linea: #e4e4ef;
-    --papel: #ffffff;
-  }
+/*
+ * Las letras salen de node_modules, las mismas que carga la aplicación: así no
+ * hay que tenerlas instaladas en el ordenador que genera el PDF ni bajarlas de
+ * internet. Solo los pesos que se usan.
+ */
+@font-face { font-family: "Barlow"; font-weight: 400; src: url("../node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 500; src: url("../node_modules/@fontsource/barlow/files/barlow-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; src: url("../node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 700; src: url("../node_modules/@fontsource/barlow/files/barlow-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 600; src: url("../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Condensed"; font-weight: 700; src: url("../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2") format("woff2"); }
 
-  * { box-sizing: border-box; }
+:root {
+  --tinta: #121216;
+  --suave: #5f5f69;
+  --tenue: #9a9aa3;
+  --marca: #4f46e5;
+  --marca-vivo: #6366f1;
+  --marca-flojo: #eef0ff;
+  --linea: #e4e4e9;
+  --gris: #f4f4f6;
+  --ojo: #d97706;
+  --noche: #0b0b0e;
+  --papel: #ffffff;
+  --titular: "Barlow Condensed", "Barlow", "Arial Narrow", sans-serif;
+}
 
-  html, body {
-    margin: 0;
-    padding: 0;
-    background: var(--papel);
-    color: var(--tinta);
-    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 10.5pt;
-    line-height: 1.5;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
+* { box-sizing: border-box; }
 
-  .pagina {
-    width: 210mm;
-    height: 297mm;
-    padding: 16mm 15mm 14mm;
-    position: relative;
-    overflow: hidden;
-    page-break-after: always;
-    display: flex;
-    flex-direction: column;
-  }
-  .pagina:last-child { page-break-after: auto; }
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--papel);
+  color: var(--tinta);
+  font-family: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 10.5pt;
+  line-height: 1.5;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
 
-  /* ---- Cabecera y pie ---- */
-  .cabecera {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    border-bottom: 1.5px solid var(--linea);
-    padding-bottom: 3mm;
-    margin-bottom: 7mm;
-    font-size: 8.5pt;
-    color: var(--suave);
-    letter-spacing: .06em;
-    text-transform: uppercase;
-  }
-  .cabecera strong { color: var(--marca); font-weight: 700; }
+.pagina {
+  width: 210mm;
+  height: 297mm;
+  padding: 15mm 15mm 16mm;
+  position: relative;
+  overflow: hidden;
+  page-break-after: always;
+  display: flex;
+  flex-direction: column;
+}
+.pagina:last-child { page-break-after: auto; }
 
-  .pie {
-    position: absolute;
-    left: 15mm; right: 15mm; bottom: 8mm;
-    display: flex;
-    justify-content: space-between;
-    font-size: 8pt;
-    color: #9a9db3;
-    border-top: 1px solid var(--linea);
-    padding-top: 2.5mm;
-  }
+/* ---- Cabecera y pie ---- */
+.cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 3mm;
+  margin-bottom: 7mm;
+  border-bottom: 1px solid var(--linea);
+  font-family: var(--titular);
+  font-weight: 600;
+  font-size: 9pt;
+  color: var(--tenue);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.cabecera strong {
+  color: var(--marca);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 2mm;
+}
+/* El cuadradito de color delante de la sección, como la raya de los títulos
+   de la app */
+.cabecera strong::before {
+  content: "";
+  width: 2.2mm;
+  height: 2.2mm;
+  border-radius: 1px;
+  background: var(--marca);
+}
 
-  h1 { font-size: 30pt; line-height: 1.05; margin: 0 0 4mm; letter-spacing: -.02em; }
-  h2 { font-size: 19pt; line-height: 1.15; margin: 0 0 3mm; letter-spacing: -.015em; }
-  h3 { font-size: 11.5pt; margin: 6mm 0 2mm; color: var(--marca); }
-  p { margin: 0 0 3mm; }
-  .entradilla { font-size: 11.5pt; color: var(--suave); margin-bottom: 6mm; }
+.pie {
+  position: absolute;
+  left: 15mm; right: 15mm; bottom: 8mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 8pt;
+  color: var(--tenue);
+  border-top: 1px solid var(--linea);
+  padding-top: 2.5mm;
+}
+/* El número de página, en la letra de marcador de las cifras de la app */
+.pie span:last-child {
+  font-family: var(--titular);
+  font-weight: 700;
+  font-size: 11pt;
+  color: var(--tinta);
+  letter-spacing: .04em;
+  line-height: 1;
+}
 
-  strong { font-weight: 650; }
-  em { font-style: normal; background: var(--marca-flojo); padding: 0 .3em; border-radius: 3px; }
+/* ---- Títulos ---- */
+h1, h2 {
+  font-family: var(--titular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+h1 { font-size: 34pt; line-height: 1; margin: 0 0 4mm; }
+h2 { font-size: 25pt; line-height: 1.02; margin: 0 0 3mm; }
+h3 {
+  font-family: var(--titular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 12pt;
+  line-height: 1.2;
+  margin: 6mm 0 2mm;
+  padding-left: 3mm;
+  border-left: 3px solid var(--marca);
+}
+p { margin: 0 0 3mm; }
+.entradilla { font-size: 11.5pt; color: var(--suave); margin-bottom: 6mm; }
 
-  /* ---- Pasos numerados ---- */
-  ol.pasos { margin: 0 0 4mm; padding: 0; list-style: none; counter-reset: paso; }
-  ol.pasos li {
-    counter-increment: paso;
-    position: relative;
-    padding-left: 9mm;
-    margin-bottom: 3mm;
-  }
-  ol.pasos li::before {
-    content: counter(paso);
-    position: absolute;
-    left: 0; top: .1mm;
-    width: 6mm; height: 6mm;
-    border-radius: 50%;
-    background: var(--marca);
-    color: #fff;
-    font-size: 8.5pt;
-    font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
+strong { font-weight: 600; }
+/* Las rutas de la app ("Lo mío → Mi perfil") van como las pastillas del menú */
+em {
+  font-style: normal;
+  font-weight: 500;
+  background: var(--gris);
+  border: 1px solid var(--linea);
+  padding: 0 .35em;
+  border-radius: 4px;
+  white-space: nowrap;
+}
 
-  ul.puntos { margin: 0 0 4mm; padding-left: 5mm; }
-  ul.puntos li { margin-bottom: 2mm; }
+/* ---- Iconos de línea (los pinta pdf.mjs, ver ahí) ---- */
+i[data-i] { font-style: normal; }
+.ico {
+  display: inline-block;
+  vertical-align: -0.18em;
+  flex: none;
+}
+.oro { color: #d97706; }
+.rojo { color: #dc2626; }
+.verde { color: #059669; }
 
-  /* ---- Avisos ---- */
-  .aviso {
-    border-left: 3px solid var(--marca);
-    background: #f7f6ff;
-    padding: 3mm 4mm;
-    border-radius: 0 6px 6px 0;
-    font-size: 9.5pt;
-    margin: 0 0 4mm;
-  }
-  .aviso.ojo { border-color: #e0a300; background: #fff9e8; }
-  .aviso > strong:first-child { display: block; margin-bottom: 1mm; }
+/* ---- Pasos numerados: la casilla oscura del "Nivel" de los level caps ---- */
+ol.pasos { margin: 0 0 4mm; padding: 0; list-style: none; counter-reset: paso; }
+ol.pasos li {
+  counter-increment: paso;
+  position: relative;
+  padding-left: 9.5mm;
+  margin-bottom: 3mm;
+}
+ol.pasos li::before {
+  content: counter(paso);
+  position: absolute;
+  left: 0; top: .2mm;
+  width: 6.2mm; height: 6.2mm;
+  border-radius: 1.6mm;
+  background: var(--noche);
+  color: #fff;
+  font-family: var(--titular);
+  font-size: 11pt;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: inset 0 -2px 0 var(--marca-vivo);
+}
 
-  /* ---- Móviles ---- */
-  .movil {
-    border: 3px solid #24263f;
-    border-radius: 16px;
-    overflow: hidden;
-    background: #0b1020;
-    display: block;
-  }
-  .movil img { width: 100%; display: block; }
+ul.puntos { margin: 0 0 4mm; padding: 0; list-style: none; }
+ul.puntos li { margin-bottom: 2mm; padding-left: 5mm; position: relative; }
+ul.puntos li::before {
+  content: "";
+  position: absolute;
+  left: .4mm; top: 2.1mm;
+  width: 1.8mm; height: 1.8mm;
+  border-radius: 50%;
+  background: var(--marca);
+}
 
-  figure { margin: 0; }
-  figcaption {
-    font-size: 8pt;
-    color: var(--suave);
-    text-align: center;
-    margin-top: 2mm;
-    line-height: 1.35;
-  }
+/* ---- Avisos ---- */
+.aviso {
+  border: 1px solid #dcdcf7;
+  border-left: 3px solid var(--marca);
+  background: #f7f7ff;
+  padding: 3mm 4mm;
+  border-radius: 0 6px 6px 0;
+  font-size: 9.5pt;
+  margin: 0 0 4mm;
+}
+.aviso.ojo { border-color: #f3dfb5; border-left-color: var(--ojo); background: #fffaf0; }
+.aviso > strong:first-child {
+  display: block;
+  margin-bottom: 1mm;
+  font-family: var(--titular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  font-size: 10pt;
+  color: var(--marca);
+}
+.aviso.ojo > strong:first-child { color: #b45309; }
 
-  .fila { display: flex; gap: 8mm; align-items: flex-start; }
-  .fila .texto { flex: 1; }
-  .fila .foto { width: 62mm; flex: none; }
+/* ---- Móviles ---- */
+.movil {
+  border: 2.2mm solid var(--noche);
+  border-radius: 5.5mm;
+  overflow: hidden;
+  background: var(--noche);
+  display: block;
+  box-shadow: 0 0 0 .35mm #3a3a42, 0 2mm 5mm rgba(15, 15, 30, .18);
+}
+.movil img { width: 100%; display: block; border-radius: 3mm; }
 
-  .duo { display: flex; gap: 7mm; margin-top: 2mm; justify-content: center; }
-  .duo figure { width: 56mm; flex: none; }
-  /* Para las páginas que llevan más texto del normal */
-  .duo.compacta figure { width: 42mm; }
+figure { margin: 0; }
+figcaption {
+  font-size: 8pt;
+  color: var(--suave);
+  text-align: center;
+  margin-top: 2.5mm;
+  line-height: 1.35;
+}
 
-  .ancha { max-width: 152mm; margin: 0 auto; border: 3px solid #24263f; border-radius: 12px; overflow: hidden; background: #0b1020; }
-  .ancha img { width: 100%; display: block; }
-  .fila .foto { width: 62mm; }
+.fila { display: flex; gap: 8mm; align-items: flex-start; }
+.fila .texto { flex: 1; min-width: 0; }
+.fila .foto { width: 62mm; flex: none; }
 
-  /* ---- Portada ---- */
-  .portada {
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    background: linear-gradient(160deg, #14162b 0%, #241f52 55%, #4b3fb8 100%);
-    color: #fff;
-  }
-  .portada .hexa { display: flex; justify-content: center; line-height: 1; margin-bottom: 4mm; }
-  .portada h1 { font-size: 44pt; margin-bottom: 3mm; }
-  .portada .sub { font-size: 13pt; color: #c9c6f2; max-width: 120mm; margin: 0 auto 12mm; }
-  .portada .pie-portada { position: absolute; bottom: 18mm; font-size: 9.5pt; color: #a9a5db; }
-  .portada .chapas { display: flex; gap: 3mm; justify-content: center; flex-wrap: wrap; margin-top: 4mm; }
-  .portada .chapa {
-    border: 1px solid rgba(255,255,255,.28);
-    border-radius: 999px;
-    padding: 1.5mm 4mm;
-    font-size: 9pt;
-    color: #ded ;
-    color: #dedcfa;
-  }
+.duo { display: flex; gap: 8mm; margin-top: 2mm; justify-content: center; }
+.duo figure { width: 56mm; flex: none; }
+/* Para las páginas que llevan más texto del normal */
+.duo.compacta figure { width: 42mm; }
 
-  /* ---- Índice ---- */
-  .indice { columns: 2; column-gap: 10mm; font-size: 10pt; }
-  .indice div {
-    break-inside: avoid;
-    display: flex;
-    justify-content: space-between;
-    gap: 3mm;
-    padding: 1.6mm 0;
-    border-bottom: 1px dotted var(--linea);
-  }
-  .indice span:last-child { color: var(--marca); font-weight: 650; }
+.ancha {
+  max-width: 152mm;
+  margin: 0 auto;
+  border: 1.6mm solid var(--noche);
+  border-radius: 3.5mm;
+  overflow: hidden;
+  background: var(--noche);
+  box-shadow: 0 0 0 .35mm #3a3a42, 0 2mm 5mm rgba(15, 15, 30, .18);
+}
+.ancha img { width: 100%; display: block; }
 
-  .tarjetas { display: flex; gap: 4mm; margin-bottom: 5mm; }
-  .tarjeta {
-    flex: 1;
-    border: 1px solid var(--linea);
-    border-radius: 8px;
-    padding: 3.5mm;
-    font-size: 9pt;
-  }
-  .tarjeta b { display: block; color: var(--marca); margin-bottom: 1mm; font-size: 9.5pt; }
+/* ---- Portada ---- */
+.portada {
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  color: #fff;
+  background-color: var(--noche);
+  /* La retícula de puntos del fondo de la app, que se apaga hacia abajo */
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 40%, rgba(99, 102, 241, .22), transparent 70%),
+    radial-gradient(rgba(255, 255, 255, .09) 1px, transparent 1.3px);
+  background-size: 100% 100%, 5mm 5mm;
+}
+.portada .hexa { display: flex; justify-content: center; line-height: 1; margin-bottom: 7mm; }
+.portada .hexa svg { width: 46mm; height: 46mm; }
+.portada h1 { font-size: 64pt; letter-spacing: .06em; margin-bottom: 2mm; }
+.portada .titulo-guia {
+  font-family: var(--titular);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .32em;
+  font-size: 13pt;
+  color: #a5b4fc;
+  margin: 0 0 9mm;
+}
+.portada .sub { font-size: 12.5pt; color: #b4b4bd; max-width: 118mm; margin: 0 auto 10mm; }
+.portada .chapas { display: flex; gap: 2.5mm; justify-content: center; flex-wrap: wrap; max-width: 140mm; }
+.portada .chapa {
+  border: 1px solid rgba(165, 180, 252, .35);
+  background: rgba(99, 102, 241, .12);
+  border-radius: 999px;
+  padding: 1.4mm 4mm;
+  font-family: var(--titular);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: 9pt;
+  color: #e0e7ff;
+}
+.portada .pie-portada {
+  position: absolute;
+  left: 15mm; right: 15mm; bottom: 14mm;
+  padding-top: 4mm;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+  font-size: 9pt;
+  color: #7c7c86;
+}
+
+/* ---- Índice ---- */
+.indice { columns: 2; column-gap: 10mm; font-size: 10pt; }
+.indice div {
+  break-inside: avoid;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 3mm;
+  padding: 1.5mm 0;
+  border-bottom: 1px dotted #d4d4db;
+}
+.indice span:last-child {
+  font-family: var(--titular);
+  font-weight: 700;
+  font-size: 11pt;
+  color: var(--marca);
+}
+/* Lo que es nuevo en esta versión, con su marca */
+.indice .nuevo span:first-child::after {
+  content: "Nuevo";
+  margin-left: 2mm;
+  padding: 0 1.4mm;
+  border-radius: 3px;
+  background: var(--marca);
+  color: #fff;
+  font-family: var(--titular);
+  font-weight: 700;
+  font-size: 7pt;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  vertical-align: .15em;
+}
+
+/* ---- Tarjetas ---- */
+.tarjetas { display: flex; gap: 4mm; margin-bottom: 5mm; }
+.tarjeta {
+  flex: 1;
+  border: 1px solid var(--linea);
+  border-radius: 7px;
+  padding: 3.5mm;
+  font-size: 9pt;
+  background: #fcfcfd;
+}
+.tarjeta b {
+  display: flex;
+  align-items: center;
+  gap: 1.6mm;
+  margin-bottom: 1mm;
+  font-family: var(--titular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 10.5pt;
+  color: var(--tinta);
+}
+.tarjeta b .ico { color: var(--marca); }
+
+/* Rejilla de tarjetas a dos columnas: las novedades y la chuleta de iconos */
+.rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 3.5mm; margin-bottom: 4mm; }
+.rejilla .tarjeta { flex: none; }
+
+/* ---- Chuleta de iconos ---- */
+.chuleta { display: grid; grid-template-columns: 1fr 1fr; gap: 0 8mm; margin-bottom: 3mm; }
+.chuleta div {
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+  padding: 1.7mm 0;
+  border-bottom: 1px solid var(--linea);
+  font-size: 9.3pt;
+  line-height: 1.35;
+  break-inside: avoid;
+}
+.chuleta .ico {
+  width: 5.2mm; height: 5.2mm;
+  padding: .9mm;
+  box-sizing: content-box;
+  border-radius: 1.6mm;
+  background: var(--noche);
+  color: #e0e7ff;
+  margin-top: -.6mm;
+}
+/* El punto relleno de "en curso": a tamaño de icono era un borrón verde */
+.chuleta .ico.punto { width: 2.6mm; height: 2.6mm; padding: 2.2mm; }
+.chuleta .ico.oro { color: #fbbf24; }
+.chuleta .ico.rojo { color: #f87171; }
+.chuleta .ico.verde { color: #34d399; }
+.chuleta b { font-weight: 600; }
+.chuleta-titulo {
+  font-family: var(--titular);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .12em;
+  font-size: 9pt;
+  color: var(--tenue);
+  margin: 4mm 0 1mm;
+}

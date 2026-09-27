@@ -11,7 +11,8 @@
 <section class="pagina portada">
   <div class="hexa"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="120" height="120" aria-hidden="true"><defs><linearGradient id="logo-guia" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5b4fc"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs><polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,50 13.63,50" fill="url(#logo-guia)"/><polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,71.00 50,92.00 13.63,71.00" fill="none" stroke="#818cf8" stroke-width="6" stroke-linejoin="round"/><line x1="13.63" y1="50" x2="86.37" y2="50" stroke="#818cf8" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#0b0b0e" stroke="#818cf8" stroke-width="6"/><circle cx="50" cy="50" r="5.5" fill="#e0e7ff"/></svg></div>
   <h1>HexaApp</h1>
-  <p class="sub">Guía para quien lleva un locke: montarlo, emparejar las jornadas, anotar
+  <p class="titulo-guia">Guía del administrador</p>
+  <p class="sub">Para quien lleva un locke: montarlo, emparejar las jornadas, anotar
     resultados y repartir premios. Lo que hay que hacer y en qué orden.</p>
   <div class="chapas">
     <span class="chapa">Montar la edición</span>
@@ -31,13 +32,13 @@
 
   <div class="duo compacta">
     <div class="tarjeta">
-      <b>Tuyo</b>
+      <b><i data-i="Shield"></i>Tuyo</b>
       Jugadores, reglas y level caps de tu edición. Jornadas, emparejamientos y resultados.
       Retos, sorteos y la ruleta. Repartir objetos. Puntos y ajustes. Archivar el locke
       cuando se acabe.
     </div>
     <div class="tarjeta">
-      <b>Del Creador</b>
+      <b><i data-i="Settings"></i>Del Creador</b>
       Los mapas de las regiones. Las plantillas de level caps de cada juego. El catálogo de
       objetos. Las copias de seguridad. Las cuentas de la gente.
     </div>
@@ -46,12 +47,25 @@
   <h3>Si te falta algo</h3>
   <p>Si necesitas una zona nueva en un mapa, un objeto que no está en el catálogo o una
     cuenta para alguien, <strong>pídeselo al Creador</strong>. Y si te han dado el permiso de
-    <strong>organizador</strong> (🎪), puedes dar de alta tú a los tuyos desde
+    <strong>organizador</strong> (<i data-i="Tent"></i>), puedes dar de alta tú a los tuyos desde
     <em>Competiciones</em>.</p>
 
   <div class="aviso ojo">
     <strong>Lo que no vas a ver nunca</strong>
     El mapa de capturas y las notas de tus jugadores. Son privados, ni siquiera para ti.
+  </div>
+
+  <h3>Lo nuevo para ti</h3>
+  <div class="rejilla">
+    <div class="tarjeta"><b><i data-i="ScrollText"></i>Reglas que avisan</b>Cambiar una regla
+      con el locke en marcha se lo avisa a todos, con lo que ha cambiado. Página 4.</div>
+    <div class="tarjeta"><b><i data-i="ImagePlus"></i>El logo del locke</b>Súbele un emblema a
+      tu edición y saldrá de fondo en la portada. Página 5.</div>
+    <div class="tarjeta"><b><i data-i="Users"></i>Copiar jugadores</b>Al crear la siguiente
+      edición, si los de la anterior no caben, te avisa en vez de dejar fuera a nadie.
+      Página 13.</div>
+    <div class="tarjeta"><b><i data-i="Crosshair"></i>Plantillas al día</b>Los level caps de
+      fábrica traen los líderes y los pueblos con su nombre en español, el de los juegos.</div>
   </div>
 
   <div class="pie"><span>HexaApp · Guía del administrador</span><span>2</span></div>
@@ -86,10 +100,10 @@
       <h3>Wipeos y perder el locke</h3>
       <p>Que a alguien le barran el equipo entero es un <strong>wipeo</strong>. Se apunta en
         su perfil, se pueden poner los que hagan falta y se quitan si se apuntó mal; sale
-        como <strong>💥N</strong> en la clasificación. <strong>No echa a nadie</strong>: un
+        como <strong><i data-i="Bomb" class="rojo"></i>N</strong> en la clasificación. <strong>No echa a nadie</strong>: un
         wipeo en la primera ruta no tiene por qué costar el locke.</p>
       <p>Cuando sí se lo cuesta, en <em>Competiciones</em> tienes
-        <strong>💥 Perdió el locke</strong>, al lado de Retirar. Deja a esa persona fuera
+        <strong><i data-i="Bomb" class="rojo"></i> Perdió el locke</strong>, al lado de Retirar. Deja a esa persona fuera
         igual que una retirada —no entra en emparejamientos, no cuenta para el MVP ni para
         el formato del final, y sus combates pendientes los gana el rival— pero se enseña
         como <strong>locke perdido</strong>, que no es lo mismo que dejarlo. Se puede
@@ -98,7 +112,7 @@
 
       <h3>Dejar que juegue alguien que está fuera</h3>
       <p>La norma se puede saltar <strong>combate a combate</strong>. En el combate te sale
-        <strong>🤝 Dejar que lo jueguen</strong>: ya no se da por retirada, se juega y cuenta
+        <strong><i data-i="Handshake"></i> Dejar que lo jueguen</strong>: ya no se da por retirada, se juega y cuenta
         como cualquier otro. Queda marcado, y el botón pasa a ser <em>Quitar el
         permiso</em>.</p>
       <p>Si no existe, móntalo a mano: en <em>Añadir combate</em> —y en los retos— salen los
@@ -124,17 +138,22 @@
       <p>En <em>La edición → Reglas</em>. Se escriben por apartados y las lee todo el mundo.
         Es el sitio donde dejar por escrito lo que siempre se discute: qué cuenta como
         captura, qué pasa con los duplicados, si valen objetos en combate.</p>
+      <p>Con el locke ya en marcha, al editar una regla sale marcada
+        <strong>Avisar a todos del cambio</strong>: a cada jugador le sale un punto en
+        <em>Reglas</em>, la regla resaltada y <strong>qué líneas has añadido y
+        quitado</strong>. Si solo corriges una errata, desmárcala y no se entera nadie.</p>
 
       <h3>Level caps</h3>
       <p>El tope de nivel de cada gimnasio o prueba. En <em>Level caps</em>, y hay un botón
         para <strong>traerlos del juego</strong> en vez de escribirlos a mano: salen los
         ocho gimnasios con sus medallas puestas y solo hay que ajustar lo que cambies.</p>
-      <p>Cada jugador marca los suyos según los va superando, y el level cap actual sale en
-        la portada del locke.</p>
+      <p>Cada jugador marca los suyos según los va superando —tú puedes marcar los de
+        cualquiera— y el level cap actual sale en la portada. El primero en pasarse cada uno
+        se lleva la <strong><i data-i="Crown" class="oro"></i> corona</strong>.</p>
     </div>
     <figure class="foto">
       <div class="movil"><img src="img/level-caps.jpg" alt="Los level caps"></div>
-      <figcaption>Con sus medallas y quién lo lleva superado.</figcaption>
+      <figcaption>Con sus medallas, quién lo lleva superado y la corona del primero.</figcaption>
     </figure>
   </div>
 
@@ -156,7 +175,45 @@
   <div class="pie"><span>HexaApp · Guía del administrador</span><span>4</span></div>
 </section>
 
-<!-- ============ 5. JORNADAS ============ -->
+<!-- ============ 5. LA CARA DE LA EDICIÓN ============ -->
+<section class="pagina">
+  <div class="cabecera"><span>Montar</span><strong>Datos y logo</strong></div>
+  <h2>La cara de la edición</h2>
+  <p class="entradilla">En <em>Competiciones → Editar datos de la competición</em> está lo
+    que ve todo el mundo nada más entrar: el nombre, el juego y, ahora, el logo.</p>
+
+  <div class="duo">
+    <figure>
+      <div class="movil"><img src="img/logo-edicion.jpg" alt="El logo en Editar datos"></div>
+      <figcaption>Se sube desde el móvil o se pega el enlace.</figcaption>
+    </figure>
+    <figure>
+      <div class="movil"><img src="img/resumen.jpg" alt="La portada con el logo"></div>
+      <figcaption>Y sale de fondo junto al nombre, en la portada.</figcaption>
+    </figure>
+  </div>
+
+  <ul class="puntos">
+    <li><strong>El juego</strong> es lo que más pesa: de él salen el mapa de capturas y la
+      plantilla de level caps. Cámbialo antes de empezar, no a mitad.</li>
+    <li><strong>La modalidad</strong> sale debajo del nombre, junto al juego; <strong>la
+      descripción</strong>, en la lista de ediciones.</li>
+    <li><strong>El logo</strong>: una imagen, mejor cuadrada y <strong>con el fondo
+      transparente</strong>, que la app reduce sola antes de guardarla. Sale a la derecha
+      del nombre, difuminada. Sin logo, la portada se queda como siempre; con
+      <em>Quitar</em> vuelve a estar así.</li>
+  </ul>
+
+  <div class="aviso">
+    <strong>Un logo por locke</strong>
+    Es de cada edición, no de la app: el Hexalocke 3 puede llevar otro distinto, y el del 2
+    se queda con el suyo aunque lo archives.
+  </div>
+
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>5</span></div>
+</section>
+
+<!-- ============ 6. JORNADAS ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Los combates</span><strong>Jornadas</strong></div>
   <h2>Crear una jornada</h2>
@@ -186,10 +243,10 @@
     </figure>
   </div>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>5</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>6</span></div>
 </section>
 
-<!-- ============ 6. RESULTADOS ============ -->
+<!-- ============ 7. RESULTADOS ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Los combates</span><strong>Resultados</strong></div>
   <h2>Anotar lo que ha pasado</h2>
@@ -216,7 +273,7 @@
 
   <div class="aviso">
     <strong>Si alguien no se presenta</strong>
-    <strong>🏳️ Dar por retirada</strong>: eliges quién faltó y con qué fecha, y el otro gana
+    <strong><i data-i="Flag"></i> Dar por retirada</strong>: eliges quién faltó y con qué fecha, y el otro gana
     con diferencia de 3. Queda apuntado como tal, no como un combate normal.
   </div>
 
@@ -224,10 +281,10 @@
   <p>Cuando la jornada está jugada se abre la votación y vota todo el mundo. No lo eliges tú;
     solo hace falta que los equipos estén apuntados.</p>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>6</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>7</span></div>
 </section>
 
-<!-- ============ 7. BATTLE ROYALE ============ -->
+<!-- ============ 8. BATTLE ROYALE ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Los combates</span><strong>Battle Royale</strong></div>
   <h2>Una jornada de todos contra todos</h2>
@@ -255,10 +312,10 @@
     este orden». Por eso no cuenta para el cara a cara ni para la diferencia de pokémon de la
     clasificación: solo reparte los puntos de la jornada.</p>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>7</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>8</span></div>
 </section>
 
-<!-- ============ 8. RETOS ============ -->
+<!-- ============ 9. RETOS ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Los combates</span><strong>Retos</strong></div>
   <h2>Los piques sueltos</h2>
@@ -289,10 +346,10 @@
     </figure>
   </div>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>8</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>9</span></div>
 </section>
 
-<!-- ============ 9. SORTEO ============ -->
+<!-- ============ 10. SORTEO ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Los combates</span><strong>Sorteo</strong></div>
   <h2>El sorteo de préstamos</h2>
@@ -306,7 +363,7 @@
         <li><strong>Cada uno echa los suyos</strong> al bote; queda apuntado quién puso cada
           uno.</li>
         <li>Eliges <strong>quién entra</strong> tocando los nombres: de dos a seis.</li>
-        <li><strong>🎲 Repartir</strong>: se baraja y se da uno a cada uno por turnos, hasta
+        <li><strong><i data-i="Dices"></i> Repartir</strong>: se baraja y se da uno a cada uno por turnos, hasta
           seis por cabeza.</li>
       </ol>
 
@@ -322,10 +379,10 @@
     </figure>
   </div>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>9</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>10</span></div>
 </section>
 
-<!-- ============ 10. PUNTOS ============ -->
+<!-- ============ 11. PUNTOS ============ -->
 <section class="pagina">
   <div class="cabecera"><span>La clasificación</span><strong>Puntos</strong></div>
   <h2>Puntos y desempates</h2>
@@ -358,10 +415,10 @@
     cada uno. Por eso conviene rellenar «Jornadas previstas» al crear la edición.
   </div>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>10</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>11</span></div>
 </section>
 
-<!-- ============ 11. RULETA Y BOLSA ============ -->
+<!-- ============ 12. RULETA Y BOLSA ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Premios</span><strong>Ruleta y bolsa</strong></div>
   <h2>Repartir premios y castigos</h2>
@@ -393,15 +450,15 @@
     <em>Dárselo a otro</em> se lo quita al primero.</p>
 
   <h3>La bolsa</h3>
-  <p>En <em>Bolsa → 🎒 Bolsas de todos</em> ves lo que lleva cada jugador y le das lo que sea,
+  <p>En <em>Bolsa → Bolsas de todos</em> ves lo que lleva cada jugador y le das lo que sea,
     con un apunte de dónde salió. <strong>Gastarlo lo hace su dueño</strong>, y eso sí se
     anuncia en el muro. Crear objetos nuevos en el catálogo es cosa del Creador: si te falta
     uno, pídeselo.</p>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>11</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>12</span></div>
 </section>
 
-<!-- ============ 12. EL FINAL ============ -->
+<!-- ============ 13. EL FINAL ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Cerrar</span><strong>El final</strong></div>
   <h2>Cómo se acaba un locke</h2>
@@ -432,19 +489,29 @@
   </div>
 
   <h3>Y después</h3>
-  <p>Con campeón se abre el <strong>Hall de la fama</strong>: cada uno pone el equipo de seis
-    con el que terminó. Luego, en <em>Competiciones</em>, <strong>Archivar</strong>: el locke
-    se queda entero como recuerdo y deja sitio para el siguiente.</p>
+  <p>Con campeón, la portada pasa a <strong>Terminado</strong> y se abre el <strong>Hall de
+    la fama</strong>: cada uno pone el equipo de seis con el que terminó. Luego, en
+    <em>Competiciones</em>, <strong>Archivar</strong>: el locke se queda entero como recuerdo
+    y deja sitio para el siguiente.</p>
+  <p>Al crear el siguiente puedes <strong>copiar de este</strong> las reglas, los level caps,
+    las ruletas y los jugadores. Si los jugadores no caben —de seis a un dualocke, por
+    ejemplo— <strong>no lo crea y te avisa</strong>: antes entraban los primeros de la lista y
+    el resto se quedaba fuera sin decir nada.</p>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>12</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>13</span></div>
 </section>
 
-<!-- ============ 13. DUDAS ============ -->
+<!-- ============ 14. DUDAS ============ -->
 <section class="pagina">
   <div class="cabecera"><span>Al final</span><strong>Dudas</strong></div>
   <h2>Dudas rápidas</h2>
 
-  <div class="duo compacta">
+  <div class="rejilla">
+    <div class="tarjeta">
+      <b>He corregido una errata en las reglas</b>
+      Si al guardar desmarcaste «Avisar a todos del cambio», no le sale a nadie como cambiada.
+      Si se te olvidó, no pasa nada: se ve qué cambió y ya está.
+    </div>
     <div class="tarjeta">
       <b>Me he equivocado en un resultado</b>
       Vuelve a anotarlo. Los puntos se recalculan solos; no hay que tocar la clasificación.
@@ -469,7 +536,7 @@
     </div>
     <div class="tarjeta">
       <b>¿Puedo montar otro locke?</b>
-      Si tienes el permiso 🎪 de organizador, sí, desde <em>Competiciones</em>. Si no, pídelo
+      Si tienes el permiso <i data-i="Tent"></i> de organizador, sí, desde <em>Competiciones</em>. Si no, pídelo
       desde ahí mismo.
     </div>
   </div>
@@ -480,7 +547,7 @@
     estaba. Si algo se va al traste, díselo al Creador antes de intentar arreglarlo a mano.
   </div>
 
-  <div class="pie"><span>HexaApp · Guía del administrador</span><span>13</span></div>
+  <div class="pie"><span>HexaApp · Guía del administrador</span><span>14</span></div>
 </section>
 
 </body>

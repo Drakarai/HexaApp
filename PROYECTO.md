@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (**pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (**las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -67,7 +67,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón. Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Sin conexión** | Las pantallas por las que ya se ha pasado **se siguen viendo** sin internet, con un aviso de que son de la última vez. Y lo que se apunta —capturas, bajas, gimnasios y notas— se guarda en el móvil y **se sube solo** al volver la línea, sin duplicarse aunque se reintente. Mientras tanto sale en su pantalla como "sin subir todavía". |
-| **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 20 páginas con fotos de cada pantalla. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
+| **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 26 páginas con fotos de cada pantalla, con su página de **lo nuevo** y una **chuleta de qué es cada icono**. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
 | **Competiciones** | Crear ediciones copiando configuración, archivar, gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
@@ -2491,7 +2491,8 @@ guia/
   guia.html         la guía de uso que se reparte, una hoja A4 por sección
   datos.mjs         prepara la partida de ejemplo para las fotos
   capturas.mjs      saca las fotos de la aplicación en marcha
-  pdf.mjs           arma el PDF y avisa si algo no cabe en su hoja
+  pdf.mjs           arma el PDF, pinta los iconos y avisa si algo no cabe
+  logo-ejemplo.svg  el logo de mentira de la edición de ejemplo
 ```
 
 Piezas con truco:
@@ -2754,24 +2755,11 @@ Piezas con truco:
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
 
-**Para la próxima vez que se rehagan las guías**: no cuentan todavía las
-flechas de la clasificación, la corona de los gimnasios ni el aviso de reglas
-cambiadas (este, con su casilla de no avisar, va en la del administrador), ni
-el logo de la edición (en la del administrador). La portada de las dos ya lleva
-el logo nuevo en el HTML, pero el PDF no se ha vuelto a sacar. Y **todas sus
-fotos son del aspecto clásico**: al rehacerlas saldrán solas con el nuevo, que es el de por
-defecto. Se
-dejó para juntarlo con más cosas, porque rehacerlas mueve los índices.
-
 **Visto y sin hacer**: un locke **archivado se sigue pudiendo tocar** entero
 —bajas, puntos, jornadas—. No es un fallo, porque "se conserva entero" es lo que
 se decidió, pero quien cambie de edición sin fijarse puede apuntar algo en la
 que no es. Si molesta, lo suyo sería dejar las archivadas de solo lectura salvo
 para quien la administra.
-
-**En la guía de uso**, la foto de los level caps enseña "Antón · Ciudad Azalea"
-(es Pueblo Azalea): viene de los datos de ejemplo de antes del cuarto repaso. Se
-arregla sola la próxima vez que se rehagan las fotos.
 
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
@@ -2809,7 +2797,7 @@ Ideas comentadas y no hechas:
 - **Deshacer al gastar un objeto**: hoy hay una confirmación, pero si le das
   sin querer no hay vuelta atrás. El historial de usos ya guarda lo necesario.
 
-Hay una **guía de uso en PDF** hecha con capturas de la aplicación (23
+Hay una **guía de uso en PDF** hecha con capturas de la aplicación (26
 páginas, escrita para el móvil), y ahora **vive en el repositorio**, en
 `guia/`: el texto en `guia.html` y tres scripts que preparan la partida de
 ejemplo, sacan las fotos y arman el PDF. La primera versión no se guardó y se
@@ -2819,9 +2807,14 @@ fotos no se suben (se rehacen en cinco minutos), pero **el PDF sí**, en
 Instrucciones en `guia/README.md`; **el índice y la cuenta de páginas** de ese
 apartado están escritos a mano y hay que tocarlos si se mueve una página.
 
-**Rehacer las fotos empieza por borrar y volver a sembrar la base local**
-(`prisma db push --force-reset` y `npm run db:seed`): en cuanto se prueba algo a
-mano, la partida de ejemplo deja de servir para capturas. Y `datos.mjs` arranca
+**Rehacer las fotos empieza por una base recién sembrada, y mejor que sea
+otra**: en cuanto se prueba algo a mano, la partida de ejemplo deja de servir
+para capturas. Ya no se borra la de trabajo con `--force-reset`: se crea una
+aparte (`hexaapp_guia`), se le pasa el esquema y la semilla, y la aplicación se
+compila y se arranca apuntando a ella con `DATABASE_URL`/`DIRECT_URL`. Los
+pasos están en `guia/README.md`. Conviene hacer un `pg_dump` justo después de
+`datos.mjs`: si hay que repetir las fotos, se restaura y listo, sin volver a
+pasar los datos. Y `datos.mjs` arranca
 **eligiendo el juego de la edición**, que no sobra: la semilla no lo pone, y sin
 juego no hay región, así que el mapa dice "esta edición no tiene juego elegido"
 y se cae detrás todo lo que necesita rutas —las capturas y las bajas con su
@@ -2836,8 +2829,10 @@ administrador.
 **El índice de la guía de uso estaba mal desde antes** y se ha rehecho: le
 faltaban dos páginas —el sorteo de préstamos y el modo sin conexión— y de ahí
 para abajo los números no cuadraban con los pies. Va a mano, así que **hay que
-mirarlo cada vez que se mueve una página**; ahora hay 21 entradas y la última es
-la 23.
+mirarlo cada vez que se mueve una página**; ahora hay 24 entradas y la última es
+la 26. Los **pies** y los comentarios de cada hoja sí se pueden renumerar por
+orden con un par de líneas de script, que es lo que se hizo al meter las tres
+páginas nuevas.
 
 **Y el de dentro de la aplicación es otro**, en `guia/page.tsx`, también a mano:
 se había quedado en 22 páginas y sin *El palmarés*, con todo lo de detrás
@@ -2847,12 +2842,17 @@ corrido un número. Son dos sitios y **hay que tocar los dos**.
 se pliega sola, y lo de dentro —los equipos, cambiar el resultado— existe pero
 no se ve, así que Playwright se queda esperando un clic que nunca llega. Tanto
 `datos.mjs` como `capturas.mjs` abren lo plegado antes de tocar nada
-(`section.card details:not([open]) summary`). Le pasará lo mismo a cualquier
+(`section.card details:not([open]) summary`), **de una en una y volviendo a
+buscar**: con dos jornadas plegadas, recorrer la lista de golpe se quedaba
+esperando a la segunda, que al abrir la primera ya no era la misma. Le pasará lo mismo a cualquier
 cosa que se esconda: si un guion de la guía se cuelga en un botón que "está
 ahí", es esto.
 
 **Una hoja de la guía no crece**: lo que no cabe se recorta y `pdf.mjs` solo
-avisa. La página de las jornadas se quedó **clavada en el límite** al añadirle
+avisa. El aviso mira ahora **también el pie**: el pie va pegado abajo por
+encima de todo, y un texto largo se le metía debajo sin que la hoja llegara a
+desbordarse, así que antes no avisaba. Con `GUIA_VISTAS=carpeta` deja además una
+foto de cada hoja, para revisarlas sin visor de PDF. La página de las jornadas se quedó **clavada en el límite** al añadirle
 la línea de que se pliegan; para que cupiera se recortó su entradilla. Si hay
 que meter algo más ahí, hay que quitar otra cosa.
 
@@ -2862,10 +2862,37 @@ cuánto pesa su HTML y cuántos nodos tiene, en móvil y en ordenador. Vive ahí
 porque reaprovecha el mismo Playwright y la misma forma de entrar. Se usa antes
 y después de tocar algo (`node guia/medir.mjs /jornadas /level-caps`).
 
-Hay **dos guías**: la de uso (23 páginas, para todos) y la del administrador
-(13, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
+Hay **dos guías**: la de uso (26 páginas, para todos) y la del administrador
+(14, para quien lleva un locke). Comparten el estilo en `guia/estilo.css` para
 que salgan idénticas. Rehacerlas mueve los números de página del índice escrito
 a mano, así que conviene juntar varias novedades y hacerlo de una vez.
+
+**Las guías llevan el aspecto nuevo**: Barlow y Barlow Condensed (las mismas
+de la app, leídas de `node_modules/@fontsource`, así que hace falta
+`npm install` antes de generarlas), títulos en mayúsculas, portada oscura con la
+retícula de puntos y la media ball, y los pasos numerados en la casilla oscura
+del "Nivel" de los level caps. **El papel sigue blanco** a propósito: se lee en
+el móvil de día y, si alguien la imprime, no se gasta el tóner.
+
+**Los iconos de la guía son los de la app**: en el HTML se escriben como
+`<i data-i="Crown" class="oro"></i>` (el nombre del icono en lucide) y
+`pdf.mjs` los cambia por su SVG justo antes de imprimir, con el mismo grosor
+de trazo. Así el original se lee sin SVG por medio y no hay dos dibujos de la
+misma cosa. Un nombre que no exista en lucide para el script con error.
+
+**Lo que enseñan las fotos nuevas y por qué los datos van así**: `datos.mjs`
+sube un **logo de mentira** (`guia/logo-ejemplo.svg`, un emblema sin letras
+para no depender de fuentes al pasarlo a PNG), juega **dos jornadas** y no una
+—las flechas comparan con la jornada anterior, y con una sola no hay nada—,
+marca gimnasios en un orden que reparte **las coronas** entre Draka y Pablo, y
+cambia una regla con el locke en marcha. La foto de esa regla se saca **como
+Héctor**, que no administra (Pablo sí, y salían sus botones), y las dos fotos
+—la regla resaltada y lo que ha cambiado— **en la misma visita**: al entrar, la
+visita se apunta y en la siguiente la regla ya no sale como nueva.
+
+**Las fotos se comprimen con mozjpeg** (sharp, calidad 80) en vez del JPEG del
+navegador: a la vista iguales y un tercio menos. Con tres páginas más, los PDF
+pesan menos que antes (3,1 y 1,4 MB).
 
 ---
 
@@ -3067,3 +3094,7 @@ lugar de destruir datos, y hay que avisar antes.
     azul marino del clásico.
 74. **Pantalla de carga**: un esqueleto al momento al cambiar de sección, en vez
     de la pantalla de antes quieta hasta que llegan los datos.
+75. **Las guías, al día**: las dos rehechas con el aspecto nuevo y fotos
+    nuevas; la de uso gana una página de lo nuevo, otra de las reglas y sus
+    cambios y una chuleta de iconos (26); la del administrador, una del logo y
+    los datos de la edición (14).

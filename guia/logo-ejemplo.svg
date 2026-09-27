@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640">
+  <!-- El logo de mentira del Hexalocke 2 de ejemplo: un emblema dorado y rojo,
+       por HeartGold, con la pluma de Ho-Oh. Sin letras, para no depender de
+       ninguna fuente al convertirlo en imagen -->
+  <defs>
+    <linearGradient id="oro" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fde68a"/>
+      <stop offset=".5" stop-color="#f59e0b"/>
+      <stop offset="1" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="rojo" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#b91c1c"/>
+      <stop offset="1" stop-color="#450a0a"/>
+    </linearGradient>
+    <linearGradient id="llama" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0" stop-color="#f97316"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <polygon points="320,28 573,174 573,466 320,612 67,466 67,174" fill="url(#oro)"/>
+  <polygon points="320,62 543,191 543,449 320,578 97,449 97,191" fill="url(#rojo)"/>
+  <polygon points="320,62 543,191 543,449 320,578 97,449 97,191" fill="none" stroke="#fde68a" stroke-opacity=".35" stroke-width="4"/>
+  <!-- La pluma: tres lenguas que suben y se curvan -->
+  <path d="M320 470 C 250 420, 215 330, 262 222 C 272 290, 300 330, 320 350 C 312 290, 318 210, 356 150 C 352 240, 392 300, 400 360 C 412 330, 420 300, 416 268 C 452 330, 440 420, 320 470 Z" fill="url(#llama)"/>
+  <path d="M320 440 C 282 410, 268 360, 290 300 C 300 350, 320 380, 330 392 C 336 360, 344 330, 362 300 C 372 360, 372 410, 320 440 Z" fill="#fff7ed" fill-opacity=".85"/>
+  <!-- Dos estrellas: la segunda edición -->
+  <polygon points="282.0,492.0 289.9,511.1 310.5,512.7 294.8,526.2 299.6,546.3 282.0,535.5 264.4,546.3 269.2,526.2 253.5,512.7 274.1,511.1" fill="url(#oro)"/>
+  <polygon points="358.0,492.0 365.9,511.1 386.5,512.7 370.8,526.2 375.6,546.3 358.0,535.5 340.4,546.3 345.2,526.2 329.5,512.7 350.1,511.1" fill="url(#oro)"/>
+</svg>
