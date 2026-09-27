@@ -20,7 +20,17 @@ import { Icono } from "@/components/icono";
  * comparte el formulario porque la diferencia está en quién eres, no en qué
  * rellenas, y tener dos iguales garantizaba que uno se quedara viejo.
  */
-export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto: boolean }) {
+export function LockeEnSolitarioForm({
+  puedeCrearDirecto,
+  abierto = false,
+  explicado = false,
+}: {
+  puedeCrearDirecto: boolean;
+  /** Desplegado de entrada: en la bienvenida es lo que se viene a hacer */
+  abierto?: boolean;
+  /** Lo de qué es pedir un locke ya se ha contado encima: no se repite */
+  explicado?: boolean;
+}) {
   const [state, formAction] = useActionState<FormState, FormData>(
     puedeCrearDirecto ? crearLockeEnSolitarioAction : pedirLockeAction,
     null,
@@ -32,12 +42,13 @@ export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto:
   }, [state]);
 
   return (
-    <details className="card group">
+    <details className="card group" open={abierto}>
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
         <Icono emoji="🎮" /> {puedeCrearDirecto ? "Crear mi locke en solitario" : "Pedir un locke"}
       </summary>
 
+      {explicado ? null : (
       <p className="muted mt-3">
         {puedeCrearDirecto ? (
           <>
@@ -57,6 +68,7 @@ export function LockeEnSolitarioForm({ puedeCrearDirecto }: { puedeCrearDirecto:
           </>
         )}
       </p>
+      )}
 
       <form ref={formRef} action={formAction} className="mt-4 space-y-3">
         <div className="grid gap-3 sm:grid-cols-2">

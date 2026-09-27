@@ -445,6 +445,8 @@ export default async function CompetitionsPage() {
         </section>
       ) : null}
 
+      {/* Sin ninguna edición el rótulo se quedaba solo, sin nada debajo */}
+      {competitions.length ? (
       <section className="mb-6">
         <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
           Histórico
@@ -532,6 +534,7 @@ export default async function CompetitionsPage() {
           ))}
         </div>
       </section>
+      ) : null}
 
       <MisSolicitudes solicitudes={misSolicitudes} />
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
@@ -123,6 +124,10 @@ export default async function AppLayout({
         }),
       ])
     : [null, null, false, {} as Record<string, boolean>];
+  /** Sin locke, el palmarés solo sale si hay algún locke de antes con esta persona */
+  const tienePalmares =
+    !active &&
+    (await prisma.lockeDeAntes.count({ where: { jugadoresIds: { has: user.id } } })) > 0;
   /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
   const perfil = perfilDeLocke(active?.maxPlayers ?? 6);
 
@@ -187,7 +192,26 @@ export default async function AppLayout({
    * mira— no le llevan a ninguna parte: se quedan fuera y en "Lo mío" queda su
    * cuenta, que sí es suya.
    */
-  const grupos: NavGroup[] = GRUPOS.flatMap((grupo) =>
+  const grupos: NavGroup[] = !active
+    ? /**
+       * **Sin ningún locke, el menú se queda en lo que sirve**: antes salían
+       * Combates y La edición con doce pantallas, y todas decían lo mismo, que
+       * ahí no había nada tuyo. Queda tu cuenta, Ediciones —que es donde se
+       * pide un locke— y la guía; el palmarés, solo si jugaste alguno de antes
+       * de la aplicación. En cuanto te apunten a uno, vuelve todo solo.
+       */
+      [
+        {
+          ...GRUPOS[GRUPOS.length - 1],
+          children: [
+            S.perfil,
+            S.ediciones,
+            ...(tienePalmares ? [S.palmares] : []),
+            S.guia,
+          ],
+        },
+      ]
+    : GRUPOS.flatMap((grupo) =>
     grupo.label === "Combates"
       ? /**
          * En solitario el grupo entero desaparece: no hay jornadas, ni retos,
@@ -252,6 +276,8 @@ export default async function AppLayout({
    */
   const comoEstoyAqui = esCreador(user)
     ? "Administrador"
+    : !active
+    ? "Sin locke todavía"
     : active && !yo
     ? "Espectador"
     : "Jugador";
