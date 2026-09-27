@@ -2167,6 +2167,11 @@ azul marino del clásico**.
   móvil redondea como el resto (`--radius-3xl`).
 - Las ventanas emergentes siguen con el fondo desenfocado detrás: ahí tiene
   sentido, es lo que dice que están encima.
+- Dos fallos que salieron al mirarlo: en una jornada con votación de MVP el ✕
+  de borrarla se caía solo a una línea aparte (la cabecera dejaba saltar de
+  línea a sus hijos), y en la barra del móvil, con un grupo abierto, quedaban
+  **dos pestañas encendidas**. Ahora, con la hoja abierta, solo se enciende la
+  suya.
 
 ### El logo de la aplicación: la media ball
 

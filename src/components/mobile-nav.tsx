@@ -211,16 +211,21 @@ export function MobileTabBar({
               : `repeat(${pestanas.length}, minmax(0, 1fr))`,
           }}
         >
-          {primary.map((item) => (
-            <Link key={item.href} href={item.href} className="pestana">
-              <Pastilla icono={item.icon} encendida={activo(item.href)} />
-              <Rotulo encendido={activo(item.href)}>{item.label}</Rotulo>
-            </Link>
-          ))}
+          {primary.map((item) => {
+            // Con una hoja abierta, la que se enciende es la de esa hoja: si
+            // no, quedaban dos pestañas marcadas a la vez
+            const encendida = !abierto && activo(item.href);
+            return (
+              <Link key={item.href} href={item.href} className="pestana">
+                <Pastilla icono={item.icon} encendida={encendida} />
+                <Rotulo encendido={encendida}>{item.label}</Rotulo>
+              </Link>
+            );
+          })}
           {/* El hueco: un hermano vacío, para que caiga justo en el medio */}
           {hayBoton && mitad === primary.length ? <span aria-hidden /> : null}
           {groups.map((grupo, posicion) => {
-            const encendida = abierto === grupo.label || dentroDe(grupo);
+            const encendida = abierto ? abierto === grupo.label : dentroDe(grupo);
             return (
               <button
                 key={grupo.label}

@@ -210,8 +210,10 @@ export default async function MatchdaysPage() {
                     : undefined
                 }
               >
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                {/* Sin flex-wrap fuera: con la caja del MVP, lo de la izquierda
+                    llenaba la fila y el ✕ se caía solo a una línea aparte */}
+                <div className="mb-4 flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h2 className="section-title">{matchday.label}</h2>
@@ -255,7 +257,7 @@ export default async function MatchdaysPage() {
                     ) : null}
                   </div>
                   {canManage ? (
-                    <form action={deleteMatchdayAction}>
+                    <form action={deleteMatchdayAction} className="shrink-0">
                       <input type="hidden" name="matchdayId" value={matchday.id} />
                       <ConfirmSubmit
                         message={`¿Borrar "${matchday.label}" con todos sus combates?`}
