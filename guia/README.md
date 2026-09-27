@@ -85,7 +85,11 @@ en el navegador, el HTML sale sin iconos). Colores: `oro`, `rojo`, `verde`; con
 `data-relleno`, relleno en vez de trazo.
 
 Al terminar, **el PDF nuevo hay que subirlo al repositorio**: hasta que no se
-despliega, la aplicación sigue sirviendo el anterior.
+despliega, la aplicación sigue sirviendo el anterior. No hace falta hacer nada para
+que los móviles que ya la tenían guardada se enteren: la aplicación la enlaza
+con la huella de su contenido y la dirección cambia sola. Lo que sí hay que
+tocar a mano es **la fecha de la versión** en `src/app/(app)/guia/page.tsx`,
+que es la que dice a quien la descargó si su copia es vieja.
 
 ## Al añadir algo a la aplicación
 

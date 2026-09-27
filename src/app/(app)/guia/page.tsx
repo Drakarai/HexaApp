@@ -83,14 +83,20 @@ export default async function GuiaPage({
           >
             <Icono emoji="📖" /> Abrirla
           </a>
-          <a href={guia.pdf} download className="btn-ghost">
-            ⬇️ Guardarla en el móvil
+          <a href={guia.pdf} download={guia.fichero} className="btn-ghost">
+            <Icono emoji="⬇️" /> Guardarla en el móvil
           </a>
           <span className="text-xs text-slate-500">
-            {guia.paginas} páginas · PDF · se puede leer sin conexión una vez
-            guardada
+            {guia.paginas} páginas · PDF · versión del {guia.version} · se
+            puede leer sin conexión una vez abierta
           </span>
         </div>
+        {/* Lo que se abre desde aquí siempre es la última; lo descargado es
+            una copia suelta en el móvil y eso no hay forma de cambiarlo */}
+        <p className="mt-3 text-xs text-slate-500">
+          Si la guardaste en el móvil antes del {guia.version}, esa copia es la
+          vieja: vuelve a guardarla desde aquí.
+        </p>
       </section>
 
       <section className="card mt-5">
@@ -154,7 +160,12 @@ const GUIAS: Record<
     pestana: string;
     titulo: string;
     de: string;
+    /** Con la huella de su contenido, para no servir nunca una guardada vieja */
     pdf: string;
+    /** El nombre con el que se guarda al descargarla */
+    fichero: string;
+    /** Cuándo se rehízo por última vez: a mano, como el índice */
+    version: string;
     paginas: number;
     contenido: [number, string][];
   }
@@ -164,7 +175,9 @@ const GUIAS: Record<
     pestana: "Guía de uso",
     titulo: "Guía de uso",
     de: "Para todo el mundo: apuntar capturas y bajas, llevar tus gimnasios y no perderte nada.",
-    pdf: "/guia-de-uso.pdf",
+    pdf: `/guia-de-uso.pdf?v=${process.env.HUELLA_GUIA_USO}`,
+    fichero: "guia-de-uso.pdf",
+    version: "27/09/2026",
     paginas: 26,
     contenido: [
       [3, "Lo nuevo"],
@@ -198,7 +211,9 @@ const GUIAS: Record<
     pestana: "Llevar un locke",
     titulo: "Guía del administrador",
     de: "Para quien lleva una edición: montarla, emparejar las jornadas, anotar resultados y repartir premios.",
-    pdf: "/guia-de-administrador.pdf",
+    pdf: `/guia-de-administrador.pdf?v=${process.env.HUELLA_GUIA_ADMIN}`,
+    fichero: "guia-de-administrador.pdf",
+    version: "27/09/2026",
     paginas: 14,
     contenido: [
       [2, "Qué puedes y qué no"],

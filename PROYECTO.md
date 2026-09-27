@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (**las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -1384,6 +1384,20 @@ PDF— habría que pasarla por una server action, que **no admite tres megas** s
 tocar la configuración, y a cambio no arregla nada: la guía la rehace quien
 toca el código, y cuando la rehace ya está desplegando.
 
+**Y va con la huella de su contenido en la dirección**
+(`/guia-de-uso.pdf?v=d2a9b56895`). El service worker guarda las guías para
+leerlas sin conexión, y al principio las trataba como los sprites —guardadas
+una vez, servidas de la copia para siempre—, así que quien la había abierto
+antes seguía viendo la vieja aunque se subiera una nueva. La huella la calcula
+`next.config.ts` al compilar (un trozo del sha256 del fichero, pasado como
+`HUELLA_GUIA_USO` / `HUELLA_GUIA_ADMIN`), así que cambia sola al subir un PDF
+distinto y no hay nada que acordarse de tocar. El service worker guarda **solo
+la última** de cada guía, pide siempre a la red la dirección sin huella —un
+enlace viejo— y sin línea sirve la que tenga. Lo que ya no tiene arreglo es la
+copia **descargada** en el móvil, que es un fichero suelto: por eso la pantalla
+dice de qué fecha es la versión (a mano, en `guia/page.tsx`, como el índice) y
+pide volver a guardarla si es de antes.
+
 **El visor solo sale en pantalla grande.** En el móvil los navegadores no
 pintan un PDF metido en la página: o lo descargan o abren su propio visor. Por
 eso arriba mandan los dos botones —abrir y guardar—, que funcionan en todas
@@ -2621,7 +2635,8 @@ Piezas con truco:
   actions de siempre. **Cuidado al cambiar una de esas acciones**: los apuntes
   que estén en cola llevan los campos de la versión anterior.
 - `public/sw.js` — el service worker: guarda cada pantalla al visitarla (pidiendo
-  siempre al servidor primero) y los sprites y mapas, que son inmutables. Al
+  siempre al servidor primero) y los sprites y mapas, que son inmutables, y las
+  guías en PDF por su huella (ver `unaGuia`; la versión va en v5). Al
   cerrar sesión, la pantalla de entrada le manda borrar las pantallas guardadas:
   llevan dentro los datos de quien las vio.
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
@@ -3098,3 +3113,5 @@ lugar de destruir datos, y hay que avisar antes.
     nuevas; la de uso gana una página de lo nuevo, otra de las reglas y sus
     cambios y una chuleta de iconos (26); la del administrador, una del logo y
     los datos de la edición (14).
+76. **La guía ya no se queda vieja**: el PDF va con la huella de su contenido
+    en la dirección y el service worker guarda solo la última.

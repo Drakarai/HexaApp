@@ -16,7 +16,9 @@
 // de guardar, para no heredar copias hechas con otras reglas.
 // v4: la página de sin conexión lleva el logo nuevo, y sin subir la versión el
 // móvil se quedaba con la guardada de antes.
-const VERSION = "v4";
+// v5: las guías en PDF ya no se guardan para siempre con su dirección de
+// siempre (ver esGuia); se sube para tirar las viejas que quedaban guardadas.
+const VERSION = "v5";
 const PAGINAS = `hexaapp-paginas-${VERSION}`;
 const IMAGENES = `hexaapp-imagenes-${VERSION}`;
 const BASICO = `hexaapp-basico-${VERSION}`;
@@ -109,12 +111,21 @@ function esPantalla(request) {
 }
 
 function esInmutable(url) {
-  return (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/api/imagen/") ||
-    // Las dos guías: se guardan para poder leerlas sin conexión
-    url.pathname.endsWith(".pdf")
-  );
+  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/api/imagen/");
+}
+
+/**
+ * Las dos guías, que se guardan para poder leerlas sin conexión.
+ *
+ * Antes iban con lo inmutable, y no lo son: se rehacen con la misma dirección,
+ * así que quien la había abierto una vez se quedaba con la vieja para siempre.
+ * Ahora la aplicación las enlaza con la huella de su contenido
+ * (`/guia-de-uso.pdf?v=…`, ver next.config.ts): esa dirección sí es fija, y al
+ * cambiar el PDF cambia ella. Sin huella —un enlace viejo, uno pegado a mano—
+ * se pide a la red, y la copia solo vale sin línea.
+ */
+function esGuia(url) {
+  return url.pathname.endsWith(".pdf");
 }
 
 self.addEventListener("fetch", (event) => {
@@ -129,6 +140,11 @@ self.addEventListener("fetch", (event) => {
   // cambia la dirección.
   if (esInmutable(url)) {
     event.respondWith(deLoGuardadoPrimero(request, url.pathname.startsWith("/_next/") ? BASICO : IMAGENES));
+    return;
+  }
+
+  if (esGuia(url)) {
+    event.respondWith(unaGuia(request, url));
     return;
   }
 
@@ -151,6 +167,35 @@ async function deLoGuardadoPrimero(request, dondeGuardar) {
     // Sin conexión y sin copia: que la imagen salga rota es mejor que
     // tumbar la pantalla entera
     return new Response("", { status: 504, statusText: "Sin conexión" });
+  }
+}
+
+async function unaGuia(request, url) {
+  const cache = await caches.open(IMAGENES);
+
+  if (url.searchParams.has("v")) {
+    const guardada = await cache.match(request, { ignoreVary: true });
+    if (guardada) return guardada;
+  }
+
+  try {
+    const respuesta = await fetch(request);
+    if (respuesta.ok) {
+      // Se guarda una sola copia de cada guía, la última: las otras versiones
+      // son megas que ya no va a pedir nadie
+      for (const vieja of await cache.keys()) {
+        if (new URL(vieja.url).pathname === url.pathname && vieja.url !== request.url) {
+          await cache.delete(vieja);
+        }
+      }
+      await cache.put(request, respuesta.clone());
+    }
+    return respuesta;
+  } catch (error) {
+    // Sin línea: la que haya de esta guía, aunque sea de otra versión, mejor
+    // que nada
+    const cualquiera = await cache.match(request, { ignoreSearch: true, ignoreVary: true });
+    return cualquiera ?? new Response("", { status: 504, statusText: "Sin conexión" });
   }
 }
 

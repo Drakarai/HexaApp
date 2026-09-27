@@ -19,6 +19,7 @@ import {
   Crosshair,
   Crown,
   Dices,
+  Download,
   DoorOpen,
   Eye,
   EyeOff,
@@ -155,6 +156,7 @@ const LINEA: Record<string, Linea> = {
   "📦": { icono: Package },
   "✨": { icono: Sparkles },
   "🖼️": { icono: ImagePlus },
+  "⬇️": { icono: Download },
   "👁": { icono: Eye },
   "🚫": { icono: EyeOff },
   // Gestión
