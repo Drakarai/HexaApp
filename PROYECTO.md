@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (**pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2134,6 +2134,23 @@ sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`
 —eso era quitar el nuevo—; para quitar el clásico, al revés: dejar las reglas
 del nuevo sin la condición y borrar los emojis de `components/icono.tsx`.
 
+### La pantalla de carga
+
+Al tocar una sección, la pantalla de antes se quedaba quieta hasta que llegaba
+la nueva —con Neon por internet, un segundo largo en el móvil—, y parecía que
+no se había tocado nada. `src/app/(app)/loading.tsx` enseña **al momento** un
+esqueleto gris con la forma de una página (título, cuatro cifras y una tarjeta
+con filas) que late despacio hasta que llegan los datos. El menú y la cabecera
+no se mueven, porque son del layout.
+
+Es **una sola para todas las secciones**: la forma es la de casi todas, y una
+por pantalla sería mucho que mantener. En las que no se parecen (el mapa, la
+ruleta) se puede poner un `loading.tsx` propio en su carpeta, que manda sobre
+este. El latido respeta a quien pide menos movimiento (`motion-safe:`).
+
+Para verla en local hay que simular la lentitud: con `LATENCIA_FALSA=250` en
+`npm run start` cada consulta tarda un cuarto de segundo y el esqueleto se ve.
+
 ### Rematar el aspecto: emojis e iconos, y restos del estilo antiguo
 
 Con el aspecto nuevo de todos quedaban dos cosas que lo delataban: **los emojis
@@ -3048,3 +3065,5 @@ lugar de destruir datos, y hay que avisar antes.
 73. **Rematar el aspecto**: los emojis de dentro de las pantallas pasan a iconos
     de línea (con su color cuando lo necesitan) y fuera los últimos restos del
     azul marino del clásico.
+74. **Pantalla de carga**: un esqueleto al momento al cambiar de sección, en vez
+    de la pantalla de antes quieta hasta que llegan los datos.
