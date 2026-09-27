@@ -10,8 +10,9 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#070a13",
-    theme_color: "#070a13",
+    // El fondo del aspecto de ahora, no el azul marino del clásico
+    background_color: "#0b0b0e",
+    theme_color: "#0b0b0e",
     lang: "es",
     categories: ["games", "sports", "utilities"],
     icons: [

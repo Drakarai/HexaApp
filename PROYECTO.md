@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de septiembre de 2026 (el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 27 de septiembre de 2026 (**logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2134,6 +2134,38 @@ sección *Aspecto* de Mi perfil y los paquetes `@fontsource/*` y `lucide-react`
 —eso era quitar el nuevo—; para quitar el clásico, al revés: dejar las reglas
 del nuevo sin la condición y borrar los emojis de `components/icono.tsx`.
 
+### El logo de la aplicación: la media ball
+
+Se propusieron siete logos y el usuario pidió **fusionar el de siempre** (un
+hexágono de contorno con un punto) **con la "captura hexagonal"** (una ball de
+captura con forma de hexágono). De las tres fusiones eligió la **media ball**:
+arriba la mitad rellena de la ball, con degradado; abajo el contorno hueco del
+original; y el punto del original hace de botón.
+
+- **Hay una sola copia del dibujo**, `lib/logo.ts`, que da el SVG como texto.
+  De ahí salen el componente `components/logo.tsx` (cabeceras del móvil y del
+  PC, pantalla de entrar e instalación) y **`scripts/iconos.ts`**, que genera
+  `src/app/icon.svg`, `favicon.ico` (16, 32 y 48, PNG dentro de un .ico),
+  `apple-icon.png` y los `public/icons/icon-*.png`. Si cambia el logo: se
+  cambia `lib/logo.ts` y se lanza `npx tsx scripts/iconos.ts`.
+- Cada logo de una página lleva **su propio `id`** para el degradado: la
+  cabecera del móvil y la del PC están las dos en la página (una escondida), y
+  con el mismo nombre el de la escondida podía dejar al otro sin color.
+- **Los iconos van como archivos de `src/app`**, no en `metadata.icons`: con
+  `icons` puesto en el layout, Next dejaba de enlazar el `icon.svg` y la
+  pestaña se quedaba con el .ico. El de iPhone pasó de
+  `public/icons/apple-touch-icon.png` a `src/app/apple-icon.png` por lo mismo.
+- Los de instalar llevan ahora **fondo transparente** fuera de la baldosa
+  (los de antes tenían las esquinas en blanco), y los *maskable* y el de iPhone
+  van a sangre con el logo más pequeño, para que el recorte del móvil no se lo
+  coma.
+- La página de sin conexión y la portada de las dos guías llevan el SVG
+  pegado, porque son HTML suelto. Por la de sin conexión **se subió el service
+  worker a v4**: si no, el móvil seguía con la copia guardada con el hexágono de
+  antes.
+- El color de la barra del sistema (`themeColor`, y el del manifiesto) pasó al
+  fondo del aspecto de ahora, `#0b0b0e`.
+
 ### El logo de cada edición
 
 El grupo se está haciendo logos para cada competición, y el usuario pidió
@@ -2625,6 +2657,8 @@ Piezas con truco:
 - `lib/reglas.ts` — si el locke ya ha empezado (de eso depende que un cambio de
   reglas se avise) y qué líneas ha ganado y perdido una regla.
 - `lib/coronas.ts` — quién se pasó cada gimnasio antes que nadie.
+- `lib/logo.ts`, `components/logo.tsx` y `scripts/iconos.ts` — el logo (única
+  copia), su componente y el script que saca de él todos los iconos.
 - `lib/estilo.ts` y `components/icono.tsx` — el aspecto elegido (clásico o
   nuevo, por cookie) y los iconos dobles del menú. El CSS del nuevo está al
   final de `globals.css`.
@@ -2667,8 +2701,9 @@ Hasta entonces la aplicación solo corre en su ordenador.
 **Para la próxima vez que se rehagan las guías**: no cuentan todavía las
 flechas de la clasificación, la corona de los gimnasios ni el aviso de reglas
 cambiadas (este, con su casilla de no avisar, va en la del administrador), ni
-el logo de la edición (en la del administrador). Y **todas sus fotos son del
-aspecto clásico**: al rehacerlas saldrán solas con el nuevo, que es el de por
+el logo de la edición (en la del administrador). La portada de las dos ya lleva
+el logo nuevo en el HTML, pero el PDF no se ha vuelto a sacar. Y **todas sus
+fotos son del aspecto clásico**: al rehacerlas saldrán solas con el nuevo, que es el de por
 defecto. Se
 dejó para juntarlo con más cosas, porque rehacerlas mueve los índices.
 
@@ -2969,3 +3004,5 @@ lugar de destruir datos, y hay que avisar antes.
     perfil y el de siempre sigue intacto.
 71. **El aspecto nuevo, para todos**, y **el logo de cada edición** de fondo
     junto a su nombre en el resumen.
+72. **Logo nuevo**: la media ball, fusión del hexágono de siempre y una ball de
+    captura, en la aplicación, la pestaña y los iconos del móvil.

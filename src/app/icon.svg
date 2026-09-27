@@ -1,5 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="14" fill="#0b1020" />
-  <path d="M32 12 51 22.8v20.4L32 54 13 43.2V22.8z" fill="none" stroke="#6366f1" stroke-width="5" stroke-linejoin="round" />
-  <circle cx="32" cy="33" r="6.5" fill="#818cf8" />
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" aria-hidden="true"><defs><linearGradient id="icono" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a5b4fc"/><stop offset="1" stop-color="#4f46e5"/></linearGradient></defs><polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,50 13.63,50" fill="url(#icono)"/><polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,71.00 50,92.00 13.63,71.00" fill="none" stroke="#818cf8" stroke-width="6" stroke-linejoin="round"/><line x1="13.63" y1="50" x2="86.37" y2="50" stroke="#818cf8" stroke-width="6"/><circle cx="50" cy="50" r="14" fill="#0b0b0e" stroke="#818cf8" stroke-width="6"/><circle cx="50" cy="50" r="5.5" fill="#e0e7ff"/></svg>

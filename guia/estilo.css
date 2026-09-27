@@ -151,7 +151,7 @@
     background: linear-gradient(160deg, #14162b 0%, #241f52 55%, #4b3fb8 100%);
     color: #fff;
   }
-  .portada .hexa { font-size: 46pt; line-height: 1; margin-bottom: 4mm; }
+  .portada .hexa { display: flex; justify-content: center; line-height: 1; margin-bottom: 4mm; }
   .portada h1 { font-size: 44pt; margin-bottom: 3mm; }
   .portada .sub { font-size: 13pt; color: #c9c6f2; max-width: 120mm; margin: 0 auto 12mm; }
   .portada .pie-portada { position: absolute; bottom: 18mm; font-size: 9.5pt; color: #a9a5db; }

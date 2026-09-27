@@ -18,6 +18,7 @@ import { regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { APARTADOS_CON_AVISO, getAvisos } from "@/lib/novedades";
+import { Logo } from "@/components/logo";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -286,9 +287,7 @@ export default async function AppLayout({
       {/* Cabecera compacta en móvil */}
       <header className="flex items-center justify-between gap-3 lg:hidden">
         <Link href="/" className="flex items-center gap-2">
-          <span className="logo-marca text-xl" aria-hidden>
-            ⬢
-          </span>
+          <Logo id="logo-movil" tamano={26} />
           <span className="logo text-base font-black tracking-tight text-white">
             HexaApp
           </span>
@@ -312,9 +311,7 @@ export default async function AppLayout({
       <aside className="hidden lg:block lg:w-64 lg:shrink-0">
         <div className="flex items-center justify-between gap-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="logo-marca text-2xl" aria-hidden>
-              ⬢
-            </span>
+            <Logo id="logo-pc" tamano={30} />
             <span className="logo text-lg font-black tracking-tight text-white">
               HexaApp
             </span>

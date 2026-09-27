@@ -379,9 +379,6 @@ html[data-estilo="nuevo"] .logo {
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-html[data-estilo="nuevo"] .logo-marca {
-  color: var(--color-brand-500);
-}
 
 /* Iconos: emojis en el clásico, de línea en el nuevo (components/icono.tsx) */
 .icono-linea {

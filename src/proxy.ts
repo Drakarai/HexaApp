@@ -50,6 +50,6 @@ export const config = {
   matcher: [
     // Fuera lo que no es una pantalla ni una acción: lo de Next, las imágenes,
     // el service worker y los ficheros sueltos de public
-    "/((?!_next/static|_next/image|api/imagen|sw\\.js|icons/|favicon\\.ico|icon\\.svg|manifest\\.webmanifest|sin-conexion\\.html|.*\\.pdf$).*)",
+    "/((?!_next/static|_next/image|api/imagen|sw\\.js|icons/|favicon\\.ico|icon\\.svg|apple-icon\\.png|manifest\\.webmanifest|sin-conexion\\.html|.*\\.pdf$).*)",
   ],
 };

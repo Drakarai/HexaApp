@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { LoginForm } from "./login-form";
 import { OlvidarLoGuardado } from "@/components/service-worker";
 import { destinoSeguro } from "@/lib/volver";
+import { Logo } from "@/components/logo";
 
 export const metadata = { title: "Entrar" };
 
@@ -25,7 +26,7 @@ export default async function LoginPage({
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <p className="logo-marca text-4xl">⬢</p>
+          <Logo id="logo-entrar" tamano={64} className="mx-auto" />
           <h1 className="logo mt-3 text-3xl font-black tracking-tight text-white">
             HexaApp
           </h1>

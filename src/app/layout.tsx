@@ -26,14 +26,14 @@ export const metadata: Metadata = {
     title: "HexaApp",
     statusBarStyle: "black-translucent",
   },
-  icons: {
-    apple: "/icons/apple-touch-icon.png",
-  },
+  // Los iconos no van aquí: son archivos de `src/app` (icon.svg, favicon.ico,
+  // apple-icon.png), que Next enlaza solo. Poner `icons` aquí anulaba el SVG y
+  // la pestaña se quedaba con el .ico. Los genera scripts/iconos.ts.
   formatDetection: { telephone: false },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#070a13",
+  themeColor: "#0b0b0e",
   width: "device-width",
   initialScale: 1,
   // Deja que el contenido llegue hasta los bordes en móviles con notch

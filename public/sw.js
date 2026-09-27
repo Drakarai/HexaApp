@@ -14,7 +14,9 @@
 // La versión va en el nombre: al subirla, el service worker nuevo tira lo que
 // guardó el anterior y empieza limpio. Se sube **siempre** que cambie la forma
 // de guardar, para no heredar copias hechas con otras reglas.
-const VERSION = "v3";
+// v4: la página de sin conexión lleva el logo nuevo, y sin subir la versión el
+// móvil se quedaba con la guardada de antes.
+const VERSION = "v4";
 const PAGINAS = `hexaapp-paginas-${VERSION}`;
 const IMAGENES = `hexaapp-imagenes-${VERSION}`;
 const BASICO = `hexaapp-basico-${VERSION}`;

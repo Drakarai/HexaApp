@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { SetupForm } from "./setup-form";
+import { Logo } from "@/components/logo";
 
 export const metadata = { title: "Instalación" };
 
@@ -21,9 +22,7 @@ export default async function SetupPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
-          <p className="text-4xl" aria-hidden>
-            ⬢
-          </p>
+          <Logo id="logo-instalacion" tamano={64} className="mx-auto" />
           <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
             Bienvenido a HexaApp
           </h1>
