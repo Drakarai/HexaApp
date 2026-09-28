@@ -59,7 +59,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
 | **Copiar de otra edición** | Al montar el locke siguiente, traerse de otro las **reglas**, los **level caps** y los **ajustes** (puntos de inicio, jornadas previstas, si los retos cuentan para la diferencia) en vez de reescribirlos. **Vale entre juegos distintos**, avisando de que unos level caps de otra región tienen los líderes que no son. No se copian jugadores, jornadas, puntos ni bajas. |
 | **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. |
-| **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón, a quién ganó y su categoría; tocando una se abre. **Solo cuentan tus lockes** (los que juegas o jugaste y los que miras), y **cada uno elige quién sale**: por defecto él y toda la gente con la que ha compartido locke, y desde "Elegir quién sale" busca y quita o vuelve a poner a quien quiera. **Pestañas por tamaño** —Todo, Grupo (3 o más), Dualocke y Solitario—, y en "Todo" cada persona lleva de dónde salen sus títulos ("3 dual · 1 en solitario"). En solitario cuenta como ganado **pasarse la Liga**. |
+| **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón, a quién ganó y su categoría; tocando una se abre. **Sale la gente de tus lockes** (los que juegas o jugaste y los que miras), **con las cifras de todos los suyos**, también los jugados con otros; la lista de ediciones es solo la tuya. **Cada uno elige quién sale**: por defecto él y toda la gente con la que ha compartido locke, y desde "Elegir quién sale" busca y quita o vuelve a poner a quien quiera. **Pestañas por tamaño** —Todo, Grupo (3 o más), Dualocke y Solitario—, y en "Todo" cada persona lleva de dónde salen sus títulos ("3 dual · 1 en solitario"). En solitario cuenta como ganado **pasarse la Liga**. |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
 | **Puntos** / **Marcador** | Clasificación con desempates y **flechas ▲▼ de lo que ha subido o bajado cada uno desde la jornada anterior** (también en la portada), el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. **El marcador decide el dualocke**: gana quien se lleve la mayoría de las jornadas previstas (4 de 6, 4 de 7); con un empate (3-3) decide la Jornada Final. Ganado por mayoría, el locke **sigue**: se juegan las jornadas que queden y la final, que ya no cambia el campeón. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
@@ -2521,12 +2521,16 @@ el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
 **El palmarés es de cada uno.** Antes salía de `listCompetitions`, así que
 contaba todo lo que uno puede abrir, y al Creador —que puede abrirlo todo— se le
 llenaba de desconocidos: los solitarios de cada uno, los lockes de otros
-organizadores. Ahora cuenta **solo sus lockes** (ficha de jugador o de
-espectador) y los lockes de antes que jugó o apuntó, y de toda esa gente cada
-uno quita a quien no quiera ver. Se guardan **los quitados** (`User.palmaresOcultos`)
+organizadores. Ahora **la gente** que sale es la de sus lockes (ficha de jugador
+o de espectador, y los lockes de antes que jugó o apuntó), y de ella cada uno
+quita a quien no quiera ver. **Las cifras de cada persona, en cambio, cuentan
+todos sus lockes**, también los que jugó con gente que tú no conoces: el usuario
+lo quiso así para comparar entre amigos. Es solo la cuenta; **la lista de
+ediciones sigue siendo solo la tuya**, así que de un locke ajeno no se ve ni el
+nombre ni quién jugó. Se guardan **los quitados** (`User.palmaresOcultos`)
 y no los elegidos, para que quien empiece a jugar contigo aparezca solo. El
-buscador solo ofrece gente de tus lockes: así nadie ve los números de lockes que
-no son suyos. Las **categorías** van por tamaño (`categoriaDelLocke`: 1
+buscador solo ofrece gente de tus lockes: a un desconocido no se le puede
+añadir. Las **categorías** van por tamaño (`categoriaDelLocke`: 1
 solitario, 2 dual, 3 o más grupo) porque ganar un Hexalocke de seis no es lo
 mismo que un dualocke; se cuentan todas a la vez y las pestañas solo cambian qué
 se enseña, sin volver a pedir nada. Un locke en solitario se gana pasándose la
@@ -2806,7 +2810,8 @@ Piezas con truco:
   checkpoints, y hall con perfiles y tipos. Las funciones que prueban son las
   "sueltas" (sin base de datos) de cada `lib/`; si una cuenta nueva lee de la
   base de datos, se separa igual para poder probarla.
-- `lib/palmares.ts` — el palmarés: sus lockes, quién ganó cada uno (final,
+- `lib/palmares.ts` — el palmarés: la gente de tus lockes con la cuenta de
+  todos los suyos, y tus ediciones. Quién ganó cada locke (final,
   mayoría en el dual, abandono o Liga en solitario) y la cuenta de cada persona
   en total y por categoría. `palmares/cuenta-de-cada-uno.tsx` pinta la tabla con
   las pestañas y el panel de elegir quién sale, que guarda con
@@ -3308,5 +3313,6 @@ del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
 82. **Pruebas automáticas**: unos ochenta casos de las reglas del locke (quién
     gana, desempates, retiradas, emparejamientos, la final, los checkpoints)
     corren en cada publicación y la paran si alguno falla.
-83. **Palmarés a medida**: cada uno ve su gente y elige a quién, con pestañas
-    de grupo, dualocke y solitario, y los solitarios ganados por fin cuentan.
+83. **Palmarés a medida**: cada uno ve su gente y elige a quién, con las
+    cifras de todos sus lockes para comparar entre amigos, pestañas de grupo,
+    dualocke y solitario, y los solitarios ganados por fin cuentan.

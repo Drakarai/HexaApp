@@ -26,7 +26,7 @@ const EN_EL_DESGLOSE: Record<Categoria, string> = {
 };
 
 const EXPLICACION: Record<Pestana, string> = {
-  todo: "Sumando todas las ediciones. Las victorias y derrotas son de los combates de jornada.",
+  todo: "Todos los lockes de cada uno, también los que ha jugado con otra gente. Las victorias y derrotas son de los combates de jornada.",
   grupo: "Lockes de tres o más: los que se ganan en la final.",
   dual: "Lockes de dos: los que se ganan por mayoría de jornadas.",
   solitario: "Lockes de uno: se ganan pasándose la Liga.",
@@ -37,7 +37,8 @@ const EXPLICACION: Record<Pestana, string> = {
  *
  * **Cada uno elige quién sale.** Por defecto, él y toda la gente con la que ha
  * compartido locke; desde "Elegir quién sale" quita a quien no quiera ver y lo
- * vuelve a poner cuando quiera. Él siempre sale: es su palmarés.
+ * vuelve a poner cuando quiera. Él siempre sale: es su palmarés. Las cifras de
+ * cada uno son de todos sus lockes, no solo de los compartidos.
  *
  * **Y se separa por tamaño de locke**, porque ganar un Hexalocke de seis no es
  * lo mismo que un dualocke. Las pestañas cambian la tabla entera a esa

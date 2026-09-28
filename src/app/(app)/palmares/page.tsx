@@ -82,7 +82,7 @@ export default async function PalmaresPage() {
           </span>
         </div>
         <p className="muted mb-4">
-          De la más nueva a la más vieja. Toca una para abrirla.
+          Las tuyas, de la más nueva a la más vieja. Toca una para abrirla.
         </p>
 
         <ul className="space-y-2">

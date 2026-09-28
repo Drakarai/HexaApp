@@ -18,8 +18,8 @@ import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
  * juntara varios. Archivar una edición no servía de nada más que para quitarla
  * de en medio.
  *
- * **Solo entran sus lockes**: los que juega o jugó y los que mira de
- * espectador. Quién de toda esa gente sale lo elige cada uno (ver
+ * **La gente es la de sus lockes, y sus números son de todos los suyos** (ver
+ * `getPalmares`). Quién de toda esa gente sale lo elige cada uno (ver
  * `User.palmaresOcultos`); eso lo aplica la página, aquí se cuenta todo.
  *
  * Se cuenta al mirarlo y no se guarda nada, como el resto de números de la
@@ -85,18 +85,46 @@ export async function getPalmares(): Promise<Palmares> {
   if (!yo) return { ediciones: [], gente: [] };
 
   /**
-   * **Sus lockes, no todos los que puede abrir.** Los que juega o jugó y los
-   * que mira de espectador. Antes salía de `listCompetitions`, y al Creador, que
-   * puede abrirlos todos, se le llenaba el palmarés de desconocidos: los lockes
-   * en solitario de cada uno, los de otros organizadores. Así el palmarés de
-   * cada uno es su gente, y nadie ve resultados de lockes que no son suyos.
+   * **Dos alcances distintos, a propósito.**
+   *
+   * - **La gente** que sale son los de *sus* lockes: los que juega o jugó y los
+   *   que mira de espectador, y los lockes de antes que jugó o apuntó. Antes
+   *   salía de `listCompetitions`, y al Creador, que puede abrirlo todo, se le
+   *   llenaba el palmarés de desconocidos.
+   * - **Los números** de esa gente cuentan **todos sus lockes**, también los que
+   *   han jugado con otros. Así se lo pidió el grupo: para comparar entre amigos
+   *   hace falta todo lo de cada uno. Solo se enseñan las cifras; la lista de
+   *   ediciones de abajo sigue siendo solo de los lockes propios.
    */
-  const competiciones = await prisma.competition.findMany({
+  const mias = await prisma.competition.findMany({
     where: {
       OR: [
         { participants: { some: { userId: yo.id } } },
         { espectadores: { some: { userId: yo.id } } },
       ],
+    },
+    select: { id: true, participants: { select: { userId: true } } },
+  });
+  const misIds = new Set(mias.map((c) => c.id));
+
+  /** Los lockes de antes que le tocan: los que jugó y los que apuntó él. */
+  const deAntesMios = await prisma.lockeDeAntes.findMany({
+    where: { OR: [{ jugadoresIds: { has: yo.id } }, { createdById: yo.id }] },
+    select: { id: true, jugadoresIds: true },
+  });
+  const misDeAntes = new Set(deAntesMios.map((l) => l.id));
+
+  const genteIds = new Set<string>([
+    yo.id,
+    ...mias.flatMap((c) => c.participants.map((p) => p.userId)),
+    ...deAntesMios.flatMap((l) => l.jugadoresIds),
+  ]);
+  const deLaGente = [...genteIds];
+
+  // Sus lockes y todos los de su gente, para contar lo de cada uno entero
+  const competiciones = await prisma.competition.findMany({
+    where: {
+      OR: [{ id: { in: [...misIds] } }, { participants: { some: { userId: { in: deLaGente } } } }],
     },
     orderBy: { startedAt: "desc" },
     select: {
@@ -113,19 +141,18 @@ export async function getPalmares(): Promise<Palmares> {
     competiciones.map((c) => [c.id, categoriaDelLocke(c.maxPlayers)]),
   );
 
-  /** Los lockes de antes que le tocan: los que jugó y los que apuntó él. */
-  const deAntes = yo
-    ? await prisma.lockeDeAntes.findMany({
-        where: { OR: [{ jugadoresIds: { has: yo.id } }, { createdById: yo.id }] },
-        orderBy: { cuando: "desc" },
-        include: {
-          ganador: { select: { id: true, displayName: true, avatarColor: true } },
-          subcampeon: {
-            select: { id: true, displayName: true, avatarColor: true },
-          },
-        },
-      })
-    : [];
+  const deAntes = await prisma.lockeDeAntes.findMany({
+    where: {
+      OR: [{ id: { in: [...misDeAntes] } }, { jugadoresIds: { hasSome: deLaGente } }],
+    },
+    orderBy: { cuando: "desc" },
+    include: {
+      ganador: { select: { id: true, displayName: true, avatarColor: true } },
+      subcampeon: {
+        select: { id: true, displayName: true, avatarColor: true },
+      },
+    },
+  });
 
   if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
@@ -395,10 +422,14 @@ export async function getPalmares(): Promise<Palmares> {
   }
 
   return {
-    ediciones: [...ediciones, ...apuntados].sort(
+    // Las ediciones, solo las suyas: de los lockes ajenos se cuentan las cifras
+    ediciones: [
+      ...ediciones.filter((e) => misIds.has(e.competitionId)),
+      ...apuntados.filter((e) => misDeAntes.has(e.competitionId)),
+    ].sort(
       (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
     ),
-    gente: [...gente.values()].sort(
+    gente: [...gente.values()].filter((fila) => genteIds.has(fila.userId)).sort(
       (a, b) =>
         b.total.ganados - a.total.ganados ||
         b.total.victorias - a.total.victorias ||
