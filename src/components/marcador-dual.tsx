@@ -9,8 +9,9 @@ import { Icono } from "@/components/icono";
  * El marcador de un locke de dos.
  *
  * Aquí no hay clasificación que valga: lo que se mira es quién va ganando más
- * jornadas y cuántas le faltan. Y al lado, la otra victoria, que es pasarse la
- * Liga Pokémon: son dos cosas distintas y las dos cuentan.
+ * jornadas y cuántas le faltan. **Ese es el campeón del locke** (ver
+ * lib/campeon.ts): la Jornada Final solo desempata. Y al lado, la otra
+ * victoria, que es pasarse la Liga Pokémon: son dos cosas distintas.
  */
 export function MarcadorDual({
   marcador,
@@ -20,7 +21,8 @@ export function MarcadorDual({
   marcador: Marcador;
   compacto?: boolean;
 }) {
-  const { jugadores, jornadas, hacenFalta, campeonId, bolaDePartido } = marcador;
+  const { jugadores, jornadas, hacenFalta, campeonId, bolaDePartido, previstas, empate } =
+    marcador;
   const nombreDe = (id: string | null) =>
     jugadores.find((jugador) => jugador.participantId === id)?.displayName ?? null;
 
@@ -31,8 +33,11 @@ export function MarcadorDual({
           <>
             <h2 className="section-title mb-1">El marcador</h2>
             <p className="muted mb-4">
-              Cada jornada es un combate al mejor de tres. Gana el locke en
-              combates el primero que se lleve {hacenFalta} jornada{hacenFalta === 1 ? "" : "s"}.
+              Cada jornada es un combate al mejor de tres. Se juegan {previstas}, y
+              gana el locke el primero que se lleve {hacenFalta}
+              {previstas % 2 === 0
+                ? `; si acabáis ${previstas / 2}-${previstas / 2}, lo decide la Jornada Final.`
+                : "."}
             </p>
           </>
         )}
@@ -81,7 +86,14 @@ export function MarcadorDual({
 
         {campeonId ? (
           <p className="mt-4 text-center text-sm text-amber-300">
-            {nombreDe(campeonId)} ya se ha llevado el locke en combates.
+            {nombreDe(campeonId)} ha ganado el locke por mayoría.
+            {compacto
+              ? null
+              : " Lo que quede —jornadas y Jornada Final— se puede jugar igual, pero ya no cambia el campeón."}
+          </p>
+        ) : empate ? (
+          <p className="mt-4 text-center text-sm text-amber-300">
+            Empate: <Link href="/final-four" className="underline">lo decide la Jornada Final</Link>.
           </p>
         ) : bolaDePartido.length ? (
           <div className="mt-4">
@@ -89,7 +101,7 @@ export function MarcadorDual({
           </div>
         ) : compacto ? (
           <p className="mt-3 text-center text-xs text-slate-500">
-            Gana el locke el primero que se lleve {hacenFalta} jornada{hacenFalta === 1 ? "" : "s"}.
+            Gana el primero que se lleve {hacenFalta} de {previstas} jornadas.
           </p>
         ) : null}
       </section>

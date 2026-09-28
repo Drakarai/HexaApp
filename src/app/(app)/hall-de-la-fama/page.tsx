@@ -7,7 +7,8 @@ import {
   getStandings,
   soloLectura,
 } from "@/lib/competition";
-import { campeonDelLocke, getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
+import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
+import { getCampeonDelLocke } from "@/lib/campeon";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -73,7 +74,8 @@ export default async function HallOfFamePage() {
     );
   }
 
-  if (!perfil.enSolitario && !campeonDelLocke(state)) {
+  const campeon = perfil.enSolitario ? null : await getCampeonDelLocke(competition.id, state);
+  if (!perfil.enSolitario && !campeon) {
     return (
       <>
         <PageHeader title="Hall de la fama" />
@@ -85,11 +87,17 @@ export default async function HallOfFamePage() {
             El locke todavía no ha terminado
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
-            Cuando la {nombreFinal} tenga campeón, aquí quedará el equipo con
-            el que cada uno acabó el locke: sus seis pokémon, con sus motes.
+            {perfil.victoria === "jornadas"
+              ? "Cuando alguien se lleve la mayoría de las jornadas (o la Jornada Final, si acabáis empatados)"
+              : `Cuando la ${nombreFinal} tenga campeón`}
+            , aquí quedará el equipo con el que cada uno acabó el locke: sus
+            seis pokémon, con sus motes.
           </p>
-          <Link href="/final-four" className="btn-ghost mt-5">
-            Ver la {nombreFinal}
+          <Link
+            href={perfil.victoria === "jornadas" ? "/puntos" : "/final-four"}
+            className="btn-ghost mt-5"
+          >
+            {perfil.victoria === "jornadas" ? "Ver el marcador" : `Ver la ${nombreFinal}`}
           </Link>
         </section>
       </>
@@ -102,8 +110,6 @@ export default async function HallOfFamePage() {
    * cierra el locke ahí es la Liga.
    */
   const elFinal = state.status === "TERMINADA" ? state : null;
-  // Sin final porque solo quedó uno: es campeón igual (ver lib/final-four.ts)
-  const porAbandono = state.status === "POR_ABANDONO" ? state.champion : null;
 
   const [canManage, standings, entries, resumen] = await Promise.all([
     canManageCompetition(competition.id, user),
@@ -150,7 +156,7 @@ export default async function HallOfFamePage() {
         detailImage: fichas(entry.id),
       }));
 
-  const { jugadores, podio } = ordenDelHall(standings, elFinal, porAbandono);
+  const { jugadores, podio } = ordenDelHall(standings, elFinal, campeon);
 
   return (
     <>
@@ -203,7 +209,7 @@ export default async function HallOfFamePage() {
             !soloLectura(competition, canManage) &&
             (canManage || row.userId === user.id);
           const esCampeon =
-            (elFinal?.champion ?? porAbandono)?.participantId === row.participantId;
+            campeon?.champion.participantId === row.participantId;
 
           /**
            * Sin equipo apuntado la tarjeta se queda en una línea. Antes se

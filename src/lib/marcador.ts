@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getParticipants } from "@/lib/competition";
 import { JORNADAS_DEL_DUALOCKE, jornadasParaGanar } from "@/lib/perfiles-de-locke";
@@ -42,7 +43,7 @@ export type Marcador = {
   jornadas: JornadaDelMarcador[];
   /** Jornadas que hacen falta para ganar: la mayoría de las que hay */
   hacenFalta: number;
-  /** Quien ya lo ha ganado en combates, si lo ha ganado alguien */
+  /** Quien ya ha ganado el locke: el primero en llegar a la mayoría de jornadas */
   campeonId: string | null;
   /**
    * A quién le vale ganar la siguiente jornada para llevarse el locke.
@@ -52,9 +53,52 @@ export type Marcador = {
    * partido" sería mentira porque no queda nada que jugar.
    */
   bolaDePartido: Array<{ participantId: string; displayName: string }>;
+  /** De cuántas jornadas va el locke */
+  previstas: number;
+  /** Las que todavía pueden cambiar el marcador */
+  quedanPorDecidir: number;
+  /**
+   * Jugadas todas y nadie ha llegado a la mayoría (un 3-3 de seis): el locke
+   * lo decide la Jornada Final, que para eso es el desempate.
+   */
+  empate: boolean;
 };
 
-export async function getMarcador(competitionId: string): Promise<Marcador> {
+/**
+ * Quién se lleva una jornada de dualocke: el que tenga más combates **y nadie
+ * pueda alcanzarle** con los que quedan. En un mejor de tres, el 2-0 ya la
+ * cierra sin jugar el tercero, igual que en la serie de la Jornada Final.
+ * Suelta para que el palmarés cuente igual sin traerse el marcador entero.
+ */
+export function ganadorDeLaJornada(combates: { winnerId: string | null }[]) {
+  const porJugador: Record<string, number> = {};
+  let faltan = 0;
+  for (const combate of combates) {
+    if (!combate.winnerId) {
+      faltan += 1;
+      continue;
+    }
+    porJugador[combate.winnerId] = (porJugador[combate.winnerId] ?? 0) + 1;
+  }
+  const marcadores = Object.entries(porJugador).sort((a, b) => b[1] - a[1]);
+  const [lider, suyas] = marcadores[0] ?? [null, 0];
+  const segundas = marcadores[1]?.[1] ?? 0;
+  return {
+    ganadorId: lider && suyas > segundas + faltan ? lider : null,
+    porJugador,
+    faltan,
+  };
+}
+
+/** De cuántas jornadas va un dualocke: las previstas o, sin ellas, las de siempre. */
+export function jornadasDelDualocke(previstas: number | null, creadas: number) {
+  return previstas ?? Math.max(creadas, JORNADAS_DEL_DUALOCKE);
+}
+
+/** Va con `cache()`: lo piden la portada y el campeón del locke en la misma visita. */
+export const getMarcador = cache(async function getMarcador(
+  competitionId: string,
+): Promise<Marcador> {
   const [competition, participantes, jornadas] = await Promise.all([
     prisma.competition.findUnique({
       where: { id: competitionId },
@@ -79,31 +123,12 @@ export async function getMarcador(competitionId: string): Promise<Marcador> {
   // Las previstas mandan sobre las creadas: si no, el primero que gane la
   // primera jornada saldría campeón, porque de una la mayoría es una. Un
   // dualocke de antes que no las tenga puestas cuenta con las de siempre.
-  const previstas =
-    competition?.jornadasPrevistas ?? Math.max(jornadas.length, JORNADAS_DEL_DUALOCKE);
+  const previstas = jornadasDelDualocke(competition?.jornadasPrevistas ?? null, jornadas.length);
   const hacenFalta = jornadasParaGanar(previstas);
   const ganadas = new Map<string, number>();
 
   const filas: JornadaDelMarcador[] = jornadas.map((jornada) => {
-    const porJugador: Record<string, number> = {};
-    let faltan = 0;
-    for (const combate of jornada.matches) {
-      if (!combate.winnerId) {
-        faltan += 1;
-        continue;
-      }
-      porJugador[combate.winnerId] = (porJugador[combate.winnerId] ?? 0) + 1;
-    }
-
-    /**
-     * La jornada es de quien tenga más combates **y nadie pueda alcanzarle**
-     * con los que quedan: en un mejor de tres, el 2-0 ya la cierra sin jugar el
-     * tercero, igual que en la serie de la Jornada Final.
-     */
-    const marcadores = Object.entries(porJugador).sort((a, b) => b[1] - a[1]);
-    const [lider, suyas] = marcadores[0] ?? [null, 0];
-    const segundas = marcadores[1]?.[1] ?? 0;
-    const ganadorId = lider && suyas > segundas + faltan ? lider : null;
+    const { ganadorId, porJugador, faltan } = ganadorDeLaJornada(jornada.matches);
 
     if (ganadorId) ganadas.set(ganadorId, (ganadas.get(ganadorId) ?? 0) + 1);
 
@@ -156,5 +181,8 @@ export async function getMarcador(competitionId: string): Promise<Marcador> {
               participantId,
               displayName,
             })),
+    previstas,
+    quedanPorDecidir: Math.max(0, quedanPorDecidir),
+    empate: !campeon && quedanPorDecidir < 1,
   };
-}
+});

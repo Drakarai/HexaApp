@@ -7,6 +7,8 @@ import {
   campeonYSubcampeon,
   formatoParaJugadores,
 } from "@/lib/formatos-finales";
+import { ganadorDeLaJornada, jornadasDelDualocke } from "@/lib/marcador";
+import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 /**
  * El histórico de todos los lockes juntos: quién ha ganado más, quién ha
@@ -110,7 +112,7 @@ export async function getPalmares(): Promise<Palmares> {
     }),
     prisma.match.findMany({
       where: { matchday: { competitionId: { in: ids } } },
-      select: { participantAId: true, participantBId: true, winnerId: true },
+      select: { participantAId: true, participantBId: true, winnerId: true, matchdayId: true },
     }),
   ]);
 
@@ -128,6 +130,15 @@ export async function getPalmares(): Promise<Palmares> {
   ]);
 
   const porParticipante = new Map(participantes.map((p) => [p.id, p]));
+  // De qué edición es cada jornada, para repartir los combates
+  const jornadasDe = new Map(
+    (
+      await prisma.matchday.findMany({
+        where: { competitionId: { in: ids } },
+        select: { id: true, competitionId: true },
+      })
+    ).map((j) => [j.id, j.competitionId]),
+  );
   const bajasPorParticipante = new Map(
     bajas.map((fila) => [fila.participantId, fila._count._all]),
   );
@@ -161,8 +172,24 @@ export async function getPalmares(): Promise<Palmares> {
      */
     const suyos = participantes.filter((p) => p.competitionId === competicion.id);
     const enPie = suyos.filter((p) => !p.retiredAt);
-    const { campeon, subcampeon } =
-      final && formato
+    /**
+     * En el dualocke manda la mayoría de jornadas y la final solo desempata
+     * (ver lib/campeon.ts). Se cuenta aquí con las mismas piezas que el
+     * marcador, sin traérselo entero por cada edición.
+     */
+    const porJornadas =
+      perfilDeLocke(competicion.maxPlayers).victoria === "jornadas"
+        ? campeonPorJornadas(
+            combates.filter((c) => c.matchdayId && jornadasDe.get(c.matchdayId) === competicion.id),
+            competicion.jornadasPrevistas,
+          )
+        : null;
+    const { campeon, subcampeon } = porJornadas
+      ? {
+          campeon: porJornadas,
+          subcampeon: suyos.find((p) => p.id !== porJornadas)?.id ?? null,
+        }
+      : final && formato
         ? campeonYSubcampeon(
             formato,
             final.seeds,
@@ -301,4 +328,22 @@ export async function getPalmares(): Promise<Palmares> {
         a.displayName.localeCompare(b.displayName, "es"),
     ),
   };
+}
+
+/** Quién llegó a la mayoría de jornadas de un dualocke, si alguien llegó. */
+function campeonPorJornadas(
+  combates: { matchdayId: string; winnerId: string | null }[],
+  previstas: number | null,
+) {
+  const porJornada = new Map<string, { winnerId: string | null }[]>();
+  for (const combate of combates) {
+    porJornada.set(combate.matchdayId, [...(porJornada.get(combate.matchdayId) ?? []), combate]);
+  }
+  const hacenFalta = jornadasParaGanar(jornadasDelDualocke(previstas, porJornada.size));
+  const ganadas = new Map<string, number>();
+  for (const suyos of porJornada.values()) {
+    const { ganadorId } = ganadorDeLaJornada(suyos);
+    if (ganadorId) ganadas.set(ganadorId, (ganadas.get(ganadorId) ?? 0) + 1);
+  }
+  return [...ganadas].find(([, cuantas]) => cuantas >= hacenFalta)?.[0] ?? null;
 }

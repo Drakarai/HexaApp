@@ -278,15 +278,4 @@ export const getFormatoFinal = cache(async (competitionId: string) => {
 export const NOMBRE_POR_DEFECTO = "Final Four";
 
 /** ¿Se puede ya rellenar el hall de la fama? */
-export async function isLockeFinished(competitionId: string) {
-  const state = await getFinalFourState(competitionId);
-  return state.status === "TERMINADA" || state.status === "POR_ABANDONO" ? state : null;
-}
-
-/** Quién ha ganado el locke, salga de la final o de quedarse solo en pie. */
-export function campeonDelLocke(state: FinalFourState): BracketPlayer | null {
-  if (state.status === "TERMINADA" || state.status === "POR_ABANDONO") return state.champion;
-  return null;
-}
-
 export { MINIMO_DE_JUGADORES };

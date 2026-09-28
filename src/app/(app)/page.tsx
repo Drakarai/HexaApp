@@ -11,7 +11,6 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
 import {
-  campeonDelLocke,
   getFinalFourState,
   getFormatoFinal,
   NOMBRE_POR_DEFECTO,
@@ -27,6 +26,7 @@ import { cx, formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getMarcador } from "@/lib/marcador";
+import { getCampeonDelLocke } from "@/lib/campeon";
 import { MarcadorDual } from "@/components/marcador-dual";
 import { getCastigosPendientes } from "@/lib/premios";
 import { Castigos } from "@/components/castigos";
@@ -250,14 +250,23 @@ export default async function DashboardPage() {
       ? miLlave.b
       : miLlave.a
     : null;
-  const campeon = campeonDelLocke(estadoFinal);
+  const ganador = perfil.enSolitario
+    ? null
+    : await getCampeonDelLocke(competition.id, estadoFinal);
+  const campeon = ganador?.champion ?? null;
+  /**
+   * En el dualocke se gana por mayoría de jornadas y se puede seguir jugando lo
+   * que quede —hasta la Jornada Final— sin que cambie el campeón. Mientras
+   * tanto, el locke no se da por terminado.
+   */
+  const sigueTrasGanar = Boolean(ganador?.quedaPorJugar);
   /**
    * Con campeón, el locke se ha acabado aunque nadie lo haya archivado todavía,
    * y la portada lo tiene que decir: antes seguía poniendo "En curso" y pidiendo
    * que se creara otra jornada.
    */
   const terminado =
-    Boolean(campeon) && competition.status !== COMPETITION_STATUS.ARCHIVED;
+    Boolean(campeon) && !sigueTrasGanar && competition.status !== COMPETITION_STATUS.ARCHIVED;
 
   /**
    * La tarjeta de la izquierda: la jornada si hay un checkpoint abierto, si no
@@ -471,7 +480,9 @@ export default async function DashboardPage() {
               : nextMatchday
               ? "Próxima jornada"
               : campeon
-              ? "Se acabó"
+              ? sigueTrasGanar
+                ? "Campeón"
+                : "Se acabó"
               : estadoFinal.status === "EN_JUEGO"
               ? (formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO)
               : "Próxima jornada"}
@@ -608,8 +619,26 @@ export default async function DashboardPage() {
               </div>
               <p className="text-sm text-slate-300">
                 <Icono emoji="🏆" /> <strong className="text-white">{campeon.displayName}</strong>{" "}
-                ha ganado el locke.
+                ha ganado el locke
+                {ganador?.como === "jornadas" && ganador.jornadas
+                  ? ` por ${ganador.jornadas.ganadas}-${ganador.jornadas.perdidas} en jornadas`
+                  : ""}
+                .
               </p>
+              {sigueTrasGanar ? (
+                <>
+                  <p className="text-xs text-slate-400">
+                    Queda la {formatoFinal?.nombre ?? "Jornada Final"} por jugar: se
+                    juega igual, por el honor, pero ya no cambia el campeón.
+                  </p>
+                  <Link
+                    href="/final-four"
+                    className="btn-ghost btn-sm w-full justify-center"
+                  >
+                    Ir a la {formatoFinal?.nombre ?? "Jornada Final"}
+                  </Link>
+                </>
+              ) : null}
               <Link
                 href="/hall-de-la-fama"
                 className="btn-ghost btn-sm w-full justify-center"

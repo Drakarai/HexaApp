@@ -6,7 +6,8 @@ import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { filtroDeLockesVisibles } from "@/lib/acceso";
 import { getStandings } from "@/lib/competition";
-import { campeonDelLocke, getFinalFourState } from "@/lib/final-four";
+import { getFinalFourState } from "@/lib/final-four";
+import { getCampeonDelLocke } from "@/lib/campeon";
 import { getResumenDelLocke } from "@/lib/resumen-del-locke";
 import { ordenDelHall } from "@/lib/hall";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
@@ -128,17 +129,14 @@ export async function GET(
   ]);
 
   const elFinal = estado.status === "TERMINADA" ? estado : null;
-  const porAbandono = estado.status === "POR_ABANDONO" ? estado.champion : null;
-  const terminado = perfil.enSolitario
-    ? Boolean(progreso?.ligaSuperada)
-    : Boolean(campeonDelLocke(estado));
+  const ganador = perfil.enSolitario ? null : await getCampeonDelLocke(competition.id, estado);
+  const terminado = perfil.enSolitario ? Boolean(progreso?.ligaSuperada) : Boolean(ganador);
   if (!terminado) {
     return new Response("El locke todavía no ha terminado", { status: 404 });
   }
 
-  const { podio, comoLoGano } = ordenDelHall(standings, elFinal, porAbandono);
-  const campeonId =
-    campeonDelLocke(estado)?.participantId ?? standings[0]?.participantId;
+  const { podio, comoLoGano } = ordenDelHall(standings, elFinal, ganador);
+  const campeonId = ganador?.champion.participantId ?? standings[0]?.participantId;
   const campeon = standings.find((fila) => fila.participantId === campeonId);
   if (!campeon) return new Response("No encontrado", { status: 404 });
 

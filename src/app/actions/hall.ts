@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { isLockeFinished } from "@/lib/final-four";
+import { getCampeonDelLocke } from "@/lib/campeon";
 import { getUltimoEquipo } from "@/lib/ultimo-equipo";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
@@ -12,7 +12,7 @@ const TEAM_SIZE = 6;
 
 /**
  * Añade un pokémon al equipo con el que un jugador termina el locke. Solo se
- * puede cuando la Final Four ya tiene campeón: el hall de la fama es el
+ * puede cuando el locke ya tiene campeón: el hall de la fama es el
  * broche, no algo que se vaya rellenando por el camino.
  */
 export async function addHallPokemonAction(
@@ -28,8 +28,8 @@ export async function addHallPokemonAction(
     return { error: (error as Error).message };
   }
 
-  if (!(await isLockeFinished(participant.competitionId))) {
-    return { error: "El hall de la fama se abre al terminar la Final Four." };
+  if (!(await getCampeonDelLocke(participant.competitionId))) {
+    return { error: "El hall de la fama se abre cuando el locke tiene campeón." };
   }
 
   const species = String(formData.get("species") ?? "").trim();
@@ -79,8 +79,8 @@ export async function traerUltimoEquipoAction(
     return { error: (error as Error).message };
   }
 
-  if (!(await isLockeFinished(participant.competitionId))) {
-    return { error: "El hall de la fama se abre al terminar la Final Four." };
+  if (!(await getCampeonDelLocke(participant.competitionId))) {
+    return { error: "El hall de la fama se abre cuando el locke tiene campeón." };
   }
 
   const cuantos = await prisma.hallOfFameEntry.count({ where: { participantId } });

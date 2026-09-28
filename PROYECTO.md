@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 28 de septiembre de 2026 (una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 28 de septiembre de 2026 (el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -61,7 +61,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes: cuántos ha jugado, cuántos ha ganado, victorias-derrotas y pokémon enterrados. Abajo, cada edición con su campeón y a quién ganó la final; tocando una se abre. **Solo salen los lockes que esa persona puede abrir.** |
 | **Combates con permiso** | La excepción a lo de arriba. Quien administra el locke puede dejar que alguien que está fuera —retirado o con el locke perdido— juegue **un combate concreto** de jornada o un reto. Se da y se quita desde el propio combate, sale marcado con un 🤝 **Con permiso**, y ese combate ya no se da por retirada: se juega y cuenta como cualquier otro. El emparejador automático sigue sin contar con quien está fuera; esto es siempre a mano. |
-| **Puntos** / **Marcador** | Clasificación con desempates y **flechas ▲▼ de lo que ha subido o bajado cada uno desde la jornada anterior** (también en la portada), el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. |
+| **Puntos** / **Marcador** | Clasificación con desempates y **flechas ▲▼ de lo que ha subido o bajado cada uno desde la jornada anterior** (también en la portada), el gráfico de cómo ha ido jornada a jornada —con su pestaña para verlo **descontando a los que se retiran o pierden el locke** desde la jornada en la que se van—, el as de cada jugador, ajustes ±1, con motivo, masivos, e historial. En un locke de **dos** no hay tabla: sale el **marcador de jornadas ganadas**, con cuántas le faltan a cada uno. Y en todos, quién se ha **pasado la Liga Pokémon**, que es ganar el locke del juego. **El marcador decide el dualocke**: gana quien se lleve la mayoría de las jornadas previstas (4 de 6, 4 de 7); con un empate (3-3) decide la Jornada Final. Ganado por mayoría, el locke **sigue**: se juegan las jornadas que queden y la final, que ya no cambia el campeón. |
 | **Perfil de jugador** | Página propia de cada uno: su título, sus cifras, su as, sus pokémon favoritos, su cara a cara con cada rival y su cementerio. Se llega tocando su foto en cualquier sitio. |
 | **Mapa de capturas** | El mapa de la región, con sus zonas **dibujadas encima y transparentes**: se rellenan de color cuando apuntas algo dentro, salen en rojo con una ✕ si ahí solo se te escapó lo que hubiera, y llevan una chapa roja con cuántos pokémon **tuyos** han caído allí. El primer toque dice qué zona es y el segundo la abre; si lleva otras dentro, sale la lista para elegir. Tiene también vista de lista con buscador, y las capturas extra aparte. Si el juego tiene **más de un mapa** —la 2ª generación y sus remakes abren Kanto, y la 7ª reparte Alola en sus **cuatro islas**—, arriba salen sus pestañas y cada mapa lleva sus propias cuentas. **Privado como las notas**: no lo ven ni los administradores. |
 | **Bolsa** | Lo que lleva encima cada jugador. La llenan los administradores; cada uno solo ve la suya y gasta lo suyo con un botón, y **durante un minuto puede deshacerlo** (el servidor deja cinco). Hay **objetos**, que se gastan directamente ("Captura extra"), y **grupos**, que llevan varios dentro ("Objeto competitivo" → Globo Helio, Casco Dentado…) y al usarlos te hacen elegir uno. |
@@ -2518,12 +2518,29 @@ del hall y el podio salieron de la página a `lib/hall.ts` para que la imagen y
 el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
 `private` en la caché.
 
+**Quién gana el locke, en un solo sitio (`lib/campeon.ts`).** El usuario lo
+dejó claro para el dualocke: **gana quien se lleve la mayoría de las jornadas**
+—con 7, el primero a 4; con 6, el primero a 4— y la Jornada Final es el
+desempate de un 3-3. Si hay mayoría, el locke **sigue**: se pueden jugar las
+jornadas que falten y la final, "por el honor", pero no cambian el campeón. Como
+había cinco pantallas decidiendo el campeón cada una a su manera (portada, hall,
+cuadro, imagen del resumen y las acciones del hall), ahora todas preguntan a
+`getCampeonDelLocke`, que mira en este orden: mayoría de jornadas (solo en el
+dual), abandono y final. Devuelve también `quedaPorJugar`: con campeón por
+mayoría y la final sin terminar, la portada no pone "Terminado" y enseña el
+enlace a la final. El hall se abre en cuanto hay campeón, y si la final se jugó
+lo cuenta ("la final, por el honor, fue para Pablo"). El palmarés lo recalcula con
+las mismas piezas del marcador (`ganadorDeLaJornada`, `jornadasDelDualocke`),
+sin traérselo entero por cada edición. En un locke de más gente que se queda en
+dos, la Jornada Final sí decide: la regla de la mayoría es del **dualocke**, no
+de quedar dos.
+
 **Campeón por abandono.** En cuanto alguien deja un dualocke —o en un locke de
 tres pierden dos— queda uno solo en pie, y no hay final posible: el locke se
 quedaba sin campeón para siempre y el hall cerrado. Ahora `getFinalFourState`
 devuelve `POR_ABANDONO` con ese uno de campeón (solo sin cuadro generado y con
-al menos dos fichas en el locke) y todo lo que pregunta "¿hay campeón?" usa
-`campeonDelLocke()`: portada, hall, imagen del resumen y acciones del hall. El
+al menos dos fichas en el locke) y `getCampeonDelLocke` (ver arriba) lo
+cuenta como campeón, salvo que el dual ya estuviera ganado por mayoría. El
 palmarés lo deduce aparte (sin final, dos o más fichas y una sola sin
 `retiredAt`). El podio en ese caso es **solo el campeón**: poner de segundo y
 tercero a los que se fueron sería inventarse un orden que no se jugó.
@@ -2753,6 +2770,10 @@ Piezas con truco:
   (método del círculo) y de ahí salen los combates que propone
   `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
   dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `lib/campeon.ts` — `getCampeonDelLocke`: quién ha ganado el locke (mayoría de
+  jornadas en el dual, abandono o final) y si queda algo por jugar. **Cualquier
+  pantalla que quiera saber el campeón, aquí**; `lib/hall.ts` lo usa para el
+  podio y el "cómo lo ganó".
 - `lib/solitario.ts` — cómo va una partida de una persona (hitos, siguiente,
   caídos, zonas). `components/resumen-solitario.tsx` lo pinta, y sale tanto en
   la portada como en la pantalla de la tabla.
@@ -2886,11 +2907,9 @@ siempre. Al crear un dualocke el campo **"Jornadas previstas"** viene con 6 y
 es obligatorio, que es de donde sale el "gana quien se lleve 4"; si uno de antes
 no lo tiene, el marcador cuenta con 6 igualmente.
 
-**Pregunta abierta (del betatesting)**: en el dualocke hay dos campeones
-posibles —el del marcador (primero a 4 jornadas) y el de la Jornada Final—, y
-el hall, la imagen y el palmarés solo miran el de la final. Falta que el
-usuario decida si el del marcador cuenta como campeón (y la final sobra en el
-dual) o si el marcador es solo la liga previa.
+**Decidido tras el betatesting**: en el dualocke el campeón es el del
+marcador (mayoría de jornadas); la Jornada Final solo decide un empate y, si no,
+se juega igual sin cambiar nada. Ver "Quién gana el locke" en el apartado 3.
 
 Se planteó esconder Retos y la Ruleta en los lockes de dos y el usuario lo
 descartó: la ruleta se usa para sortearle algo al ganador y los retos también
@@ -3233,3 +3252,7 @@ lugar de destruir datos, y hay que avisar antes.
     que sobrevivían a su combate, series atascadas, lockes sin campeón al
     quedar uno— y se arreglaron todos, con quién descansa y apuntar a alguien
     por su usuario de regalo.
+81. **El dualocke se gana por mayoría**: quien se lleve la mayoría de las
+    jornadas es el campeón, la Jornada Final solo desempata, y el locke se
+    puede seguir jugando hasta el final sin que cambie nada. El campeón sale
+    ya de un solo sitio para todas las pantallas.

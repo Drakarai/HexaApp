@@ -23,6 +23,9 @@ import { resetBracketAction } from "@/app/actions/final-four";
 import { BracketCard } from "./bracket";
 import { GenerateBracketForm } from "./generate-form";
 import { Icono } from "@/components/icono";
+import { getCampeonDelLocke } from "@/lib/campeon";
+import { getMarcador } from "@/lib/marcador";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 export const metadata = { title: "Final Four" };
 
@@ -38,6 +41,17 @@ export default async function FinalFourPage() {
     urlsDeCarteles([competition.id]),
     getMyParticipant(competition.id, user.id),
   ]);
+
+  /**
+   * En el dualocke la final **no decide el locke**: lo decide la mayoría de
+   * jornadas, y esto solo desempata (ver lib/campeon.ts). Se dice arriba para
+   * que nadie crea que lo que se juega aquí cambia el campeón.
+   */
+  const porJornadas = perfilDeLocke(competition.maxPlayers).victoria === "jornadas";
+  const [ganador, marcador] = porJornadas
+    ? await Promise.all([getCampeonDelLocke(competition.id, state), getMarcador(competition.id)])
+    : [null, null];
+  const porMayoria = ganador?.como === "jornadas" ? ganador : null;
 
   /**
    * Los equipos de la final, si ya hay cuadro. Uno por jugador: se piden todos
@@ -80,12 +94,46 @@ export default async function FinalFourPage() {
       <PageHeader
         title={nombre}
         subtitle={
+          // En el dual la final no reparte el locke: desempata (ver arriba)
+          (porJornadas && formato
+            ? "El desempate del dualocke: cara a cara al mejor de tres, y el tercero solo si hace falta."
+            : null) ??
           formato?.explicacion ??
           (state.status === "POR_ABANDONO"
             ? "Esta vez no hubo final: el locke lo gana quien aguanta."
             : "El final del locke. Se decide entre los que mejor hayan quedado.")
         }
       />
+
+      {porJornadas && state.status !== "POR_ABANDONO" ? (
+        <p
+          className={cx(
+            "mb-6 rounded-xl border px-4 py-3 text-sm",
+            porMayoria || marcador?.empate
+              ? "border-amber-400/40 bg-amber-400/10 text-amber-100"
+              : "border-white/10 bg-white/[0.03] text-slate-300",
+          )}
+        >
+          {porMayoria ? (
+            <>
+              <Icono emoji="🏆" /> <strong>{porMayoria.champion.displayName}</strong> ganó
+              el locke por {porMayoria.jornadas?.ganadas}-{porMayoria.jornadas?.perdidas} en
+              jornadas. La {nombre} se juega igual, por el honor, pero no cambia el
+              campeón.
+            </>
+          ) : marcador?.empate ? (
+            <>
+              Empate en jornadas: <strong>esta {nombre} decide el locke</strong>.
+            </>
+          ) : (
+            <>
+              En el dualocke gana quien se lleve la mayoría de las jornadas. La{" "}
+              {nombre} solo decide si acabáis empatados; si no, se juega igual,
+              por el honor.
+            </>
+          )}
+        </p>
+      ) : null}
 
       {state.status === "POCA_GENTE" ? (
         <EmptyState
@@ -195,7 +243,7 @@ export default async function FinalFourPage() {
                 <Icono emoji="🏆" />
               </p>
               <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
-                Campeón del {competition.name}
+                {porMayoria ? `Ganó la ${nombre}` : `Campeón del ${competition.name}`}
               </p>
               <div className="mt-3 flex items-center justify-center gap-3">
                 <Avatar
@@ -208,7 +256,11 @@ export default async function FinalFourPage() {
                   {state.champion.displayName}
                 </p>
               </div>
-              {state.runnerUp ? (
+              {porMayoria ? (
+                <p className="mt-2 text-sm text-slate-400">
+                  El locke es de {porMayoria.champion.displayName}, que lo ganó en jornadas.
+                </p>
+              ) : state.runnerUp ? (
                 <p className="mt-2 text-sm text-slate-400">
                   Subcampeón: {state.runnerUp.displayName}
                 </p>

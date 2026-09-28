@@ -1,5 +1,6 @@
 import type { StandingRow } from "@/lib/competition";
 import type { FinalFourState } from "@/lib/final-four";
+import type { CampeonDelLocke } from "@/lib/campeon";
 
 /**
  * Cómo acabó el locke: el orden del hall de la fama y su podio.
@@ -27,9 +28,13 @@ type FinalTerminada = Extract<FinalFourState, { status: "EN_JUEGO" | "TERMINADA"
 export function ordenDelHall(
   standings: StandingRow[],
   elFinal: FinalTerminada | null,
-  /** El que ganó por quedarse solo en pie, cuando no hubo final (ver `POR_ABANDONO`) */
-  porAbandono: { participantId: string; displayName: string } | null = null,
+  /**
+   * Quién ganó el locke (ver lib/campeon.ts). Cuando no salió de la final —por
+   * jornadas en el dualocke o por abandono—, manda sobre el cuadro.
+   */
+  campeon: CampeonDelLocke | null = null,
 ) {
+  const sinFinal = campeon && campeon.como !== "final" ? campeon : null;
   /**
    * **El orden del hall no es la clasificación: es cómo acabó el locke.**
    *
@@ -96,10 +101,8 @@ export function ordenDelHall(
    * Todas las llaves del cuadro son al mejor de tres, así que el marcador de la
    * serie ya está contado en la propia llave (ver `lib/formatos-finales.ts`).
    */
-  const comoLoGano = (() => {
-    if (porAbandono) {
-      return `${porAbandono.displayName} fue el único que siguió en pie hasta el final.`;
-    }
+  /** Cómo fue la final, si se jugó: "Draka ganó la final a Pablo por 2-1" */
+  const laFinalFue = (() => {
     if (!elFinal?.champion) return "";
     const campeon = elFinal.champion.displayName;
     const rival = elFinal.runnerUp?.displayName;
@@ -115,6 +118,23 @@ export function ordenDelHall(
     return `${campeon} ganó la final a ${rival} por ${ganadas}-${perdidas}.`;
   })();
 
+  const comoLoGano = (() => {
+    if (sinFinal?.como === "abandono") {
+      return `${sinFinal.champion.displayName} fue el único que siguió en pie hasta el final.`;
+    }
+    if (sinFinal?.como === "jornadas") {
+      const { ganadas, perdidas } = sinFinal.jornadas ?? { ganadas: 0, perdidas: 0 };
+      // La final se juega igual aunque no cuente: si se jugó, se dice
+      const yLaFinal = elFinal?.champion
+        ? elFinal.champion.participantId === sinFinal.champion.participantId
+          ? " Y remató ganando también la final."
+          : ` La final, por el honor, fue para ${elFinal.champion.displayName}.`
+        : "";
+      return `${sinFinal.champion.displayName} ganó el locke por ${ganadas}-${perdidas} en jornadas.${yLaFinal}`;
+    }
+    return laFinalFue;
+  })();
+
   /**
    * El podio, **solo con quien llegó a la final**. El 1º y el 2º salen de la
    * final; el 3º sale de la tabla, que no es lo mismo y por eso se dice: en el
@@ -128,26 +148,25 @@ export function ordenDelHall(
     elFinal?.seeds.map((jugador) => jugador.participantId) ?? [],
   );
   /**
-   * Sin final, el podio es solo el campeón: los demás se fueron, y ponerlos de
+   * Sin campeón de la final, el podio es el campeón y, si lo hay, el otro del
+   * dualocke. Por abandono queda solo: los demás se fueron, y ponerlos de
    * segundo y tercero por la tabla sería inventarse un orden que no se jugó.
    */
-  const campeonSolo = porAbandono
-    ? standings.find((row) => row.participantId === porAbandono.participantId)
-    : null;
-  if (campeonSolo) {
+  if (sinFinal) {
+    const arriba = [sinFinal.champion, sinFinal.runnerUp]
+      .map((quien) => standings.find((row) => row.participantId === quien?.participantId))
+      .filter((row): row is StandingRow => Boolean(row));
     return {
-      jugadores: [campeonSolo, ...jugadores.filter((row) => row !== campeonSolo)],
-      podio: [
-        {
-          participantId: campeonSolo.participantId,
-          displayName: campeonSolo.displayName,
-          color: campeonSolo.color,
-          avatarImage: campeonSolo.avatarImage,
-          puesto: 1,
-          titulo: "Campeón",
-          comoLoGano,
-        },
-      ] satisfies EnElPodio[],
+      jugadores: [...arriba, ...jugadores.filter((row) => !arriba.includes(row))],
+      podio: arriba.map((row, index) => ({
+        participantId: row.participantId,
+        displayName: row.displayName,
+        color: row.color,
+        avatarImage: row.avatarImage,
+        puesto: index + 1,
+        titulo: ["Campeón", "Subcampeón"][index],
+        comoLoGano,
+      })) satisfies EnElPodio[],
       comoLoGano,
     };
   }

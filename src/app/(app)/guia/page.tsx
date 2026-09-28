@@ -177,7 +177,7 @@ const GUIAS: Record<
     de: "Para todo el mundo: apuntar capturas y bajas, llevar tus gimnasios y no perderte nada.",
     pdf: `/guia-de-uso.pdf?v=${process.env.HUELLA_GUIA_USO}`,
     fichero: "guia-de-uso.pdf",
-    version: "27/09/2026",
+    version: "28/09/2026",
     paginas: 26,
     contenido: [
       [3, "Lo nuevo"],
