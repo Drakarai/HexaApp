@@ -106,7 +106,12 @@ export type FinalFourState =
 export async function getFinalFourState(
   competitionId: string,
 ): Promise<FinalFourState> {
-  const [matches, finalFour, activos, competition] = await Promise.all([
+  /**
+   * La clasificación va en la misma tanda que lo demás: casi siempre hace
+   * falta, y las páginas que preguntan esto ya la han pedido (`getStandings`
+   * va con `cache()`), así que no cuesta otro viaje.
+   */
+  const [combates, cuadro, activos, competition, standings] = await Promise.all([
     prisma.match.findMany({
       where: { matchday: { competitionId } },
       select: { winnerId: true, matchdayId: true },
@@ -120,11 +125,53 @@ export async function getFinalFourState(
       where: { id: competitionId },
       select: { jornadasPrevistas: true, _count: { select: { participants: true } } },
     }),
+    getStandings(competitionId),
   ]);
 
+  return calcularEstadoDeLaFinal({
+    combates,
+    cuadro,
+    activos,
+    participantes: competition?._count.participants ?? 0,
+    jornadasPrevistas: competition?.jornadasPrevistas ?? null,
+    standings,
+  });
+}
+
+/**
+ * La cuenta de `getFinalFourState`, sin tocar la base de datos: en qué punto
+ * está la final y, con cuadro, quién va ganando cada llave. Suelta para poder
+ * probarla.
+ */
+export function calcularEstadoDeLaFinal({
+  combates: matches,
+  cuadro: finalFour,
+  activos,
+  participantes,
+  jornadasPrevistas,
+  standings,
+}: {
+  combates: { winnerId: string | null; matchdayId: string }[];
+  cuadro: {
+    id: string;
+    jugadores: number;
+    seeds: string[];
+    matches: {
+      key: string;
+      winnerId: string | null;
+      pokemonDiff: number | null;
+      playedAt: Date | null;
+      notes: string | null;
+      replayUrl: string | null;
+    }[];
+  } | null;
+  activos: number;
+  participantes: number;
+  jornadasPrevistas: number | null;
+  standings: StandingRow[];
+}): FinalFourState {
   // Un locke de grupo en el que ya solo queda uno: ese lo ha ganado
-  if (!finalFour && activos === 1 && (competition?._count.participants ?? 0) >= 2) {
-    const standings = await getStandings(competitionId);
+  if (!finalFour && activos === 1 && participantes >= 2) {
     const quedaEnPie = standings.find((row) => !row.retirado);
     if (quedaEnPie) {
       return {
@@ -157,12 +204,11 @@ export async function getFinalFourState(
    * final se juegan menos, se bajan las previstas y listo.
    */
   const creadas = new Set(matches.map((match) => match.matchdayId)).size;
-  const faltanPorCrear = Math.max(0, (competition?.jornadasPrevistas ?? 0) - creadas);
+  const faltanPorCrear = Math.max(0, (jornadasPrevistas ?? 0) - creadas);
   if ((jugados < matches.length || faltanPorCrear > 0) && !finalFour) {
     return { status: "BLOQUEADA", jugados, total: matches.length, formato, faltanPorCrear };
   }
 
-  const standings = await getStandings(competitionId);
   if (!finalFour) return { status: "SIN_CUADRO", standings, formato };
 
   const byId = new Map(standings.map((row) => [row.participantId, row]));

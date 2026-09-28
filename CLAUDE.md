@@ -42,6 +42,8 @@ No hace falta narrar cada retoque: el documento es un mapa, no un diario.
 - Las imágenes se reducen en el navegador y se guardan como data URL.
 - Verifica los cambios de verdad antes de darlos por buenos: `npm run build` y,
   cuando afecte a la interfaz, arrancar la aplicación y probarla.
+- `npm test` prueba las reglas del locke y va dentro del build: si tocas una
+  regla, actualiza o añade su caso en `tests/`.
 
 ## Al terminar
 

@@ -2,7 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/db";
 import { getFinalFourState, type BracketPlayer, type FinalFourState } from "@/lib/final-four";
-import { getMarcador } from "@/lib/marcador";
+import { getMarcador, type Marcador } from "@/lib/marcador";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 /**
@@ -47,8 +47,20 @@ export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
     }),
   ]);
 
-  if (competition && perfilDeLocke(competition.maxPlayers).victoria === "jornadas") {
-    const marcador = await getMarcador(competitionId);
+  const esDual =
+    competition !== null && perfilDeLocke(competition.maxPlayers).victoria === "jornadas";
+  return decidirCampeon(state, esDual ? await getMarcador(competitionId) : null);
+});
+
+/**
+ * La cuenta de `getCampeonDelLocke`, sin tocar la base de datos. `marcador`
+ * solo va en un dualocke: sin él, manda la final. Suelta para poder probarla.
+ */
+export function decidirCampeon(
+  state: FinalFourState,
+  marcador: Marcador | null,
+): CampeonDelLocke | null {
+  if (marcador) {
     const ganador = marcador.jugadores.find((j) => j.participantId === marcador.campeonId);
     if (ganador) {
       const otro = marcador.jugadores.find((j) => j.participantId !== ganador.participantId);
@@ -84,4 +96,4 @@ export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
     };
   }
   return null;
-});
+}

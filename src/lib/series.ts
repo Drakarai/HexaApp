@@ -39,9 +39,37 @@ export async function ajustarDesempate(matchdayId: string) {
   const alMejorDe = perfilDeLocke(jornada.competition.maxPlayers).serieAlMejorDe;
   if (!alMejorDe) return;
 
+  const { borrar, crear } = queHacerConElDesempate(jornada.matches, alMejorDe);
+
+  // Sobra: alguien ya la tiene ganada y queda un combate sin jugar
+  if (borrar.length) {
+    await prisma.match.deleteMany({ where: { id: { in: borrar } } });
+  }
+
+  // Falta: están todos jugados, nadie la ha ganado y la serie da para más
+  if (crear) {
+    await prisma.match.create({ data: { matchdayId: jornada.id, ...crear } });
+  }
+}
+
+/**
+ * La cuenta de `ajustarDesempate`, sin tocar la base de datos: qué combates
+ * sobran y si hace falta el siguiente. Suelta para poder probarla.
+ */
+export function queHacerConElDesempate(
+  combates: {
+    id: string;
+    winnerId: string | null;
+    participantAId: string;
+    participantBId: string;
+  }[],
+  alMejorDe: number,
+): {
+  borrar: string[];
+  crear: { participantAId: string; participantBId: string; position: number } | null;
+} {
   const hacenFalta = Math.ceil(alMejorDe / 2);
-  const combates = jornada.matches;
-  if (!combates.length) return;
+  if (!combates.length) return { borrar: [], crear: null };
 
   const victorias = new Map<string, number>();
   let sinJugar = 0;
@@ -54,27 +82,23 @@ export async function ajustarDesempate(matchdayId: string) {
   }
   const decidida = [...victorias.values()].some((cuantas) => cuantas >= hacenFalta);
 
-  // Sobra: alguien ya la tiene ganada y queda un combate sin jugar
   if (decidida) {
-    const deMas = combates.filter((combate) => !combate.winnerId);
-    if (deMas.length) {
-      await prisma.match.deleteMany({
-        where: { id: { in: deMas.map((combate) => combate.id) } },
-      });
-    }
-    return;
+    return {
+      borrar: combates.filter((combate) => !combate.winnerId).map((combate) => combate.id),
+      crear: null,
+    };
   }
 
-  // Falta: están todos jugados, nadie la ha ganado y la serie da para más
   if (sinJugar === 0 && combates.length < alMejorDe) {
     const primero = combates[0];
-    await prisma.match.create({
-      data: {
-        matchdayId: jornada.id,
+    return {
+      borrar: [],
+      crear: {
         participantAId: primero.participantAId,
         participantBId: primero.participantBId,
         position: combates.length,
       },
-    });
+    };
   }
+  return { borrar: [], crear: null };
 }

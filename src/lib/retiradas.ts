@@ -64,35 +64,8 @@ async function resolverUnaVuelta(
   let resueltos = 0;
 
   for (const jornada of jornadas) {
-    const sinJugar = jornada.matches.filter((combate) => !combate.winnerId);
-    if (!sinJugar.length) continue;
-
-    const seRetiroUno = (combate: (typeof sinJugar)[number]) =>
-      retirados.has(combate.participantAId) !== retirados.has(combate.participantBId);
-    const seRetiraronLosDos = (combate: (typeof sinJugar)[number]) =>
-      retirados.has(combate.participantAId) && retirados.has(combate.participantBId);
-
-    /**
-     * Los de la excepción no se dan por ganados: la organización ha dicho que
-     * ese se juega, aunque uno de los dos esté fuera del locke.
-     */
-    const porRetirada = sinJugar.filter(
-      (combate) => !combate.excepcion && seRetiroUno(combate),
-    );
+    const porRetirada = combatesPorRetirada(jornada.matches, retirados);
     if (!porRetirada.length) continue;
-
-    /**
-     * Lo que falta por jugar de verdad. Un combate entre dos retirados no
-     * cuenta: no lo va a jugar nadie, así que no puede bloquear a los demás
-     * para siempre. Ese se queda sin ganador, que es lo justo.
-     */
-    const faltanDeVerdad = sinJugar.filter(
-      (combate) =>
-        // Uno con permiso sí falta de verdad: lo van a jugar
-        combate.excepcion ||
-        (!seRetiroUno(combate) && !seRetiraronLosDos(combate)),
-    ).length;
-    if (faltanDeVerdad > 0) continue;
 
     for (const combate of porRetirada) {
       const ganadorId = retirados.has(combate.participantAId)
@@ -144,6 +117,52 @@ async function resolverUnaVuelta(
   }
 
   return resueltos;
+}
+
+/**
+ * La cuenta de una jornada, sin tocar la base de datos: qué combates se dan ya
+ * por ganados porque el rival está fuera. Vacío mientras quede algo que jugar
+ * de verdad en la jornada. Suelta para poder probarla.
+ */
+export function combatesPorRetirada<
+  C extends {
+    participantAId: string;
+    participantBId: string;
+    winnerId: string | null;
+    excepcion: boolean;
+  },
+>(combates: C[], retirados: ReadonlySet<string>): C[] {
+  const sinJugar = combates.filter((combate) => !combate.winnerId);
+  if (!sinJugar.length) return [];
+
+  const seRetiroUno = (combate: C) =>
+    retirados.has(combate.participantAId) !== retirados.has(combate.participantBId);
+  const seRetiraronLosDos = (combate: C) =>
+    retirados.has(combate.participantAId) && retirados.has(combate.participantBId);
+
+  /**
+   * Los de la excepción no se dan por ganados: la organización ha dicho que
+   * ese se juega, aunque uno de los dos esté fuera del locke.
+   */
+  const porRetirada = sinJugar.filter(
+    (combate) => !combate.excepcion && seRetiroUno(combate),
+  );
+  if (!porRetirada.length) return [];
+
+  /**
+   * Lo que falta por jugar de verdad. Un combate entre dos retirados no
+   * cuenta: no lo va a jugar nadie, así que no puede bloquear a los demás
+   * para siempre. Ese se queda sin ganador, que es lo justo.
+   */
+  const faltanDeVerdad = sinJugar.filter(
+    (combate) =>
+      // Uno con permiso sí falta de verdad: lo van a jugar
+      combate.excepcion ||
+      (!seRetiroUno(combate) && !seRetiraronLosDos(combate)),
+  ).length;
+  if (faltanDeVerdad > 0) return [];
+
+  return porRetirada;
 }
 
 /**

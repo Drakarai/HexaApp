@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "node scripts/preparar-build.mjs && prisma generate && prisma db push --skip-generate && next build",
+    "build": "node scripts/preparar-build.mjs && prisma generate && npm test && prisma db push --skip-generate && next build",
+    "test": "node --require ./tests/preparar.cjs --import tsx --test tests/*.test.ts",
     "start": "next start",
     "lint": "tsc --noEmit",
     "db:push": "prisma db push",

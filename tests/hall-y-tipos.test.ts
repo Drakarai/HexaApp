@@ -1,0 +1,83 @@
+/**
+ * El orden del hall de la fama según cómo se ganó el locke, los perfiles de
+ * locke según cuántos sean y la tabla de tipos de cada generación.
+ */
+import { describe, test } from "node:test";
+import assert from "node:assert/strict";
+import { ordenDelHall } from "@/lib/hall";
+import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { multiplicador, tiposDePokemon, tiposDeGeneracion } from "@/lib/tipos";
+import { fila } from "./ayudas";
+
+const ficha = (participantId: string, seed = 1) => ({
+  participantId,
+  displayName: participantId,
+  color: "#fff",
+  avatarImage: null,
+  seed,
+});
+
+describe("el hall de la fama", () => {
+  test("dualocke ganado por jornadas: campeón y subcampeón, con el marcador", () => {
+    const r = ordenDelHall([fila("Pablo", { points: 9 }), fila("Draka")], null, {
+      champion: ficha("Draka"),
+      runnerUp: ficha("Pablo", 2),
+      como: "jornadas",
+      jornadas: { ganadas: 4, perdidas: 2 },
+      quedaPorJugar: false,
+    });
+    assert.deepEqual(r.podio.map((p) => [p.displayName, p.titulo]), [
+      ["Draka", "Campeón"],
+      ["Pablo", "Subcampeón"],
+    ]);
+    assert.match(r.comoLoGano, /4-2 en jornadas/);
+  });
+  test("por abandono: solo el campeón en el podio", () => {
+    const r = ordenDelHall([fila("Draka"), fila("Pablo", { retirado: true })], null, {
+      champion: ficha("Draka"),
+      runnerUp: null,
+      como: "abandono",
+      quedaPorJugar: false,
+    });
+    assert.equal(r.podio.length, 1);
+    assert.equal(r.jugadores[0].participantId, "Draka");
+  });
+  test("sin campeón no hay podio", () => {
+    assert.deepEqual(ordenDelHall([fila("a"), fila("b")], null).podio, []);
+  });
+});
+
+describe("perfiles de locke", () => {
+  test("uno solo es un locke en solitario", () => assert.equal(perfilDeLocke(1).enSolitario, true));
+  test("dos es dualocke: se gana por jornadas y cada jornada al mejor de tres", () => {
+    const p = perfilDeLocke(2);
+    assert.equal(p.victoria, "jornadas");
+    assert.equal(p.serieAlMejorDe, 3);
+  });
+  test("tres o más se gana por puntos", () => assert.equal(perfilDeLocke(6).victoria, "puntos"));
+  test("la mayoría: 4 de 6, 4 de 7, 3 de 5", () => {
+    assert.deepEqual([6, 7, 5].map(jornadasParaGanar), [4, 4, 3]);
+  });
+});
+
+describe("tipos de cada generación", () => {
+  const FANTASMA = 8;
+  const ACERO = 9;
+  const FUEGO = 10;
+  const BICHO = 7;
+  test("el Acero resiste al Fantasma hasta la 5ª, y en la 6ª ya no", () => {
+    assert.equal(multiplicador(FANTASMA, [ACERO], 5), 0.5);
+    assert.equal(multiplicador(FANTASMA, [ACERO], 6), 1);
+  });
+  test("el Hada no existe antes de la 6ª", () => {
+    assert.equal(tiposDeGeneracion(5).some((t) => t.slug === "fairy"), false);
+    assert.equal(tiposDeGeneracion(7).some((t) => t.slug === "fairy"), true);
+  });
+  test("Clefairy es Normal en Johto y Hada en Alola", () => {
+    assert.deepEqual(tiposDePokemon(35, 2), [1]);
+    assert.deepEqual(tiposDePokemon(35, 7), [18]);
+  });
+  test("Fuego contra Bicho/Acero hace x4", () => {
+    assert.equal(multiplicador(FUEGO, [BICHO, ACERO], 7), 4);
+  });
+});

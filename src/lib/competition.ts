@@ -374,50 +374,11 @@ export const getStandings = cache(async (
     wipeoCounts.map((row) => [row.participantId, row._count._all]),
   );
 
-  const stats = new Map<
-    string,
-    { wins: number; losses: number; played: number; diff: number }
-  >();
-  const bump = (id: string) => {
-    if (!stats.has(id)) stats.set(id, { wins: 0, losses: 0, played: 0, diff: 0 });
-    return stats.get(id)!;
-  };
-
-  /**
-   * Los retos suman victorias y derrotas igual que las jornadas, porque son
-   * combates de verdad, pero **nunca dan puntos**. Su diferencia de pokémon
-   * solo entra en el desempate si la edición lo tiene activado.
-   */
-  const apuntar = (
-    combate: {
-      participantAId: string;
-      participantBId: string;
-      winnerId: string | null;
-      pokemonDiff: number | null;
-    },
-    cuentaLaDiferencia: boolean,
-  ) => {
-    if (!combate.winnerId) return;
-    const perdedorId =
-      combate.winnerId === combate.participantAId
-        ? combate.participantBId
-        : combate.participantAId;
-    const ganador = bump(combate.winnerId);
-    const perdedor = bump(perdedorId);
-    ganador.wins += 1;
-    ganador.played += 1;
-    perdedor.losses += 1;
-    perdedor.played += 1;
-    if (!cuentaLaDiferencia) return;
-    const diff = combate.pokemonDiff ?? 0;
-    ganador.diff += diff;
-    perdedor.diff -= diff;
-  };
-
-  for (const match of matches) apuntar(match, true);
-  for (const reto of challenges) {
-    apuntar(reto, competition?.challengeDiffCounts ?? false);
-  }
+  const stats = contarCombates(
+    matches,
+    challenges,
+    competition?.challengeDiffCounts ?? false,
+  );
 
   const titulos = await getTitulosEquipados(
     participants.map((participante) => participante.userId),
@@ -460,12 +421,87 @@ export const getStandings = cache(async (
     };
   });
 
+  return ordenarClasificacion(rows);
+});
+
+type CombateContado = {
+  participantAId: string;
+  participantBId: string;
+  winnerId: string | null;
+  pokemonDiff: number | null;
+};
+
+/**
+ * Victorias, derrotas y diferencia de cada uno, de los combates de jornada y
+ * de los retos. Suelta de `getStandings` para poder probarla sin base de datos.
+ */
+export function contarCombates(
+  combates: CombateContado[],
+  retos: CombateContado[],
+  retosCuentanDiferencia: boolean,
+) {
+  const stats = new Map<
+    string,
+    { wins: number; losses: number; played: number; diff: number }
+  >();
+  const bump = (id: string) => {
+    if (!stats.has(id)) stats.set(id, { wins: 0, losses: 0, played: 0, diff: 0 });
+    return stats.get(id)!;
+  };
+
   /**
-   * Los retirados van al final y **no ocupan puesto**. Si se quedaran en su
-   * sitio, alguien que ya no juega saldría segundo y parecería clasificado
-   * para la Final Four; el puesto tiene que decir algo de quien sigue.
+   * Los retos suman victorias y derrotas igual que las jornadas, porque son
+   * combates de verdad, pero **nunca dan puntos**. Su diferencia de pokémon
+   * solo entra en el desempate si la edición lo tiene activado.
    */
-  rows.sort(
+  const apuntar = (
+    combate: {
+      participantAId: string;
+      participantBId: string;
+      winnerId: string | null;
+      pokemonDiff: number | null;
+    },
+    cuentaLaDiferencia: boolean,
+  ) => {
+    if (!combate.winnerId) return;
+    const perdedorId =
+      combate.winnerId === combate.participantAId
+        ? combate.participantBId
+        : combate.participantAId;
+    const ganador = bump(combate.winnerId);
+    const perdedor = bump(perdedorId);
+    ganador.wins += 1;
+    ganador.played += 1;
+    perdedor.losses += 1;
+    perdedor.played += 1;
+    if (!cuentaLaDiferencia) return;
+    const diff = combate.pokemonDiff ?? 0;
+    ganador.diff += diff;
+    perdedor.diff -= diff;
+  };
+
+  for (const combate of combates) apuntar(combate, true);
+  for (const reto of retos) apuntar(reto, retosCuentanDiferencia);
+  return stats;
+}
+
+/**
+ * El orden de la tabla y el puesto de cada uno.
+ *
+ * Los retirados van al final y **no ocupan puesto**. Si se quedaran en su
+ * sitio, alguien que ya no juega saldría segundo y parecería clasificado
+ * para la Final Four; el puesto tiene que decir algo de quien sigue.
+ */
+export function ordenarClasificacion<
+  T extends {
+    retirado: boolean;
+    points: number;
+    deaths: number;
+    pokemonDiff: number;
+    displayName: string;
+  },
+>(rows: T[]): (T & { position: number })[] {
+  const ordenadas = [...rows].sort(
     (a, b) =>
       Number(a.retirado) - Number(b.retirado) ||
       b.points - a.points ||
@@ -475,8 +511,8 @@ export const getStandings = cache(async (
   );
 
   let puesto = 0;
-  return rows.map((row) => ({
+  return ordenadas.map((row) => ({
     ...row,
     position: row.retirado ? 0 : ++puesto,
   }));
-});
+}

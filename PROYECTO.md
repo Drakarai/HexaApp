@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 28 de septiembre de 2026 (el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 28 de septiembre de 2026 (**pruebas automáticas** de las reglas del locke, que paran la publicación si alguna cuenta se rompe; antes: el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -2518,6 +2518,20 @@ del hall y el podio salieron de la página a `lib/hall.ts` para que la imagen y
 el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
 `private` en la caché.
 
+**Pruebas de las reglas, dentro del build.** Como cada push a la rama
+principal va directo a producción, un cambio que rompiera una cuenta (quién
+gana, desempates, retiradas, el cuadro) se descubría a mitad de locke. Ahora
+`tests/` tiene ~80 casos inventados con su resultado sabido, y `npm test` va en
+el build **entre `prisma generate` y `prisma db push`**: si falla uno, ni se
+tocan las tablas ni se compila. Van con el ejecutor que ya trae Node
+(`node --test`) y `tsx`, que ya estaba, para no añadir dependencias. Prueban
+**las cuentas, no las pantallas**; por eso lo que antes mezclaba cuenta y
+consulta se partió en dos, sin cambiar lo que devuelve: `calcularEstadoDeLaFinal`
+(dentro de `getFinalFourState`, que ahora pide la clasificación en la misma
+tanda), `calcularMarcador`, `decidirCampeon`, `queHacerConElDesempate`,
+`combatesPorRetirada`, `contarCombates` y `ordenarClasificacion`. Lo que se ve
+se sigue comprobando arrancando la app.
+
 **Quién gana el locke, en un solo sitio (`lib/campeon.ts`).** El usuario lo
 dejó claro para el dualocke: **gana quien se lleve la mayoría de las jornadas**
 —con 7, el primero a 4; con 6, el primero a 4— y la Jornada Final es el
@@ -2770,6 +2784,13 @@ Piezas con truco:
   (método del círculo) y de ahí salen los combates que propone
   `createMatchdayAction`. `lib/marcador.ts` cuenta las jornadas ganadas del
   dualocke y `components/marcador-dual.tsx` las pinta, dentro de `puntos/page.tsx`.
+- `tests/` — las pruebas (`npm test`). `preparar.cjs` cambia `server-only`
+  —que lo pone Next y fuera de él no existe— por un módulo vacío, y
+  `ayudas.ts` monta fichas, combates y jornadas inventados. Un fichero por
+  tema: dualocke, clasificación, retiradas, emparejamientos, final,
+  checkpoints, y hall con perfiles y tipos. Las funciones que prueban son las
+  "sueltas" (sin base de datos) de cada `lib/`; si una cuenta nueva lee de la
+  base de datos, se separa igual para poder probarla.
 - `lib/campeon.ts` — `getCampeonDelLocke`: quién ha ganado el locke (mayoría de
   jornadas en el dual, abandono o final) y si queda algo por jugar. **Cualquier
   pantalla que quiera saber el campeón, aquí**; `lib/hall.ts` lo usa para el
@@ -3047,6 +3068,14 @@ datos viven en Neon y no se tocan al desplegar. Si un cambio necesita campos
 nuevos, el build los crea; si implicara borrar algo, el despliegue se detiene en
 lugar de destruir datos, y hay que avisar antes.
 
+**La rama principal es `claude/competition-management-app-k9ua86`**: en GitHub
+no hay otra (ni `main`), así que cada push a esa rama es lo que publica Vercel.
+
+**Pruebas (`npm test`).** Antes de publicar, el build corre las pruebas de
+`tests/`: si alguna falla, se para antes de tocar la base de datos y de
+compilar, Vercel no publica y se queda la versión anterior. Al cambiar una regla
+del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
+
 ---
 
 ## 8. Cronología
@@ -3256,3 +3285,6 @@ lugar de destruir datos, y hay que avisar antes.
     jornadas es el campeón, la Jornada Final solo desempata, y el locke se
     puede seguir jugando hasta el final sin que cambie nada. El campeón sale
     ya de un solo sitio para todas las pantallas.
+82. **Pruebas automáticas**: unos ochenta casos de las reglas del locke (quién
+    gana, desempates, retiradas, emparejamientos, la final, los checkpoints)
+    corren en cada publicación y la paran si alguno falla.

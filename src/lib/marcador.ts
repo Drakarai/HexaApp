@@ -120,10 +120,41 @@ export const getMarcador = cache(async function getMarcador(
     }),
   ]);
 
+  return calcularMarcador(
+    participantes.map((participante) => ({
+      id: participante.id,
+      displayName: participante.displayName,
+      color: participante.color,
+      avatarImage: participante.user.avatarImage,
+    })),
+    jornadas,
+    competition?.jornadasPrevistas ?? null,
+  );
+});
+
+/**
+ * La cuenta de `getMarcador`, sin tocar la base de datos. Suelta para poder
+ * probarla: es la que decide quién gana un dualocke.
+ */
+export function calcularMarcador(
+  participantes: {
+    id: string;
+    displayName: string;
+    color: string;
+    avatarImage: string | null;
+  }[],
+  jornadas: {
+    id: string;
+    label: string;
+    milestone: string | null;
+    matches: { winnerId: string | null }[];
+  }[],
+  jornadasPrevistas: number | null,
+): Marcador {
   // Las previstas mandan sobre las creadas: si no, el primero que gane la
   // primera jornada saldría campeón, porque de una la mayoría es una. Un
   // dualocke de antes que no las tenga puestas cuenta con las de siempre.
-  const previstas = jornadasDelDualocke(competition?.jornadasPrevistas ?? null, jornadas.length);
+  const previstas = jornadasDelDualocke(jornadasPrevistas, jornadas.length);
   const hacenFalta = jornadasParaGanar(previstas);
   const ganadas = new Map<string, number>();
 
@@ -149,7 +180,7 @@ export const getMarcador = cache(async function getMarcador(
         participantId: participante.id,
         displayName: participante.displayName,
         color: participante.color,
-        avatarImage: participante.user.avatarImage,
+        avatarImage: participante.avatarImage,
         ganadas: suyas,
         leFaltan: Math.max(0, hacenFalta - suyas),
       };
@@ -185,4 +216,4 @@ export const getMarcador = cache(async function getMarcador(
     quedanPorDecidir: Math.max(0, quedanPorDecidir),
     empate: !campeon && quedanPorDecidir < 1,
   };
-});
+}
