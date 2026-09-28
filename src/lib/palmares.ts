@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { listCompetitions } from "@/lib/competition";
+import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { esCreador, getCurrentUser } from "@/lib/auth";
 import { urlsDeImagen } from "@/lib/imagenes";
 import {
@@ -18,9 +18,9 @@ import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
  * juntara varios. Archivar una edición no servía de nada más que para quitarla
  * de en medio.
  *
- * **Solo entran los lockes que esa persona puede abrir.** Sale de
- * `listCompetitions`, que ya lleva el filtro de visibilidad: quien no juega una
- * edición ni la mira de espectador, tampoco la ve en el palmarés.
+ * **Solo entran sus lockes**: los que juega o jugó y los que mira de
+ * espectador. Quién de toda esa gente sale lo elige cada uno (ver
+ * `User.palmaresOcultos`); eso lo aplica la página, aquí se cuenta todo.
  *
  * Se cuenta al mirarlo y no se guarda nada, como el resto de números de la
  * aplicación. Son **cinco consultas para todas las ediciones a la vez**, no
@@ -41,18 +41,38 @@ export type CampeonDeUnLocke = {
   terminado: boolean;
   campeon: { displayName: string; color: string; avatarImage: string | null } | null;
   subcampeon: { displayName: string; color: string } | null;
+  categoria: Categoria;
 };
+
+/**
+ * Las categorías del palmarés, por tamaño del locke: ganar un Hexalocke de seis
+ * no es lo mismo que ganar un dualocke, y así se cuentan por separado.
+ */
+export type Categoria = "grupo" | "dual" | "solitario";
+export const CATEGORIAS: Categoria[] = ["grupo", "dual", "solitario"];
+
+export function categoriaDelLocke(jugadores: number): Categoria {
+  return jugadores <= 1 ? "solitario" : jugadores === 2 ? "dual" : "grupo";
+}
+
+export type Cuenta = {
+  lockes: number;
+  ganados: number;
+  victorias: number;
+  derrotas: number;
+  bajas: number;
+};
+
+const cuentaVacia = (): Cuenta => ({ lockes: 0, ganados: 0, victorias: 0, derrotas: 0, bajas: 0 });
 
 export type FilaDelPalmares = {
   userId: string;
   displayName: string;
   color: string;
   avatarImage: string | null;
-  lockes: number;
-  ganados: number;
-  victorias: number;
-  derrotas: number;
-  bajas: number;
+  /** Todo junto */
+  total: Cuenta;
+  porCategoria: Record<Categoria, Cuenta>;
 };
 
 export type Palmares = {
@@ -62,16 +82,41 @@ export type Palmares = {
 
 export async function getPalmares(): Promise<Palmares> {
   const yo = await getCurrentUser();
-  const competiciones = await listCompetitions();
-  const ids = competiciones.map((competicion) => competicion.id);
+  if (!yo) return { ediciones: [], gente: [] };
 
   /**
-   * Los lockes de antes que le tocan: **solo los que jugó**. El Creador los ve
-   * todos, como en el resto de la aplicación.
+   * **Sus lockes, no todos los que puede abrir.** Los que juega o jugó y los
+   * que mira de espectador. Antes salía de `listCompetitions`, y al Creador, que
+   * puede abrirlos todos, se le llenaba el palmarés de desconocidos: los lockes
+   * en solitario de cada uno, los de otros organizadores. Así el palmarés de
+   * cada uno es su gente, y nadie ve resultados de lockes que no son suyos.
    */
+  const competiciones = await prisma.competition.findMany({
+    where: {
+      OR: [
+        { participants: { some: { userId: yo.id } } },
+        { espectadores: { some: { userId: yo.id } } },
+      ],
+    },
+    orderBy: { startedAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      game: true,
+      startedAt: true,
+      maxPlayers: true,
+      jornadasPrevistas: true,
+    },
+  });
+  const ids = competiciones.map((competicion) => competicion.id);
+  const categoriaDe = new Map(
+    competiciones.map((c) => [c.id, categoriaDelLocke(c.maxPlayers)]),
+  );
+
+  /** Los lockes de antes que le tocan: los que jugó y los que apuntó él. */
   const deAntes = yo
     ? await prisma.lockeDeAntes.findMany({
-        where: esCreador(yo) ? {} : { jugadoresIds: { has: yo.id } },
+        where: { OR: [{ jugadoresIds: { has: yo.id } }, { createdById: yo.id }] },
         orderBy: { cuando: "desc" },
         include: {
           ganador: { select: { id: true, displayName: true, avatarColor: true } },
@@ -84,7 +129,11 @@ export async function getPalmares(): Promise<Palmares> {
 
   if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
-  const [participantes, finales, bajas, combates] = await Promise.all([
+  const enSolitario = competiciones
+    .filter((c) => categoriaDelLocke(c.maxPlayers) === "solitario")
+    .map((c) => c.id);
+
+  const [participantes, finales, bajas, combates, ligas] = await Promise.all([
     prisma.participant.findMany({
       where: { competitionId: { in: ids } },
       select: {
@@ -114,7 +163,21 @@ export async function getPalmares(): Promise<Palmares> {
       where: { matchday: { competitionId: { in: ids } } },
       select: { participantAId: true, participantBId: true, winnerId: true, matchdayId: true },
     }),
+    /**
+     * En solitario se gana **pasándose la Liga** (ver lib/solitario.ts): el hito
+     * de tipo Campeón marcado. Antes esos lockes sumaban como jugados y nunca
+     * como ganados.
+     */
+    enSolitario.length
+      ? prisma.gymClear.findMany({
+          where: {
+            levelCap: { competitionId: { in: enSolitario }, kind: LEVEL_CAP_KINDS.CHAMPION },
+          },
+          select: { participantId: true, levelCap: { select: { competitionId: true } } },
+        })
+      : [],
   ]);
+  const ligaPasadaEn = new Map(ligas.map((marca) => [marca.levelCap.competitionId, marca.participantId]));
 
   /**
    * Las fotos de perfil, como **dirección** y no como imagen. Se pidieron mal
@@ -184,7 +247,9 @@ export async function getPalmares(): Promise<Palmares> {
             competicion.jornadasPrevistas,
           )
         : null;
-    const { campeon, subcampeon } = porJornadas
+    const { campeon, subcampeon } = categoriaDe.get(competicion.id) === "solitario"
+      ? { campeon: ligaPasadaEn.get(competicion.id) ?? null, subcampeon: null }
+      : porJornadas
       ? {
           campeon: porJornadas,
           subcampeon: suyos.find((p) => p.id !== porJornadas)?.id ?? null,
@@ -215,6 +280,7 @@ export async function getPalmares(): Promise<Palmares> {
       terminado: Boolean(campeon),
       campeon: ficha(campeon),
       subcampeon: ficha(subcampeon),
+      categoria: categoriaDe.get(competicion.id) ?? "grupo",
     };
   });
 
@@ -246,6 +312,7 @@ export async function getPalmares(): Promise<Palmares> {
           color: locke.subcampeon.avatarColor,
         }
       : null,
+    categoria: categoriaDelLocke(locke.jugadoresIds.length),
   }));
 
   /** Las cuentas van por **cuenta de usuario**, no por participante: el mote
@@ -262,21 +329,29 @@ export async function getPalmares(): Promise<Palmares> {
         displayName: quien.displayName,
         color: quien.color,
         avatarImage: avatares(quien.userId),
-        lockes: 0,
-        ganados: 0,
-        victorias: 0,
-        derrotas: 0,
-        bajas: 0,
+        total: cuentaVacia(),
+        porCategoria: { grupo: cuentaVacia(), dual: cuentaVacia(), solitario: cuentaVacia() },
       });
     }
     return gente.get(quien.userId)!;
   };
+  /** Suma a la vez en el total y en su categoría, para que cuadren siempre */
+  const sumar = (
+    fila: FilaDelPalmares,
+    categoria: Categoria,
+    campo: keyof Cuenta,
+    cuanto = 1,
+  ) => {
+    fila.total[campo] += cuanto;
+    fila.porCategoria[categoria][campo] += cuanto;
+  };
 
   for (const p of participantes) {
     const fila = deLaPersona(p);
-    fila.lockes += 1;
-    fila.bajas += bajasPorParticipante.get(p.id) ?? 0;
-    if (campeonPorEdicion.get(p.competitionId) === p.userId) fila.ganados += 1;
+    const categoria = categoriaDe.get(p.competitionId) ?? "grupo";
+    sumar(fila, categoria, "lockes");
+    sumar(fila, categoria, "bajas", bajasPorParticipante.get(p.id) ?? 0);
+    if (campeonPorEdicion.get(p.competitionId) === p.userId) sumar(fila, categoria, "ganados");
   }
 
   for (const combate of combates) {
@@ -287,8 +362,9 @@ export async function getPalmares(): Promise<Palmares> {
         ? combate.participantBId
         : combate.participantAId;
     const perdedor = porParticipante.get(perdedorId);
-    if (ganador) deLaPersona(ganador).victorias += 1;
-    if (perdedor) deLaPersona(perdedor).derrotas += 1;
+    const categoria = categoriaDe.get(jornadasDe.get(combate.matchdayId) ?? "") ?? "grupo";
+    if (ganador) sumar(deLaPersona(ganador), categoria, "victorias");
+    if (perdedor) sumar(deLaPersona(perdedor), categoria, "derrotas");
   }
 
   /**
@@ -312,8 +388,9 @@ export async function getPalmares(): Promise<Palmares> {
         displayName: cuenta?.displayName ?? "Alguien",
         color: cuenta?.avatarColor ?? "#64748b",
       });
-      fila.lockes += 1;
-      if (userId === locke.ganadorId) fila.ganados += 1;
+      const categoria = categoriaDelLocke(locke.jugadoresIds.length);
+      sumar(fila, categoria, "lockes");
+      if (userId === locke.ganadorId) sumar(fila, categoria, "ganados");
     }
   }
 
@@ -323,8 +400,8 @@ export async function getPalmares(): Promise<Palmares> {
     ),
     gente: [...gente.values()].sort(
       (a, b) =>
-        b.ganados - a.ganados ||
-        b.victorias - a.victorias ||
+        b.total.ganados - a.total.ganados ||
+        b.total.victorias - a.total.victorias ||
         a.displayName.localeCompare(b.displayName, "es"),
     ),
   };

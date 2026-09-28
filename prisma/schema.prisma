@@ -52,6 +52,12 @@ model User {
   avatarImage      String?
   // Tema de color elegido, uno por juego principal. Ver src/lib/themes.ts
   theme            String   @default("hexa")
+  /**
+   * A quién ha quitado de su palmarés. Se guardan los quitados y no los
+   * elegidos a propósito: así quien empiece a jugar con él aparece solo, sin
+   * tener que ir a añadirlo.
+   */
+  palmaresOcultos  String[] @default([])
   createdAt        DateTime @default(now())
 
   participations         Participant[]

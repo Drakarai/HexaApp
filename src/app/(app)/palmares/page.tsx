@@ -4,6 +4,7 @@ import { abrirCompeticionAction } from "@/app/actions/competitions";
 import { borrarLockeDeAntesAction } from "@/app/actions/lockes-de-antes";
 import { ConfirmSubmit } from "@/components/ui";
 import { ApuntarLockeDeAntesForm } from "./apuntar-form";
+import { CuentaDeCadaUno } from "./cuenta-de-cada-uno";
 import { getPalmares, type CampeonDeUnLocke } from "@/lib/palmares";
 import { getActiveCompetition } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
@@ -13,12 +14,18 @@ import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Palmarés" };
 
-const MEDALS = ["🥇", "🥈", "🥉"];
+/** La categoría de cada edición, dicha corta junto a su fecha */
+const DE_QUE_TAMANO = { grupo: "De grupo", dual: "Dualocke", solitario: "En solitario" } as const;
 
 export default async function PalmaresPage() {
   // No hace falta edición activa: esta pantalla va por encima de todas
   const user = await requireUser();
-  const { ediciones, gente } = await getPalmares();
+  const [{ ediciones, gente }, preferencias] = await Promise.all([
+    getPalmares(),
+    // A quién ha quitado de su palmarés: ver cuenta-de-cada-uno.tsx
+    prisma.user.findUnique({ where: { id: user.id }, select: { palmaresOcultos: true } }),
+  ]);
+  const ocultos = preferencias?.palmaresOcultos ?? [];
 
   /** Apuntar lockes de antes lo puede hacer quien puede montarlos */
   const puedeApuntar = esCreador(user) || puedeCrearLockes(user);
@@ -64,65 +71,7 @@ export default async function PalmaresPage() {
         subtitle="Todos tus lockes juntos: quién ha ganado más, quién ha enterrado más y cómo acabó cada edición."
       />
 
-      <section className="card mb-6">
-        <h2 className="section-title">La cuenta de cada uno</h2>
-        <p className="muted mb-4">
-          Sumando todas las ediciones. Las victorias y derrotas son de los
-          combates de jornada.
-        </p>
-
-        <ul className="space-y-2">
-          {gente.map((fila, index) => (
-            <li
-              key={fila.userId}
-              className={cx(
-                "rounded-xl border px-3 py-2.5",
-                index === 0 && fila.ganados > 0
-                  ? "border-amber-400/30 bg-amber-400/[0.05]"
-                  : "border-white/5 bg-white/[0.03]",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-6 text-center text-lg">
-                  {fila.ganados > 0 && index < 3 ? (
-                    <Icono emoji={MEDALS[index]} />
-                  ) : (
-                    <span className="text-sm text-slate-500">{index + 1}º</span>
-                  )}
-                </span>
-                <Avatar
-                  name={fila.displayName}
-                  color={fila.color}
-                  image={fila.avatarImage}
-                  size={32}
-                />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-white">
-                    {fila.displayName}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">
-                    {fila.lockes} {fila.lockes === 1 ? "locke" : "lockes"}
-                    {fila.ganados
-                      ? ` · ${fila.ganados} ${fila.ganados === 1 ? "ganado" : "ganados"}`
-                      : ""}
-                  </p>
-                </div>
-              </div>
-
-              {/* Las cifras debajo y no al lado: con cuatro columnas en un
-                  móvil el nombre se quedaba en dos letras */}
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <Cifra valor={fila.ganados} rotulo={<><Icono emoji="🏆" /> Lockes</>} />
-                <Cifra
-                  valor={`${fila.victorias}-${fila.derrotas}`}
-                  rotulo="V-D"
-                />
-                <Cifra valor={fila.bajas} rotulo={<><Icono emoji="💀" /> Caídos</>} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <CuentaDeCadaUno gente={gente} yoId={user.id} ocultosDeEntrada={ocultos} />
 
       <section className="card">
         <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
@@ -200,17 +149,6 @@ export default async function PalmaresPage() {
   );
 }
 
-function Cifra({ valor, rotulo }: { valor: string | number; rotulo: React.ReactNode }) {
-  return (
-    <div className="rounded-lg bg-white/[0.03] px-2 py-1.5">
-      <p className="text-base font-black text-white">{valor}</p>
-      <p className="text-[10px] uppercase tracking-wide text-slate-500">
-        {rotulo}
-      </p>
-    </div>
-  );
-}
-
 /** La línea de una edición: nombre, juego, fecha y quién la ganó. */
 function Ficha({ edicion }: { edicion: CampeonDeUnLocke }) {
   return (
@@ -221,7 +159,8 @@ function Ficha({ edicion }: { edicion: CampeonDeUnLocke }) {
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-white">{edicion.nombre}</p>
         <p className="truncate text-xs text-slate-500">
-          {edicion.game ? `${edicion.game} · ` : ""}
+          {/* La categoría delante: es corta, y detrás el nombre del juego la cortaba */}
+          {DE_QUE_TAMANO[edicion.categoria]} · {edicion.game ? `${edicion.game} · ` : ""}
           {formatDate(edicion.startedAt)}
           {edicion.deAntes ? " · a mano" : ""}
         </p>
