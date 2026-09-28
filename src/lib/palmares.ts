@@ -42,6 +42,21 @@ export type CampeonDeUnLocke = {
   campeon: { displayName: string; color: string; avatarImage: string | null } | null;
   subcampeon: { displayName: string; color: string } | null;
   categoria: Categoria;
+  /** Un locke de antes, con lo que hace falta para editarlo (solo si puede) */
+  paraEditar?: DatosDeLockeDeAntes;
+};
+
+export type DatosDeLockeDeAntes = {
+  nombre: string;
+  juego: string | null;
+  /** "2024-05-01", como lo pide un campo de fecha */
+  cuando: string;
+  notas: string | null;
+  jugadoresIds: string[];
+  sinCuenta: string[];
+  /** "u:<id>" o "n:<nombre>", como los desplegables */
+  ganador: string;
+  subcampeon: string;
 };
 
 /**
@@ -319,6 +334,8 @@ export async function getPalmares(): Promise<Palmares> {
   const puedeBorrar = (createdById: string | null) =>
     Boolean(yo) && (esCreador(yo!) || createdById === yo!.id);
 
+  // Quien no tiene cuenta sale con su nombre y en gris: no hay más de él
+  const SIN_CUENTA = "#64748b";
   const apuntados: CampeonDeUnLocke[] = deAntes.map((locke) => ({
     competitionId: locke.id,
     deAntes: true,
@@ -328,18 +345,39 @@ export async function getPalmares(): Promise<Palmares> {
     game: locke.juego,
     startedAt: locke.cuando,
     terminado: true,
-    campeon: {
-      displayName: locke.ganador.displayName,
-      color: locke.ganador.avatarColor,
-      avatarImage: avatares(locke.ganador.id),
-    },
+    campeon: locke.ganador
+      ? {
+          displayName: locke.ganador.displayName,
+          color: locke.ganador.avatarColor,
+          avatarImage: avatares(locke.ganador.id),
+        }
+      : { displayName: locke.ganadorNombre ?? "Alguien", color: SIN_CUENTA, avatarImage: null },
     subcampeon: locke.subcampeon
       ? {
           displayName: locke.subcampeon.displayName,
           color: locke.subcampeon.avatarColor,
         }
-      : null,
-    categoria: categoriaDelLocke(locke.jugadoresIds.length),
+      : locke.subcampeonNombre
+        ? { displayName: locke.subcampeonNombre, color: SIN_CUENTA }
+        : null,
+    categoria: categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length),
+    // Lo que hace falta para editarlo, solo a quien puede
+    paraEditar: puedeBorrar(locke.createdById)
+      ? {
+          nombre: locke.nombre,
+          juego: locke.juego,
+          cuando: locke.cuando.toISOString().slice(0, 10),
+          notas: locke.notas,
+          jugadoresIds: locke.jugadoresIds,
+          sinCuenta: locke.sinCuenta,
+          ganador: locke.ganadorId ? `u:${locke.ganadorId}` : `n:${locke.ganadorNombre ?? ""}`,
+          subcampeon: locke.subcampeonId
+            ? `u:${locke.subcampeonId}`
+            : locke.subcampeonNombre
+              ? `n:${locke.subcampeonNombre}`
+              : "",
+        }
+      : undefined,
   }));
 
   /** Las cuentas van por **cuenta de usuario**, no por participante: el mote
@@ -415,7 +453,7 @@ export async function getPalmares(): Promise<Palmares> {
         displayName: cuenta?.displayName ?? "Alguien",
         color: cuenta?.avatarColor ?? "#64748b",
       });
-      const categoria = categoriaDelLocke(locke.jugadoresIds.length);
+      const categoria = categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length);
       sumar(fila, categoria, "lockes");
       if (userId === locke.ganadorId) sumar(fila, categoria, "ganados");
     }

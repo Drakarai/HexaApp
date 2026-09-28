@@ -4,6 +4,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { esCreador, puedeCrearLockes, requireUser } from "@/lib/auth";
 import type { FormState } from "@/app/actions/auth";
+import {
+  cuentasQuePuedeApuntar,
+  leerEleccion,
+  leerNombres,
+  montarJugadores,
+} from "@/lib/lockes-de-antes";
 
 /**
  * Los lockes que se jugaron antes de que existiera la aplicación.
@@ -13,7 +19,8 @@ import type { FormState } from "@/app/actions/auth";
  * palmarés esas líneas salen con sus cifras en blanco.
  *
  * Lo apunta **quien puede montar lockes**: el Creador o un organizador. Y cada
- * uno borra lo que apuntó; el Creador, lo que sea.
+ * uno edita y borra lo que apuntó; el Creador, lo que sea. Puede haber
+ * jugadores sin cuenta (ver lib/lockes-de-antes.ts).
  */
 
 async function quienPuedeApuntar() {
@@ -24,7 +31,11 @@ async function quienPuedeApuntar() {
   return user;
 }
 
-export async function apuntarLockeDeAntesAction(
+/**
+ * Apunta un locke de antes o, si llega `id`, lo edita. Es la misma pantalla y
+ * las mismas reglas; editar solo añade comprobar que es suyo.
+ */
+export async function guardarLockeDeAntesAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
@@ -35,51 +46,82 @@ export async function apuntarLockeDeAntesAction(
     return { error: (error as Error).message };
   }
 
+  const id = String(formData.get("id") ?? "").trim();
+  const antes = id
+    ? await prisma.lockeDeAntes.findUnique({
+        where: { id },
+        select: { createdById: true, jugadoresIds: true },
+      })
+    : null;
+  if (id) {
+    if (!antes) return { error: "Ese locke ya no está apuntado." };
+    // Cada uno lo suyo; el Creador, lo que sea
+    if (!esCreador(user) && antes.createdById !== user.id) {
+      return { error: "Solo puede cambiarlo quien lo apuntó." };
+    }
+  }
+
   const nombre = String(formData.get("nombre") ?? "").trim();
   if (!nombre) return { error: "Ponle nombre al locke." };
-
-  const ganadorId = String(formData.get("ganadorId") ?? "").trim();
-  if (!ganadorId) return { error: "Elige quién lo ganó." };
-
-  const subcampeonRaw = String(formData.get("subcampeonId") ?? "").trim();
-  const subcampeonId =
-    subcampeonRaw && subcampeonRaw !== ganadorId ? subcampeonRaw : null;
 
   const cuandoRaw = String(formData.get("cuando") ?? "").trim();
   const cuando = cuandoRaw ? new Date(cuandoRaw) : new Date();
   if (Number.isNaN(cuando.getTime())) return { error: "Esa fecha no vale." };
 
   /**
-   * Quiénes lo jugaron decide **quién lo ve**. El ganador y el subcampeón
-   * entran siempre: no tendría sentido apuntar que alguien ganó un locke y que
-   * él no lo viera en su palmarés.
+   * "Este nombre sin cuenta ya es esta cuenta": llegan como `vincular:<nombre>`
+   * con el identificador de la cuenta, solo al editar.
    */
-  const marcados = formData.getAll("jugadoresIds").map(String).filter(Boolean);
-  const jugadoresIds = [
-    ...new Set([...marcados, ganadorId, ...(subcampeonId ? [subcampeonId] : [])]),
-  ];
-
-  // Que existan de verdad: los identificadores los manda el navegador
-  const cuantos = await prisma.user.count({ where: { id: { in: jugadoresIds } } });
-  if (cuantos !== jugadoresIds.length) {
-    return { error: "Alguna de esas cuentas ya no existe." };
+  const vinculos = new Map<string, string>();
+  for (const [clave, valor] of formData.entries()) {
+    if (clave.startsWith("vincular:") && String(valor)) {
+      vinculos.set(clave.slice("vincular:".length), String(valor));
+    }
   }
 
-  await prisma.lockeDeAntes.create({
-    data: {
-      nombre,
-      juego: String(formData.get("juego") ?? "").trim() || null,
-      cuando,
-      ganadorId,
-      subcampeonId,
-      jugadoresIds,
-      notas: String(formData.get("notas") ?? "").trim() || null,
-      createdById: user.id,
-    },
+  const montado = montarJugadores({
+    cuentas: formData.getAll("jugadoresIds").map(String),
+    nombres: leerNombres(String(formData.get("sinCuenta") ?? "")),
+    ganador: leerEleccion(String(formData.get("ganador") ?? "")),
+    subcampeon: leerEleccion(String(formData.get("subcampeon") ?? "")),
+    vinculos,
   });
+  if ("error" in montado) return montado;
+
+  /**
+   * Las cuentas, comprobadas: los identificadores los manda el navegador. Que
+   * existan, y que un organizador no cuele a nadie que no pueda ver; las que ya
+   * estaban en el locke se respetan, que si no editarlo las quitaría.
+   */
+  const existentes = await prisma.user.count({ where: { id: { in: montado.jugadoresIds } } });
+  if (existentes !== montado.jugadoresIds.length) {
+    return { error: "Alguna de esas cuentas ya no existe." };
+  }
+  if (!esCreador(user)) {
+    const permitidas = new Set([
+      ...(await cuentasQuePuedeApuntar(user)).map((c) => c.id),
+      ...(antes?.jugadoresIds ?? []),
+    ]);
+    if (montado.jugadoresIds.some((cuenta) => !permitidas.has(cuenta))) {
+      return { error: "Alguna de esas cuentas no la puedes apuntar." };
+    }
+  }
+
+  const datos = {
+    nombre,
+    juego: String(formData.get("juego") ?? "").trim() || null,
+    cuando,
+    notas: String(formData.get("notas") ?? "").trim() || null,
+    ...montado,
+  };
+  if (id) {
+    await prisma.lockeDeAntes.update({ where: { id }, data: datos });
+  } else {
+    await prisma.lockeDeAntes.create({ data: { ...datos, createdById: user.id } });
+  }
 
   revalidatePath("/palmares");
-  return { success: `${nombre} apuntado en el palmarés.` };
+  return { success: id ? `${nombre} actualizado.` : `${nombre} apuntado en el palmarés.` };
 }
 
 export async function borrarLockeDeAntesAction(formData: FormData) {

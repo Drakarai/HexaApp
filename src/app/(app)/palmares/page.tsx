@@ -3,7 +3,8 @@ import { requireUser, esCreador, puedeCrearLockes } from "@/lib/auth";
 import { abrirCompeticionAction } from "@/app/actions/competitions";
 import { borrarLockeDeAntesAction } from "@/app/actions/lockes-de-antes";
 import { ConfirmSubmit } from "@/components/ui";
-import { ApuntarLockeDeAntesForm } from "./apuntar-form";
+import { ApuntarLockeDeAntesForm, EditarLockeDeAntes } from "./apuntar-form";
+import { cuentasQuePuedeApuntar } from "@/lib/lockes-de-antes";
 import { CuentaDeCadaUno } from "./cuenta-de-cada-uno";
 import { getPalmares, type CampeonDeUnLocke } from "@/lib/palmares";
 import { getActiveCompetition } from "@/lib/competition";
@@ -31,10 +32,8 @@ export default async function PalmaresPage() {
   const puedeApuntar = esCreador(user) || puedeCrearLockes(user);
   const [cuentas, jugandoAhora] = puedeApuntar
     ? await Promise.all([
-        prisma.user.findMany({
-          orderBy: { displayName: "asc" },
-          select: { id: true, displayName: true, username: true },
-        }),
+        // Las que puede poner: todas el Creador, las suyas un organizador
+        cuentasQuePuedeApuntar(user),
         // Los del locke que se está jugando: son los que vienen marcados
         getActiveCompetition().then((activa) =>
           activa
@@ -100,6 +99,13 @@ export default async function PalmaresPage() {
                   </div>
                   {/* El botón debajo y no al lado: al lado apretaba el nombre
                       del juego y la fecha hasta dejarlos en puntos suspensivos */}
+                  {edicion.paraEditar && puedeApuntar ? (
+                    <EditarLockeDeAntes
+                      id={edicion.competitionId}
+                      datos={edicion.paraEditar}
+                      cuentas={cuentas}
+                    />
+                  ) : null}
                   {edicion.puedeBorrar ? (
                     <form
                       action={borrarLockeDeAntesAction}

@@ -1716,17 +1716,30 @@ model LockeDeAntes {
    */
   juego        String?
   cuando       DateTime
-  ganadorId    String
-  subcampeonId String?
+  /**
+   * El ganador, si tiene cuenta. Si no la tiene, va su nombre escrito en
+   * `ganadorNombre` y esto queda vacío: de un locke de antes puede haber gente
+   * que nunca se hizo cuenta.
+   */
+  ganadorId        String?
+  ganadorNombre    String?
+  subcampeonId     String?
+  subcampeonNombre String?
   /**
    * Las cuentas de quienes lo jugaron. El ganador entra siempre.
    */
   jugadoresIds String[] @default([])
+  /**
+   * Los que lo jugaron **sin cuenta**, por su nombre. Salen en la línea del
+   * locke y cuentan para su tamaño, pero no tienen fila en ningún palmarés.
+   * Si uno se hace cuenta luego, al editar se vincula y pasa a `jugadoresIds`.
+   */
+  sinCuenta    String[] @default([])
   notas        String?
   createdById  String?
   createdAt    DateTime @default(now())
 
-  ganador     User  @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
+  ganador     User? @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
   subcampeon  User? @relation("SubcampeonDeAntes", fields: [subcampeonId], references: [id], onDelete: SetNull)
   apuntadoPor User? @relation("ApuntadorDeAntes", fields: [createdById], references: [id], onDelete: SetNull)
 
