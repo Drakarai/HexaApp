@@ -28,6 +28,8 @@ export type CombateParaCheckpoint = {
   participantAId: string;
   participantBId: string;
   winnerId: string | null;
+  /** La organización ha dicho que se juega aunque uno esté fuera del locke */
+  excepcion?: boolean;
 };
 
 export type JornadaParaCheckpoint = {
@@ -107,27 +109,33 @@ export function checkpointAbierto<J extends JornadaParaCheckpoint>(
 export function miParteDeLaJornada(
   jornada: JornadaParaCheckpoint,
   participantId: string,
+  /**
+   * Los que están fuera del locke. Un combate contra uno de ellos no se juega:
+   * se gana solo al acabar la jornada (ver lib/retiradas.ts), y la portada
+   * decía "tu rival" de alguien que ya no está.
+   */
+  retirados: ReadonlySet<string> = new Set(),
 ):
   | { tipo: "rival"; rivalId: string; combateId: string }
+  | { tipo: "porRetirada"; rivalId: string }
   | { tipo: "royale" }
   | { tipo: "hecho" }
   | { tipo: "fuera" } {
-  const pendiente = jornada.matches.find(
+  const rivalEn = (combate: CombateParaCheckpoint) =>
+    combate.participantAId === participantId ? combate.participantBId : combate.participantAId;
+  const pendientes = jornada.matches.filter(
     (combate) =>
       combate.winnerId === null &&
       (combate.participantAId === participantId ||
         combate.participantBId === participantId),
   );
+  const pendiente = pendientes.find(
+    (combate) => combate.excepcion || !retirados.has(rivalEn(combate)),
+  );
   if (pendiente) {
-    return {
-      tipo: "rival",
-      rivalId:
-        pendiente.participantAId === participantId
-          ? pendiente.participantBId
-          : pendiente.participantAId,
-      combateId: pendiente.id,
-    };
+    return { tipo: "rival", rivalId: rivalEn(pendiente), combateId: pendiente.id };
   }
+  if (pendientes.length) return { tipo: "porRetirada", rivalId: rivalEn(pendientes[0]) };
   if (
     jornada.royales.some(
       (royale) => !royale.ganado && royale.participantes.includes(participantId),
@@ -166,7 +174,13 @@ export async function getJornadasParaCheckpoints(competitionId: string) {
       milestone: true,
       matches: {
         orderBy: { position: "asc" },
-        select: { id: true, participantAId: true, participantBId: true, winnerId: true },
+        select: {
+          id: true,
+          participantAId: true,
+          participantBId: true,
+          winnerId: true,
+          excepcion: true,
+        },
       },
       royales: { select: { puestos: { select: { participantId: true, puesto: true } } } },
     },

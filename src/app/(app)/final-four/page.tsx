@@ -71,7 +71,9 @@ export default async function FinalFourPage() {
    * tres para abajo. Ver lib/formatos-finales.ts.
    */
   const formato = "formato" in state ? state.formato : null;
-  const nombre = formato?.nombre ?? NOMBRE_POR_DEFECTO;
+  // Sin formato no hay cuadro que nombrar: "Final Four" con uno solo sonaba raro
+  const sinCuadro = state.status === "POCA_GENTE" || state.status === "POR_ABANDONO";
+  const nombre = formato?.nombre ?? (sinCuadro ? "La final" : NOMBRE_POR_DEFECTO);
 
   return (
     <>
@@ -79,7 +81,9 @@ export default async function FinalFourPage() {
         title={nombre}
         subtitle={
           formato?.explicacion ??
-          "El final del locke. Se decide entre los que mejor hayan quedado."
+          (state.status === "POR_ABANDONO"
+            ? "Esta vez no hubo final: el locke lo gana quien aguanta."
+            : "El final del locke. Se decide entre los que mejor hayan quedado.")
         }
       />
 
@@ -88,6 +92,31 @@ export default async function FinalFourPage() {
           title="No hay final que jugar"
           hint={`Queda${state.activos === 1 ? "" : "n"} ${state.activos} jugador${state.activos === 1 ? "" : "es"} en el locke: hacen falta al menos ${MINIMO_DE_JUGADORES}.`}
         />
+      ) : null}
+
+      {state.status === "POR_ABANDONO" ? (
+        <section className="card text-center">
+          <div className="flex justify-center">
+            <Avatar
+              name={state.champion.displayName}
+              color={state.champion.color}
+              image={state.champion.avatarImage}
+              size={64}
+              participantId={state.champion.participantId}
+            />
+          </div>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            {state.champion.displayName} gana el locke
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+            Es el único que sigue en pie: los demás se retiraron o perdieron el
+            locke, así que no hay final que jugar. El hall de la fama ya está
+            abierto.
+          </p>
+          <Link href="/hall-de-la-fama" className="btn-ghost mt-5">
+            Ir al hall de la fama
+          </Link>
+        </section>
       ) : null}
 
       {state.status === "SIN_JORNADAS" ? (
@@ -106,9 +135,22 @@ export default async function FinalFourPage() {
             Aún no toca
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
-            Quedan <strong className="text-white">{state.total - state.jugados}</strong>{" "}
-            combates de jornada por resolver. Hasta que no estén todos no se
-            sabe cómo queda la tabla, así que el cuadro sigue cerrado.
+            {state.total > state.jugados ? (
+              <>
+                Quedan <strong className="text-white">{state.total - state.jugados}</strong>{" "}
+                combates de jornada por resolver.{" "}
+              </>
+            ) : null}
+            {state.faltanPorCrear ? (
+              <>
+                Falta{state.faltanPorCrear === 1 ? "" : "n"} por crear{" "}
+                <strong className="text-white">{state.faltanPorCrear}</strong> de las
+                jornadas previstas
+                {canManage ? " (si al final se juegan menos, bájalas en Ediciones)" : ""}.{" "}
+              </>
+            ) : null}
+            Hasta que no esté todo no se sabe cómo queda la tabla, así que el
+            cuadro sigue cerrado.
           </p>
 
           <div className="mx-auto mt-4 h-2 w-full max-w-sm overflow-hidden rounded-full bg-white/10">

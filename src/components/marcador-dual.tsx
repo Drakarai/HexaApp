@@ -32,7 +32,7 @@ export function MarcadorDual({
             <h2 className="section-title mb-1">El marcador</h2>
             <p className="muted mb-4">
               Cada jornada es un combate al mejor de tres. Gana el locke en
-              combates el primero que se lleve {hacenFalta} jornadas.
+              combates el primero que se lleve {hacenFalta} jornada{hacenFalta === 1 ? "" : "s"}.
             </p>
           </>
         )}
@@ -89,7 +89,7 @@ export function MarcadorDual({
           </div>
         ) : compacto ? (
           <p className="mt-3 text-center text-xs text-slate-500">
-            Gana el locke el primero que se lleve {hacenFalta} jornadas.
+            Gana el locke el primero que se lleve {hacenFalta} jornada{hacenFalta === 1 ? "" : "s"}.
           </p>
         ) : null}
       </section>

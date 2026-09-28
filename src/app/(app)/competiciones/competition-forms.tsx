@@ -14,16 +14,27 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
 import { ImageInput } from "@/components/image-input";
 import { IMAGE_SIZES } from "@/lib/image";
+import { JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
 
 export function NewCompetitionForm({
   competitions,
+  archivables,
 }: {
   competitions: Array<{ id: string; name: string }>;
+  /** Los lockes activos que quien crea puede archivar de paso */
+  archivables: Array<{ id: string; name: string; jugadores: number; marcado: boolean }>;
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     createCompetitionAction,
     null,
   );
+  /**
+   * El dualocke se gana por mayoría de jornadas, así que sin saber cuántas van
+   * a ser no hay forma de decir quién va ganando: con dos jugadores el campo
+   * deja de ser opcional y viene con las seis de siempre.
+   */
+  const [jugadores, setJugadores] = useState(6);
+  const esDual = jugadores === 2;
 
   return (
     <details className="card group">
@@ -60,8 +71,9 @@ export function NewCompetitionForm({
                 name="maxPlayers"
                 type="number"
                 min={2}
-                max={20}
+                max={JUGADORES_MAXIMOS}
                 defaultValue={6}
+                onChange={(event) => setJugadores(Number(event.target.value))}
                 className="input"
               />
             </div>
@@ -71,13 +83,22 @@ export function NewCompetitionForm({
           <div>
             <label className="label">Jornadas previstas</label>
             <input
+              // Se remonta al pasar a dos para que salga el 6 puesto
+              key={esDual ? "dual" : "grupo"}
               name="jornadasPrevistas"
               type="number"
               min={1}
               max={50}
               className="input"
               placeholder="Opcional"
+              required={esDual}
+              defaultValue={esDual ? 6 : undefined}
             />
+            {esDual ? (
+              <p className="mt-1 text-xs text-slate-500">
+                Gana quien se lleve la mayoría: con 6, el primero a 4.
+              </p>
+            ) : null}
           </div>
         </div>
 
@@ -112,11 +133,29 @@ export function NewCompetitionForm({
           </div>
         ) : null}
 
-        <Check
-          name="archivePrevious"
-          label="Archivar las competiciones que estén activas ahora mismo"
-          defaultChecked
-        />
+        {archivables.length ? (
+          <fieldset className="space-y-2 rounded-xl border border-white/10 bg-white/[0.02] p-4">
+            <legend className="label px-1">Archivar al crear</legend>
+            <p className="text-xs text-slate-500">
+              Se quedan con todos sus datos, de solo lectura. Solo los marcados.
+            </p>
+            {archivables.map((locke) => (
+              <label key={locke.id} className="flex items-center gap-2 text-sm text-slate-300">
+                <input
+                  type="checkbox"
+                  name="archivar"
+                  value={locke.id}
+                  defaultChecked={locke.marcado}
+                  className="accent-indigo-500"
+                />
+                {locke.name}
+                <span className="text-xs text-slate-500">
+                  · {locke.jugadores === 1 ? "en solitario" : `${locke.jugadores} jugadores`}
+                </span>
+              </label>
+            ))}
+          </fieldset>
+        ) : null}
 
         <FormMessage state={state} />
         <SubmitButton>Crear competición</SubmitButton>
@@ -257,27 +296,38 @@ export function AddParticipantForm({
     if (state?.success) formRef.current?.reset();
   }, [state]);
 
-  if (!users.length) {
-    return (
-      <p className="muted">
-        No hay usuarios disponibles para añadir a esta competición.
-      </p>
-    );
-  }
-
   return (
     <form ref={formRef} action={formAction} className="space-y-3">
       <input type="hidden" name="competitionId" value={competitionId} />
       <div className="grid gap-3 sm:grid-cols-4">
+        {users.length ? (
+          <div>
+            <label className="label">Usuario</label>
+            <select name="userId" className="input">
+              {users.map((user) => (
+                <option key={user.id} value={user.id}>
+                  {user.displayName} (@{user.username})
+                </option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+        {/**
+         * Alguien que ya tenía cuenta: un organizador solo ve en la lista las
+         * que dio de alta él, así que a un amigo que ya jugaba otro locke no
+         * había forma de apuntarlo. Con el usuario exacto se le encuentra sin
+         * enseñar la lista de cuentas de la casa.
+         */}
         <div>
-          <label className="label">Usuario</label>
-          <select name="userId" className="input" required>
-            {users.map((user) => (
-              <option key={user.id} value={user.id}>
-                {user.displayName} (@{user.username})
-              </option>
-            ))}
-          </select>
+          <label className="label">{users.length ? "…o su usuario" : "Su usuario"}</label>
+          <input
+            name="username"
+            className="input"
+            placeholder="@usuario exacto"
+            autoCapitalize="none"
+            autoCorrect="off"
+            required={!users.length}
+          />
         </div>
         <div>
           <label className="label">Nombre en el locke</label>

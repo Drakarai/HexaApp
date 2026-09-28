@@ -11,6 +11,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { StandingsTable } from "@/components/standings-table";
 import {
+  campeonDelLocke,
   getFinalFourState,
   getFormatoFinal,
   NOMBRE_POR_DEFECTO,
@@ -133,7 +134,7 @@ export default async function DashboardPage() {
   const pieDelLider = marcador
     ? empatadosArriba > 1
       ? `${marcador.jugadores[0]?.ganadas ?? 0} jornadas cada uno`
-      : `${marcador.jugadores[0]?.ganadas ?? 0} jornadas ganadas`
+      : `${marcador.jugadores[0]?.ganadas ?? 0} jornada${marcador.jugadores[0]?.ganadas === 1 ? "" : "s"} ganada${marcador.jugadores[0]?.ganadas === 1 ? "" : "s"}`
     : standings[0]
     ? empatadosArriba > 1
       ? `${empatadosArriba} empatados a ${standings[0].points} puntos`
@@ -210,10 +211,14 @@ export default async function DashboardPage() {
       : 0;
 
   const fichaDe = new Map(standings.map((row) => [row.participantId, row]));
+  const idsFuera = new Set(fuera.map((row) => row.participantId));
+  // Quien está fuera del locke no tiene nada que jugar: ni rival ni combate
   const miParte =
-    nextMatchday && myParticipant
-      ? miParteDeLaJornada(nextMatchday, myParticipant.id)
+    nextMatchday && myParticipant && !idsFuera.has(myParticipant.id)
+      ? miParteDeLaJornada(nextMatchday, myParticipant.id, idsFuera)
       : null;
+  const rivalRetirado =
+    miParte?.tipo === "porRetirada" ? (fichaDe.get(miParte.rivalId) ?? null) : null;
   const rivalDeJornada =
     miParte?.tipo === "rival" ? (fichaDe.get(miParte.rivalId) ?? null) : null;
 
@@ -245,8 +250,7 @@ export default async function DashboardPage() {
       ? miLlave.b
       : miLlave.a
     : null;
-  const campeon =
-    estadoFinal.status === "TERMINADA" ? estadoFinal.champion : null;
+  const campeon = campeonDelLocke(estadoFinal);
   /**
    * Con campeón, el locke se ha acabado aunque nadie lo haya archivado todavía,
    * y la portada lo tiene que decir: antes seguía poniendo "En curso" y pidiendo
@@ -267,26 +271,33 @@ export default async function DashboardPage() {
           ? "Sin crear"
           : rivalDeJornada
             ? rivalDeJornada.displayName
-            : miParte?.tipo === "royale"
-              ? "Royale"
-              : miParte?.tipo === "hecho"
-                ? "Jugado"
-                : `${porJugarEnLaJornada} por jugar`,
+            : miParte?.tipo === "porRetirada"
+              ? "Por retirada"
+              : miParte?.tipo === "royale"
+                ? "Royale"
+                : miParte?.tipo === "hecho"
+                  ? "Jugado"
+                  : miParte?.tipo === "fuera"
+                    ? "Descansas"
+                    : `${porJugarEnLaJornada} por jugar`,
         hint: !abierto.jornada
           ? `Jornada ${abierto.numero} · tras ${abierto.hito.label}`
           : rivalDeJornada
             ? `Tu rival · ${abierto.jornada.label}`
-            : miParte?.tipo === "royale"
-              ? `Todos contra todos · ${abierto.jornada.label}`
-              : miParte?.tipo === "hecho"
-                ? `${abierto.jornada.label} · faltan ${porJugarEnLaJornada}`
-                : abierto.jornada.label,
+            : rivalRetirado
+              ? `${rivalRetirado.displayName} está fuera: lo ganas al acabar la jornada`
+              : miParte?.tipo === "royale"
+                ? `Todos contra todos · ${abierto.jornada.label}`
+                : miParte?.tipo === "hecho"
+                  ? `${abierto.jornada.label} · faltan ${porJugarEnLaJornada}`
+                  : abierto.jornada.label,
         images: rivalDeJornada?.avatarImage ? [rivalDeJornada.avatarImage] : [],
         href: "/jornadas",
       }
     : tocaElFinal
     ? {
-        label: formatoFinal?.nombre ?? NOMBRE_POR_DEFECTO,
+        // Sin formato y con campeón es que ganó por quedarse solo: no hubo final
+        label: formatoFinal?.nombre ?? (campeon ? "El locke" : NOMBRE_POR_DEFECTO),
         value: campeon
           ? campeon.displayName
           : miRival
@@ -296,7 +307,9 @@ export default async function DashboardPage() {
           : estadoFinal.status === "SIN_CUADRO"
           ? "Sin cuadro"
           : estadoFinal.status === "BLOQUEADA"
-          ? `${estadoFinal.jugados}/${estadoFinal.total}`
+          ? estadoFinal.jugados === estadoFinal.total
+            ? `${estadoFinal.faltanPorCrear} por crear`
+            : `${estadoFinal.jugados}/${estadoFinal.total}`
           : "En juego",
         hint: campeon
           ? "Campeón del locke"
@@ -307,7 +320,9 @@ export default async function DashboardPage() {
           : estadoFinal.status === "SIN_CUADRO"
           ? "Falta sembrarlo"
           : estadoFinal.status === "BLOQUEADA"
-          ? "combates de jornada jugados"
+          ? estadoFinal.jugados === estadoFinal.total
+            ? "jornadas previstas sin crear"
+            : "combates de jornada jugados"
           : "Los gimnasios ya están todos",
         /**
          * La foto del rival manda sobre el cartel: es lo que hay que mirar. Sin
@@ -489,6 +504,17 @@ export default async function DashboardPage() {
                   </p>
                 ) : null}
               </div>
+
+              {rivalRetirado ? (
+                <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-300">
+                  Tu combate contra <strong className="text-white">{rivalRetirado.displayName}</strong>{" "}
+                  no se juega: está fuera del locke y lo ganas al acabar la jornada.
+                </p>
+              ) : miParte?.tipo === "fuera" ? (
+                <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm text-slate-300">
+                  Esta jornada descansas: con los que sois, a alguien le toca.
+                </p>
+              ) : null}
 
               {/* Lo tuyo, arriba y en grande: es lo que se viene a mirar */}
               {rivalDeJornada && myParticipant ? (

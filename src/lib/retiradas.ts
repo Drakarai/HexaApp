@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { ajustarDesempate } from "@/lib/series";
 
 /**
  * Los combates que se ganan porque el otro se retiró del locke.
@@ -23,6 +24,25 @@ import { prisma } from "@/lib/db";
  * Devuelve cuántos ha resuelto, para poder avisar.
  */
 export async function resolverRetiradas(
+  competitionId: string,
+  autorId: string | null,
+): Promise<number> {
+  /**
+   * En vueltas: en un dualocke, dar por ganado un combate puede dejar la serie
+   * 1-1 y crear el desempate, que es otro combate contra el retirado. Antes la
+   * jornada se quedaba ahí para siempre, empatada y sin nadie que la cerrara.
+   * Cada vuelta resuelve lo que ya se pueda; cuando una no resuelve nada, está.
+   */
+  let resueltos = 0;
+  for (let vuelta = 0; vuelta < 5; vuelta += 1) {
+    const deEstaVuelta = await resolverUnaVuelta(competitionId, autorId);
+    resueltos += deEstaVuelta;
+    if (!deEstaVuelta) break;
+  }
+  return resueltos;
+}
+
+async function resolverUnaVuelta(
   competitionId: string,
   autorId: string | null,
 ): Promise<number> {
@@ -118,6 +138,9 @@ export async function resolverRetiradas(
       }
       resueltos += 1;
     }
+
+    // Si es una serie al mejor de tres, que decida si hace falta el tercero
+    await ajustarDesempate(jornada.id);
   }
 
   return resueltos;

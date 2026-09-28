@@ -24,7 +24,12 @@ export type EnElPodio = {
 
 type FinalTerminada = Extract<FinalFourState, { status: "EN_JUEGO" | "TERMINADA" }>;
 
-export function ordenDelHall(standings: StandingRow[], elFinal: FinalTerminada | null) {
+export function ordenDelHall(
+  standings: StandingRow[],
+  elFinal: FinalTerminada | null,
+  /** El que ganó por quedarse solo en pie, cuando no hubo final (ver `POR_ABANDONO`) */
+  porAbandono: { participantId: string; displayName: string } | null = null,
+) {
   /**
    * **El orden del hall no es la clasificación: es cómo acabó el locke.**
    *
@@ -92,6 +97,9 @@ export function ordenDelHall(standings: StandingRow[], elFinal: FinalTerminada |
    * serie ya está contado en la propia llave (ver `lib/formatos-finales.ts`).
    */
   const comoLoGano = (() => {
+    if (porAbandono) {
+      return `${porAbandono.displayName} fue el único que siguió en pie hasta el final.`;
+    }
     if (!elFinal?.champion) return "";
     const campeon = elFinal.champion.displayName;
     const rival = elFinal.runnerUp?.displayName;
@@ -119,6 +127,31 @@ export function ordenDelHall(standings: StandingRow[], elFinal: FinalTerminada |
   const sembrados = new Set(
     elFinal?.seeds.map((jugador) => jugador.participantId) ?? [],
   );
+  /**
+   * Sin final, el podio es solo el campeón: los demás se fueron, y ponerlos de
+   * segundo y tercero por la tabla sería inventarse un orden que no se jugó.
+   */
+  const campeonSolo = porAbandono
+    ? standings.find((row) => row.participantId === porAbandono.participantId)
+    : null;
+  if (campeonSolo) {
+    return {
+      jugadores: [campeonSolo, ...jugadores.filter((row) => row !== campeonSolo)],
+      podio: [
+        {
+          participantId: campeonSolo.participantId,
+          displayName: campeonSolo.displayName,
+          color: campeonSolo.color,
+          avatarImage: campeonSolo.avatarImage,
+          puesto: 1,
+          titulo: "Campeón",
+          comoLoGano,
+        },
+      ] satisfies EnElPodio[],
+      comoLoGano,
+    };
+  }
+
   const podio: EnElPodio[] = elFinal?.champion
     ? jugadores
         .filter((row) => sembrados.has(row.participantId))

@@ -196,6 +196,24 @@ export default async function MatchdaysPage() {
                       : match.participantB,
                   );
 
+            /**
+             * Quién descansa: los que siguen en el locke, ya estaban cuando se
+             * creó la jornada y no tienen combate en ella. Con cinco o con
+             * tres, a uno le toca, y antes solo se decía en el aviso al
+             * crearla: luego había que adivinarlo.
+             */
+            const descansan =
+              !formato.multiple && matchday.matches.length
+                ? participants.filter(
+                    (p) =>
+                      !p.retiredAt &&
+                      p.joinedAt <= matchday.createdAt &&
+                      !matchday.matches.some(
+                        (m) => m.participantAId === p.id || m.participantBId === p.id,
+                      ),
+                  )
+                : [];
+
             return (
               <section
                 key={matchday.id}
@@ -226,6 +244,9 @@ export default async function MatchdaysPage() {
                           ? `${matchday.royales.length} ${matchday.royales.length === 1 ? "royale" : "royales"}`
                           : `${played}/${matchday.matches.length} combates jugados`}{" "}
                         · {matchday.pointsForWin} pto/victoria
+                        {descansan.length
+                          ? ` · Descansa${descansan.length === 1 ? "" : "n"} ${descansan.map((p) => p.displayName).join(", ")}`
+                          : ""}
                       </p>
                       {matchday.condiciones ? (
                         <p className="mt-1 text-xs text-amber-200/80">

@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { getParticipants } from "@/lib/competition";
-import { jornadasParaGanar } from "@/lib/perfiles-de-locke";
+import { JORNADAS_DEL_DUALOCKE, jornadasParaGanar } from "@/lib/perfiles-de-locke";
 
 /**
  * El marcador de un locke que se decide **por jornadas ganadas** y no por
@@ -77,10 +77,11 @@ export async function getMarcador(competitionId: string): Promise<Marcador> {
   ]);
 
   // Las previstas mandan sobre las creadas: si no, el primero que gane la
-  // primera jornada saldría campeón, porque de una la mayoría es una
-  const hacenFalta = jornadasParaGanar(
-    competition?.jornadasPrevistas ?? jornadas.length,
-  );
+  // primera jornada saldría campeón, porque de una la mayoría es una. Un
+  // dualocke de antes que no las tenga puestas cuenta con las de siempre.
+  const previstas =
+    competition?.jornadasPrevistas ?? Math.max(jornadas.length, JORNADAS_DEL_DUALOCKE);
+  const hacenFalta = jornadasParaGanar(previstas);
   const ganadas = new Map<string, number>();
 
   const filas: JornadaDelMarcador[] = jornadas.map((jornada) => {
@@ -139,7 +140,7 @@ export async function getMarcador(competitionId: string): Promise<Marcador> {
    */
   const decididas = filas.filter((jornada) => jornada.ganadorId).length;
   const quedanPorDecidir =
-    Math.max(competition?.jornadasPrevistas ?? 0, filas.length) - decididas;
+    Math.max(previstas, filas.length) - decididas;
 
   return {
     jugadores,

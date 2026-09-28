@@ -9,6 +9,7 @@ import { juegoPorId } from "@/lib/juegos";
 import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
 import { PALETTE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
+import { JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -25,8 +26,6 @@ import type { FormState } from "@/app/actions/auth";
  *   locke de grupo no sirve de nada si no puede dar de alta a sus amigos.
  */
 
-/** De dos a ocho, que es lo que admite un locke. */
-const MAXIMO_DE_JUGADORES = 8;
 
 function refrescar() {
   revalidatePath("/competiciones");
@@ -71,7 +70,7 @@ export async function pedirLockeAction(
   // Sin el campo, uno: es como funcionaba esto cuando solo había lockes de uno
   const pedidos = Number(formData.get("maxPlayers") ?? 1);
   const maxPlayers = Number.isFinite(pedidos)
-    ? Math.min(MAXIMO_DE_JUGADORES, Math.max(1, Math.trunc(pedidos)))
+    ? Math.min(JUGADORES_MAXIMOS, Math.max(1, Math.trunc(pedidos)))
     : 1;
 
   await prisma.lockeRequest.create({

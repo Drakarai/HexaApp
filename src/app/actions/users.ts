@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
 import {
   hashPassword,
   esCreador,
@@ -168,6 +169,12 @@ export async function deleteUserAction(formData: FormData) {
   if (userId === quien.id) return;
   if (!(await puedeTocarLaCuenta(quien, userId))) return;
 
+  // Los lockes en los que jugaba, para limpiar después los puntos de sus combates
+  const suyos = await prisma.participant.findMany({
+    where: { userId },
+    select: { competitionId: true },
+  });
   await prisma.user.delete({ where: { id: userId } });
+  for (const { competitionId } of suyos) await borrarPuntosHuerfanos(competitionId);
   revalidatePath("/admin");
 }

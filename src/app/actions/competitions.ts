@@ -17,7 +17,9 @@ import {
 import { filtroDeLockesVisibles, puedeVerLocke } from "@/lib/acceso";
 import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
+import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { JORNADAS_DEL_DUALOCKE, JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
 import { slugify } from "@/lib/utils";
 import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
@@ -97,7 +99,8 @@ export async function createCompetitionAction(
   const startingPoints = Number(formData.get("startingPoints") ?? 5);
   const maxPlayers = Number(formData.get("maxPlayers") ?? 6);
   const copyFromId = String(formData.get("copyFromId") ?? "");
-  const archivePrevious = formData.get("archivePrevious") === "on";
+  // Los que se archivan, uno a uno: ver `archivables` en la página
+  const archivar = formData.getAll("archivar").map(String).filter(Boolean);
   const copyRules = formData.get("copyRules") === "on";
   const copyLevelCaps = formData.get("copyLevelCaps") === "on";
   const copyRoulettes = formData.get("copyRoulettes") === "on";
@@ -106,7 +109,11 @@ export async function createCompetitionAction(
   if (!Number.isFinite(startingPoints) || !Number.isFinite(maxPlayers)) {
     return { error: "Puntos iniciales y jugadores tienen que ser números." };
   }
-  const plazas = Math.max(2, Math.trunc(maxPlayers));
+  const plazas = Math.min(JUGADORES_MAXIMOS, Math.max(2, Math.trunc(maxPlayers)));
+  // En un dualocke hace falta saber de cuántas va (ver JORNADAS_DEL_DUALOCKE)
+  const jornadasPrevistas =
+    numeroOpcional(formData.get("jornadasPrevistas"), 50) ??
+    (plazas === 2 ? JORNADAS_DEL_DUALOCKE : null);
 
   /**
    * Si los jugadores del locke de origen no caben, no se crea nada. Antes se
@@ -143,7 +150,7 @@ export async function createCompetitionAction(
       description,
       startingPoints: Math.trunc(startingPoints),
       maxPlayers: plazas,
-      jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
+      jornadasPrevistas,
       createdById: admin.id,
     },
   });
@@ -166,10 +173,10 @@ export async function createCompetitionAction(
 
   // Las competiciones anteriores se conservan enteras: sólo se marcan como
   // archivadas para que la nueva sea la activa.
-  if (archivePrevious) {
+  if (archivar.length) {
     await prisma.competition.updateMany({
       where: {
-        id: { not: created.id },
+        id: { in: archivar, not: created.id },
         status: COMPETITION_STATUS.ACTIVE,
         /**
          * Un organizador archiva **los que lleva él**, no los que juega.
@@ -368,9 +375,23 @@ export async function addParticipantAction(
   const competitionId = String(formData.get("competitionId") ?? "");
   await requireCompetitionManager(competitionId);
 
-  const userId = String(formData.get("userId") ?? "");
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return { error: "Ese usuario no existe." };
+  // El usuario escrito a mano manda sobre la lista (ver AddParticipantForm)
+  const username = String(formData.get("username") ?? "").trim().replace(/^@/, "");
+  const user = username
+    ? await prisma.user.findFirst({
+        where: { username: { equals: username, mode: "insensitive" } },
+      })
+    : await prisma.user.findUnique({
+        where: { id: String(formData.get("userId") ?? "") },
+      });
+  if (!user) {
+    return {
+      error: username
+        ? `No hay ninguna cuenta con el usuario @${username}. Tiene que ser exacto, el de entrar.`
+        : "Ese usuario no existe.",
+    };
+  }
+  const userId = user.id;
 
   const competition = await prisma.competition.findUnique({
     where: { id: competitionId },
@@ -488,6 +509,8 @@ export async function removeParticipantAction(formData: FormData) {
   await requireCompetitionManager(participant.competitionId);
 
   await prisma.participant.delete({ where: { id: participantId } });
+  // Sus combates se van con él; los puntos que dieron a sus rivales, no solos
+  await borrarPuntosHuerfanos(participant.competitionId);
   revalidatePath("/", "layout");
 }
 
@@ -510,9 +533,23 @@ export async function darEspectadorAction(
     return { error: (error as Error).message };
   }
 
-  const userId = String(formData.get("userId") ?? "");
-  const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user) return { error: "Ese usuario no existe." };
+  // El usuario escrito a mano manda sobre la lista (ver AddParticipantForm)
+  const username = String(formData.get("username") ?? "").trim().replace(/^@/, "");
+  const user = username
+    ? await prisma.user.findFirst({
+        where: { username: { equals: username, mode: "insensitive" } },
+      })
+    : await prisma.user.findUnique({
+        where: { id: String(formData.get("userId") ?? "") },
+      });
+  if (!user) {
+    return {
+      error: username
+        ? `No hay ninguna cuenta con el usuario @${username}. Tiene que ser exacto, el de entrar.`
+        : "Ese usuario no existe.",
+    };
+  }
+  const userId = user.id;
 
   const juega = await prisma.participant.count({
     where: { competitionId, userId },

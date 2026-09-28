@@ -9,6 +9,7 @@ import {
   formatoParaJugadores,
   llavesPosteriores,
 } from "@/lib/formatos-finales";
+import { getFinalFourState } from "@/lib/final-four";
 import { enlaceSeguro } from "@/lib/utils";
 import { IMAGEN_SIN_CAMBIOS, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
@@ -34,18 +35,22 @@ export async function generateBracketAction(
   });
   if (existing) return { error: "El cuadro ya estaba generado." };
 
-  const matches = await prisma.match.findMany({
-    where: { matchday: { competitionId } },
-    select: { winnerId: true },
-  });
-  if (!matches.length) {
+  // Lo mismo que decide si la pantalla enseña el botón, para que no se pueda
+  // generar mandando el formulario a mano antes de tiempo
+  const estado = await getFinalFourState(competitionId);
+  if (estado.status === "SIN_JORNADAS") {
     return { error: "Todavía no hay jornadas con combates." };
   }
-  const pendientes = matches.filter((match) => !match.winnerId).length;
-  if (pendientes > 0) {
+  if (estado.status === "BLOQUEADA") {
+    const pendientes = estado.total - estado.jugados;
     return {
-      error: `Faltan ${pendientes} combates de jornada por resolver.`,
+      error: pendientes
+        ? `Faltan ${pendientes} combates de jornada por resolver.`
+        : `Faltan ${estado.faltanPorCrear} de las jornadas previstas por crear.`,
     };
+  }
+  if (estado.status === "POR_ABANDONO") {
+    return { error: `No hay final que jugar: ${estado.champion.displayName} es el único que queda.` };
   }
 
   /**

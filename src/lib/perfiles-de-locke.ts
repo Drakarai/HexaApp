@@ -81,6 +81,21 @@ export const MINIMO_DE_JUGADORES = 1;
 /** De cuántos hace falta ser para que haya combates entre jugadores. */
 export const MINIMO_PARA_COMPETIR = 2;
 
+/**
+ * El más que puede tener. No es un capricho: los formatos de la final llegan
+ * hasta seis y de siete para arriba se juega el de seis dejando fuera a los
+ * últimos, así que un locke de veinte tendría catorce que no pintan nada.
+ * Ocho es lo que ya admitían las solicitudes; ahora vale igual al crearlo.
+ */
+export const JUGADORES_MAXIMOS = 8;
+
+/**
+ * Las jornadas de un dualocke cuando nadie ha dicho cuántas: las de siempre.
+ * Sin número no se sabe a cuántas hay que llegar, y el marcador daba campeón
+ * al que ganaba la primera.
+ */
+export const JORNADAS_DEL_DUALOCKE = 6;
+
 export function perfilDeLocke(jugadores: number): PerfilDeLocke {
   const cuantos = Math.max(MINIMO_DE_JUGADORES, Math.trunc(jugadores || 0));
   const solo = cuantos === 1;

@@ -7,7 +7,7 @@ import {
   getStandings,
   soloLectura,
 } from "@/lib/competition";
-import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
+import { campeonDelLocke, getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -73,7 +73,7 @@ export default async function HallOfFamePage() {
     );
   }
 
-  if (!perfil.enSolitario && state.status !== "TERMINADA") {
+  if (!perfil.enSolitario && !campeonDelLocke(state)) {
     return (
       <>
         <PageHeader title="Hall de la fama" />
@@ -102,6 +102,8 @@ export default async function HallOfFamePage() {
    * cierra el locke ahí es la Liga.
    */
   const elFinal = state.status === "TERMINADA" ? state : null;
+  // Sin final porque solo quedó uno: es campeón igual (ver lib/final-four.ts)
+  const porAbandono = state.status === "POR_ABANDONO" ? state.champion : null;
 
   const [canManage, standings, entries, resumen] = await Promise.all([
     canManageCompetition(competition.id, user),
@@ -148,7 +150,7 @@ export default async function HallOfFamePage() {
         detailImage: fichas(entry.id),
       }));
 
-  const { jugadores, podio } = ordenDelHall(standings, elFinal);
+  const { jugadores, podio } = ordenDelHall(standings, elFinal, porAbandono);
 
   return (
     <>
@@ -163,7 +165,7 @@ export default async function HallOfFamePage() {
 
       {/* El podio solo tiene sentido si hubo final. En solitario no hay a
           quién ganar y lo que cierra el locke es pasarse la Liga. */}
-      {elFinal?.champion ? (
+      {podio.length ? (
         <Podio podio={podio} />
       ) : (
         <section className="card mb-6 text-center">
@@ -200,7 +202,8 @@ export default async function HallOfFamePage() {
           const editable =
             !soloLectura(competition, canManage) &&
             (canManage || row.userId === user.id);
-          const esCampeon = elFinal?.champion?.participantId === row.participantId;
+          const esCampeon =
+            (elFinal?.champion ?? porAbandono)?.participantId === row.participantId;
 
           /**
            * Sin equipo apuntado la tarjeta se queda en una línea. Antes se

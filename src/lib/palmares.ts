@@ -91,6 +91,7 @@ export async function getPalmares(): Promise<Palmares> {
         competitionId: true,
         displayName: true,
         color: true,
+        retiredAt: true,
       },
     }),
     prisma.finalFour.findMany({
@@ -154,6 +155,12 @@ export async function getPalmares(): Promise<Palmares> {
     const final = finales.find((fila) => fila.competitionId === competicion.id);
     const formato = final ? formatoParaJugadores(final.jugadores) : null;
 
+    /**
+     * Sin final puede haber campeón igual: el único que queda en pie cuando
+     * los demás se han ido (ver `POR_ABANDONO` en lib/final-four.ts).
+     */
+    const suyos = participantes.filter((p) => p.competitionId === competicion.id);
+    const enPie = suyos.filter((p) => !p.retiredAt);
     const { campeon, subcampeon } =
       final && formato
         ? campeonYSubcampeon(
@@ -161,7 +168,9 @@ export async function getPalmares(): Promise<Palmares> {
             final.seeds,
             new Map(final.matches.map((m) => [m.key, m.winnerId])),
           )
-        : { campeon: null, subcampeon: null };
+        : !final && suyos.length >= 2 && enPie.length === 1
+          ? { campeon: enPie[0].id, subcampeon: null }
+          : { campeon: null, subcampeon: null };
 
     campeonPorEdicion.set(
       competicion.id,

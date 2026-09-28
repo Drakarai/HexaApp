@@ -71,7 +71,21 @@ export type LlaveDelCuadro = {
 export type FinalFourState =
   | { status: "SIN_JORNADAS"; formato: FormatoFinal | null }
   | { status: "POCA_GENTE"; activos: number }
-  | { status: "BLOQUEADA"; jugados: number; total: number; formato: FormatoFinal }
+  /**
+   * Solo queda uno en pie: los demás se retiraron o perdieron el locke. No hay
+   * final que jugar, y aun así el locke tiene ganador; si no, el hall de la
+   * fama se quedaba cerrado para siempre. Pasa en cuanto alguien deja un
+   * dualocke.
+   */
+  | { status: "POR_ABANDONO"; champion: BracketPlayer }
+  | {
+      status: "BLOQUEADA";
+      jugados: number;
+      total: number;
+      formato: FormatoFinal;
+      /** Jornadas previstas que todavía no se han creado */
+      faltanPorCrear: number;
+    }
   | { status: "SIN_CUADRO"; standings: StandingRow[]; formato: FormatoFinal }
   | {
       status: "EN_JUEGO" | "TERMINADA";
@@ -92,17 +106,39 @@ export type FinalFourState =
 export async function getFinalFourState(
   competitionId: string,
 ): Promise<FinalFourState> {
-  const [matches, finalFour, activos] = await Promise.all([
+  const [matches, finalFour, activos, competition] = await Promise.all([
     prisma.match.findMany({
       where: { matchday: { competitionId } },
-      select: { winnerId: true },
+      select: { winnerId: true, matchdayId: true },
     }),
     prisma.finalFour.findUnique({
       where: { competitionId },
       include: { matches: true },
     }),
     prisma.participant.count({ where: { competitionId, retiredAt: null } }),
+    prisma.competition.findUnique({
+      where: { id: competitionId },
+      select: { jornadasPrevistas: true, _count: { select: { participants: true } } },
+    }),
   ]);
+
+  // Un locke de grupo en el que ya solo queda uno: ese lo ha ganado
+  if (!finalFour && activos === 1 && (competition?._count.participants ?? 0) >= 2) {
+    const standings = await getStandings(competitionId);
+    const quedaEnPie = standings.find((row) => !row.retirado);
+    if (quedaEnPie) {
+      return {
+        status: "POR_ABANDONO",
+        champion: {
+          participantId: quedaEnPie.participantId,
+          displayName: quedaEnPie.displayName,
+          color: quedaEnPie.color,
+          avatarImage: quedaEnPie.avatarImage,
+          seed: 1,
+        },
+      };
+    }
+  }
 
   /**
    * Con el cuadro ya sembrado manda el formato con el que se sembró: si
@@ -115,8 +151,15 @@ export async function getFinalFourState(
   if (!matches.length) return { status: "SIN_JORNADAS", formato };
 
   const jugados = matches.filter((match) => match.winnerId).length;
-  if (jugados < matches.length && !finalFour) {
-    return { status: "BLOQUEADA", jugados, total: matches.length, formato };
+  /**
+   * Las jornadas previstas también cuentan: con una de seis creada y jugada
+   * la final se abría, porque "todos los combates jugados" era verdad. Si al
+   * final se juegan menos, se bajan las previstas y listo.
+   */
+  const creadas = new Set(matches.map((match) => match.matchdayId)).size;
+  const faltanPorCrear = Math.max(0, (competition?.jornadasPrevistas ?? 0) - creadas);
+  if ((jugados < matches.length || faltanPorCrear > 0) && !finalFour) {
+    return { status: "BLOQUEADA", jugados, total: matches.length, formato, faltanPorCrear };
   }
 
   const standings = await getStandings(competitionId);
@@ -237,7 +280,13 @@ export const NOMBRE_POR_DEFECTO = "Final Four";
 /** ¿Se puede ya rellenar el hall de la fama? */
 export async function isLockeFinished(competitionId: string) {
   const state = await getFinalFourState(competitionId);
-  return state.status === "TERMINADA" ? state : null;
+  return state.status === "TERMINADA" || state.status === "POR_ABANDONO" ? state : null;
+}
+
+/** Quién ha ganado el locke, salga de la final o de quedarse solo en pie. */
+export function campeonDelLocke(state: FinalFourState): BracketPlayer | null {
+  if (state.status === "TERMINADA" || state.status === "POR_ABANDONO") return state.champion;
+  return null;
 }
 
 export { MINIMO_DE_JUGADORES };

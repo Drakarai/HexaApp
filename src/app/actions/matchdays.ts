@@ -7,6 +7,7 @@ import { resolverRetiradas } from "@/lib/retiradas";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { ajustarDesempate } from "@/lib/series";
+import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
 import { esRoyale, formatoDeCombate } from "@/lib/formatos-de-combate";
 import { enlaceSeguro } from "@/lib/utils";
 
@@ -31,6 +32,22 @@ export async function createMatchdayAction(
 
   const label = String(formData.get("label") ?? "").trim();
   if (!label) return { error: "Ponle nombre a la jornada." };
+
+  /**
+   * Con uno solo en pie no hay jornada posible: antes se creaba vacía, sin un
+   * combate y sin decir por qué. Ese uno ya ha ganado (ver `POR_ABANDONO`).
+   */
+  const enPie = await prisma.participant.findMany({
+    where: { competitionId, retiredAt: null },
+    select: { displayName: true },
+  });
+  if (enPie.length < 2) {
+    return {
+      error: enPie.length
+        ? `Solo queda ${enPie[0].displayName} en el locke: no hay contra quién jugar. Ha ganado por abandono; está en la final y en el hall de la fama.`
+        : "No queda nadie jugando este locke.",
+    };
+  }
 
   const pointsForWin = Number(formData.get("pointsForWin") ?? 1);
   // El formato se valida contra la lista: si llega uno raro, singles
@@ -159,6 +176,8 @@ export async function deleteMatchdayAction(formData: FormData) {
   await requireCompetitionManager(matchday.competitionId);
 
   await prisma.matchday.delete({ where: { id } });
+  // Los puntos de sus combates no se van solos con ellos: ver lib/puntos-huerfanos
+  await borrarPuntosHuerfanos(matchday.competitionId);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");

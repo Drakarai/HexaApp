@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de septiembre de 2026 (las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 28 de septiembre de 2026 (una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -51,7 +51,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Secciones por categorías, editables y reordenables por administradores. **Un cambio con el locke en marcha se avisa**: punto ámbar en *Reglas*, la sección marcada como *Cambiada el…* o *Añadida el…* —resaltada para quien no la ha visto— y un desplegable con **qué líneas ganó y perdió**, más cómo estaba entera. Al editar hay una casilla para no avisar, para las erratas. |
 | **Level caps** | Nivel máximo por gimnasio, con una o varias imágenes que se alternan. El administrador marca en un gimnasio **Jornada después** (checkpoint): entre ese gimnasio y el siguiente sale una franja con su jornada —jugada, *toca ahora* o cuándo toca—; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. |
 | **Cementerio** | Caja estilo PC de Pokémon; cada casilla abre una ficha con imagen grande. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. |
-| **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. |
+| **Jornadas** | Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. La cabecera de cada jornada dice **quién descansa** (con cinco o con tres, a alguien le toca), y con uno solo en pie ya no deja crear jornadas vacías. |
 | **Retos** | Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
@@ -69,9 +69,9 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Sin conexión** | Las pantallas por las que ya se ha pasado **se siguen viendo** sin internet, con un aviso de que son de la última vez. Y lo que se apunta —capturas, bajas, gimnasios y notas— se guarda en el móvil y **se sube solo** al volver la línea, sin duplicarse aunque se reintente. Mientras tanto sale en su pantalla como "sin subir todavía". |
 | **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 26 páginas con fotos de cada pantalla, con su página de **lo nuevo** y una **chuleta de qué es cada icono**. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar (una edición archivada es **de solo lectura para los jugadores**: se ve entera, con un aviso arriba, pero no se apunta nada; quien la administra sí puede), gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar (una edición archivada es **de solo lectura para los jugadores**: se ve entera, con un aviso arriba, pero no se apunta nada; quien la administra sí puede), gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. Al crear una, **se elige qué lockes archivar** de una lista (vienen marcados los de grupo en los que juegas): antes era una casilla de "archivar todo lo activo" que al Creador le archivaba los de toda la casa. De 2 a 8 jugadores, y un dualocke nace con **6 jornadas previstas**. Se puede **apuntar a alguien por su usuario exacto**, aunque la cuenta no la hayas dado de alta tú. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
-| **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. |
+| **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. No se abre hasta que estén creadas **las jornadas previstas**, no solo jugadas las que haya. Y si **solo queda uno en pie** —los demás se retiraron o perdieron el locke—, no hay final: **gana por abandono**, y el hall, la imagen del resumen y el palmarés lo cuentan como campeón. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. Entre las menciones, **quién se llevó más coronas** y la **causa de muerte más repetida**. Y **Para el grupo**: el locke entero en **una imagen** —campeón con su equipo, podio, cifras y menciones— con botón de compartir (el menú del móvil) o descargar. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Actividad** | Cronología con muertes, puntos, gimnasios superados, giros de ruleta, resultados de jornada y objetos gastados. |
@@ -2518,6 +2518,43 @@ del hall y el podio salieron de la página a `lib/hall.ts` para que la imagen y
 el hall digan lo mismo. Solo de lockes que quien pide puede abrir, y
 `private` en la caché.
 
+**Campeón por abandono.** En cuanto alguien deja un dualocke —o en un locke de
+tres pierden dos— queda uno solo en pie, y no hay final posible: el locke se
+quedaba sin campeón para siempre y el hall cerrado. Ahora `getFinalFourState`
+devuelve `POR_ABANDONO` con ese uno de campeón (solo sin cuadro generado y con
+al menos dos fichas en el locke) y todo lo que pregunta "¿hay campeón?" usa
+`campeonDelLocke()`: portada, hall, imagen del resumen y acciones del hall. El
+palmarés lo deduce aparte (sin final, dos o más fichas y una sola sin
+`retiredAt`). El podio en ese caso es **solo el campeón**: poner de segundo y
+tercero a los que se fueron sería inventarse un orden que no se jugó.
+
+**La final espera a las jornadas previstas.** "Todos los combates jugados" era
+verdad con una jornada de seis creada y jugada, y el botón de generar el cuadro
+salía. Ahora cuentan también las previstas sin crear; si al final se juegan
+menos, se bajan en Ediciones. La acción de generar pregunta al mismo
+`getFinalFourState` que la pantalla, para que no se pueda saltar mandando el
+formulario a mano.
+
+**Puntos huérfanos.** Los puntos automáticos apuntan a su combate con
+`sourceMatchId` **sin clave ajena** (añadirla haría que `db push` avisara de
+pérdida de datos y el despliegue se parara). Borrar la jornada entera, quitar
+a un jugador del locke o borrar su cuenta se llevaba los combates en cascada,
+pero no los puntos: la victoria se iba del V-D y el punto seguía sumando, sin
+botón para quitarlo por ser automático. `lib/puntos-huerfanos.ts` los barre
+después de cada uno de esos borrados (y de paso los que quedaran de antes).
+
+**Retiradas en un dualocke, en vueltas.** Dar por ganado un combate por
+retirada puede dejar la serie 1-1, y entonces hace falta el tercero, que es
+otro combate contra el retirado. `resolverRetiradas` llama a
+`ajustarDesempate` en cada jornada que toca y repite hasta que una vuelta no
+resuelve nada.
+
+**La portada de quien está fuera.** El retirado seguía viendo "Toca jornada ·
+tu rival", y su rival le tenía de rival aunque ese combate se gana solo.
+`miParteDeLaJornada` recibe quién está fuera: al retirado no se le da parte, al
+rival le sale "Por retirada" con la explicación, y al que no tiene combate,
+"Descansas".
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -2760,6 +2797,9 @@ Piezas con truco:
   Decide **cuándo** darlos por ganados (al completarse su jornada, no al
   retirar a la persona) y sabe cuáles están esperando, para poder enseñarlos.
   `soloActivos()` en `lib/competition.ts` es el filtro de "los que siguen".
+- `lib/puntos-huerfanos.ts` — borra los puntos automáticos cuyo combate o
+  royale ya no existe. Llamarlo después de cualquier borrado que se lleve
+  combates por delante (jornada, jugador, cuenta).
 - `lib/tipos.ts` — los tipos, la tabla de efectividad **de cada generación** y
   qué es cada pokémon en cada una. Los datos salen de
   `scripts/generate-tipos.ts` a `lib/tipos.json` (unos 30 KB); este módulo solo
@@ -2842,8 +2882,15 @@ las zonas isla por isla (y bajarles el relleno, que son dibujos detallados).
 **Hecho, pero conviene saberlo**: la aplicación ya sirve **de dos a ocho
 jugadores** (jornadas, final y marcador), y todo eso se aplica **a los lockes
 nuevos**: el que está en marcha tiene `maxPlayers` a 6 y se comporta igual que
-siempre. Al crear un dualocke hay que rellenarle **"Jornadas previstas"** (6, en
-lo acordado), que es de donde sale el "gana quien se lleve 4".
+siempre. Al crear un dualocke el campo **"Jornadas previstas"** viene con 6 y
+es obligatorio, que es de donde sale el "gana quien se lleve 4"; si uno de antes
+no lo tiene, el marcador cuenta con 6 igualmente.
+
+**Pregunta abierta (del betatesting)**: en el dualocke hay dos campeones
+posibles —el del marcador (primero a 4 jornadas) y el de la Jornada Final—, y
+el hall, la imagen y el palmarés solo miran el de la final. Falta que el
+usuario decida si el del marcador cuenta como campeón (y la final sobra en el
+dual) o si el marcador es solo la liga previa.
 
 Se planteó esconder Retos y la Ruleta en los lockes de dos y el usuario lo
 descartó: la ruleta se usa para sortearle algo al ganador y los retos también
@@ -3181,3 +3228,8 @@ lugar de destruir datos, y hay que avisar antes.
     enseñan formularios a los jugadores, y las guías tienen fotos de la jornada
     que toca, los checkpoints, deshacer y la bienvenida, con una página nueva
     en la del administrador para los checkpoints.
+80. **Betatesting a fondo**: haciendo de usuario en dualockes, lockes de tres y
+    de seis salieron una docena de fallos —archivar de más al crear, puntos
+    que sobrevivían a su combate, series atascadas, lockes sin campeón al
+    quedar uno— y se arreglaron todos, con quién descansa y apuntar a alguien
+    por su usuario de regalo.

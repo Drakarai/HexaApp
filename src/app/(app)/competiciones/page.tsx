@@ -110,6 +110,36 @@ export default async function CompetitionsPage() {
   const mandoEn = (competitionId: string) =>
     admin || Boolean(mando?.has(competitionId));
 
+  /**
+   * Los lockes que se pueden archivar al crear uno nuevo, **uno a uno y a la
+   * vista**. Antes era una casilla de "archivar todo lo activo" que al Creador
+   * le archivaba los lockes de toda la casa —los en solitario de cada uno y los
+   * de los organizadores— de un plumazo. Vienen marcados los de grupo en los
+   * que juega quien crea: es la edición anterior, la que se quiere cerrar.
+   */
+  const juegoEn = organiza
+    ? new Set(
+        (
+          await prisma.participant.findMany({
+            where: { userId: user.id },
+            select: { competitionId: true },
+          })
+        ).map((ficha) => ficha.competitionId),
+      )
+    : new Set<string>();
+  const archivables = competitions
+    .filter(
+      (competition) =>
+        competition.status === COMPETITION_STATUS.ACTIVE &&
+        (mandoEn(competition.id) || competition.createdById === user.id),
+    )
+    .map((competition) => ({
+      id: competition.id,
+      name: competition.name,
+      jugadores: competition._count.participants,
+      marcado: juegoEn.has(competition.id) && competition.maxPlayers > 1,
+    }));
+
   // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
   const [avatares, logos] = await Promise.all([
     urlsDeImagen(
@@ -293,7 +323,7 @@ export default async function CompetitionsPage() {
                           value={participant.id}
                         />
                         <ConfirmSubmit
-                          message={`¿Sacar a ${participant.displayName} de la competición? Se borrarán sus muertes y puntos de esta edición.`}
+                          message={`¿Sacar a ${participant.displayName} de la competición? Se borran sus muertes, sus puntos y todos sus combates de jornada, también los puntos que les dieron a sus rivales. Si ya ha jugado y lo deja, mejor "Retirar": se queda en la historia y sus combates pendientes los gana el rival.`}
                         >
                           ✕
                         </ConfirmSubmit>
@@ -384,16 +414,18 @@ export default async function CompetitionsPage() {
           {canManageActive ? (
             <div className="mt-5 space-y-4 border-t border-white/10 pt-4">
               {participants.length < active.maxPlayers ? (
-                availableUsers.length || !organiza ? (
+                <>
                   <AddParticipantForm
                     competitionId={active.id}
                     users={availableUsers}
                   />
-                ) : (
-                  <p className="muted">
-                    No quedan cuentas libres. Crea una aquí abajo.
-                  </p>
-                )
+                  {organiza && !availableUsers.length ? (
+                    <p className="muted text-xs">
+                      No te quedan cuentas tuyas libres: apunta a alguien por su
+                      usuario o crea una cuenta aquí abajo.
+                    </p>
+                  ) : null}
+                </>
               ) : (
                 <p className="muted">
                   La competición ya tiene sus {active.maxPlayers} jugadores.
@@ -550,6 +582,7 @@ export default async function CompetitionsPage() {
               id: competition.id,
               name: competition.name,
             }))}
+            archivables={archivables}
           />
           {/**
            * El alta de cuentas vive aquí y no en Administración porque un
