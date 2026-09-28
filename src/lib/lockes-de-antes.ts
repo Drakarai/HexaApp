@@ -164,3 +164,61 @@ export function montarJugadores({
     subcampeonNombre: s?.tipo === "nombre" ? s.nombre : null,
   };
 }
+
+/**
+ * Cómo queda un locke de antes cuando se borra la cuenta de uno que lo jugó:
+ * **pasa a ser alguien sin cuenta**, con su nombre. Antes, borrar la cuenta del
+ * ganador se llevaba el locke entero del palmarés de todos (la relación borra
+ * en cascada), y la del subcampeón lo dejaba sin subcampeón.
+ */
+export function sinLaCuenta(
+  locke: JugadoresDeAntes,
+  userId: string,
+  nombre: string,
+): JugadoresDeAntes {
+  const estaba =
+    locke.jugadoresIds.includes(userId) ||
+    locke.ganadorId === userId ||
+    locke.subcampeonId === userId;
+  if (!estaba) return locke;
+  const yaEsta = locke.sinCuenta.some(
+    (n) => n.toLocaleLowerCase("es") === nombre.toLocaleLowerCase("es"),
+  );
+  return {
+    jugadoresIds: locke.jugadoresIds.filter((id) => id !== userId),
+    sinCuenta: yaEsta ? locke.sinCuenta : [...locke.sinCuenta, nombre],
+    ganadorId: locke.ganadorId === userId ? null : locke.ganadorId,
+    ganadorNombre: locke.ganadorId === userId ? nombre : locke.ganadorNombre,
+    subcampeonId: locke.subcampeonId === userId ? null : locke.subcampeonId,
+    subcampeonNombre: locke.subcampeonId === userId ? nombre : locke.subcampeonNombre,
+  };
+}
+
+/** Aplica `sinLaCuenta` a todos sus lockes de antes. Va antes de borrarla. */
+export async function pasarASinCuenta(userId: string) {
+  const cuenta = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { displayName: true },
+  });
+  if (!cuenta) return;
+  const lockes = await prisma.lockeDeAntes.findMany({
+    where: {
+      OR: [{ ganadorId: userId }, { subcampeonId: userId }, { jugadoresIds: { has: userId } }],
+    },
+    select: {
+      id: true,
+      jugadoresIds: true,
+      sinCuenta: true,
+      ganadorId: true,
+      ganadorNombre: true,
+      subcampeonId: true,
+      subcampeonNombre: true,
+    },
+  });
+  for (const { id, ...locke } of lockes) {
+    await prisma.lockeDeAntes.update({
+      where: { id },
+      data: sinLaCuenta(locke, userId, cuenta.displayName),
+    });
+  }
+}

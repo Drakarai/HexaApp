@@ -74,3 +74,31 @@ describe("lockes de antes con gente sin cuenta", () => {
     assert.ok(!("error" in r) && r.subcampeonId === null);
   });
 });
+
+import { sinLaCuenta } from "@/lib/lockes-de-antes";
+
+describe("borrar la cuenta de alguien que jugó un locke de antes", () => {
+  const locke = {
+    jugadoresIds: ["draka", "pablo", "hector"],
+    sinCuenta: ["Marcos"],
+    ganadorId: "pablo",
+    ganadorNombre: null,
+    subcampeonId: "draka",
+    subcampeonNombre: null,
+  };
+  test("el ganador se queda por su nombre y el locke no se pierde", () => {
+    const r = sinLaCuenta(locke, "pablo", "Pablo");
+    assert.equal(r.ganadorId, null);
+    assert.equal(r.ganadorNombre, "Pablo");
+    assert.deepEqual(r.jugadoresIds, ["draka", "hector"]);
+    assert.deepEqual(r.sinCuenta, ["Marcos", "Pablo"]);
+  });
+  test("el subcampeón también", () => {
+    const r = sinLaCuenta(locke, "draka", "Draka");
+    assert.equal(r.subcampeonNombre, "Draka");
+    assert.equal(r.ganadorId, "pablo");
+  });
+  test("si no jugó, no cambia nada", () => {
+    assert.deepEqual(sinLaCuenta(locke, "lara", "Lara"), locke);
+  });
+});

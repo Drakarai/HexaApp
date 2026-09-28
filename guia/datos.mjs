@@ -17,6 +17,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
+import { apuntarLockesDeAntes } from "./datos-palmares.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -379,6 +380,9 @@ await p.fill('input[name="password"]', CLAVE);
 await p.locator("button", { hasText: "Crear usuario" }).click();
 await p.waitForTimeout(2000);
 console.log("cuenta sin locke: lara");
+
+// --- Lockes de antes, para las pestañas y la línea a mano del palmarés
+await apuntarLockesDeAntes(p);
 
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");

@@ -376,14 +376,21 @@ export async function guardarFondoAction(
  * siempre**, nunca del formulario: es lo que hace que no se pueda escribir en
  * el mapa de otro.
  */
-async function miParticipante() {
+/**
+ * La ficha de quien apunta, en la edición activa o **en la que diga el
+ * formulario**. Lo segundo es para la cola sin conexión: una captura apuntada
+ * en el Hexalocke 2 tiene que ir al Hexalocke 2 aunque, cuando por fin se
+ * sube, se esté mirando otro locke. No abre ninguna puerta: si en esa edición
+ * no tiene ficha, no hay mapa que tocar.
+ */
+async function miParticipante(competitionId?: string) {
   const user = await requireUser();
-  const competition = await getActiveCompetition();
-  if (!competition) return null;
-  const participante = await getMyParticipant(competition.id, user.id);
+  const id = competitionId || (await getActiveCompetition())?.id;
+  if (!id) return null;
+  const participante = await getMyParticipant(id, user.id);
   if (!participante) return null;
   // En una edición archivada el mapa ya no se toca (ver assertEdicionAbierta)
-  await assertPuedeApuntarEn(competition.id, user);
+  await assertPuedeApuntarEn(id, user);
   return participante;
 }
 
@@ -393,7 +400,7 @@ export async function apuntarCapturaAction(
 ): Promise<FormState> {
   let participante;
   try {
-    participante = await miParticipante();
+    participante = await miParticipante(String(formData.get("competitionId") ?? "").trim());
   } catch (error) {
     return { error: (error as Error).message };
   }

@@ -454,8 +454,9 @@ function capturaConCola(competitionId: string, zona: string | null) {
       const fallado = formData.get("failed") === "on" ? " (fallado)" : "";
       return `${especie}${fallado} · ${zona ?? "captura extra"}`;
     },
-    // La edición no va en el formulario: la acción la saca de la sesión, y al
-    // subirlo más tarde hay que poder comprobar que sigue siendo la misma
+    // La edición no va en el formulario (en línea, la acción la saca de la
+    // sesión), pero a la cola sí: al subirla más tarde va a este locke aunque
+    // entre medias se haya cambiado de edición
     () => ({ competitionId }),
   );
 }

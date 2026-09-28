@@ -214,7 +214,7 @@ export default async function AdminPage() {
                   <form action={deleteUserAction}>
                     <input type="hidden" name="userId" value={user.id} />
                     <ConfirmSubmit
-                      message={`¿Borrar a ${user.displayName}? Desaparece de todas las competiciones, con sus muertes y notas.`}
+                      message={`¿Borrar a ${user.displayName}? Desaparece de todas las competiciones, con sus muertes y notas. En los lockes de antes se queda por su nombre.`}
                     >
                       ✕
                     </ConfirmSubmit>

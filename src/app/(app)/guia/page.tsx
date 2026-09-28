@@ -213,7 +213,7 @@ const GUIAS: Record<
     de: "Para quien lleva una edición: montarla, emparejar las jornadas, anotar resultados y repartir premios.",
     pdf: `/guia-de-administrador.pdf?v=${process.env.HUELLA_GUIA_ADMIN}`,
     fichero: "guia-de-administrador.pdf",
-    version: "27/09/2026",
+    version: "28/09/2026",
     paginas: 15,
     contenido: [
       [2, "Qué puedes y qué no"],

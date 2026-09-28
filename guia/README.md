@@ -49,7 +49,10 @@ coronas—, pone un checkpoint de jornada tras cada uno (así la 3ª jornada es
 la que toca), cambia una regla, crea una cuenta sin locke (`lara`, para la
 foto de la bienvenida), deja una
 nota, un reto, objetos y **las dos primeras jornadas** enteras (con una sola no
-salen las flechas de la clasificación), y repetirlo lo duplicaría todo. Si algo
+salen las flechas de la clasificación), y al final **dos lockes de antes** (uno
+de seis con alguien sin cuenta y un dualocke, para las pestañas del palmarés;
+están en `datos-palmares.mjs`, que también se puede lanzar suelto). Repetirlo
+lo duplicaría todo. Si algo
 sale torcido, vuelve a sembrar la base de datos y empieza de nuevo.
 
 `capturas.mjs` sí se puede repetir, pero **las fotos de las reglas solo salen

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { getActiveCompetition } from "@/lib/competition";
 import { apuntarCapturaAction } from "@/app/actions/mapas";
 import { createDeathAction } from "@/app/actions/deaths";
 import { createNoteAction } from "@/app/actions/notes";
@@ -18,8 +17,8 @@ import { toggleGymClearAction } from "@/app/actions/level-caps";
  * - **Que no se duplique**: cada apunte trae un identificador que generó el
  *   móvil y se guarda al aplicarlo (`ApunteSincronizado`). Si llega dos veces,
  *   la segunda se descarta.
- * - **Que no se cuele en otra edición**: una captura apuntada en el Hexalocke 2
- *   no se puede subir a otro locke porque entre medias se cambiara de edición.
+ * - **Que cada cosa vaya a su locke**: una captura apuntada en el Hexalocke 2
+ *   se sube al Hexalocke 2 aunque entre medias se cambiara de edición.
  *
  * Y es una dirección propia y no una server action a propósito: el
  * identificador interno de una server action **cambia en cada despliegue**, y
@@ -55,7 +54,6 @@ export async function POST(request: Request) {
   const apuntes = Array.isArray(cuerpo.apuntes) ? cuerpo.apuntes.slice(0, MAXIMO) : [];
   if (!apuntes.length) return NextResponse.json({ resultados: [] });
 
-  const activa = await getActiveCompetition();
   const resultados: Resultado[] = [];
 
   // En orden y de uno en uno: un apunte puede depender del anterior (una baja
@@ -69,7 +67,7 @@ export async function POST(request: Request) {
         : {};
     if (!id || !tipo) continue;
 
-    resultados.push(await aplicar({ id, tipo, datos, userId: user.id, activa }));
+    resultados.push(await aplicar({ id, tipo, datos, userId: user.id }));
   }
 
   return NextResponse.json({ resultados });
@@ -80,13 +78,11 @@ async function aplicar({
   tipo,
   datos,
   userId,
-  activa,
 }: {
   id: string;
   tipo: string;
   datos: Record<string, unknown>;
   userId: string;
-  activa: { id: string; name: string } | null;
 }): Promise<Resultado> {
   /**
    * Se apunta **antes** de aplicarlo: si dos envíos llegan a la vez, el
@@ -105,7 +101,7 @@ async function aplicar({
       if (typeof valor === "string") formData.set(campo, valor);
     }
 
-    const mensaje = await ejecutar(tipo, formData, activa);
+    const mensaje = await ejecutar(tipo, formData);
     if (mensaje) {
       await prisma.apunteSincronizado.delete({ where: { id } }).catch(() => {});
       return { id, estado: "error", mensaje };
@@ -118,24 +114,15 @@ async function aplicar({
 }
 
 /** Aplica el apunte. Devuelve el motivo si no se pudo, o null si fue bien. */
-async function ejecutar(
-  tipo: string,
-  formData: FormData,
-  activa: { id: string; name: string } | null,
-): Promise<string | null> {
+async function ejecutar(tipo: string, formData: FormData): Promise<string | null> {
   switch (tipo) {
     case "captura": {
       /**
-       * La captura va al mapa de quien la apunta **en la edición activa**, que
-       * es de donde la saca la acción. Si mientras estaba en la cola se cambió
-       * de locke, se para: es mejor decirlo que apuntar un Sentret en la
-       * edición equivocada.
+       * La captura va al mapa de quien la apunta **en el locke en el que la
+       * apuntó** (el `competitionId` del formulario), aunque entre medias se
+       * haya cambiado de edición. Antes se paraba con un aviso y había que
+       * cambiarse a mano para subirla.
        */
-      const suya = String(formData.get("competitionId") ?? "");
-      if (suya && activa && suya !== activa.id) {
-        return `Este apunte es de otro locke. Cámbiate a él y vuelve a subirlo.`;
-      }
-      if (suya && !activa) return "No hay ninguna edición abierta.";
       const estado = await apuntarCapturaAction(null, formData);
       return estado?.error ?? null;
     }

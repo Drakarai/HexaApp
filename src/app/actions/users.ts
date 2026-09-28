@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
+import { pasarASinCuenta } from "@/lib/lockes-de-antes";
 import {
   hashPassword,
   esCreador,
@@ -174,6 +175,8 @@ export async function deleteUserAction(formData: FormData) {
     where: { userId },
     select: { competitionId: true },
   });
+  // En los lockes de antes se queda por su nombre, no desaparece con él
+  await pasarASinCuenta(userId);
   await prisma.user.delete({ where: { id: userId } });
   for (const { competitionId } of suyos) await borrarPuntosHuerfanos(competitionId);
   revalidatePath("/admin");
