@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { juegoPorId } from "@/lib/juegos";
+import { juegoPorId, repartirVersiones, versionesDelJuego } from "@/lib/juegos";
 import {
   esCreador,
   requireOrganizador,
@@ -497,6 +497,38 @@ export async function retirarParticipanteAction(formData: FormData) {
    */
   await resolverRetiradas(participant.competitionId, manager.id);
 
+  revalidatePath("/", "layout");
+}
+
+/**
+ * Reparte al azar las versiones de la pareja (Rubí Omega y Zafiro Alfa) entre
+ * los que siguen jugando, a partes iguales. Es como lo hace el grupo en la
+ * vida real; esto solo lo ahorra. Cambia la de todos, así que va con aviso.
+ */
+export async function repartirVersionesAction(formData: FormData) {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  await requireCompetitionManager(competitionId);
+
+  const competition = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { gameId: true },
+  });
+  const versiones = versionesDelJuego(competition?.gameId);
+  if (versiones.length < 2) return;
+
+  const jugadores = await prisma.participant.findMany({
+    where: { competitionId, retiredAt: null },
+    select: { id: true },
+  });
+  const reparto = repartirVersiones(
+    jugadores.map((j) => j.id),
+    versiones,
+  );
+  await prisma.$transaction(
+    [...reparto].map(([id, gameVersion]) =>
+      prisma.participant.update({ where: { id }, data: { gameVersion } }),
+    ),
+  );
   revalidatePath("/", "layout");
 }
 

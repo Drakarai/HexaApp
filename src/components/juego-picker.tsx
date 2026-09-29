@@ -6,13 +6,15 @@ import {
   juegosPorGrupo,
   nombreDeRegion,
   regionesDelJuego,
+  versionesDelJuego,
 } from "@/lib/juegos";
 
 /**
  * En qué juego se juega la edición.
  *
  * Se elige de la lista, y de ahí sale **la región**, que es lo que decide qué
- * mapa se usa en el Mapa de capturas. Los remakes van en su propio grupo pero
+ * mapa se usa en el Mapa de capturas. Los juegos gemelos van **en pareja**
+ * ("Rubí Omega y Zafiro Alfa") y luego cada jugador lleva una de las dos. Los remakes van en su propio grupo pero
  * apuntan a la región del original: HeartGold usa el mapa de Johto.
  *
  * Debajo queda el campo de texto de siempre, que **no se ha quitado**: las
@@ -50,7 +52,7 @@ export function JuegoPicker({
           onChange={(evento) => setGameId(evento.target.value)}
         >
           <option value="">— Sin elegir —</option>
-          {juegosPorGrupo().map(([grupo, juegos]) => (
+          {juegosPorGrupo(defaultGameId).map(([grupo, juegos]) => (
             <optgroup key={grupo} label={grupo}>
               {juegos.map((juego) => (
                 <option key={juego.id} value={juego.id}>
@@ -82,6 +84,13 @@ export function JuegoPicker({
             "Si lo eliges, cada jugador tendrá el mapa de esa región en Lo mío."
           )}
         </p>
+        {versionesDelJuego(gameId).length ? (
+          <p className="mt-1 text-xs text-slate-500">
+            Es una pareja: al apuntar a cada jugador se elige si lleva{" "}
+            <span className="text-slate-300">{versionesDelJuego(gameId).join(" o ")}</span>, o
+            se reparten al azar.
+          </p>
+        ) : null}
       </div>
 
       <div>

@@ -49,6 +49,12 @@ export type Juego = {
   mapas?: Region[];
   /** El tema de `themes.ts` que le pega, para proponerlo al crear la edición */
   tema?: string;
+  /**
+   * Si es una **pareja** (Rojo y Azul, Rubí Omega y Zafiro Alfa…), las dos
+   * versiones que la forman. Se juega a la vez en las dos: cada jugador lleva
+   * la suya, que es como se reparte el grupo normalmente.
+   */
+  versiones?: string[];
 };
 
 export const REGIONES: {
@@ -80,7 +86,7 @@ export const REGIONES_DE_MAPA = REGIONES.filter((region) => !region.sinMapa);
 /** En el orden en el que se recorren jugando. */
 const ISLAS_DE_ALOLA: Region[] = ["melemele", "akala", "ula-ula", "poni"];
 
-export const JUEGOS: Juego[] = [
+const SUELTOS: Juego[] = [
   { id: "rojo", name: "Rojo", grupo: "1ª generación", region: "kanto", tema: "rojo" },
   { id: "azul", name: "Azul", grupo: "1ª generación", region: "kanto", tema: "azul" },
   { id: "amarillo", name: "Amarillo", grupo: "1ª generación", region: "kanto", tema: "amarillo" },
@@ -167,12 +173,39 @@ export const GRUPOS_DE_PLANTILLA: GrupoDePlantilla[] = [
   { id: "rubiomega-zafiroalfa", nombre: "Rubí Omega y Zafiro Alfa", juegos: ["rubi-omega", "zafiro-alfa"] },
 ];
 
+const SUELTO_POR_ID = new Map(SUELTOS.map((juego) => [juego.id, juego]));
+
+/**
+ * Las **parejas**: los juegos que son el mismo con distintos bichos, sacadas de
+ * las plantillas de level caps de dos juegos, que son justo esas. Se eligen
+ * como un juego más —con su región, su mapa, su plantilla y su tema, los de su
+ * primera versión— y luego cada jugador se queda con una de las dos. Las
+ * terceras ediciones (Amarillo, Cristal, Esmeralda, Platino) no tienen pareja
+ * y van sueltas.
+ */
+const PAREJAS: Juego[] = GRUPOS_DE_PLANTILLA.filter((grupo) => grupo.juegos.length > 1).map(
+  (grupo) => {
+    const primero = SUELTO_POR_ID.get(grupo.juegos[0])!;
+    return {
+      ...primero,
+      id: grupo.id,
+      name: grupo.nombre,
+      versiones: grupo.juegos.map((id) => SUELTO_POR_ID.get(id)!.name),
+    };
+  },
+);
+
+/** Todos: los sueltos y las parejas. Cualquiera vale como juego de una edición. */
+export const JUEGOS: Juego[] = [...SUELTOS, ...PAREJAS];
+
 const POR_ID = new Map(JUEGOS.map((juego) => [juego.id, juego]));
 
 const GRUPO_POR_JUEGO = new Map(
-  GRUPOS_DE_PLANTILLA.flatMap((grupo) =>
-    grupo.juegos.map((juegoId) => [juegoId, grupo] as const),
-  ),
+  GRUPOS_DE_PLANTILLA.flatMap((grupo) => [
+    ...grupo.juegos.map((juegoId) => [juegoId, grupo] as const),
+    // Una pareja mira a la plantilla de la que sale, que tiene su mismo id
+    [grupo.id, grupo] as const,
+  ]),
 );
 const GRUPO_POR_ID = new Map(
   GRUPOS_DE_PLANTILLA.map((grupo) => [grupo.id, grupo] as const),
@@ -237,13 +270,26 @@ export function nombreDeRegion(slug: string) {
   return REGIONES.find((region) => region.slug === slug)?.nombre ?? slug;
 }
 
-/** Los juegos repartidos por generación, en el orden del desplegable. */
-export function juegosPorGrupo() {
+/** Las versiones entre las que se reparte el grupo, si el juego es una pareja. */
+export function versionesDelJuego(id: string | null | undefined): string[] {
+  return juegoPorId(id)?.versiones ?? [];
+}
+
+/** Los juegos que ya están dentro de una pareja: en el desplegable sobran. */
+const EN_PAREJA = new Set(PAREJAS.flatMap((pareja) => GRUPO_POR_ID.get(pareja.id)!.juegos));
+
+/**
+ * Los juegos repartidos por generación, en el orden del desplegable: en cada
+ * una, **primero la pareja y luego la tercera edición**. Las versiones sueltas
+ * de una pareja no salen —se elige la pareja y se reparten—, salvo la que ya
+ * tenga puesta una edición de antes (`actual`), que si no desaparecería.
+ */
+export function juegosPorGrupo(actual?: string | null) {
   const grupos = new Map<string, Juego[]>();
-  for (const juego of JUEGOS) {
-    const lista = grupos.get(juego.grupo) ?? [];
-    lista.push(juego);
-    grupos.set(juego.grupo, lista);
+  for (const juego of SUELTOS) grupos.set(juego.grupo, grupos.get(juego.grupo) ?? []);
+  for (const juego of [...PAREJAS, ...SUELTOS]) {
+    if (EN_PAREJA.has(juego.id) && juego.id !== actual) continue;
+    grupos.get(juego.grupo)!.push(juego);
   }
   return [...grupos.entries()];
 }
@@ -255,4 +301,28 @@ export function juegosPorGrupo() {
  */
 export function nombreDelJuego(gameId: string | null, game: string | null) {
   return juegoPorId(gameId)?.name ?? game ?? null;
+}
+
+/**
+ * Reparte las versiones de una pareja entre los jugadores **a partes iguales y
+ * al azar**: con cuatro, dos y dos; con cinco, tres y dos. `azar` se puede
+ * cambiar para probarlo sin que baile.
+ */
+export function repartirVersiones(
+  jugadores: string[],
+  versiones: string[],
+  azar: () => number = Math.random,
+): Map<string, string> {
+  const reparto = new Map<string, string>();
+  if (versiones.length < 2) return reparto;
+  // Fisher-Yates: barajar de verdad, no con un sort con random
+  const barajados = [...jugadores];
+  for (let i = barajados.length - 1; i > 0; i--) {
+    const j = Math.floor(azar() * (i + 1));
+    [barajados[i], barajados[j]] = [barajados[j], barajados[i]];
+  }
+  // La versión que sobra en un reparto impar también se sortea
+  const inicio = Math.floor(azar() * versiones.length);
+  barajados.forEach((id, i) => reparto.set(id, versiones[(inicio + i) % versiones.length]));
+  return reparto;
 }

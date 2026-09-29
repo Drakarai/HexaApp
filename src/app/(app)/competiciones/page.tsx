@@ -8,12 +8,13 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { COMPETITION_STATUS } from "@/lib/constants";
-import { nombreDelJuego } from "@/lib/juegos";
+import { nombreDelJuego, versionesDelJuego } from "@/lib/juegos";
 import { cx, formatDate } from "@/lib/utils";
 import {
   deleteCompetitionAction,
   quitarEspectadorAction,
   removeParticipantAction,
+  repartirVersionesAction,
   retirarParticipanteAction,
   selectCompetitionAction,
   setCompetitionStatusAction,
@@ -150,6 +151,9 @@ export default async function CompetitionsPage() {
     urlsDeImagen("logo", active ? [active.id] : []),
   ]);
   const logoActual = active ? logos(active.id) : null;
+
+  // Si el juego es una pareja, cada jugador lleva una de sus dos versiones
+  const versiones = versionesDelJuego(active?.gameId);
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
@@ -340,6 +344,7 @@ export default async function CompetitionsPage() {
                         color: participant.color,
                         isAdmin: participant.isAdmin,
                       }}
+                      versiones={versiones}
                     />
                   ) : null}
                 </li>
@@ -418,6 +423,7 @@ export default async function CompetitionsPage() {
                   <AddParticipantForm
                     competitionId={active.id}
                     users={availableUsers}
+                    versiones={versiones}
                   />
                   {organiza && !availableUsers.length ? (
                     <p className="muted text-xs">
@@ -431,6 +437,24 @@ export default async function CompetitionsPage() {
                   La competición ya tiene sus {active.maxPlayers} jugadores.
                 </p>
               )}
+
+              {versiones.length && participants.length > 1 ? (
+                <form
+                  action={repartirVersionesAction}
+                  className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3"
+                >
+                  <input type="hidden" name="competitionId" value={active.id} />
+                  <p className="min-w-0 flex-1 text-sm text-slate-300">
+                    {versiones.join(" y ")}: a partes iguales entre los que siguen jugando.
+                  </p>
+                  <ConfirmSubmit
+                    className="btn-ghost btn-sm"
+                    message={`¿Repartir ${versiones.join(" y ")} al azar? Cambia la edición de todos los que siguen jugando.`}
+                  >
+                    <Icono emoji="🎲" /> Repartir al azar
+                  </ConfirmSubmit>
+                </form>
+              ) : null}
 
               <EditCompetitionForm
                 competition={{

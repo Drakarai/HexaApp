@@ -282,9 +282,12 @@ export function EditCompetitionForm({
 export function AddParticipantForm({
   competitionId,
   users,
+  versiones = [],
 }: {
   competitionId: string;
   users: Array<{ id: string; displayName: string; username: string }>;
+  /** Si el juego es una pareja, sus dos versiones: ver `CampoDeEdicion` */
+  versiones?: string[];
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     addParticipantAction,
@@ -335,7 +338,7 @@ export function AddParticipantForm({
         </div>
         <div>
           <label className="label">Edición</label>
-          <input name="gameVersion" className="input" placeholder="HeartGold" />
+          <CampoDeEdicion versiones={versiones} />
         </div>
         <div>
           <label className="label">Color</label>
@@ -359,6 +362,7 @@ export function AddParticipantForm({
 
 export function EditParticipantForm({
   participant,
+  versiones = [],
 }: {
   participant: {
     id: string;
@@ -367,6 +371,7 @@ export function EditParticipantForm({
     color: string;
     isAdmin: boolean;
   };
+  versiones?: string[];
 }) {
   const [open, setOpen] = useState(false);
 
@@ -402,11 +407,7 @@ export function EditParticipantForm({
         </div>
         <div>
           <label className="label">Edición</label>
-          <input
-            name="gameVersion"
-            className="input"
-            defaultValue={participant.gameVersion ?? ""}
-          />
+          <CampoDeEdicion versiones={versiones} actual={participant.gameVersion} />
         </div>
         <div>
           <label className="label">Color</label>
@@ -592,5 +593,35 @@ function Marca({
         ) : null}
       </span>
     </label>
+  );
+}
+
+/**
+ * La edición que lleva cada jugador. Si el juego del locke es una **pareja**
+ * (Rubí Omega y Zafiro Alfa), se elige de las dos, que es como se reparte el
+ * grupo; si no, se escribe a mano como siempre. Si ya tenía algo escrito que
+ * no es ninguna de las dos, se conserva como opción para no perderlo al editar.
+ */
+function CampoDeEdicion({ versiones, actual }: { versiones: string[]; actual?: string | null }) {
+  if (!versiones.length) {
+    return (
+      <input
+        name="gameVersion"
+        className="input"
+        placeholder="HeartGold"
+        defaultValue={actual ?? ""}
+      />
+    );
+  }
+  const opciones = actual && !versiones.includes(actual) ? [...versiones, actual] : versiones;
+  return (
+    <select name="gameVersion" className="input" defaultValue={actual ?? ""}>
+      <option value="">Sin elegir</option>
+      {opciones.map((version) => (
+        <option key={version} value={version}>
+          {version}
+        </option>
+      ))}
+    </select>
   );
 }
