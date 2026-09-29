@@ -2572,6 +2572,13 @@ o, en solitario, el día que se pasó la Liga. Sin ganador, hasta lo último que
 jugó. La fecha de archivar solo sale en el histórico de Ediciones, que es lo que
 significa.
 
+**La foto del resumen, sin caché vieja.** Su dirección lleva `?v=` con una
+**huella de todo lo que se pinta** (resumen, podio, equipos, nombre y juego de
+la edición) y va con `Cache-Control: private, no-cache`. Antes la firma era un
+recuento de cuatro cifras y se guardaba cinco minutos, así que al arreglar las
+fechas el Hall seguía enseñando la foto vieja con la misma dirección. Si se
+añade algo nuevo a la imagen, hay que meterlo en la huella del Hall.
+
 **El logo de un locke de antes es una imagen más.** Va en
 `LockeDeAntes.logo` y se trata exactamente como el de una edición: se reduce en
 el navegador, se guarda en el almacén (`guardarPorContenido`) y se sirve por

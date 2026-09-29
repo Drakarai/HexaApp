@@ -481,8 +481,13 @@ export async function GET(
     height: ALTO,
     fonts: letras.map((letra) => ({ name: letra.name, data: letra.data, weight: letra.weight, style: "normal" as const })),
     headers: {
-      // Es de un locke privado: nada de guardarla en la red
-      "Cache-Control": "private, max-age=300",
+      /**
+       * Es de un locke privado: nada de guardarla en la red. Y **sin reutilizar
+       * sin preguntar**: con cinco minutos de caché, un cambio en algo que no
+       * movía la dirección (las fechas) seguía enseñando la foto vieja. La
+       * huella de la dirección ya evita casi todo; esto cubre el resto.
+       */
+      "Cache-Control": "private, no-cache",
     },
   });
 }

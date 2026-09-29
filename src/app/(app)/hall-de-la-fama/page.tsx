@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
@@ -158,6 +159,24 @@ export default async function HallOfFamePage() {
 
   const { jugadores, podio } = ordenDelHall(standings, elFinal, campeon);
 
+  /**
+   * La huella de la imagen del resumen: **todo lo que sale en ella**. Antes era
+   * un recuento (equipos, bajas, combates, wipeos), y cambiar algo que no
+   * estuviera ahí —las fechas, al arreglar cuándo acaba un locke— dejaba al
+   * navegador enseñando la foto vieja con la misma dirección.
+   */
+  const huellaDelResumen = createHash("sha1")
+    .update(
+      JSON.stringify({
+        resumen,
+        podio,
+        equipos: entries.map((e) => [e.id, e.participantId, e.species, e.nickname]),
+        edicion: [competition.name, competition.game, competition.updatedAt],
+      }),
+    )
+    .digest("hex")
+    .slice(0, 12);
+
   return (
     <>
       <PageHeader
@@ -193,10 +212,10 @@ export default async function HallOfFamePage() {
 
       <ResumenDelLocke resumen={resumen} />
 
-      {/* La versión para mandar al grupo. La firma de la dirección cambia al
-          apuntar equipos o corregir algo, para no enseñar una guardada vieja */}
+      {/* La versión para mandar al grupo. La dirección lleva la huella de lo
+          que se pinta en ella, para no enseñar una guardada vieja */}
       <CompartirResumen
-        url={`/api/resumen/${competition.id}?v=${entries.length}-${resumen.bajas}-${resumen.combates}-${resumen.wipeos}`}
+        url={`/api/resumen/${competition.id}?v=${huellaDelResumen}`}
         fichero={`resumen-${competition.slug}.png`}
         titulo={competition.name}
         alto={perfil.enSolitario ? 1080 : 1350}
