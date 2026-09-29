@@ -288,59 +288,59 @@ function Cifra({ valor, rotulo }: { valor: string | number; rotulo: React.ReactN
   );
 }
 
-/** Cuántos títulos se ven de entrada: con más, un "+N" los despliega */
-const A_LA_VISTA = 3;
-
 /**
- * Los lockes que ha ganado, con su nombre y su logo: la vitrina. Van también
- * los que ganó con otra gente, que es la gracia de compararse entre amigos.
- * Se enseñan los tres más nuevos y el resto se despliega, para que alguien con
- * diez títulos no ocupe media pantalla.
+ * Los lockes que ha ganado, con su logo, su nombre y su año: la vitrina. Van
+ * también los que ganó con otra gente, que es la gracia de compararse entre
+ * amigos.
+ *
+ * **Plegada de entrada**, con un botón pequeño para verla: abierta en todos a
+ * la vez llenaba la tabla, y muchos lockes no tienen logo, así que tampoco
+ * valía enseñar solo los logos.
  */
 function Vitrina({ titulos }: { titulos: Titulo[] }) {
-  const [todos, setTodos] = useState(false);
+  const [abierta, setAbierta] = useState(false);
   if (!titulos.length) return null;
-  const vistos = todos ? titulos : titulos.slice(0, A_LA_VISTA);
-  const quedan = titulos.length - vistos.length;
 
   return (
-    <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Lockes ganados">
-      {vistos.map((titulo) => (
-        <li
-          key={titulo.id}
-          className="flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] py-1 pl-1 pr-2 text-xs text-amber-100"
-          title={titulo.deAntes ? `${titulo.nombre} · apuntado a mano` : titulo.nombre}
-        >
-          {titulo.logo ? (
-            // eslint-disable-next-line @next/next/no-img-element -- el logo ya viene reducido de la base de datos
-            <img
-              src={titulo.logo}
-              alt=""
-              width={20}
-              height={20}
-              loading="lazy"
-              className="h-5 w-5 shrink-0 rounded object-contain"
-            />
-          ) : (
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center text-amber-300">
-              <Icono emoji={titulo.deAntes ? "📜" : "🏆"} />
-            </span>
-          )}
-          <span className="truncate">{titulo.nombre}</span>
-          <span className="shrink-0 text-amber-200/50">{titulo.anio}</span>
-        </li>
-      ))}
-      {quedan > 0 || todos ? (
-        <li>
-          <button
-            type="button"
-            className="rounded-lg border border-white/10 px-2 py-1 text-xs text-slate-400 hover:text-slate-200"
-            onClick={() => setTodos((antes) => !antes)}
-          >
-            {todos ? "Menos" : `+${quedan}`}
-          </button>
-        </li>
+    <div className="mt-2">
+      <button
+        type="button"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/25 px-2 py-1 text-xs text-amber-200/80 transition hover:bg-amber-400/[0.06]"
+        aria-expanded={abierta}
+        onClick={() => setAbierta((antes) => !antes)}
+      >
+        <Icono emoji="🏆" />
+        {abierta ? "Ocultar títulos" : `Ver títulos (${titulos.length})`}
+      </button>
+      {abierta ? (
+        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Lockes ganados">
+          {titulos.map((titulo) => (
+            <li
+              key={titulo.id}
+              className="flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] py-1 pl-1 pr-2 text-xs text-amber-100"
+              title={titulo.deAntes ? `${titulo.nombre} · apuntado a mano` : titulo.nombre}
+            >
+              {titulo.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element -- el logo ya viene reducido de la base de datos
+                <img
+                  src={titulo.logo}
+                  alt=""
+                  width={20}
+                  height={20}
+                  loading="lazy"
+                  className="h-5 w-5 shrink-0 rounded object-contain"
+                />
+              ) : (
+                <span className="flex h-5 w-5 shrink-0 items-center justify-center text-amber-300">
+                  <Icono emoji={titulo.deAntes ? "📜" : "🏆"} />
+                </span>
+              )}
+              <span className="truncate">{titulo.nombre}</span>
+              <span className="shrink-0 text-amber-200/50">{titulo.anio}</span>
+            </li>
+          ))}
+        </ul>
       ) : null}
-    </ul>
+    </div>
   );
 }

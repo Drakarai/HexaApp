@@ -42,6 +42,18 @@ export type CampeonDeUnLocke = {
   campeon: { displayName: string; color: string; avatarImage: string | null } | null;
   subcampeon: { displayName: string; color: string } | null;
   categoria: Categoria;
+  /** El logo de la edición, si tiene */
+  logo: string | null;
+  /** La descripción de la edición; los de antes llevan sus notas en `notas` */
+  descripcion: string | null;
+  /**
+   * Un locke en el que tú no estás, que sale porque lo ganó alguien de tu
+   * palmarés. No se puede abrir, y de su gente solo se nombra a la tuya.
+   */
+  deFuera: boolean;
+  /** Las cuentas del campeón y del subcampeón, para saber si son de tu gente */
+  campeonUserId: string | null;
+  subcampeonUserId: string | null;
   /** Un locke de antes, con lo que hace falta para editarlo (solo si puede) */
   paraEditar?: DatosDeLockeDeAntes;
 };
@@ -161,6 +173,7 @@ export async function getPalmares(): Promise<Palmares> {
       id: true,
       name: true,
       game: true,
+      description: true,
       startedAt: true,
       maxPlayers: true,
       jornadasPrevistas: true,
@@ -343,6 +356,11 @@ export async function getPalmares(): Promise<Palmares> {
       campeon: ficha(campeon),
       subcampeon: ficha(subcampeon),
       categoria: categoriaDe.get(competicion.id) ?? "grupo",
+      logo: logos(competicion.id),
+      descripcion: competicion.description,
+      deFuera: !misIds.has(competicion.id),
+      campeonUserId: campeon ? (porParticipante.get(campeon)?.userId ?? null) : null,
+      subcampeonUserId: subcampeon ? (porParticipante.get(subcampeon)?.userId ?? null) : null,
     };
   });
 
@@ -381,6 +399,11 @@ export async function getPalmares(): Promise<Palmares> {
         ? { displayName: locke.subcampeonNombre, color: SIN_CUENTA }
         : null,
     categoria: categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length),
+    logo: null,
+    descripcion: null,
+    deFuera: !misDeAntes.has(locke.id),
+    campeonUserId: locke.ganadorId,
+    subcampeonUserId: locke.subcampeonId,
     // Lo que hace falta para editarlo, solo a quien puede
     paraEditar: puedeBorrar(locke.createdById)
       ? {
@@ -510,12 +533,24 @@ export async function getPalmares(): Promise<Palmares> {
     }
   }
 
+  /**
+   * Un locke de fuera entra en el historial **solo si lo ganó alguien de tu
+   * gente**: es su título, y es lo que se quiere ver. Si lo ganó un
+   * desconocido, no sale, que la victoria es de alguien que no pinta nada en
+   * tu palmarés. Y del subcampeón (o del rival en un dual) solo se dice el
+   * nombre si también es de los tuyos; si no, ni aparece.
+   */
+  const deTuGente = (userId: string | null) => Boolean(userId && genteIds.has(userId));
+  const historial = [...ediciones, ...apuntados]
+    .filter((e) => !e.deFuera || (e.terminado && deTuGente(e.campeonUserId)))
+    .map((e) =>
+      e.deFuera && !deTuGente(e.subcampeonUserId)
+        ? { ...e, subcampeon: null, subcampeonUserId: null }
+        : e,
+    );
+
   return {
-    // Las ediciones, solo las suyas: de los lockes ajenos se cuentan las cifras
-    ediciones: [
-      ...ediciones.filter((e) => misIds.has(e.competitionId)),
-      ...apuntados.filter((e) => misDeAntes.has(e.competitionId)),
-    ].sort(
+    ediciones: historial.sort(
       (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
     ),
     gente: [...gente.values()]
