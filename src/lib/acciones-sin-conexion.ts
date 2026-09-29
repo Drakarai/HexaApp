@@ -41,6 +41,53 @@ export function conCola(
   };
 }
 
+/**
+ * Lo mismo para las acciones que se llaman **sin formulario** (las del Equipo
+ * y PC: soltar un pokémon, evolucionarlo, darlo por muerto). Sin línea, se
+ * guarda en la cola con los datos que hacen falta para repetirla al subir.
+ *
+ * Las que no tiene sentido guardar para luego —deshacer, vincular, cambiar el
+ * mote— no pasan por aquí: sin línea, dicen que hace falta conexión (ver
+ * `sinConexion`).
+ */
+export async function directaConCola<T extends { error?: string; aviso?: string }>(
+  accion: () => Promise<T>,
+  tipo: TipoDeApunte,
+  datos: Record<string, string>,
+  resumen: string,
+): Promise<T | { aviso: string; enCola: true }> {
+  const guardar = () => {
+    encolar(tipo, datos, resumen);
+    return {
+      aviso: "Sin conexión: guardado en el móvil. Se subirá solo al volver la línea.",
+      enCola: true as const,
+    };
+  };
+  if (sinLinea()) return guardar();
+  try {
+    return await accion();
+  } catch (error) {
+    if (!pareceCorteDeRed(error)) throw error;
+    return guardar();
+  }
+}
+
+/**
+ * Para las acciones que no se encolan: si lo que falló es la red, un mensaje
+ * que se entiende en vez de la pantalla de error.
+ */
+export async function sinConexion<T extends { error?: string; aviso?: string }>(
+  accion: () => Promise<T>,
+): Promise<{ error?: string; aviso?: string }> {
+  if (sinLinea()) return { error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." };
+  try {
+    return await accion();
+  } catch (error) {
+    if (!pareceCorteDeRed(error)) throw error;
+    return { error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." };
+  }
+}
+
 function aLaCola(
   tipo: TipoDeApunte,
   formData: FormData,

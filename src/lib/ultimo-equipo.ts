@@ -45,20 +45,7 @@ export async function getUltimoEquipo(
     where: { id: competitionId },
     select: { estilo: true },
   });
-  if (competicion?.estilo === "soullink") {
-    const equipo = await getEquipoActual(participantId);
-    return equipo.length
-      ? {
-          deDonde: "Equipo y PC",
-          pokemon: equipo.map((p) => ({
-            species: p.species,
-            nickname: p.nickname,
-            boxImage: p.image,
-            detailImage: null,
-          })),
-        }
-      : null;
-  }
+  if (competicion?.estilo === "soullink") return delEquipoYPc(participantId);
 
   /**
    * **Primero el de la final.** Si jugó el cuadro, ese es el equipo con el que
@@ -101,7 +88,8 @@ export async function getUltimoEquipo(
       royale: { select: { matchday: { select: { position: true, label: true } } } },
     },
   });
-  if (!filas.length) return null;
+  // Sin combates con equipo (un solitario, o nadie los apuntó): el de la caja
+  if (!filas.length) return delEquipoYPc(participantId);
 
   const jornadaDe = (fila: (typeof filas)[number]) =>
     fila.match?.matchday ?? fila.royale?.matchday ?? null;
@@ -133,7 +121,23 @@ export async function getUltimoEquipo(
   const ultimo = [...porCombate.values()].sort(
     (a, b) => b.posicion - a.posicion,
   )[0];
-  if (!ultimo?.pokemon.length) return null;
+  if (!ultimo?.pokemon.length) return delEquipoYPc(participantId);
 
   return { deDonde: ultimo.label, pokemon: ultimo.pokemon };
+}
+
+/** El equipo que lleva ahora en Equipo y PC, si lleva alguno */
+async function delEquipoYPc(participantId: string): Promise<UltimoEquipo | null> {
+  const equipo = await getEquipoActual(participantId);
+  return equipo.length
+    ? {
+        deDonde: "Equipo y PC",
+        pokemon: equipo.map((p) => ({
+          species: p.species,
+          nickname: p.nickname,
+          boxImage: p.image,
+          detailImage: null,
+        })),
+      }
+    : null;
 }

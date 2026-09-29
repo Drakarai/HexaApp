@@ -432,7 +432,7 @@ export default async function DashboardPage() {
               const rotos = equipos.vinculos.filter((v) => v.miembros.some((m) => m.muerta)).length;
               return rotos ? `vivos · ${rotos} rotos` : "Parejas vivas";
             })()}
-            href="/soul-link"
+            href="/equipo"
           />
         ) : progreso ? (
           <StatCard
@@ -471,7 +471,7 @@ export default async function DashboardPage() {
             </h2>
             {progreso ? null : (
               <Link
-                href={equipos ? "/soul-link" : "/puntos"}
+                href={equipos ? "/equipo" : "/puntos"}
                 className="text-xs text-brand-400 hover:underline"
               >
                 {equipos ? "Equipo y PC →" : "Ver detalle →"}

@@ -807,6 +807,8 @@ model LockeRequest {
    * grupo, y quien lo pide se lleva además el permiso de organizador para dar
    * de alta a sus amigos.
    */
+  /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero */
+  estilo        String    @default("competitivo")
   maxPlayers    Int       @default(1)
   /**
    * "PENDIENTE" | "ACEPTADA" | "RECHAZADA"

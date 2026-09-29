@@ -9,7 +9,7 @@ import { juegoPorId, leerJuego } from "@/lib/juegos";
 import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
 import { PALETTE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
-import { JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
+import { JUGADORES_DEL_SOUL_LINK, JUGADORES_MAXIMOS, leerEstilo } from "@/lib/perfiles-de-locke";
 import type { FormState } from "@/app/actions/auth";
 
 /**
@@ -78,12 +78,20 @@ export async function pedirLockeAction(
   const maxPlayers = Number.isFinite(pedidos)
     ? Math.min(JUGADORES_MAXIMOS, Math.max(1, Math.trunc(pedidos)))
     : 1;
+  // El estilo solo tiene sentido con compañía: uno solo es en solitario
+  const estilo = maxPlayers > 1 ? leerEstilo(String(formData.get("estilo") ?? "")) : "competitivo";
+  if (estilo === "soullink" && maxPlayers > JUGADORES_DEL_SOUL_LINK.maximo) {
+    return {
+      error: `Un Soul Link es de ${JUGADORES_DEL_SOUL_LINK.minimo} a ${JUGADORES_DEL_SOUL_LINK.maximo} jugadores.`,
+    };
+  }
 
   await prisma.lockeRequest.create({
     data: {
       userId: user.id,
       name,
       maxPlayers,
+      estilo,
       gameId: juego.gameId,
       game: juego.game,
       juegoNoOficial: juego.juegoNoOficial,
@@ -139,6 +147,7 @@ export async function aceptarSolicitudAction(formData: FormData) {
       modality: solicitud.modality,
       description: solicitud.description,
       maxPlayers: solicitud.maxPlayers,
+      estilo: solicitud.estilo,
       createdById: admin.id,
       participants: {
         create: {

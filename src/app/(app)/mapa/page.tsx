@@ -66,7 +66,7 @@ export default async function MapaPage({
         {competition.juegoNoOficial ? (
           <EmptyState
             title="Este juego no tiene mapa de capturas"
-            hint="Es un juego no oficial hecho desde cero, sin un juego de base del que sacar el mapa. Si se parece a una región, en Ediciones se le puede poner como base."
+            hint="Es un juego no oficial hecho desde cero, sin un juego de base del que sacar el mapa. Las capturas se apuntan en Equipo y PC, escribiendo la ruta; y si se parece a una región, en Ediciones se le puede poner como base."
           />
         ) : (
           <EmptyState

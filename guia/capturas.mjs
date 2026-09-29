@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
+import { aLocke, SOUL_LINK } from "./datos-soullink.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -112,6 +113,8 @@ async function foto(pagina, nombre, ruta, prepara) {
 {
   const { contexto, pagina } = await abrirMovil();
   await entrar(pagina, "draka");
+  // El Soul Link es el locke más nuevo: sin esto, las fotos saldrían de él
+  await aLocke(pagina, "Hexalocke 2");
 
   await foto(pagina, "resumen", "/");
   await foto(pagina, "menu", "/", async (p) => {
@@ -138,6 +141,13 @@ async function foto(pagina, nombre, ruta, prepara) {
     // Escrito tecla a tecla: rellenar el campo de golpe no abre la lista
     await especie.pressSequentially("Abr", { delay: 130 });
     await p.waitForTimeout(1800);
+  });
+
+  // El equipo y la caja de Draka, privados, y la ficha de uno
+  await foto(pagina, "equipo", "/equipo");
+  await foto(pagina, "equipo-ficha", "/equipo", async (p) => {
+    await p.locator('button[title*="Sentret"]').first().click();
+    await p.waitForTimeout(900);
   });
 
   await foto(pagina, "muertes", "/muertes");
@@ -195,6 +205,26 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await pagina.context().setOffline(false);
   await foto(pagina, "admin", "/admin");
+
+  // --- El Soul Link: los tableros de los dos, una ficha con su pareja y la portada
+  await aLocke(pagina, SOUL_LINK);
+  await foto(pagina, "soullink", "/equipo");
+  await foto(pagina, "soullink-ficha", "/equipo", async (p) => {
+    await p.locator('button[title*="Caterpie"]').first().click();
+    await p.waitForTimeout(900);
+  });
+  await foto(pagina, "soullink-portada", "/");
+  await foto(pagina, "soullink-vinculos", "/equipo", async (p) => {
+    await arriba(p, p.locator("h2", { hasText: "Vínculos" }).first(), 90);
+  });
+  // Y el estilo de juego, en el formulario de la edición
+  await foto(pagina, "estilo", "/competiciones", async (p) => {
+    const bloque = p.locator("details", { hasText: "Editar datos" }).first();
+    await bloque.locator("summary").first().click();
+    await p.waitForTimeout(600);
+    await arriba(p, bloque.locator("text=Estilo de juego").first(), 140);
+  });
+  await aLocke(pagina, "Hexalocke 2");
 
   // --- Para la guía de quien lleva un locke
   await foto(pagina, "bolsas-todos", "/bolsa/todas");
@@ -263,6 +293,7 @@ async function foto(pagina, nombre, ruta, prepara) {
 {
   const { contexto, pagina } = await abrirMovil();
   await entrar(pagina, "hector");
+  await aLocke(pagina, "Hexalocke 2");
   /**
    * Dos fotos de la misma visita: la regla resaltada tal y como te la
    * encuentras, y abierto lo que ha cambiado. En la misma, porque al entrar la
@@ -292,6 +323,7 @@ async function foto(pagina, nombre, ruta, prepara) {
   const pagina = await contexto.newPage();
   pagina.on("dialog", (aviso) => aviso.accept());
   await entrar(pagina, "draka");
+  await aLocke(pagina, "Hexalocke 2");
 
   await pagina.goto(BASE + "/admin/mapas?region=johto", { waitUntil: "domcontentloaded" });
   await pagina.waitForTimeout(1600);

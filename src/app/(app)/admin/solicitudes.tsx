@@ -25,6 +25,7 @@ export function SolicitudesPendientes({
     game: string | null;
     juegoNoOficial: boolean;
     maxPlayers: number;
+    estilo: string;
     modality: string | null;
     description: string | null;
     createdAt: Date;
@@ -68,7 +69,7 @@ export function SolicitudesPendientes({
                     : ""}
                   {solicitud.modality ? ` · ${solicitud.modality}` : ""}
                   {solicitud.maxPlayers > 1
-                    ? ` · para ${solicitud.maxPlayers} jugadores`
+                    ? ` · ${solicitud.estilo === "soullink" ? "Soul Link " : ""}para ${solicitud.maxPlayers} jugadores`
                     : " · en solitario"}
                 </p>
               </div>

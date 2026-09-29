@@ -82,7 +82,7 @@ export function ResumenSoulLink({
       {equipos.tableros.every((t) => !t.vivos.length) ? (
         <p className="mt-3 text-sm text-slate-400">
           Todavía no hay capturas.{" "}
-          <Link href="/soul-link?apuntar=1" className="text-brand-400 hover:underline">
+          <Link href="/equipo?apuntar=1" className="text-brand-400 hover:underline">
             Apunta la primera
           </Link>
           .

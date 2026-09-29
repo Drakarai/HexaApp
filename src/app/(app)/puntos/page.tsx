@@ -45,7 +45,7 @@ export default async function PointsPage() {
   const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const porJornadas = perfil.victoria === "jornadas";
   // En un Soul Link no hay puntos: lo que hace de "tabla" es el Equipo y PC
-  if (perfil.cooperativo) redirect("/soul-link");
+  if (perfil.cooperativo) redirect("/equipo");
   /**
    * En solitario esta pantalla no está en el menú, pero se puede llegar por la
    * dirección: en vez de una clasificación de una fila, enseña la partida.

@@ -56,6 +56,43 @@ export default async function DeathsPage({
     getZonasMasMortiferas(competition.id),
   ]);
   const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));
+  const myParticipantId = participants.find((p) => p.userId === user.id)?.id ?? null;
+
+  /**
+   * Los pokémon vivos de la caja que se pueden dar por muertos desde aquí. En
+   * un Soul Link, los de todos si administras (como en Equipo y PC); en los
+   * demás lockes, **solo los tuyos**: la caja es privada y esta lista no puede
+   * enseñarle a nadie lo que llevan los demás.
+   */
+  const deQuien =
+    competition.estilo === "soullink" && canManage
+      ? participants.map((p) => p.id)
+      : myParticipantId
+        ? [myParticipantId]
+        : [];
+  const capturasQueCaen = deQuien.length
+    ? (
+        await prisma.capture.findMany({
+          where: { participantId: { in: deQuien }, failed: false, deathId: null },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true,
+            participantId: true,
+            species: true,
+            nickname: true,
+            sitio: true,
+            zone: { select: { name: true } },
+          },
+        })
+      ).map((c) => {
+        const sitio = c.zone?.name ?? c.sitio;
+        return {
+          id: c.id,
+          participantId: c.participantId,
+          rotulo: `${c.nickname ? `${c.nickname} (${c.species})` : c.species}${sitio ? ` · ${sitio}` : ""}`,
+        };
+      })
+    : [];
 
   const selected = participants.find((participant) => participant.id === jugador);
   const myParticipant = participants.find(
@@ -191,14 +228,15 @@ export default async function DeathsPage({
         subtitle="La caja de los caídos. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
       />
 
-      {/* Apuntada aquí, la baja no sabe de vínculos: la pareja no cae sola */}
+      {/* Escrita a mano, una baja no sabe de vínculos: la pareja no cae sola */}
       {competition.estilo === "soullink" ? (
         <p className="mb-5 rounded-xl border border-brand-400/30 bg-brand-600/10 px-3 py-2 text-sm text-slate-300">
-          En un Soul Link, las bajas se marcan mejor desde{" "}
-          <Link href="/soul-link" className="text-brand-300 hover:underline">
+          En un Soul Link, al registrar una baja elige el pokémon <strong>de la caja</strong>:
+          así cae también su pareja y se puede deshacer desde{" "}
+          <Link href="/equipo" className="text-brand-300 hover:underline">
             Equipo y PC
           </Link>
-          : así cae también su pareja y se puede deshacer.
+          .
         </p>
       ) : null}
 
@@ -246,6 +284,8 @@ export default async function DeathsPage({
             }
             lockedToParticipantId={canManage ? null : (myParticipant?.id ?? null)}
             zonas={zonas}
+            capturas={capturasQueCaen}
+            enSoulLink={competition.estilo === "soullink"}
             abiertoDeEntrada={apuntar === "1"}
           />
         </div>

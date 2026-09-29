@@ -9,6 +9,7 @@ import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
+import { capturaQuePuedoTocar, darPorMuerto } from "@/lib/caja-servidor";
 
 /**
  * El sitio del formulario: o una zona del mapa, o texto libre, nunca las dos.
@@ -74,6 +75,27 @@ export async function createDeathAction(
     await assertCanActForParticipant(participantId);
   } catch (error) {
     return { error: (error as Error).message };
+  }
+
+  /**
+   * Si se eligió **de la caja**, la baja sale de esa captura: su especie, su
+   * mote y su ruta, y en un Soul Link se lleva a su pareja. Es la misma caída
+   * que la de Equipo y PC (y se deshace desde allí); antes, apuntada aquí, la
+   * pareja seguía viva.
+   */
+  const captureId = String(formData.get("captureId") ?? "").trim();
+  if (captureId) {
+    try {
+      const captura = await capturaQuePuedoTocar(captureId);
+      if (captura.participantId !== participantId) {
+        return { error: "Ese pokémon no es de la caja de ese jugador." };
+      }
+      const aviso = await darPorMuerto(captura, String(formData.get("cause") ?? ""));
+      refrescarBajas();
+      return { success: aviso };
+    } catch (error) {
+      return { error: (error as Error).message };
+    }
   }
 
   const species = String(formData.get("species") ?? "").trim();

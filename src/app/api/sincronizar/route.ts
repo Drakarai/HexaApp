@@ -5,6 +5,12 @@ import { apuntarCapturaAction } from "@/app/actions/mapas";
 import { createDeathAction } from "@/app/actions/deaths";
 import { createNoteAction } from "@/app/actions/notes";
 import { toggleGymClearAction } from "@/app/actions/level-caps";
+import {
+  apuntarEnCajaAction,
+  darPorMuertoAction,
+  evolucionarAction,
+  moverPokemonAction,
+} from "@/app/actions/equipo-y-caja";
 
 /**
  * La puerta por la que entra lo que se apuntó sin conexión.
@@ -156,6 +162,39 @@ async function ejecutar(tipo: string, formData: FormData): Promise<string | null
       // La acción vuelve a comprobar los permisos, que es lo que importa
       await toggleGymClearAction(formData);
       return null;
+    }
+
+    // Los del Equipo y PC: las mismas acciones, con sus mismos permisos
+    case "caja": {
+      const estado = await apuntarEnCajaAction(null, formData);
+      return estado?.error ?? null;
+    }
+
+    case "movimiento": {
+      const hueco = String(formData.get("hueco") ?? "");
+      const lugar = String(formData.get("lugar") ?? "");
+      const estado = await moverPokemonAction({
+        captureId: String(formData.get("captureId") ?? ""),
+        lugar: lugar === "equipo" ? "equipo" : "caja",
+        hueco: hueco === "" ? null : Number(hueco),
+      });
+      return estado.error ?? null;
+    }
+
+    case "evolucion": {
+      const estado = await evolucionarAction({
+        captureId: String(formData.get("captureId") ?? ""),
+        pokemonId: Number(formData.get("pokemonId") ?? 0),
+      });
+      return estado.error ?? null;
+    }
+
+    case "caida": {
+      const estado = await darPorMuertoAction({
+        captureId: String(formData.get("captureId") ?? ""),
+        causa: String(formData.get("causa") ?? ""),
+      });
+      return estado.error ?? null;
     }
 
     default:

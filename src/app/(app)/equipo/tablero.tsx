@@ -24,6 +24,7 @@ import {
   moverPokemonAction,
   vincularAction,
 } from "@/app/actions/equipo-y-caja";
+import { directaConCola, sinConexion } from "@/lib/acciones-sin-conexion";
 
 /**
  * El equipo y la caja de cada uno, a la vista de todos.
@@ -169,9 +170,17 @@ function Tablero({
       return;
     }
     setMovidos(new Map(resultado.posiciones.map((p) => [p.id, { lugar: p.lugar, hueco: p.hueco }])));
+    const quien = vivos.find((p) => p.id === id);
     empezar(async () => {
-      const respuesta = await moverPokemonAction({ captureId: id, ...destino });
-      if (respuesta.error) {
+      // Sin línea se queda en la cola y la casilla, movida, hasta que suba
+      const respuesta = await directaConCola(
+        () => moverPokemonAction({ captureId: id, ...destino }),
+        "movimiento",
+        { captureId: id, lugar: destino.lugar, hueco: String(destino.hueco) },
+        `${quien?.nickname ?? quien?.species ?? "Pokémon"} → ${destino.lugar === "equipo" ? "equipo" : "caja"}`,
+      );
+      if ("enCola" in respuesta) onAviso({ tipo: "ok", texto: respuesta.aviso });
+      else if (respuesta.error) {
         setMovidos(null);
         onAviso({ tipo: "error", texto: respuesta.error });
       }
@@ -216,7 +225,9 @@ function Tablero({
             title={`Deshacer: ${tablero.deshacer}`}
             onClick={() =>
               empezar(async () => {
-                const respuesta = await deshacerEnCajaAction({ participantId: tablero.participantId });
+                const respuesta = await sinConexion(() =>
+                  deshacerEnCajaAction({ participantId: tablero.participantId }),
+                );
                 onAviso(
                   respuesta.error
                     ? { tipo: "error", texto: respuesta.error }
@@ -711,7 +722,8 @@ function Ficha({
     { cerrar = false, ok }: { cerrar?: boolean; ok?: string } = {},
   ) {
     empezar(async () => {
-      const respuesta = await accion();
+      // Lo que no se encola avisa de que hace falta línea en vez de romperse
+      const respuesta = await sinConexion(accion);
       if (respuesta.error) {
         onAviso({ tipo: "error", texto: respuesta.error });
         return;
@@ -859,11 +871,17 @@ function Ficha({
                 onClick={() =>
                   lanzar(
                     () =>
-                      moverPokemonAction({
-                        captureId: pokemon.id,
-                        lugar: enEquipo ? "caja" : "equipo",
-                        hueco: null,
-                      }),
+                      directaConCola(
+                        () =>
+                          moverPokemonAction({
+                            captureId: pokemon.id,
+                            lugar: enEquipo ? "caja" : "equipo",
+                            hueco: null,
+                          }),
+                        "movimiento",
+                        { captureId: pokemon.id, lugar: enEquipo ? "caja" : "equipo", hueco: "" },
+                        `${(pokemon.nickname ?? pokemon.species)} → ${enEquipo ? "caja" : "equipo"}`,
+                      ),
                     { ok: enEquipo ? "A la caja." : "Al equipo." },
                   )
                 }
@@ -884,7 +902,13 @@ function Ficha({
                       disabled={pendiente}
                       onClick={() =>
                         lanzar(() =>
-                          evolucionarAction({ captureId: pokemon.id, pokemonId: opcion.pokemonId }),
+                          directaConCola(
+                            () =>
+                              evolucionarAction({ captureId: pokemon.id, pokemonId: opcion.pokemonId }),
+                            "evolucion",
+                            { captureId: pokemon.id, pokemonId: String(opcion.pokemonId) },
+                            `${(pokemon.nickname ?? pokemon.species)} → ${opcion.rotulo}`,
+                          ),
                         )
                       }
                     >
@@ -957,7 +981,16 @@ function Ficha({
                         .join(" y ")}. Se puede deshacer.`
                     : `¿${pokemon.nickname ?? pokemon.species} ha caído? Se puede deshacer.`;
                   if (!window.confirm(pregunta)) return;
-                  lanzar(() => darPorMuertoAction({ captureId: pokemon.id, causa }), { cerrar: true });
+                  lanzar(
+                    () =>
+                      directaConCola(
+                        () => darPorMuertoAction({ captureId: pokemon.id, causa }),
+                        "caida",
+                        { captureId: pokemon.id, causa },
+                        `${(pokemon.nickname ?? pokemon.species)}${causa ? ` · ${causa}` : ""}`,
+                      ),
+                    { cerrar: true },
+                  );
                 }}
               >
                 <Icono emoji="💀" /> Dar por muerto

@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   crearLockeEnSolitarioAction,
   pedirLockeAction,
@@ -11,6 +11,7 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
 import { formatDate } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { ESTILOS, JUGADORES_DEL_SOUL_LINK } from "@/lib/perfiles-de-locke";
 
 /**
  * Abrir un locke en solitario.
@@ -36,9 +37,13 @@ export function LockeEnSolitarioForm({
     null,
   );
   const formRef = useRef<HTMLFormElement>(null);
+  const [cuantos, setCuantos] = useState(1);
 
   useEffect(() => {
-    if (state?.success) formRef.current?.reset();
+    if (state?.success) {
+      formRef.current?.reset();
+      setCuantos(1);
+    }
   }, [state]);
 
   return (
@@ -92,7 +97,12 @@ export function LockeEnSolitarioForm({
           {puedeCrearDirecto ? null : (
             <div>
               <label className="label">Cuántos vais a jugar</label>
-              <select name="maxPlayers" className="input" defaultValue="1">
+              <select
+                name="maxPlayers"
+                className="input"
+                value={cuantos}
+                onChange={(evento) => setCuantos(Number(evento.target.value))}
+              >
                 <option value="1">Yo solo</option>
                 {[2, 3, 4, 5, 6, 7, 8].map((cuantos) => (
                   <option key={cuantos} value={cuantos}>
@@ -102,6 +112,18 @@ export function LockeEnSolitarioForm({
               </select>
             </div>
           )}
+          {/* Con compañía se puede pedir cooperativo; un Soul Link es de 2 a 4 */}
+          {!puedeCrearDirecto && cuantos > 1 ? (
+            <div>
+              <label className="label">Cómo se juega</label>
+              <select name="estilo" className="input" defaultValue="competitivo">
+                <option value="competitivo">{ESTILOS.competitivo.nombre}: unos contra otros</option>
+                {cuantos <= JUGADORES_DEL_SOUL_LINK.maximo ? (
+                  <option value="soullink">{ESTILOS.soullink.nombre}: cooperativo y vinculado</option>
+                ) : null}
+              </select>
+            </div>
+          ) : null}
         </div>
         <div>
           <label className="label">

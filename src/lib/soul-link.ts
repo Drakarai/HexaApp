@@ -60,6 +60,12 @@ export type EquiposDelLocke = {
 export async function getEquiposDelLocke(
   competicion: { id: string; gameId: string | null; juegoNoOficial: boolean },
   quienMira: { userId: string; gestiona: boolean; soloLectura: boolean },
+  /**
+   * Solo el tablero de este jugador. Es lo que se usa fuera del Soul Link,
+   * donde la caja es privada: lo de los demás **ni se lee**, que es la forma
+   * de que no se pueda colar en la página.
+   */
+  soloDe?: string,
 ): Promise<EquiposDelLocke> {
   /**
    * La generación manda en los tipos (Clefairy es Normal en Johto) y en qué
@@ -72,12 +78,16 @@ export async function getEquiposDelLocke(
 
   const [jugadores, capturas, cambios] = await Promise.all([
     prisma.participant.findMany({
-      where: { competitionId: competicion.id },
+      where: { competitionId: competicion.id, ...(soloDe ? { id: soloDe } : {}) },
       orderBy: { joinedAt: "asc" },
       select: { id: true, userId: true, displayName: true, color: true, retiredAt: true },
     }),
     prisma.capture.findMany({
-      where: { participant: { competitionId: competicion.id }, failed: false },
+      where: {
+        participant: { competitionId: competicion.id },
+        failed: false,
+        ...(soloDe ? { participantId: soloDe } : {}),
+      },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
@@ -98,7 +108,10 @@ export async function getEquiposDelLocke(
     }),
     // El último cambio de cada uno, para el rótulo del botón de deshacer
     prisma.cambioDeCaja.findMany({
-      where: { participant: { competitionId: competicion.id } },
+      where: {
+        participant: { competitionId: competicion.id },
+        ...(soloDe ? { participantId: soloDe } : {}),
+      },
       orderBy: { createdAt: "desc" },
       distinct: ["participantId"],
       select: { participantId: true, descripcion: true },

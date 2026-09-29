@@ -18,7 +18,16 @@ const LLAVE = "hexaapp.cola";
 /** Para que los demás componentes se enteren sin recargar nada */
 const EVENTO = "hexaapp:cola";
 
-export type TipoDeApunte = "captura" | "baja" | "gimnasio" | "nota";
+export type TipoDeApunte =
+  | "captura"
+  | "baja"
+  | "gimnasio"
+  | "nota"
+  // Los del Equipo y PC: apuntar, mover, evolucionar y dar por muerto
+  | "caja"
+  | "movimiento"
+  | "evolucion"
+  | "caida";
 
 export type Apunte = {
   /** Lo genera el móvil y es lo que evita que se suba dos veces */
@@ -38,6 +47,10 @@ export const TIPOS: Record<TipoDeApunte, { nombre: string; icono: string }> = {
   baja: { nombre: "Baja", icono: "💀" },
   gimnasio: { nombre: "Gimnasio", icono: "🎯" },
   nota: { nombre: "Nota", icono: "🗒️" },
+  caja: { nombre: "Captura", icono: "📦" },
+  movimiento: { nombre: "Movimiento", icono: "🔁" },
+  evolucion: { nombre: "Evolución", icono: "🧬" },
+  caida: { nombre: "Baja", icono: "💀" },
 };
 
 function hayNavegador() {

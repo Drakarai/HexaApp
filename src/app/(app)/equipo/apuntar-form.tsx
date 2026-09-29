@@ -1,12 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import { apuntarEnCajaAction } from "@/app/actions/equipo-y-caja";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { SitioPicker } from "@/components/sitio-picker";
 import type { ZonaParaElegir } from "@/lib/mapas";
+import { conCola } from "@/lib/acciones-sin-conexion";
+import { Pendientes } from "@/components/pendientes";
 
 export type SueltoParaVincular = {
   id: string;
@@ -30,6 +32,7 @@ export function ApuntarEnCaja({
   sueltos,
   esSoulLink,
   abierto,
+  competitionId,
 }: {
   zonas: ZonaParaElegir[];
   /** A quién se le puede apuntar: uno mismo o, quien administra, cualquiera */
@@ -38,8 +41,28 @@ export function ApuntarEnCaja({
   sueltos: SueltoParaVincular[];
   esSoulLink: boolean;
   abierto: boolean;
+  /** Para la cola sin conexión: lo apuntado va a este locke aunque se cambie */
+  competitionId: string;
 }) {
-  const [state, formAction] = useActionState<FormState, FormData>(apuntarEnCajaAction, null);
+  /**
+   * Una captura se apunta donde se juega, que es donde falta la cobertura: sin
+   * línea se queda en el móvil y sube sola, como las del mapa.
+   */
+  const apuntar = useMemo(
+    () =>
+      conCola(
+        apuntarEnCajaAction,
+        "caja",
+        (formData) => {
+          const especie = String(formData.get("species") ?? "").trim() || "Pokémon";
+          const ruta = String(formData.get("location") ?? "").trim();
+          return ruta ? `${especie} · ${ruta}` : especie;
+        },
+        () => ({ competitionId }),
+      ),
+    [competitionId],
+  );
+  const [state, formAction] = useActionState<FormState, FormData>(apuntar, null);
   const [para, setPara] = useState(miId ?? jugadores[0]?.id ?? "");
   // Se remonta tras guardar para vaciar el buscador de especie, que lleva su estado
   const [vuelta, setVuelta] = useState(0);
@@ -117,6 +140,8 @@ export function ApuntarEnCaja({
         <FormMessage state={state} />
         <SubmitButton>Apuntar</SubmitButton>
       </form>
+
+      <Pendientes tipo="caja" />
     </details>
   );
 }

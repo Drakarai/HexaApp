@@ -41,8 +41,10 @@ const S = {
   sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
-  // Solo en un Soul Link: el equipo y la caja de todos, con sus vínculos
-  soulLink: { href: "/soul-link", label: "Equipo y PC", icon: "🔗" },
+  // En un Soul Link, el equipo y la caja de todos, con sus vínculos; en los
+  // demás lockes, los tuyos y privados (ver `equipo`, en "Lo mío")
+  soulLink: { href: "/equipo", label: "Equipo y PC", icon: "🔗" },
+  equipo: { href: "/equipo", label: "Equipo y PC", icon: "📦" },
   // Va con las ediciones y no con los combates: no es de este locke, es de
   // todos los que esa persona puede abrir
   palmares: { href: "/palmares", label: "Palmarés", icon: "👑" },
@@ -163,13 +165,15 @@ export default async function AppLayout({
       label: "Apuntar una captura",
       hint: "Busca la ruta y apunta lo que salió",
     });
-  } else if (!archivadaParaMi && yo && perfil.cooperativo) {
-    // Sin mapa, en un Soul Link las capturas se apuntan en Equipo y PC
+  } else if (!archivadaParaMi && yo) {
+    // Sin mapa (un fangame desde cero), las capturas se apuntan en Equipo y PC
     atajos.push({
-      href: "/soul-link?apuntar=1",
-      icon: "🔗",
+      href: "/equipo?apuntar=1",
+      icon: perfil.cooperativo ? "🔗" : "📦",
       label: "Apuntar una captura",
-      hint: "Va a tu equipo o a tu caja, y se vincula por la ruta",
+      hint: perfil.cooperativo
+        ? "Va a tu equipo o a tu caja, y se vincula por la ruta"
+        : "Va a tu equipo o a tu caja",
     });
   }
   if (!archivadaParaMi && yo) {
@@ -283,9 +287,15 @@ export default async function AppLayout({
             children: !yo
               ? [S.perfil, S.guia]
               : // La bolsa es de los premios que se reparten en un locke de
-                // varios: en solitario no la llena nadie
-                grupo.children.filter(
-                  (item) => !(perfil.enSolitario && item.href === S.bolsa.href),
+                // varios: en solitario no la llena nadie. Y el equipo y la
+                // caja van aquí, al lado del mapa, cuando son privados: en
+                // un Soul Link están en "La edición", a la vista de todos
+                grupo.children.flatMap((item) =>
+                  perfil.enSolitario && item.href === S.bolsa.href
+                    ? []
+                    : item.href === S.mapa.href && !perfil.cooperativo
+                      ? [item, S.equipo]
+                      : [item],
                 ),
           },
         ]

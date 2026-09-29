@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
 import { apuntarLockesDeAntes } from "./datos-palmares.mjs";
+import { montarSoulLink } from "./datos-soullink.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -383,6 +384,9 @@ console.log("cuenta sin locke: lara");
 
 // --- Lockes de antes, para las pestañas y la línea a mano del palmarés
 await apuntarLockesDeAntes(p);
+
+// --- El equipo de Draka en Equipo y PC y un Soul Link con Héctor
+await montarSoulLink(p);
 
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");

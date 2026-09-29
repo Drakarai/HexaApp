@@ -465,7 +465,7 @@ export async function apuntarCapturaAction(
   await vincularCapturaNueva(nueva.id);
 
   revalidatePath("/mapa");
-  revalidatePath("/soul-link");
+  revalidatePath("/equipo");
   return {
     success: fallado
       ? `${species} apuntado como fallado.`
@@ -485,5 +485,5 @@ export async function borrarCapturaAction(formData: FormData) {
     where: { id, participantId: participante.id },
   });
   revalidatePath("/mapa");
-  revalidatePath("/soul-link");
+  revalidatePath("/equipo");
 }

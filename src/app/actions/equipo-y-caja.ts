@@ -1,20 +1,13 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import {
-  assertCanActForParticipant,
-  getActiveCompetition,
-  getMyParticipant,
-} from "@/lib/competition";
+import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
 import { generacionDelJuego } from "@/lib/juegos";
 import { evolucionesDe } from "@/lib/evoluciones";
 import {
-  companerasDe,
   mover,
   sePuedenVincular,
   sitioParaUnaNueva,
@@ -22,12 +15,23 @@ import {
   type Lugar,
 } from "@/lib/equipo-y-caja";
 import { capturasParaVincular, vincularCapturaNueva } from "@/lib/soul-link";
+import {
+  apuntarCambio,
+  assertPuedeTocarLaCaja,
+  capturaQuePuedoTocar,
+  darPorMuerto,
+  fotos,
+  nombreDe,
+  refrescarCaja as refrescar,
+  type Foto,
+} from "@/lib/caja-servidor";
 import type { FormState } from "@/app/actions/auth";
 
 /**
- * Las acciones del Equipo y PC. **Cada una comprueba en el servidor** que quien
- * la lanza es el dueño de ese pokémon o administra el locke
- * (`assertCanActForParticipant`), que ocultar un botón no protege nada. Las de
+ * Las acciones del Equipo y PC. **Cada una comprueba en el servidor** quién
+ * puede tocar esa caja (`assertPuedeTocarLaCaja`: en un Soul Link su dueño o
+ * quien administra; en los demás lockes, solo su dueño), que ocultar un botón
+ * no protege nada. Las de
  * mover se llaman directamente desde el navegador, sin formulario, porque el
  * arrastre ya ha movido la casilla y solo falta guardarlo.
  *
@@ -36,92 +40,6 @@ import type { FormState } from "@/app/actions/auth";
  */
 
 type Resultado = { error?: string; aviso?: string };
-
-/** Los campos de una captura que se pueden deshacer */
-const CAMPOS = {
-  id: true,
-  lugar: true,
-  hueco: true,
-  species: true,
-  pokemonId: true,
-  vinculo: true,
-  deathId: true,
-  image: true,
-} as const;
-type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }>;
-
-async function fotos(ids: string[]): Promise<Foto[]> {
-  if (!ids.length) return [];
-  return prisma.capture.findMany({ where: { id: { in: ids } }, select: CAMPOS });
-}
-
-/** Cuántos cambios se guardan por jugador: más atrás nadie se acuerda */
-const CAMBIOS_GUARDADOS = 20;
-
-async function apuntarCambio(
-  participantId: string,
-  descripcion: string,
-  antes: Foto[],
-  muertes: string[] = [],
-) {
-  if (!antes.length && !muertes.length) return;
-  await prisma.cambioDeCaja.create({
-    data: { participantId, descripcion, antes: antes as unknown as Prisma.InputJsonValue, muertes },
-  });
-  const sobran = await prisma.cambioDeCaja.findMany({
-    where: { participantId },
-    orderBy: { createdAt: "desc" },
-    skip: CAMBIOS_GUARDADOS,
-    select: { id: true },
-  });
-  if (sobran.length) {
-    await prisma.cambioDeCaja.deleteMany({ where: { id: { in: sobran.map((c) => c.id) } } });
-  }
-}
-
-/** Lo que cambia cuando cambia el equipo, la caja o una baja */
-function refrescar(conBajas = false) {
-  revalidatePath("/soul-link");
-  revalidatePath("/");
-  if (conBajas) {
-    revalidatePath("/muertes");
-    revalidatePath("/mapa");
-    revalidatePath("/hall-de-la-fama");
-    revalidatePath("/actividad");
-    revalidatePath("/jugador", "layout");
-  }
-}
-
-/**
- * La captura y su dueño, **con el permiso comprobado**. Si no es tuya y no
- * administras el locke, o la edición está archivada, salta el error.
- */
-async function capturaQuePuedoTocar(captureId: string) {
-  const captura = await prisma.capture.findUnique({
-    where: { id: captureId },
-    select: {
-      ...CAMPOS,
-      participantId: true,
-      nickname: true,
-      zoneId: true,
-      sitio: true,
-      failed: true,
-      participant: {
-        select: {
-          displayName: true,
-          competition: {
-            select: { id: true, estilo: true, gameId: true, juegoNoOficial: true },
-          },
-        },
-      },
-    },
-  });
-  if (!captura || captura.failed) throw new Error("Ese pokémon ya no está.");
-  await assertCanActForParticipant(captura.participantId);
-  return captura;
-}
-
-const nombreDe = (c: { nickname: string | null; species: string }) => c.nickname || c.species;
 
 async function conError(accion: () => Promise<Resultado | void>): Promise<Resultado> {
   try {
@@ -140,20 +58,28 @@ export async function apuntarEnCajaAction(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser();
-  const competicion = await getActiveCompetition();
+  /**
+   * El locke: el que diga el formulario o, si no dice ninguno, el que se está
+   * mirando. Lo primero es para la cola sin conexión, como en el mapa: lo
+   * apuntado en un locke va a ese locke aunque al subirlo se esté en otro.
+   */
+  const pedido = String(formData.get("competitionId") ?? "").trim();
+  const competicion = pedido
+    ? await prisma.competition.findUnique({ where: { id: pedido } })
+    : await getActiveCompetition();
   if (!competicion) return { error: "No hay ningún locke abierto." };
 
   /**
-   * Para quién: el suyo, salvo que quien apunta administre el locke y elija a
-   * otro (el que lleva el locke le apunta la captura al que no tiene el móvil
-   * a mano).
+   * Para quién: el suyo, salvo que en un Soul Link quien administra elija a
+   * otro (le apunta la captura al que no tiene el móvil a mano). En los demás
+   * lockes la caja es privada y solo la toca su dueño.
    */
   const elegido = String(formData.get("participantId") ?? "").trim();
   const yo = await getMyParticipant(competicion.id, user.id);
   const participantId = elegido || yo?.id;
   if (!participantId) return { error: "No juegas este locke, así que no tienes caja." };
   try {
-    const { participant } = await assertCanActForParticipant(participantId);
+    const { participant } = await assertPuedeTocarLaCaja(participantId);
     if (participant.competitionId !== competicion.id) {
       return { error: "Ese jugador no es de este locke." };
     }
@@ -331,74 +257,14 @@ export async function evolucionarAction(entrada: {
 // Caer
 // ---------------------------------------------------------------------------
 
-/**
- * Dar un pokémon por muerto. Va al cementerio como cualquier baja, y en un Soul
- * Link **se lleva a su pareja**: a las compañeras de su vínculo que sigan vivas
- * se les apunta la baja también, con la causa de que cayó la otra.
- */
+/** Dar un pokémon por muerto: ver `darPorMuerto` en lib/caja-servidor.ts */
 export async function darPorMuertoAction(entrada: {
   captureId: string;
   causa: string;
 }): Promise<Resultado> {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
-    if (captura.deathId) return { error: "Ya estaba en el cementerio." };
-    const { competition } = captura.participant;
-    const causa = entrada.causa.trim().slice(0, 200) || null;
-
-    const companeras =
-      competition.estilo === "soullink"
-        ? companerasDe(await capturasParaVincular(competition.id), captura.id).filter(
-            (c) => !c.muerta,
-          )
-        : [];
-    const todas = await prisma.capture.findMany({
-      where: { id: { in: [captura.id, ...companeras.map((c) => c.id)] } },
-      select: {
-        ...CAMPOS,
-        participantId: true,
-        nickname: true,
-        zoneId: true,
-        sitio: true,
-        participant: { select: { displayName: true } },
-      },
-    });
-    const foto = await fotos(todas.map((c) => c.id));
-
-    const muertes: string[] = [];
-    for (const c of todas) {
-      const esLaMisma = c.id === captura.id;
-      // La ilustración grande, como las bajas del cementerio; el sprite es el suyo
-      const sprites = c.pokemonId ? await descargarSprites(c.pokemonId, false) : null;
-      const baja = await prisma.death.create({
-        data: {
-          participantId: c.participantId,
-          species: c.species,
-          nickname: c.nickname,
-          cause: esLaMisma
-            ? causa
-            : `Vínculo: cayó ${nombreDe(captura)} de ${captura.participant.displayName}${causa ? ` (${causa})` : ""}`,
-          zoneId: c.zoneId,
-          location: c.sitio,
-          boxImage: c.image ?? sprites?.boxImage ?? null,
-          detailImage: sprites?.detailImage ?? null,
-        },
-        select: { id: true },
-      });
-      muertes.push(baja.id);
-      await prisma.capture.update({ where: { id: c.id }, data: { deathId: baja.id } });
-    }
-
-    await apuntarCambio(captura.participantId, `Dar por muerto a ${nombreDe(captura)}`, foto, muertes);
-    refrescar(true);
-    const otras = todas.filter((c) => c.id !== captura.id);
-    return {
-      aviso: otras.length
-        ? `F por ${nombreDe(captura)}. Con él cae ${otras
-            .map((c) => `${nombreDe(c)} de ${c.participant.displayName}`)
-            .join(" y ")}.`
-        : `F por ${nombreDe(captura)}.`,
-    };
+    return { aviso: await darPorMuerto(captura, entrada.causa ?? "") };
   });
 }
 
@@ -508,7 +374,7 @@ export async function borrarDeLaCajaAction(entrada: { captureId: string }): Prom
  */
 export async function deshacerEnCajaAction(entrada: { participantId: string }): Promise<Resultado> {
   return conError(async () => {
-    await assertCanActForParticipant(entrada.participantId);
+    await assertPuedeTocarLaCaja(entrada.participantId);
     const cambio = await prisma.cambioDeCaja.findFirst({
       where: { participantId: entrada.participantId },
       orderBy: { createdAt: "desc" },
