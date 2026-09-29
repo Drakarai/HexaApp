@@ -56,7 +56,7 @@ await p.waitForTimeout(900);
   if (await bloque.count()) {
     await bloque.locator("summary").first().click();
     await p.waitForTimeout(500);
-    await bloque.locator('select[name="gameId"]').first().selectOption("heartgold");
+    await bloque.locator('select[name="gameId"]').first().selectOption("heartgold-soulsilver");
     await p.waitForTimeout(400);
     // Y el logo, para que la portada salga con su emblema de fondo. Se pasa a
     // PNG aquí porque el navegador no sabe reducir un SVG a imagen

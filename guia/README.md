@@ -42,7 +42,8 @@ node guia/pdf.mjs        # 3. arma los dos PDF de public/
 `GUIA_VISTAS=/una/carpeta` deja además una foto de cada hoja, para repasarlas
 sin abrir el PDF.
 
-`datos.mjs` **no se puede pasar dos veces**: elige el juego y sube el logo de
+`datos.mjs` **no se puede pasar dos veces**: elige el juego (la pareja
+HeartGold y SoulSilver, para que salgan las versiones de cada uno) y sube el logo de
 la edición (`logo-ejemplo.svg`), rellena los mapas, apunta capturas, bajas y
 los tres primeros gimnasios de todos —en un orden que reparte las
 coronas—, pone un checkpoint de jornada tras cada uno (así la 3ª jornada es

@@ -57,19 +57,18 @@
 
   <h3>Lo nuevo para ti</h3>
   <div class="rejilla">
-    <div class="tarjeta"><b><i data-i="ScrollText"></i>Reglas que avisan</b>Cambiar una regla
-      con el locke en marcha se lo avisa a todos, con lo que ha cambiado. Página 4.</div>
-    <div class="tarjeta"><b><i data-i="ImagePlus"></i>El logo del locke</b>Súbele un emblema a
-      tu edición y saldrá de fondo en la portada. Página 5.</div>
-    <div class="tarjeta"><b><i data-i="Users"></i>Copiar jugadores</b>Al crear la siguiente
-      edición, si los de la anterior no caben, te avisa en vez de dejar fuera a nadie.
-      Página 14.</div>
-    <div class="tarjeta"><b><i data-i="Swords"></i>Checkpoints de jornada</b>Marca tras qué
-      gimnasios toca jornada y la portada le dirá a cada uno su rival. Página 7.</div>
-    <div class="tarjeta"><b><i data-i="Archive"></i>Archivar cierra</b>Una edición archivada
-      es de solo lectura para los jugadores; tú sigues pudiendo corregir. Página 14.</div>
-    <div class="tarjeta"><b><i data-i="Crosshair"></i>Plantillas al día</b>Los level caps de
-      fábrica traen los líderes y los pueblos con su nombre en español, el de los juegos.</div>
+    <div class="tarjeta"><b><i data-i="Shuffle"></i>Juegos en pareja</b>Rubí Omega y Zafiro
+      Alfa se eligen juntos, y las versiones se reparten a mano o al azar. Páginas 3 y 5.</div>
+    <div class="tarjeta"><b><i data-i="Gamepad2"></i>Fangames</b>Un juego no oficial, con su
+      nombre y el mapa y los level caps del juego en que se basa. Página 5.</div>
+    <div class="tarjeta"><b><i data-i="UserSearch"></i>Apuntar por usuario</b>A quien ya tiene
+      cuenta se le apunta escribiendo su usuario exacto. Página 3.</div>
+    <div class="tarjeta"><b><i data-i="Coffee"></i>Quién descansa</b>Con impares, la jornada lo
+      dice; y con uno solo en pie ya no deja crearla. Página 6.</div>
+    <div class="tarjeta"><b><i data-i="Trophy" class="oro"></i>Cómo se gana</b>El dualocke, por
+      mayoría de jornadas; y si solo queda uno, gana por abandono. Página 14.</div>
+    <div class="tarjeta"><b><i data-i="Archive"></i>Archivar lo que elijas</b>Al crear una
+      edición se marcan uno a uno los lockes que se archivan. Página 14.</div>
   </div>
 
   <div class="pie"><span>HexaApp · Guía del administrador</span><span>2</span></div>
@@ -85,7 +84,8 @@
   <div class="fila">
     <div class="texto">
       <ol class="pasos">
-        <li><strong>Añadir jugador</strong>: se elige su cuenta, se le pone el nombre con el
+        <li><strong>Añadir jugador</strong>: se elige su cuenta (o se escribe su usuario, si
+          ya la tenía), se le pone el nombre con el
           que saldrá en el locke, <strong>su versión del juego</strong> (en una pareja, una de
           las dos, o al azar) y su color.</li>
         <li>Marca <strong>Puede administrar esta competición</strong> a quien quieras que te
@@ -111,8 +111,7 @@
         igual que una retirada —no entra en emparejamientos, no cuenta para el MVP ni para
         el formato del final, y sus combates pendientes los gana el rival— pero se enseña
         como <strong>locke perdido</strong>, que no es lo mismo que dejarlo. Se puede
-        deshacer. Y <strong>no te quita el mando</strong>: si administras el locke, lo
-        sigues administrando aunque te wipeen o te retires. Faltaría más.</p>
+        deshacer, y <strong>no te quita el mando</strong> si administras el locke.</p>
 
       <h3>Dejar que juegue alguien que está fuera</h3>
       <p>La norma se puede saltar <strong>combate a combate</strong>. En el combate te sale
@@ -239,8 +238,12 @@
           Préstamo o Battle Royale.</li>
         <li>Debajo cabe una línea de <strong>condiciones</strong> para lo que el formato no
           dice: «monotipo agua», «sin objetos», «nivel 50».</li>
-        <li>Los emparejamientos salen solos. Puedes dejarlos o tocarlos.</li>
+        <li>Los emparejamientos salen solos. Puedes dejarlos o tocarlos. Con impares, la
+          cabecera de la jornada dice quién descansa.</li>
       </ol>
+      <p>Si solo queda uno en el locke, no deja crear jornada: ese ya ha ganado por
+        abandono. Y <strong>borrar una jornada</strong> se lleva con ella los puntos de sus
+        combates.</p>
 
       <div class="aviso">
         <strong>El tipo de combate cambia la pantalla</strong>
@@ -511,8 +514,8 @@
 <section class="pagina">
   <div class="cabecera"><span>Cerrar</span><strong>El final</strong></div>
   <h2>Cómo se acaba un locke</h2>
-  <p class="entradilla">Cuando están jugadas todas las jornadas se abre el final, y el cuadro
-    depende de <strong>cuánta gente siga jugando</strong>.</p>
+  <p class="entradilla">Cuando están creadas y jugadas todas las jornadas previstas se abre
+    el final, y el cuadro depende de <strong>cuánta gente siga jugando</strong>.</p>
 
   <div class="fila">
     <div class="texto">
@@ -530,6 +533,9 @@
         en uno —ganador, diferencia, fecha, notas y el <strong>enlace a la repetición</strong>—
         y la llave se la lleva quien gane dos. El tercero se apaga solo cuando ya no hace
         falta. Corregir un combate borra las rondas siguientes, no la suya.</p>
+      <p><strong>En un dualocke</strong> gana quien se lleve la mayoría de las jornadas; la
+        Jornada Final solo desempata un empate. Y si los demás se van, el que queda
+        <strong>gana por abandono</strong>, sin final.</p>
     </div>
     <figure class="foto">
       <div class="movil"><img src="img/final.jpg" alt="El cuadro final"></div>
@@ -540,8 +546,8 @@
   <h3>Y después</h3>
   <p>Con campeón, la portada pasa a <strong>Terminado</strong> y se abre el <strong>Hall de
     la fama</strong>: cada uno pone el equipo de seis con el que terminó. Luego, en
-    <em>Competiciones</em>, <strong>Archivar</strong>: el locke se queda entero como recuerdo
-    y deja sitio para el siguiente. Archivada, <strong>los jugadores ya no pueden apuntar
+    <em>Competiciones</em>, <strong>Archivar</strong> (o márcalo en la lista al crear el
+    siguiente): el locke se queda entero como recuerdo. Archivada, <strong>los jugadores ya no pueden apuntar
     nada</strong>; tú, que la administras, sí, por si hay que corregir algo. En el hall hay
     además una <strong>imagen con el resumen del locke</strong> para mandar al grupo.</p>
   <p>Al crear el siguiente puedes <strong>copiar de este</strong> las reglas, los level caps,
@@ -576,6 +582,11 @@
       <b>Quiero otro que administre conmigo</b>
       En su ficha de <em>Competiciones</em>, «Puede administrar esta competición». Tendrá lo
       mismo que tú dentro de este locke.
+    </div>
+    <div class="tarjeta">
+      <b>Jugamos un fangame</b>
+      En <em>Editar datos</em>, juego «No oficial»: su nombre y el juego en que se basa, o
+      ninguno para hacer los level caps a mano.
     </div>
     <div class="tarjeta">
       <b>Falta una zona en el mapa</b>
