@@ -8,7 +8,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit, EmptyState } from "@/components/ui";
 import { COMPETITION_STATUS } from "@/lib/constants";
-import { nombreDelJuego, versionesDelJuego } from "@/lib/juegos";
+import { nombreDelJuego, versionesDeLaEdicion } from "@/lib/juegos";
 import { cx, formatDate } from "@/lib/utils";
 import {
   deleteCompetitionAction,
@@ -153,7 +153,7 @@ export default async function CompetitionsPage() {
   const logoActual = active ? logos(active.id) : null;
 
   // Si el juego es una pareja, cada jugador lleva una de sus dos versiones
-  const versiones = versionesDelJuego(active?.gameId);
+  const versiones = active ? versionesDeLaEdicion(active) : [];
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
@@ -175,7 +175,7 @@ export default async function CompetitionsPage() {
               <h2 className="section-title">{active.name}</h2>
               <p className="muted mt-1">
                 {[
-                  nombreDelJuego(active.gameId, active.game),
+                  nombreDelJuego(active.gameId, active.game, active.juegoNoOficial),
                   active.modality,
                 ]
                   .filter(Boolean)
@@ -462,6 +462,7 @@ export default async function CompetitionsPage() {
                   name: active.name,
                   game: active.game,
                   gameId: active.gameId,
+                  juegoNoOficial: active.juegoNoOficial,
                   modality: active.modality,
                   description: active.description,
                   startingPoints: active.startingPoints,

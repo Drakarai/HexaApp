@@ -194,6 +194,7 @@ export function EditCompetitionForm({
     name: string;
     game: string | null;
     gameId: string | null;
+    juegoNoOficial: boolean;
     modality: string | null;
     description: string | null;
     startingPoints: number;
@@ -224,6 +225,7 @@ export function EditCompetitionForm({
             <JuegoPicker
               defaultGameId={competition.gameId}
               defaultGame={competition.game}
+              defaultNoOficial={competition.juegoNoOficial}
             />
           </div>
           <div>

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { juegoPorId, repartirVersiones, versionesDelJuego } from "@/lib/juegos";
+import { leerJuego, repartirVersiones, versionesDeLaEdicion } from "@/lib/juegos";
 import {
   esCreador,
   requireOrganizador,
@@ -90,10 +90,14 @@ export async function createCompetitionAction(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a la competición." };
 
-  const game = String(formData.get("game") ?? "").trim() || null;
-  // Solo se guarda si de verdad está en la lista: de ahí sale la región
-  const gameIdBruto = String(formData.get("gameId") ?? "").trim();
-  const gameId = juegoPorId(gameIdBruto) ? gameIdBruto : null;
+  // Oficial o no (un fangame): ver `leerJuego`. De `gameId` sale la región
+  const juego = leerJuego({
+    gameId: String(formData.get("gameId") ?? ""),
+    game: String(formData.get("game") ?? ""),
+    noOficial: String(formData.get("noOficial") ?? ""),
+  });
+  if ("error" in juego) return juego;
+  const { game, gameId, juegoNoOficial } = juego;
   const modality = String(formData.get("modality") ?? "").trim() || null;
   const description = String(formData.get("description") ?? "").trim() || null;
   const startingPoints = Number(formData.get("startingPoints") ?? 5);
@@ -146,6 +150,7 @@ export async function createCompetitionAction(
       slug: await uniqueSlug(name),
       game,
       gameId,
+      juegoNoOficial,
       modality,
       description,
       startingPoints: Math.trunc(startingPoints),
@@ -307,12 +312,20 @@ export async function updateCompetitionAction(
 
   const startingPoints = Number(formData.get("startingPoints") ?? 5);
 
+  const juego = leerJuego({
+    gameId: String(formData.get("gameId") ?? ""),
+    game: String(formData.get("game") ?? ""),
+    noOficial: String(formData.get("noOficial") ?? ""),
+  });
+  if ("error" in juego) return juego;
+
   await prisma.competition.update({
     where: { id: competitionId },
     data: {
       name,
-      game: String(formData.get("game") ?? "").trim() || null,
-      gameId: juegoPorId(String(formData.get("gameId") ?? "").trim())?.id ?? null,
+      game: juego.game,
+      gameId: juego.gameId,
+      juegoNoOficial: juego.juegoNoOficial,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
@@ -511,9 +524,9 @@ export async function repartirVersionesAction(formData: FormData) {
 
   const competition = await prisma.competition.findUnique({
     where: { id: competitionId },
-    select: { gameId: true },
+    select: { gameId: true, juegoNoOficial: true },
   });
-  const versiones = versionesDelJuego(competition?.gameId);
+  const versiones = competition ? versionesDeLaEdicion(competition) : [];
   if (versiones.length < 2) return;
 
   const jugadores = await prisma.participant.findMany({

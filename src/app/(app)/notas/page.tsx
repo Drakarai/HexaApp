@@ -117,7 +117,7 @@ export default async function NotesPage({
               generacionDelLocke={
                 generacionDelJuego(competition.gameId) ?? GENERACION_POR_DEFECTO
               }
-              juego={nombreDelJuego(competition.gameId, competition.game)}
+              juego={nombreDelJuego(competition.gameId, competition.game, competition.juegoNoOficial)}
               inicial={miEquipo}
               tablaInicial={equipo?.tabla === "ahora" ? "ahora" : "juego"}
             />

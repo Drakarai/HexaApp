@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { requireCreador, requireUser } from "@/lib/auth";
 import { COMPETITION_COOKIE } from "@/lib/competition";
-import { juegoPorId } from "@/lib/juegos";
+import { juegoPorId, leerJuego } from "@/lib/juegos";
 import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
 import { PALETTE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
@@ -66,7 +66,13 @@ export async function pedirLockeAction(
     };
   }
 
-  const gameIdBruto = String(formData.get("gameId") ?? "").trim();
+  // El juego, oficial o no (un fangame): ver `leerJuego`
+  const juego = leerJuego({
+    gameId: String(formData.get("gameId") ?? ""),
+    game: String(formData.get("game") ?? ""),
+    noOficial: String(formData.get("noOficial") ?? ""),
+  });
+  if ("error" in juego) return juego;
   // Sin el campo, uno: es como funcionaba esto cuando solo había lockes de uno
   const pedidos = Number(formData.get("maxPlayers") ?? 1);
   const maxPlayers = Number.isFinite(pedidos)
@@ -78,7 +84,9 @@ export async function pedirLockeAction(
       userId: user.id,
       name,
       maxPlayers,
-      gameId: juegoPorId(gameIdBruto) ? gameIdBruto : null,
+      gameId: juego.gameId,
+      game: juego.game,
+      juegoNoOficial: juego.juegoNoOficial,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
     },
@@ -125,7 +133,9 @@ export async function aceptarSolicitudAction(formData: FormData) {
       name: solicitud.name,
       slug: await slugLibre(solicitud.name),
       gameId: juego?.id ?? null,
-      game: juego?.name ?? null,
+      // Un fangame lleva su nombre; uno oficial, el de la lista si no se escribió otro
+      game: solicitud.juegoNoOficial ? solicitud.game : (solicitud.game ?? juego?.name ?? null),
+      juegoNoOficial: solicitud.juegoNoOficial,
       modality: solicitud.modality,
       description: solicitud.description,
       maxPlayers: solicitud.maxPlayers,
@@ -199,15 +209,22 @@ export async function crearLockeEnSolitarioAction(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a tu locke." };
 
-  const gameIdBruto = String(formData.get("gameId") ?? "").trim();
-  const juego = juegoPorId(gameIdBruto);
+  const juego = leerJuego({
+    gameId: String(formData.get("gameId") ?? ""),
+    game: String(formData.get("game") ?? ""),
+    noOficial: String(formData.get("noOficial") ?? ""),
+  });
+  if ("error" in juego) return juego;
 
   const competicion = await prisma.competition.create({
     data: {
       name,
       slug: await slugLibre(name),
-      gameId: juego?.id ?? null,
-      game: juego?.name ?? null,
+      gameId: juego.gameId,
+      game: juego.juegoNoOficial
+        ? juego.game
+        : (juego.game ?? juegoPorId(juego.gameId)?.name ?? null),
+      juegoNoOficial: juego.juegoNoOficial,
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       maxPlayers: 1,

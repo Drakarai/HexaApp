@@ -299,8 +299,57 @@ export function juegosPorGrupo(actual?: string | null) {
  * no, lo que hubiera escrito a mano. Las ediciones de antes de que existiera la
  * lista siguen enseñando su texto tal cual.
  */
-export function nombreDelJuego(gameId: string | null, game: string | null) {
+export function nombreDelJuego(
+  gameId: string | null,
+  game: string | null,
+  /** Un fangame se llama como se escribió: su `gameId` es solo la base */
+  juegoNoOficial = false,
+) {
+  if (juegoNoOficial) return game ?? null;
   return juegoPorId(gameId)?.name ?? game ?? null;
+}
+
+/**
+ * Las versiones que se reparten en una edición: las de su pareja, salvo que el
+ * juego sea no oficial, que es uno solo aunque se base en Rojo y Azul.
+ */
+export function versionesDeLaEdicion(edicion: {
+  gameId: string | null;
+  juegoNoOficial: boolean;
+}): string[] {
+  return edicion.juegoNoOficial ? [] : versionesDelJuego(edicion.gameId);
+}
+
+/** Lo más largo que se deja poner de nombre a un juego escrito a mano. */
+const LARGO_DEL_NOMBRE = 60;
+
+/**
+ * Qué juego se ha elegido en el selector (`JuegoPicker`), ya comprobado.
+ *
+ * - **Oficial**: `gameId` de la lista y, en `game`, el nombre a mano si se
+ *   quiso poner otro ("HeartGold / SoulSilver, random").
+ * - **No oficial** (un fangame): `game` es su nombre, que es obligatorio, y
+ *   `gameId` el juego en que se basa, o nada si se empieza de cero.
+ *
+ * Sin base de datos, para poder probarlo. Llega un objeto y no un FormData para
+ * que valga igual desde un formulario que desde una prueba.
+ */
+export function leerJuego(campos: {
+  gameId?: string | null;
+  game?: string | null;
+  noOficial?: string | boolean | null;
+}):
+  | { gameId: string | null; game: string | null; juegoNoOficial: boolean }
+  | { error: string } {
+  const id = String(campos.gameId ?? "").trim();
+  const gameId = juegoPorId(id) ? id : null;
+  const game = String(campos.game ?? "").replace(/\s+/g, " ").trim().slice(0, LARGO_DEL_NOMBRE) || null;
+  const noOficial = campos.noOficial === true || campos.noOficial === "on";
+  if (noOficial) {
+    if (!game) return { error: "Ponle nombre al juego: \"Pokémon Añil\", por ejemplo." };
+    return { gameId, game, juegoNoOficial: true };
+  }
+  return { gameId, game, juegoNoOficial: false };
 }
 
 /**

@@ -22,6 +22,8 @@ export function SolicitudesPendientes({
     id: string;
     name: string;
     gameId: string | null;
+    game: string | null;
+    juegoNoOficial: boolean;
     maxPlayers: number;
     modality: string | null;
     description: string | null;
@@ -61,8 +63,8 @@ export function SolicitudesPendientes({
                 <p className="truncate text-xs text-slate-500">
                   {solicitud.user.displayName} (@{solicitud.user.username}) ·{" "}
                   {formatDate(solicitud.createdAt)}
-                  {nombreDelJuego(solicitud.gameId, null)
-                    ? ` · ${nombreDelJuego(solicitud.gameId, null)}`
+                  {nombreDelJuego(solicitud.gameId, solicitud.game, solicitud.juegoNoOficial)
+                    ? ` · ${nombreDelJuego(solicitud.gameId, solicitud.game, solicitud.juegoNoOficial)}${solicitud.juegoNoOficial ? " (no oficial)" : ""}`
                     : ""}
                   {solicitud.modality ? ` · ${solicitud.modality}` : ""}
                   {solicitud.maxPlayers > 1

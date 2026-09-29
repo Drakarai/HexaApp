@@ -62,14 +62,22 @@ export default async function MapaPage({
     return (
       <>
         <Cabecera region={null} />
-        <EmptyState
-          title="Esta edición no tiene juego elegido"
-          hint={
-            esCreador(user)
-              ? "Elige el juego en Ediciones y aparecerá el mapa de su región."
-              : "Pídele a un administrador que elija el juego en Ediciones."
-          }
-        />
+        {/* Un fangame hecho desde cero no tiene mapa, y es a propósito */}
+        {competition.juegoNoOficial ? (
+          <EmptyState
+            title="Este juego no tiene mapa de capturas"
+            hint="Es un juego no oficial hecho desde cero, sin un juego de base del que sacar el mapa. Si se parece a una región, en Ediciones se le puede poner como base."
+          />
+        ) : (
+          <EmptyState
+            title="Esta edición no tiene juego elegido"
+            hint={
+              esCreador(user)
+                ? "Elige el juego en Ediciones y aparecerá el mapa de su región."
+                : "Pídele a un administrador que elija el juego en Ediciones."
+            }
+          />
+        )}
       </>
     );
   }

@@ -429,6 +429,13 @@ model Competition {
    * antes de que existiera la lista siguen enseñando lo que se escribió a mano.
    */
   gameId              String?
+  /**
+   * Un juego **no oficial** (un fangame: Pokémon Añil, Pokémon Z…). Entonces
+   * `game` es su nombre, y `gameId`, si lo hay, es solo **el juego en el que se
+   * basa**: de él salen el mapa de capturas y la plantilla de level caps, pero
+   * no su nombre ni sus versiones. Sin base, se empieza de cero y no hay mapa.
+   */
+  juegoNoOficial Boolean @default(false)
   // Modalidad ("Random", "Nuzlocke clásico", ...)
   modality            String?
   description         String?
@@ -729,6 +736,9 @@ model LockeRequest {
    * El juego de lib/juegos.ts, si eligió uno de la lista
    */
   gameId        String?
+  /** Para un juego no oficial: su nombre (ver `Competition.juegoNoOficial`) */
+  game          String?
+  juegoNoOficial Boolean  @default(false)
   modality      String?
   description   String?
   /**
