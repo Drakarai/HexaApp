@@ -31,6 +31,7 @@ export const FUENTES = {
   captura: { tabla: "Capture", columna: "image" },
   sorteo: { tabla: "SorteoPokemon", columna: "boxImage" },
   logo: { tabla: "Competition", columna: "logo" },
+  "logo-antes": { tabla: "LockeDeAntes", columna: "logo" },
 } as const satisfies Record<
   // Fuera las que guardan una lista: esas tienen su propia consulta
   Exclude<TipoImagen, "medalla" | "medalla-plantilla" | "cartel">,

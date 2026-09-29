@@ -1745,6 +1745,8 @@ model LockeDeAntes {
    * Si uno se hace cuenta luego, al editar se vincula y pasa a `jugadoresIds`.
    */
   sinCuenta    String[] @default([])
+  /** El logo de aquel locke, como el de una edición (data URL o `ref:` del almacén) */
+  logo         String?
   notas        String?
   createdById  String?
   createdAt    DateTime @default(now())

@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { esCreador, puedeCrearLockes, requireUser } from "@/lib/auth";
 import type { FormState } from "@/app/actions/auth";
+import { imagenEditada } from "@/lib/image";
+import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import {
   cuentasQuePuedeApuntar,
   leerEleccion,
@@ -112,6 +114,9 @@ export async function guardarLockeDeAntesAction(
     juego: String(formData.get("juego") ?? "").trim() || null,
     cuando,
     notas: String(formData.get("notas") ?? "").trim() || null,
+    // Como el de una edición: reducido en el navegador y al almacén. Si no se
+    // ha tocado llega "sin cambios" y se queda el que había; vacío lo quita
+    logo: await guardarPorContenido(imagenEditada(formData.get("logo"))),
     ...montado,
   };
   if (id) {

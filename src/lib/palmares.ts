@@ -69,6 +69,8 @@ export type DatosDeLockeDeAntes = {
   /** "u:<id>" o "n:<nombre>", como los desplegables */
   ganador: string;
   subcampeon: string;
+  /** La dirección del logo que ya tiene, para verlo al editar */
+  logo: string | null;
 };
 
 /**
@@ -96,7 +98,7 @@ const cuentaVacia = (): Cuenta => ({ lockes: 0, ganados: 0, victorias: 0, derrot
 export type Titulo = {
   id: string;
   nombre: string;
-  /** El logo de la edición, si tiene; los de antes no tienen */
+  /** El logo de la edición o del locke de antes, si tiene */
   logo: string | null;
   categoria: Categoria;
   anio: number;
@@ -256,7 +258,7 @@ export async function getPalmares(): Promise<Palmares> {
    * `lib/db.ts`), justo para que no se cuelen enteras en el HTML. Lo que hace
    * falta es la dirección, y eso lo da `urlsDeImagen`.
    */
-  const [avatares, logos] = await Promise.all([
+  const [avatares, logos, logosDeAntes] = await Promise.all([
     urlsDeImagen("avatar", [
       ...participantes.map((p) => p.userId),
       // También los de los lockes de antes, que pueden ser gente que ya no juega
@@ -264,6 +266,8 @@ export async function getPalmares(): Promise<Palmares> {
     ]),
     // Los logos de las ediciones, para la vitrina de títulos de cada uno
     urlsDeImagen("logo", ids),
+    // Y los de los lockes de antes, que también pueden tener
+    urlsDeImagen("logo-antes", deAntes.map((locke) => locke.id)),
   ]);
   const porId = new Map(competiciones.map((c) => [c.id, c]));
 
@@ -399,7 +403,7 @@ export async function getPalmares(): Promise<Palmares> {
         ? { displayName: locke.subcampeonNombre, color: SIN_CUENTA }
         : null,
     categoria: categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length),
-    logo: null,
+    logo: logosDeAntes(locke.id),
     descripcion: null,
     deFuera: !misDeAntes.has(locke.id),
     campeonUserId: locke.ganadorId,
@@ -419,6 +423,7 @@ export async function getPalmares(): Promise<Palmares> {
             : locke.subcampeonNombre
               ? `n:${locke.subcampeonNombre}`
               : "",
+          logo: logosDeAntes(locke.id),
         }
       : undefined,
   }));
@@ -523,7 +528,7 @@ export async function getPalmares(): Promise<Palmares> {
         fila.titulos.push({
           id: locke.id,
           nombre: locke.nombre,
-          logo: null,
+          logo: logosDeAntes(locke.id),
           categoria,
           anio: locke.cuando.getFullYear(),
           cuando: locke.cuando.getTime(),

@@ -5,6 +5,8 @@ import { guardarLockeDeAntesAction } from "@/app/actions/lockes-de-antes";
 import type { FormState } from "@/app/actions/auth";
 import type { DatosDeLockeDeAntes } from "@/lib/palmares";
 import { FormMessage, SubmitButton } from "@/components/ui";
+import { ImageInput } from "@/components/image-input";
+import { IMAGE_SIZES } from "@/lib/image";
 
 export type CuentaParaElegir = {
   id: string;
@@ -290,6 +292,14 @@ function FormularioDeLockeDeAntes({
           </select>
         </div>
       </div>
+
+      <ImageInput
+        name="logo"
+        label="Logo (opcional)"
+        defaultValue={datos?.logo ?? null}
+        maxSize={IMAGE_SIZES.logo}
+        hint="Sale en el historial de ediciones y en la vitrina de quien lo ganó."
+      />
 
       <div>
         <label className="label">Notas (opcional)</label>

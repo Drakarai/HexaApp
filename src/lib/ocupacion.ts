@@ -62,6 +62,7 @@ export const COLUMNAS: [
   ["FavoritePokemon", "image", "Favoritos"],
   ["User", "avatarImage", "Fotos de perfil"],
   ["Competition", "logo", "Logos de las ediciones"],
+  ["LockeDeAntes", "logo", "Logos de los lockes de antes"],
   ["Item", "image", "Objetos", true],
   ["ItemOption", "image", "Objetos · variantes", true],
 ];
