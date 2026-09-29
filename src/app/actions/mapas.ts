@@ -19,6 +19,8 @@ import { detectarZonas } from "@/lib/detectar-zonas";
 import { FORMAS, esRedonda } from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
+import { sitioParaUnaNueva } from "@/lib/equipo-y-caja";
+import { vincularCapturaNueva } from "@/lib/soul-link";
 
 /**
  * Los mapas y las capturas.
@@ -430,19 +432,40 @@ export async function apuntarCapturaAction(
   const fallado = formData.get("failed") === "on";
   const sprites = fallado ? null : await spritesDelFormulario(formData);
 
-  await prisma.capture.create({
+  /**
+   * Dónde entra en el equipo y la caja (ver lib/equipo-y-caja.ts): al equipo
+   * si queda hueco y si no a la caja, como en los juegos. Y qué pokémon es de
+   * verdad, para sus tipos y sus evoluciones.
+   */
+  const pokemonIdBruto = Number(formData.get("pokemonId") ?? "");
+  const pokemonId = Number.isInteger(pokemonIdBruto) && pokemonIdBruto > 0 ? pokemonIdBruto : null;
+  const suyas = fallado
+    ? []
+    : await prisma.capture.findMany({
+        where: { participantId: participante.id, failed: false, deathId: null },
+        select: { id: true, lugar: true, hueco: true, createdAt: true },
+      });
+  const donde = sitioParaUnaNueva(suyas.map((c) => ({ ...c, creado: c.createdAt.getTime() })));
+
+  const nueva = await prisma.capture.create({
     data: {
       participantId: participante.id,
       zoneId,
       species,
+      pokemonId,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
       image: sprites?.boxImage ?? null,
       failed: fallado,
+      lugar: donde.lugar,
+      hueco: donde.hueco,
     },
   });
+  // En un Soul Link, con la captura de los demás en esa misma zona
+  await vincularCapturaNueva(nueva.id);
 
   revalidatePath("/mapa");
+  revalidatePath("/soul-link");
   return {
     success: fallado
       ? `${species} apuntado como fallado.`
@@ -462,4 +485,5 @@ export async function borrarCapturaAction(formData: FormData) {
     where: { id, participantId: participante.id },
   });
   revalidatePath("/mapa");
+  revalidatePath("/soul-link");
 }

@@ -6,6 +6,7 @@ import { primerosEnPasar } from "@/lib/coronas";
 import { getCampeonDelLocke } from "@/lib/campeon";
 import { cuandoSeGanoPorJornadas, getMarcador } from "@/lib/marcador";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getLigaEnCooperativo } from "@/lib/soul-link";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 
 /**
@@ -220,11 +221,14 @@ export async function getResumenDelLocke(
 async function cuandoSeDecidio(competitionId: string): Promise<Date | null> {
   const competicion = await prisma.competition.findUnique({
     where: { id: competitionId },
-    select: { maxPlayers: true },
+    select: { maxPlayers: true, estilo: true },
   });
   if (!competicion) return null;
 
-  if (perfilDeLocke(competicion.maxPlayers).enSolitario) {
+  const perfil = perfilDeLocke(competicion.maxPlayers, competicion.estilo);
+  // En un Soul Link, el día que se la pasó el último de los que siguen
+  if (perfil.cooperativo) return (await getLigaEnCooperativo(competitionId)).cuando;
+  if (perfil.enSolitario) {
     const liga = await prisma.gymClear.findFirst({
       where: { levelCap: { competitionId, kind: LEVEL_CAP_KINDS.CHAMPION } },
       orderBy: { clearedAt: "asc" },

@@ -76,7 +76,7 @@ export default async function LevelCapsPage({
    * El equipo con el que se pasó cada gimnasio. **Solo en solitario**: en un
    * locke de seis serían seis equipos por gimnasio y no lo apuntaría nadie.
    */
-  const perfil = perfilDeLocke(competition.maxPlayers);
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const equiposPorHito = perfil.enSolitario
     ? await prisma.matchPokemon.findMany({
         where: { levelCap: { competitionId: competition.id } },
@@ -92,7 +92,8 @@ export default async function LevelCapsPage({
    * La corona de quien se pasó cada gimnasio antes que nadie. En solitario no:
    * siendo uno, sería primero siempre.
    */
-  const coronas = perfil.enSolitario
+  // En un Soul Link tampoco: se juega a la vez, no a ver quién llega antes
+  const coronas = perfil.sinJornadas
     ? new Map<string, Set<string>>()
     : primerosEnPasar(
         levelCaps.flatMap((cap) =>
@@ -104,7 +105,7 @@ export default async function LevelCapsPage({
    * Los checkpoints de jornada. En solitario no hay jornadas, así que ni se
    * enseñan ni se pueden poner.
    */
-  const checkpoints = perfil.enSolitario
+  const checkpoints = perfil.sinJornadas
     ? []
     : checkpointsDelLocke(levelCaps, jornadas);
   const pasadoPorTodos = (levelCap: (typeof levelCaps)[number]) =>
@@ -260,7 +261,7 @@ export default async function LevelCapsPage({
 
                   {canManage ? (
                     <div className="flex shrink-0 items-center gap-1">
-                    {perfil.enSolitario ? null : (
+                    {perfil.sinJornadas ? null : (
                       <form action={toggleJornadaDespuesAction}>
                         <input type="hidden" name="levelCapId" value={levelCap.id} />
                         {/* Solo el icono, encendido cuando está puesto: con

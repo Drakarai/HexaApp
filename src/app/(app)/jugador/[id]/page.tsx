@@ -42,7 +42,7 @@ export default async function PlayerPage({
   const participant = await prisma.participant.findUnique({
     where: { id },
     include: {
-      competition: { select: { id: true, name: true, maxPlayers: true, status: true } },
+      competition: { select: { id: true, name: true, maxPlayers: true, estilo: true, status: true } },
     },
   });
   if (!participant) notFound();
@@ -84,7 +84,8 @@ export default async function PlayerPage({
   const fila = standings.find((row) => row.participantId === id);
   const misGimnasios = clears.filter((clear) => clear.participantId === id).length;
   // En solitario no hay a quién ganarle la carrera
-  const coronas = perfilDeLocke(participant.competition.maxPlayers).enSolitario
+  const coronas = perfilDeLocke(participant.competition.maxPlayers, participant.competition.estilo)
+    .sinJornadas
     ? 0
     : coronasDe(id, clears);
   const combates = await getResumenDeCombates(competitionId, id);

@@ -70,7 +70,14 @@ function Mencion({
  * Cómo fue el locke, en cifras. Nada de esto se guarda: se cuenta al abrir el
  * hall (ver `lib/resumen-del-locke.ts`).
  */
-export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
+export function ResumenDelLocke({
+  resumen,
+  cooperativo = false,
+}: {
+  resumen: ResumenDelLocke;
+  /** Un Soul Link: sin jornadas ni carreras por los gimnasios que contar */
+  cooperativo?: boolean;
+}) {
   const menciones = [
     resumen.masMvps
       ? {
@@ -105,7 +112,8 @@ export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
         }
       : null,
     // En solitario las coronas serían todas suyas: no es mención de nada
-    resumen.masCoronas && resumen.jugadores > 1
+    // Y en un Soul Link no se juega a llegar antes: se va a la vez
+    resumen.masCoronas && resumen.jugadores > 1 && !cooperativo
       ? {
           emoji: "👑",
           rotulo: "El primero en los gimnasios",
@@ -125,9 +133,13 @@ export function ResumenDelLocke({ resumen }: { resumen: ResumenDelLocke }) {
         {resumen.dias ? ` · ${resumen.dias} ${plural(resumen.dias, "día")}` : ""}.
       </p>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Cifra valor={resumen.jornadas} rotulo={plural(resumen.jornadas, "jornada")} />
-        <Cifra valor={resumen.combates} rotulo={plural(resumen.combates, "combate")} />
+      <div className={cooperativo ? "grid grid-cols-2 gap-2" : "grid grid-cols-2 gap-2 sm:grid-cols-4"}>
+        {cooperativo ? null : (
+          <>
+            <Cifra valor={resumen.jornadas} rotulo={plural(resumen.jornadas, "jornada")} />
+            <Cifra valor={resumen.combates} rotulo={plural(resumen.combates, "combate")} />
+          </>
+        )}
         <Cifra
           valor={resumen.bajas}
           rotulo={plural(resumen.bajas, "caído")}

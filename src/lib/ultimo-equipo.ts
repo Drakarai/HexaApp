@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { getEquipoActual } from "@/lib/soul-link";
 
 /**
  * El último equipo que alguien sacó en una jornada.
@@ -36,6 +37,29 @@ export async function getUltimoEquipo(
   participantId: string,
   competitionId: string,
 ): Promise<UltimoEquipo | null> {
+  /**
+   * En un Soul Link no hay combates de jornada: el equipo con el que se acaba
+   * es **el que se lleva ahora** en Equipo y PC.
+   */
+  const competicion = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { estilo: true },
+  });
+  if (competicion?.estilo === "soullink") {
+    const equipo = await getEquipoActual(participantId);
+    return equipo.length
+      ? {
+          deDonde: "Equipo y PC",
+          pokemon: equipo.map((p) => ({
+            species: p.species,
+            nickname: p.nickname,
+            boxImage: p.image,
+            detailImage: null,
+          })),
+        }
+      : null;
+  }
+
   /**
    * **Primero el de la final.** Si jugó el cuadro, ese es el equipo con el que
    * acabó el locke de verdad; el del último combate de jornada es lo que había

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { getCampeonDelLocke } from "@/lib/campeon";
+import { lockeTerminado } from "@/lib/campeon";
 import { getUltimoEquipo } from "@/lib/ultimo-equipo";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
@@ -28,8 +28,8 @@ export async function addHallPokemonAction(
     return { error: (error as Error).message };
   }
 
-  if (!(await getCampeonDelLocke(participant.competitionId))) {
-    return { error: "El hall de la fama se abre cuando el locke tiene campeón." };
+  if (!(await lockeTerminado(participant.competitionId))) {
+    return { error: "El hall de la fama se abre cuando el locke se ha acabado." };
   }
 
   const species = String(formData.get("species") ?? "").trim();
@@ -79,8 +79,8 @@ export async function traerUltimoEquipoAction(
     return { error: (error as Error).message };
   }
 
-  if (!(await getCampeonDelLocke(participant.competitionId))) {
-    return { error: "El hall de la fama se abre cuando el locke tiene campeón." };
+  if (!(await lockeTerminado(participant.competitionId))) {
+    return { error: "El hall de la fama se abre cuando el locke se ha acabado." };
   }
 
   const cuantos = await prisma.hallOfFameEntry.count({ where: { participantId } });
@@ -90,7 +90,7 @@ export async function traerUltimoEquipoAction(
 
   const equipo = await getUltimoEquipo(participantId, participant.competitionId);
   if (!equipo) {
-    return { error: "No hay ningún equipo apuntado en las jornadas." };
+    return { error: "No hay ningún equipo apuntado del que traerlo." };
   }
 
   await prisma.hallOfFameEntry.createMany({

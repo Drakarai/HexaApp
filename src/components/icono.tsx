@@ -67,6 +67,10 @@ import {
   Zap,
   Undo2,
   Share2,
+  Link2,
+  Link2Off,
+  Dna,
+  ArrowRightLeft,
   type LucideIcon,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -116,6 +120,11 @@ const LINEA: Record<string, Linea> = {
   "⚔️": { icono: Swords },
   "📚": { icono: BookOpen },
   "📍": { icono: MapPinned },
+  // El Soul Link: el vínculo, romperlo, evolucionar y cambiar de sitio
+  "🔗": { icono: Link2 },
+  "⛓️‍💥": { icono: Link2Off },
+  "🧬": { icono: Dna },
+  "🔁": { icono: ArrowRightLeft },
   // Medallas del podio y de la tabla
   "🥇": { icono: Medal, color: "text-amber-400" },
   "🥈": { icono: Medal, color: "text-slate-300" },

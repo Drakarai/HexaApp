@@ -23,6 +23,7 @@ import { getMisSolicitudes } from "@/lib/solicitudes";
 import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { perderElLockeAction } from "@/app/actions/wipeos";
 import { urlsDeImagen } from "@/lib/imagenes";
+import { leerEstilo } from "@/lib/perfiles-de-locke";
 import { NewUserForm } from "../admin/user-forms";
 import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
 import {
@@ -468,6 +469,9 @@ export default async function CompetitionsPage() {
                   startingPoints: active.startingPoints,
                   jornadasPrevistas: active.jornadasPrevistas,
                   logo: logoActual,
+                  estilo: leerEstilo(active.estilo),
+                  maxPlayers: active.maxPlayers,
+                  apuntados: participants.length,
                 }}
               />
 

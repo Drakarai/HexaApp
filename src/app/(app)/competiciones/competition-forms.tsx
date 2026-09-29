@@ -14,7 +14,52 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import { JuegoPicker } from "@/components/juego-picker";
 import { ImageInput } from "@/components/image-input";
 import { IMAGE_SIZES } from "@/lib/image";
-import { JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
+import {
+  ESTILOS,
+  JUGADORES_DEL_SOUL_LINK,
+  JUGADORES_MAXIMOS,
+  type EstiloDeJuego,
+} from "@/lib/perfiles-de-locke";
+import { cx } from "@/lib/utils";
+
+/**
+ * El estilo de juego: competir o Soul Link. Dos botones, como el de oficial o
+ * fangame del juego, y un campo oculto con lo elegido. Lo usan el alta y la
+ * edición, que es donde se puede cambiar después.
+ */
+function EstiloPicker({
+  estilo,
+  onChange,
+}: {
+  estilo: EstiloDeJuego;
+  onChange: (estilo: EstiloDeJuego) => void;
+}) {
+  return (
+    <div>
+      <label className="label">Estilo de juego</label>
+      <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+        {(Object.keys(ESTILOS) as EstiloDeJuego[]).map((cual) => (
+          <button
+            key={cual}
+            type="button"
+            onClick={() => onChange(cual)}
+            aria-pressed={estilo === cual}
+            className={cx(
+              "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition",
+              estilo === cual
+                ? "bg-brand-600/25 text-white ring-1 ring-brand-500/40"
+                : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+            )}
+          >
+            {ESTILOS[cual].nombre}
+          </button>
+        ))}
+      </div>
+      <input type="hidden" name="estilo" value={estilo} />
+      <p className="mt-1 text-xs text-slate-500">{ESTILOS[estilo].explicacion}</p>
+    </div>
+  );
+}
 
 export function NewCompetitionForm({
   competitions,
@@ -34,7 +79,9 @@ export function NewCompetitionForm({
    * deja de ser opcional y viene con las seis de siempre.
    */
   const [jugadores, setJugadores] = useState(6);
-  const esDual = jugadores === 2;
+  const [estilo, setEstilo] = useState<EstiloDeJuego>("competitivo");
+  const soulLink = estilo === "soullink";
+  const esDual = jugadores === 2 && !soulLink;
 
   return (
     <details className="card group">
@@ -49,6 +96,16 @@ export function NewCompetitionForm({
             <input name="name" className="input" placeholder="Hexalocke 3" required />
           </div>
           <div className="sm:col-span-2">
+            <EstiloPicker
+              estilo={estilo}
+              onChange={(nuevo) => {
+                setEstilo(nuevo);
+                // Un Soul Link es de dos casi siempre; volver deja los seis
+                setJugadores(nuevo === "soullink" ? 2 : 6);
+              }}
+            />
+          </div>
+          <div className="sm:col-span-2">
             <JuegoPicker />
           </div>
           <div>
@@ -56,31 +113,39 @@ export function NewCompetitionForm({
             <input name="modality" className="input" placeholder="Random" />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label">Puntos iniciales</label>
-              <input
-                name="startingPoints"
-                type="number"
-                defaultValue={5}
-                className="input"
-              />
-            </div>
+            {/* En un Soul Link no hay puntos: se manda el de siempre y no se pregunta */}
+            {soulLink ? (
+              <input type="hidden" name="startingPoints" value={5} />
+            ) : (
+              <div>
+                <label className="label">Puntos iniciales</label>
+                <input
+                  name="startingPoints"
+                  type="number"
+                  defaultValue={5}
+                  className="input"
+                />
+              </div>
+            )}
             <div>
               <label className="label">Jugadores</label>
               <input
+                // Se remonta al cambiar de estilo para que salga el número nuevo
+                key={estilo}
                 name="maxPlayers"
                 type="number"
                 min={2}
-                max={JUGADORES_MAXIMOS}
-                defaultValue={6}
+                max={soulLink ? JUGADORES_DEL_SOUL_LINK.maximo : JUGADORES_MAXIMOS}
+                defaultValue={jugadores}
                 onChange={(event) => setJugadores(Number(event.target.value))}
                 className="input"
               />
             </div>
           </div>
           {/* De cuántas jornadas va el locke. Solo hace falta de verdad en el
-              dualocke, que se gana con la mayoría de ellas */}
-          <div>
+              dualocke, que se gana con la mayoría de ellas; en un Soul Link
+              no hay jornadas */}
+          <div className={soulLink ? "hidden" : undefined}>
             <label className="label">Jornadas previstas</label>
             <input
               // Se remonta al pasar a dos para que salga el 6 puesto
@@ -92,6 +157,7 @@ export function NewCompetitionForm({
               className="input"
               placeholder="Opcional"
               required={esDual}
+              disabled={soulLink}
               defaultValue={esDual ? 6 : undefined}
             />
             {esDual ? (
@@ -201,12 +267,25 @@ export function EditCompetitionForm({
     jornadasPrevistas: number | null;
     /** Dirección del logo que ya tiene, para verlo: ver lib/imagen-url.ts */
     logo: string | null;
+    estilo: EstiloDeJuego;
+    maxPlayers: number;
+    /** Los que ya están apuntados: menos plazas que eso no puede tener */
+    apuntados: number;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
     updateCompetitionAction,
     null,
   );
+  /**
+   * El estilo y las plazas **se pueden cambiar con el locke empezado**: el
+   * grupo que pidió el Soul Link ya lo había montado como dualocke. Lo que haya
+   * de antes —jornadas, puntos— se queda guardado, solo que no se enseña.
+   */
+  const [estilo, setEstilo] = useState<EstiloDeJuego>(competition.estilo);
+  const soulLink = estilo === "soullink";
+  // En solitario (una plaza) no hay estilo que elegir: es de uno
+  const enSolitario = competition.maxPlayers === 1;
 
   return (
     <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -221,6 +300,11 @@ export function EditCompetitionForm({
             <label className="label">Nombre</label>
             <input name="name" className="input" defaultValue={competition.name} />
           </div>
+          {enSolitario ? null : (
+            <div className="sm:col-span-2">
+              <EstiloPicker estilo={estilo} onChange={setEstilo} />
+            </div>
+          )}
           <div className="sm:col-span-2">
             <JuegoPicker
               defaultGameId={competition.gameId}
@@ -236,7 +320,20 @@ export function EditCompetitionForm({
               defaultValue={competition.modality ?? ""}
             />
           </div>
-          <div>
+          {enSolitario ? null : (
+            <div>
+              <label className="label">Jugadores</label>
+              <input
+                name="maxPlayers"
+                type="number"
+                min={Math.max(2, competition.apuntados)}
+                max={soulLink ? JUGADORES_DEL_SOUL_LINK.maximo : JUGADORES_MAXIMOS}
+                className="input"
+                defaultValue={competition.maxPlayers}
+              />
+            </div>
+          )}
+          <div className={soulLink ? "hidden" : undefined}>
             <label className="label">Puntos iniciales</label>
             <input
               name="startingPoints"
@@ -245,7 +342,7 @@ export function EditCompetitionForm({
               defaultValue={competition.startingPoints}
             />
           </div>
-          <div>
+          <div className={soulLink ? "hidden" : undefined}>
             <label className="label">Jornadas previstas</label>
             <input
               name="jornadasPrevistas"

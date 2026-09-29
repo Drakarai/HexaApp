@@ -26,11 +26,13 @@ export function SitioPicker({
   defaultZoneId = null,
   defaultLocation = null,
   label = "Dónde",
+  placeholder = "Combate contra Draka, intercambio…",
 }: {
   zonas: ZonaParaElegir[];
   defaultZoneId?: string | null;
   defaultLocation?: string | null;
   label?: string;
+  placeholder?: string;
 }) {
   /**
    * Se arranca en "otro" si ya había un sitio escrito y ninguna zona puesta:
@@ -111,7 +113,7 @@ export function SitioPicker({
           className={zonas.length ? "input mt-2" : "input"}
           defaultValue={defaultLocation ?? ""}
           maxLength={80}
-          placeholder="Combate contra Draka, intercambio…"
+          placeholder={placeholder}
         />
       ) : null}
     </div>

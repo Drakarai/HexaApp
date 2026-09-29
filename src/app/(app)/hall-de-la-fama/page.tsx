@@ -17,6 +17,7 @@ import { Avatar } from "@/components/ui";
 import { cx, formatDate } from "@/lib/utils";
 import { getResumenDelLocke } from "@/lib/resumen-del-locke";
 import { getUltimoEquipo } from "@/lib/ultimo-equipo";
+import { getLigaEnCooperativo } from "@/lib/soul-link";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getProgresoEnSolitario } from "@/lib/solitario";
 import { AddPokemonForm, TeamSlots } from "./team-editor";
@@ -46,11 +47,38 @@ export default async function HallOfFamePage() {
    * **pasarse la Liga**. Sin esto el hall no se abriría nunca en una partida de
    * una persona, porque exige campeón de la Final Four.
    */
-  const perfil = perfilDeLocke(competition.maxPlayers);
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const progreso = perfil.enSolitario
     ? await getProgresoEnSolitario(competition.id)
     : null;
   const terminadoEnSolitario = Boolean(progreso?.ligaSuperada);
+  /** En un Soul Link, lo mismo pero entre todos: todos los que siguen */
+  const liga = perfil.cooperativo ? await getLigaEnCooperativo(competition.id) : null;
+
+  if (liga && !liga.superada) {
+    const faltan = liga.jugadores.filter((j) => !j.ligaPasada).map((j) => j.displayName);
+    return (
+      <>
+        <PageHeader title="Hall de la fama" />
+        <section className="card text-center">
+          <p className="text-4xl" aria-hidden>
+            <Icono emoji="🏅" />
+          </p>
+          <h2 className="mt-3 text-lg font-semibold text-white">
+            Todavía no os habéis pasado la Liga todos
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
+            Un Soul Link se supera entre todos: cuando los que siguen marquen el
+            último hito, aquí quedará el equipo con el que lo terminó cada uno.
+            {faltan.length ? ` Falta: ${faltan.join(", ")}.` : ""}
+          </p>
+          <Link href="/level-caps" className="btn-ghost mt-5">
+            Ver los level caps
+          </Link>
+        </section>
+      </>
+    );
+  }
 
   if (perfil.enSolitario && !terminadoEnSolitario) {
     return (
@@ -75,8 +103,8 @@ export default async function HallOfFamePage() {
     );
   }
 
-  const campeon = perfil.enSolitario ? null : await getCampeonDelLocke(competition.id, state);
-  if (!perfil.enSolitario && !campeon) {
+  const campeon = perfil.sinJornadas ? null : await getCampeonDelLocke(competition.id, state);
+  if (!perfil.sinJornadas && !campeon) {
     return (
       <>
         <PageHeader title="Hall de la fama" />
@@ -184,6 +212,8 @@ export default async function HallOfFamePage() {
         subtitle={
           perfil.enSolitario
             ? `Así terminó el ${competition.name}. El equipo con el que te pasaste la Liga, para el recuerdo.`
+            : liga
+            ? `Así terminó el ${competition.name}. El equipo con el que cada uno se pasó la Liga, para el recuerdo.`
             : `Así terminó el ${competition.name}. El equipo con el que cada uno llegó al final, para el recuerdo.`
         }
       />
@@ -201,16 +231,18 @@ export default async function HallOfFamePage() {
             Locke terminado
           </p>
           <p className="mt-3 text-3xl font-black text-white">
-            {progreso?.displayName}
+            {liga
+              ? liga.jugadores.map((j) => j.displayName).join(" y ")
+              : progreso?.displayName}
           </p>
           <p className="mt-2 text-xs text-slate-500">
-            Se pasó la Liga · {competition.name} ·{" "}
+            {liga ? "Se pasaron la Liga juntos" : "Se pasó la Liga"} · {competition.name} ·{" "}
             {formatDate(competition.startedAt)}
           </p>
         </section>
       )}
 
-      <ResumenDelLocke resumen={resumen} />
+      <ResumenDelLocke resumen={resumen} cooperativo={perfil.cooperativo} />
 
       {/* La versión para mandar al grupo. La dirección lleva la huella de lo
           que se pinta en ella, para no enseñar una guardada vieja */}
@@ -272,7 +304,7 @@ export default async function HallOfFamePage() {
                   <p className="truncate text-xs text-slate-500">
                     {vacia
                       ? "Todavía no ha apuntado su equipo"
-                      : `${row.points} puntos · ${row.deaths} caídos${
+                      : `${perfil.cooperativo ? "" : `${row.points} puntos · `}${row.deaths} caídos${
                           row.gameVersion ? ` · ${row.gameVersion}` : ""
                         }`}
                   </p>

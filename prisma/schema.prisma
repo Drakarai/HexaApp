@@ -287,13 +287,65 @@ model Capture {
    * en cuanto la hay, manda ella y la ✕ pasa a ser un número.
    */
   failed        Boolean  @default(false)
+  /**
+   * Qué pokémon es de verdad (el número de PokéAPI, forma incluida), para sus
+   * tipos y sus evoluciones. Las de antes no lo tienen y se saca del nombre.
+   */
+  pokemonId     Int?
+  /**
+   * Dónde se capturó, escrito a mano: para los juegos sin mapa (un fangame
+   * desde cero) o lo que no está en él.
+   */
+  sitio         String?
+  /**
+   * Dónde lo lleva ahora: `"equipo"` o `"caja"`, y en qué hueco. En la caja el
+   * hueco es global (el 31 es el primero de la caja 2). Ver `lib/equipo-y-caja.ts`.
+   */
+  lugar         String   @default("caja")
+  hueco         Int      @default(0)
+  /**
+   * El **vínculo** del Soul Link: las capturas de distintos jugadores que
+   * comparten este valor van juntas, y si cae una caen todas. Vale lo mismo
+   * para dos jugadores que para cuatro. Sin él, va suelta.
+   */
+  vinculo       String?
+  /**
+   * Si ya ha caído, su baja del cementerio. Borrar la baja lo resucita.
+   * Sin `@unique` a propósito aunque sea una baja por captura: añadir una
+   * restricción única obliga a `db push` a pedir permiso para perder datos, y
+   * el despliegue se pararía ahí.
+   */
+  deathId       String?
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  muerte      Death?      @relation(fields: [deathId], references: [id], onDelete: SetNull)
 
   @@index([participantId])
   @@index([zoneId])
+  @@index([vinculo])
+  @@index([deathId])
+}
+
+/**
+ * Lo que se puede **deshacer** en el equipo y la caja: mover, evolucionar,
+ * vincular o dar por muerto. Se guarda cómo estaban las capturas tocadas
+ * antes del cambio (`antes`, una lista de sus campos) y qué bajas creó, para
+ * volver atrás de una en una. Se quedan las últimas veinte de cada jugador.
+ */
+model CambioDeCaja {
+  id            String   @id @default(cuid())
+  participantId String
+  // "Evolucionar a Quilava", para el botón de deshacer
+  descripcion   String
+  antes         Json
+  muertes       String[] @default([])
+  createdAt     DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([participantId, createdAt])
 }
 
 // ---------------------------------------------------------------------------
@@ -445,6 +497,13 @@ model Competition {
   startingPoints      Int       @default(5)
   maxPlayers          Int       @default(6)
   /**
+   * El estilo de juego: `"competitivo"` (el de siempre, contra los demás) o
+   * `"soullink"` (cooperativo: las capturas de cada ruta van vinculadas y si
+   * cae una caen todas). Se puede cambiar después de crearlo; ver
+   * `lib/perfiles-de-locke.ts`, que es quien dice qué cambia con cada uno.
+   */
+  estilo              String    @default("competitivo")
+  /**
    * Si la diferencia de pokémon de los combates de reto cuenta para el
    * desempate de la clasificación. Los retos nunca dan puntos; esto solo
    * decide si su diferencia entra en el tercer criterio.
@@ -587,6 +646,7 @@ model Participant {
   bag               BagEntry[]
   bagUses           BagUse[]
   captures          Capture[]
+  cambiosDeCaja     CambioDeCaja[]
   royales           RoyalePuesto[]
   sorteos           SorteoParticipante[]
   aportadosASorteos SorteoPokemon[]      @relation("SorteoAportadoPor")
@@ -844,6 +904,8 @@ model Death {
   // Si se borra la zona del mapa la baja se queda, sin sitio: perder el
   // cementerio por retocar un mapa sería absurdo.
   zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  // La captura del equipo y la caja que era, si se marcó desde allí (una sola)
+  capturas    Capture[]
 
   @@index([participantId])
   @@index([zoneId])

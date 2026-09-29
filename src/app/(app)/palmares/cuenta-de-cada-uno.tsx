@@ -16,6 +16,7 @@ const PESTANAS: { cual: Pestana; rotulo: string }[] = [
   { cual: "grupo", rotulo: "Grupo" },
   { cual: "dual", rotulo: "Dualocke" },
   { cual: "solitario", rotulo: "Solitario" },
+  { cual: "soullink", rotulo: "Soul Link" },
 ];
 
 /** Cómo se dice cada categoría en el desglose de una persona */
@@ -23,6 +24,7 @@ const EN_EL_DESGLOSE: Record<Categoria, string> = {
   grupo: "de grupo",
   dual: "dual",
   solitario: "en solitario",
+  soullink: "en Soul Link",
 };
 
 const EXPLICACION: Record<Pestana, string> = {
@@ -30,6 +32,7 @@ const EXPLICACION: Record<Pestana, string> = {
   grupo: "Lockes de tres o más: los que se ganan en la final.",
   dual: "Lockes de dos: los que se ganan por mayoría de jornadas.",
   solitario: "Lockes de uno: se ganan pasándose la Liga.",
+  soullink: "Lockes cooperativos: se superan entre todos pasándose la Liga, y cuentan como ganados para todo el grupo.",
 };
 
 /**
@@ -202,14 +205,15 @@ export function CuentaDeCadaUno({
           const cuenta = cuentaDe(fila);
           const desglose =
             pestanaVisible === "todo"
-              ? (["grupo", "dual", "solitario"] as const)
+              ? (["grupo", "dual", "solitario", "soullink"] as const)
                   .filter((categoria) => fila.porCategoria[categoria].ganados > 0)
                   .map(
                     (categoria) =>
                       `${fila.porCategoria[categoria].ganados} ${EN_EL_DESGLOSE[categoria]}`,
                   )
               : [];
-          const soloLiga = pestanaVisible === "solitario";
+          // Sin combates que contar: se gana pasándose la Liga
+          const soloLiga = pestanaVisible === "solitario" || pestanaVisible === "soullink";
           return (
             <li
               key={fila.userId}

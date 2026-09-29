@@ -12,6 +12,8 @@ import { getResumenDelLocke } from "@/lib/resumen-del-locke";
 import { ordenDelHall } from "@/lib/hall";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getProgresoEnSolitario } from "@/lib/solitario";
+import { capturasParaVincular, getLigaEnCooperativo } from "@/lib/soul-link";
+import { vinculosDe } from "@/lib/equipo-y-caja";
 import { resolverImagen } from "@/lib/almacen-de-imagenes";
 import { logoSvg } from "@/lib/logo";
 import { formatDate } from "@/lib/utils";
@@ -120,17 +122,22 @@ export async function GET(
   });
   if (!competition) return new Response("No encontrado", { status: 404 });
 
-  const perfil = perfilDeLocke(competition.maxPlayers);
-  const [estado, standings, resumen, progreso] = await Promise.all([
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
+  const [estado, standings, resumen, progreso, liga] = await Promise.all([
     getFinalFourState(competition.id),
     getStandings(competition.id),
     getResumenDelLocke(competition.id),
     perfil.enSolitario ? getProgresoEnSolitario(competition.id) : null,
+    perfil.cooperativo ? getLigaEnCooperativo(competition.id) : null,
   ]);
 
   const elFinal = estado.status === "TERMINADA" ? estado : null;
-  const ganador = perfil.enSolitario ? null : await getCampeonDelLocke(competition.id, estado);
-  const terminado = perfil.enSolitario ? Boolean(progreso?.ligaSuperada) : Boolean(ganador);
+  const ganador = perfil.sinJornadas ? null : await getCampeonDelLocke(competition.id, estado);
+  const terminado = perfil.enSolitario
+    ? Boolean(progreso?.ligaSuperada)
+    : liga
+      ? liga.superada
+      : Boolean(ganador);
   if (!terminado) {
     return new Response("El locke todavía no ha terminado", { status: 404 });
   }
@@ -140,8 +147,34 @@ export async function GET(
   const campeon = standings.find((fila) => fila.participantId === campeonId);
   if (!campeon) return new Response("No encontrado", { status: 404 });
 
+  /**
+   * En un Soul Link no hay campeón: lo superan **todos juntos**, así que salen
+   * todos en la tarjeta de arriba y debajo el equipo de cada uno, una fila por
+   * cabeza, en vez del equipo del campeón y el podio.
+   */
+  const juntos = liga ? liga.jugadores : null;
+  const [equiposDeTodos, vinculos] = juntos
+    ? await Promise.all([
+        Promise.all(
+          juntos.map((j) =>
+            prisma.hallOfFameEntry.findMany({
+              where: { participantId: j.id },
+              orderBy: { position: "asc" },
+              take: 6,
+              select: { species: true, nickname: true, image: true },
+            }),
+          ),
+        ),
+        capturasParaVincular(competition.id).then((c) => vinculosDe(c).size),
+      ])
+    : [null, 0];
+
   // Lo que hay que pintar con imagen: fotos del podio, equipo del campeón y logo
-  const idsDelPodio = podio.length ? podio.map((sitio) => sitio.participantId) : [campeon.participantId];
+  const idsDelPodio = juntos
+    ? juntos.map((j) => j.id)
+    : podio.length
+      ? podio.map((sitio) => sitio.participantId)
+      : [campeon.participantId];
   const [fichas, equipo, conLogo] = await Promise.all([
     prisma.participant.findMany({
       where: { id: { in: idsDelPodio } },
@@ -156,17 +189,22 @@ export async function GET(
     // El logo no viene con la competición: las columnas de imagen se piden aparte
     prisma.competition.findUnique({ where: { id: competition.id }, select: { logo: true } }),
   ]);
-  const [fotos, sprites, logo, letras] = await Promise.all([
+  const [fotos, sprites, spritesDeTodos, logo, letras] = await Promise.all([
     Promise.all(
       fichas.map(async (ficha) => [ficha.id, await paraLaImagen(ficha.user.avatarImage, 220)] as const),
     ).then((pares) => new Map(pares)),
     Promise.all(equipo.map((pokemon) => paraLaImagen(pokemon.image, 160))),
+    equiposDeTodos
+      ? Promise.all(
+          equiposDeTodos.map((suyo) => Promise.all(suyo.map((p) => paraLaImagen(p.image, 110)))),
+        )
+      : null,
     paraLaImagen(conLogo?.logo ?? null, 420),
     cargarFuentes(),
   ]);
 
   const logoDeLaApp = `data:image/svg+xml;base64,${Buffer.from(logoSvg("resumen", 64)).toString("base64")}`;
-  const segundos = podio.filter((sitio) => sitio.puesto > 1);
+  const segundos = juntos ? [] : podio.filter((sitio) => sitio.puesto > 1);
 
   const cuando = [
     `Del ${formatDate(resumen.desde)}`,
@@ -178,8 +216,16 @@ export async function GET(
   const ALTO = perfil.enSolitario ? ALTO_EN_SOLITARIO : ALTO_DE_GRUPO;
   const dias = { valor: resumen.dias ?? "—", rotulo: resumen.dias === 1 ? "día" : "días" };
   const caidos = { valor: resumen.bajas, rotulo: resumen.bajas === 1 ? "caído" : "caídos" };
-  // En solitario no hay jornadas ni combates: se cuenta su partida
-  const cifras = progreso
+  // En solitario no hay jornadas ni combates: se cuenta su partida. En un Soul
+  // Link, lo que se cuenta son las parejas
+  const cifras = juntos
+    ? [
+        dias,
+        { valor: vinculos, rotulo: vinculos === 1 ? "vínculo" : "vínculos" },
+        { valor: juntos.length, rotulo: "jugadores" },
+        caidos,
+      ]
+    : progreso
     ? [
         dias,
         { valor: progreso.hitos.hechos, rotulo: progreso.hitos.hechos === 1 ? "hito" : "hitos" },
@@ -198,7 +244,7 @@ export async function GET(
     resumen.masMvps && hayRivales
       ? { dibujo: icono("Star", ORO, true), rotulo: "Más MVPs", nombre: resumen.masMvps.displayName, color: resumen.masMvps.color, detalle: String(resumen.masMvps.cuantas) }
       : null,
-    resumen.masCoronas && hayRivales
+    resumen.masCoronas && hayRivales && !juntos
       ? { dibujo: icono("Crown", ORO), rotulo: "Más coronas", nombre: resumen.masCoronas.displayName, color: resumen.masCoronas.color, detalle: plural(resumen.masCoronas.cuantas, "corona") }
       : null,
     resumen.masBajas && resumen.masBajas.cuantas > 0 && hayRivales
@@ -282,14 +328,16 @@ export async function GET(
             height: 176,
             borderRadius: 88,
             border: `5px solid ${ORO}`,
-            backgroundColor: campeon.color,
+            backgroundColor: juntos ? "rgba(251,191,36,0.10)" : campeon.color,
             alignItems: "center",
             justifyContent: "center",
             overflow: "hidden",
             flexShrink: 0,
           }}
         >
-          {fotos.get(campeon.participantId) ? (
+          {juntos ? (
+            <img src={icono("Trophy", ORO)} width={96} height={96} />
+          ) : fotos.get(campeon.participantId) ? (
             <img src={fotos.get(campeon.participantId)!} width={176} height={176} style={{ objectFit: "cover" }} />
           ) : (
             <span style={{ fontFamily: "Condensed", fontWeight: 800, fontSize: 80 }}>
@@ -301,11 +349,20 @@ export async function GET(
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <img src={icono("Trophy", ORO)} width={36} height={36} />
             <span style={{ fontFamily: "Condensed", fontWeight: 700, fontSize: 28, letterSpacing: 5, color: ORO }}>
-              {perfil.enSolitario ? "SE PASÓ LA LIGA" : "CAMPEÓN"}
+              {juntos ? "SOUL LINK SUPERADO" : perfil.enSolitario ? "SE PASÓ LA LIGA" : "CAMPEÓN"}
             </span>
           </div>
-          <span style={{ fontFamily: "Condensed", fontWeight: 800, fontSize: 84, lineHeight: 1, marginTop: 6 }}>
-            {campeon.displayName}
+          <span
+            style={{
+              fontFamily: "Condensed",
+              fontWeight: 800,
+              // Cuatro nombres no caben al tamaño de uno
+              fontSize: juntos && juntos.length > 2 ? 54 : juntos ? 68 : 84,
+              lineHeight: 1,
+              marginTop: 6,
+            }}
+          >
+            {juntos ? juntos.map((j) => j.displayName).join(" y ") : campeon.displayName}
           </span>
           {comoLoGano ? (
             <span style={{ fontSize: 26, color: "#d4d4d8", marginTop: 8 }}>{comoLoGano}</span>
@@ -313,8 +370,41 @@ export async function GET(
         </div>
       </div>
 
+      {/* En un Soul Link, el equipo de cada uno en una fila */}
+      {juntos && equiposDeTodos && spritesDeTodos ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 18 }}>
+          {juntos.map((j, fila) => (
+            <div
+              key={j.id}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "8px 16px",
+                borderRadius: 20,
+                backgroundColor: TARJETA,
+                border: `1.5px solid ${BORDE}`,
+              }}
+            >
+              <span style={{ fontFamily: "Condensed", fontWeight: 700, fontSize: 30, width: 190, overflow: "hidden", whiteSpace: "nowrap" }}>
+                {j.displayName}
+              </span>
+              <div style={{ display: "flex", flex: 1, justifyContent: "space-between" }}>
+                {Array.from({ length: 6 }, (_, i) => spritesDeTodos[fila][i]).map((sprite, i) =>
+                  sprite ? (
+                    <img key={i} src={sprite} width={juntos.length > 2 ? 72 : 96} height={juntos.length > 2 ? 72 : 96} style={{ objectFit: "contain" }} />
+                  ) : (
+                    <div key={i} style={{ display: "flex", width: juntos.length > 2 ? 72 : 96, height: juntos.length > 2 ? 72 : 96 }} />
+                  ),
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {/* Su equipo */}
-      {equipo.length ? (
+      {!juntos && equipo.length ? (
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: 18, gap: 12 }}>
           {equipo.map((pokemon, indice) => (
             <div

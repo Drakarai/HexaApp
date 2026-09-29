@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 29 de septiembre de 2026 (las **dos guías al día** con todo lo de estos días —dualocke por mayoría, palmarés, lockes de antes, parejas, fangames— y fotos nuevas; antes: la **duración de un locke** acaba cuando se decide el ganador, no al archivarlo; antes: los **lockes de antes pueden llevar logo**, que sale en el historial y en la vitrina; antes: **juegos no oficiales**: un fangame con su nombre y, si se quiere, un juego de base del que sacar mapa y plantilla; antes: los juegos gemelos se eligen **en pareja** y cada jugador lleva una versión, con **reparto al azar**; antes: el **historial de ediciones** incluye los lockes de fuera que ha ganado tu gente, con logo, descripción y juego; la vitrina va plegada; antes: **vitrina de títulos** en el palmarés, con nombre, año y logo; antes: una captura apuntada sin conexión **va a su locke** aunque se cambie de edición; borrar una cuenta ya no se lleva sus **lockes de antes**; fotos de la guía al día; antes: los **lockes de antes** admiten jugadores **sin cuenta**, se **editan** y se **vinculan** cuando alguien se hace cuenta; antes: **palmarés a medida**: cada uno elige a quién ve, solo cuentan sus lockes, y pestañas de grupo, dualocke y solitario; antes: **pruebas automáticas** de las reglas del locke, que paran la publicación si alguna cuenta se rompe; antes: el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 29 de septiembre de 2026 (el **Soul Link**: un estilo de juego cooperativo con el **Equipo y PC** de todos a la vista —arrastrar, evolucionar, vínculos por ruta, la pareja que cae con el otro y deshacer— y el **estilo de juego editable** en un locke ya creado; antes: las las **dos guías al día** con todo lo de estos días —dualocke por mayoría, palmarés, lockes de antes, parejas, fangames— y fotos nuevas; antes: la **duración de un locke** acaba cuando se decide el ganador, no al archivarlo; antes: los **lockes de antes pueden llevar logo**, que sale en el historial y en la vitrina; antes: **juegos no oficiales**: un fangame con su nombre y, si se quiere, un juego de base del que sacar mapa y plantilla; antes: los juegos gemelos se eligen **en pareja** y cada jugador lleva una versión, con **reparto al azar**; antes: el **historial de ediciones** incluye los lockes de fuera que ha ganado tu gente, con logo, descripción y juego; la vitrina va plegada; antes: **vitrina de títulos** en el palmarés, con nombre, año y logo; antes: una captura apuntada sin conexión **va a su locke** aunque se cambie de edición; borrar una cuenta ya no se lleva sus **lockes de antes**; fotos de la guía al día; antes: los **lockes de antes** admiten jugadores **sin cuenta**, se **editan** y se **vinculan** cuando alguien se hace cuenta; antes: **palmarés a medida**: cada uno elige a quién ve, solo cuentan sus lockes, y pestañas de grupo, dualocke y solitario; antes: **pruebas automáticas** de las reglas del locke, que paran la publicación si alguna cuenta se rompe; antes: el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -68,8 +68,10 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Mis notas** | Cuaderno privado con un sub-apartado por jugador. Solo lo ve su autor. Arriba, plegada, la **cobertura de tipos**: metes un equipo de hasta seis y sale una tabla de cuánto le entra a cada uno un ataque de cada tipo, con la cuenta de débiles y resistencias por tipo. Usa la tabla **de la generación del locke**, con una casilla para contar con la de ahora si jugáis los combates con las reglas modernas. El equipo se guarda y es igual de privado. |
 | **Sin conexión** | Las pantallas por las que ya se ha pasado **se siguen viendo** sin internet, con un aviso de que son de la última vez. Y lo que se apunta —capturas, bajas, gimnasios y notas— se guarda en el móvil y **se sube solo** al volver la línea, sin duplicarse aunque se reintente. Mientras tanto sale en su pantalla como "sin subir todavía". Cada captura **va al locke en el que se apuntó**, aunque al subirla se esté mirando otro: antes se paraba y había que cambiarse a mano. |
 | **Guía de uso** | El manual de la aplicación en PDF, dentro de la propia aplicación: 26 páginas con fotos de cada pantalla, con su página de **lo nuevo** y una **chuleta de qué es cada icono**. Se abre, se descarga para leerla sin conexión y, en pantalla grande, se lee ahí mismo en un visor. Está en "Lo mío" y **no se le quita a nadie**, juegue o no juegue. |
+| **Soul Link** | Un **estilo de juego** aparte del de competir, que se elige al crear el locke y **se puede cambiar después** en *Ediciones → Editar datos* (junto con las plazas). Cooperativo y de 2 a 4: **sin jornadas, puntos ni final**; se quedan los retos (por si se echa alguno de risas), el sorteo, la ruleta y la bolsa. Las capturas de la misma ruta **se vinculan solas** —por la zona del mapa o, sin mapa, por lo escrito ("Ruta 1" y "ruta1" son la misma)—; un pokémon sin pareja va suelto hasta que otro capture ahí, y también se vincula o desvincula a mano. **Si cae uno, cae su pareja**: se apunta la baja de los dos en el cementerio. Se supera cuando **todos los que siguen se han pasado la Liga**, y cuenta como ganado para todo el grupo: la portada lo dice, el hall se abre (con el equipo traído de Equipo y PC) y el palmarés tiene su pestaña **Soul Link**. |
+| **Equipo y PC** | La pantalla del Soul Link (va primera en *La edición*): el **equipo de 6 y la caja** (cajas de 30, como en los juegos) de cada jugador, **a la vista de todos**, lo tuyo arriba. Cada pokémon lleva sus **tipos** (los de la generación del juego) y el **número de su vínculo**, el mismo que su pareja. Se **arrastran** entre huecos y entre equipo y caja —con el ratón al moverlo; con el dedo, dejándolo pulsado un momento, que si no la página no haría scroll—, y soltar encima de otro los cambia. Tocar uno abre su **ficha**: al equipo o a la caja, **evolucionar** (si hay varias, todas en botones; en un fangame, sin límite de generación), mote, vincular a mano, **dar por muerto** (avisando de quién cae con él) y borrarlo si se apuntó por error. **Deshacer** vuelve atrás lo último (hasta 20), también una muerte con su pareja. Las capturas se apuntan aquí mismo o desde el Mapa de capturas, y caen al equipo si hay hueco. Debajo, la lista de **vínculos**, vivos y caídos. |
 | **Locke en solitario** | Una partida para una persona: sin jornadas, sin clasificación y sin final, pero con su caja, su mapa, sus level caps, su bolsa y sus notas. Se gana **pasándose la Liga**. Un administrador se lo crea al momento; cualquiera lo **pide** y le llega un aviso a la organización, que acepta o rechaza. |
-| **Competiciones** | Crear ediciones copiando configuración, archivar (una edición archivada es **de solo lectura para los jugadores**: se ve entera, con un aviso arriba, pero no se apunta nada; quien la administra sí puede), gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. Al crear una, **se elige qué lockes archivar** de una lista (vienen marcados los de grupo en los que juegas): antes era una casilla de "archivar todo lo activo" que al Creador le archivaba los de toda la casa. De 2 a 8 jugadores, y un dualocke nace con **6 jornadas previstas**. Se puede **apuntar a alguien por su usuario exacto**, aunque la cuenta no la hayas dado de alta tú. El juego se elige **en pareja** cuando son gemelos (Rojo y Azul, Rubí Omega y Zafiro Alfa…; las terceras ediciones, sueltas), y cada jugador lleva **una de las dos versiones**, elegida de un desplegable o **repartidas al azar** a partes iguales con un botón. También **juegos no oficiales** (fangames): su nombre a mano y, si se quiere, **el juego en el que se basan** (Pokémon Añil sobre Rojo y Azul), del que salen el mapa de capturas y la plantilla de level caps para ajustarla; o **desde cero**, sin mapa (Pokémon Z). Se puede pedir también en un locke en solitario. |
+| **Competiciones** | Crear ediciones copiando configuración, archivar (una edición archivada es **de solo lectura para los jugadores**: se ve entera, con un aviso arriba, pero no se apunta nada; quien la administra sí puede), gestionar jugadores y **retirar** al que se va a mitad del locke. El juego se elige de una lista (1ª a 7ª generación, remakes aparte) y de ahí sale la región del mapa. Aquí se reparte también el acceso de **espectador**: quien no juega un locke no lo ve, salvo que un administrador se lo enseñe. Al crear una, **se elige qué lockes archivar** de una lista (vienen marcados los de grupo en los que juegas): antes era una casilla de "archivar todo lo activo" que al Creador le archivaba los de toda la casa. De 2 a 8 jugadores, y un dualocke nace con **6 jornadas previstas**. Se puede **apuntar a alguien por su usuario exacto**, aunque la cuenta no la hayas dado de alta tú. El juego se elige **en pareja** cuando son gemelos (Rojo y Azul, Rubí Omega y Zafiro Alfa…; las terceras ediciones, sueltas), y cada jugador lleva **una de las dos versiones**, elegida de un desplegable o **repartidas al azar** a partes iguales con un botón. También **juegos no oficiales** (fangames): su nombre a mano y, si se quiere, **el juego en el que se basan** (Pokémon Añil sobre Rojo y Azul), del que salen el mapa de capturas y la plantilla de level caps para ajustarla; o **desde cero**, sin mapa (Pokémon Z). Se puede pedir también en un locke en solitario. Cada locke tiene su **estilo de juego** —competitivo o Soul Link—, que se elige al crearlo y, como las plazas, **se cambia después** en *Editar datos*. |
 | **Administración** | Alta de usuarios, roles y contraseñas, los ajustes de la edición, los títulos, el **editor de mapas** (dibujar zonas sobre la imagen —rectángulo, círculo, óvalo o a medida—, moverlas, estirarlas, **girarlas**, colorearlas, agruparlas y regular cuánto se rellenan), las **plantillas de level caps** de cada juego y las copias de seguridad. |
 | **Final Four** / **Jornada Final** | El final del locke, que se abre al terminar todas las jornadas y acaba con un campeón. **El cuadro depende de cuántos sigan jugando**: seis (dos cruces, dos semifinales y final), cinco (dos cruces, una semifinal y el 1º esperando en la final), cuatro (torneo normal: 1º-4º, 2º-3º y final), tres (el 1º espera y se juegan el 2º y el 3º) o dos (una sola llave). De cuatro para arriba se llama **Final Four**; de tres para abajo, **Jornada Final**. **Todas las llaves se juegan al mejor de tres**, y cada combate lleva su ganador, su diferencia, su fecha, sus notas y **su enlace a la repetición**. No se abre hasta que estén creadas **las jornadas previstas**, no solo jugadas las que haya. Y si **solo queda uno en pie** —los demás se retiraron o perdieron el locke—, no hay final: **gana por abandono**, y el hall, la imagen del resumen y el palmarés lo cuentan como campeón. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon se abre en grande con su ilustración, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. Entre las menciones, **quién se llevó más coronas** y la **causa de muerte más repetida**. Y **Para el grupo**: el locke entero en **una imagen** —campeón con su equipo, podio, cifras y menciones— con botón de compartir (el menú del móvil) o descargar. |
@@ -2687,6 +2689,51 @@ tu rival", y su rival le tenía de rival aunque ese combate se gana solo.
 rival le sale "Por retirada" con la explicación, y al que no tiene combate,
 "Descansas".
 
+### El Soul Link: cooperativo, vinculado y con su propia pantalla
+
+Lo pidió un amigo del grupo que iba a jugar un Soul Link en un fangame: un
+locke **cooperativo** en el que lo que captura cada uno en una ruta va
+**vinculado** con lo que capturan los demás en esa misma ruta, y si muere uno
+muere su pareja. Quería ver su equipo y su caja, y los del otro, moverlos y
+evolucionarlos.
+
+- **Es un estilo de juego y no un tamaño.** Hasta ahora todo salía de
+  `maxPlayers` (uno es solitario, dos dualocke…). Un Soul Link de dos no es un
+  dualocke, así que va en `Competition.estilo` y `perfilDeLocke(jugadores,
+  estilo)` devuelve `cooperativo` y `sinJornadas` (este último vale también en
+  solitario, que es lo que casi todas las pantallas querían preguntar).
+- **Editable después de crearlo**, estilo y plazas: el grupo ya había montado
+  el locke como dualocke. Lo que hubiera de antes (jornadas, puntos) se queda
+  guardado y deja de enseñarse. No se puede bajar de los apuntados ni pasar de
+  cuatro en un Soul Link.
+- **El vínculo es por ruta y se guarda.** Se pensó en calcularlo al vuelo por
+  la zona, pero con capturas extra, fangames sin mapa y rutas escritas a mano
+  no vale: cada captura lleva `vinculo` (una clave compartida), se busca solo
+  al apuntar (misma zona o mismo texto normalizado) y se corrige a mano. Un
+  vínculo del que solo queda uno es como ir suelto, sin limpiar nada. Vale igual
+  para 2 que para 4 jugadores.
+- **Las capturas son las de siempre** (`Capture`), con su sitio en el equipo o
+  la caja (`lugar`, `hueco`) y qué pokémon son de verdad (`pokemonId`, para
+  tipos y evoluciones). Así lo del Mapa de capturas entra solo, y el día que
+  los lockes normales tengan su caja (privada) no hay que migrar nada.
+- **Los huecos nunca se dan por buenos**: `colocar()` resuelve choques, séptimos
+  en el equipo y las capturas de antes, que nacieron todas en el hueco 0.
+- **Arrastrar sin librería**, con eventos de puntero. Con el dedo hace falta
+  una pulsación larga, y para que la página no se desplace mientras se arrastra
+  el `touchmove` que lo bloquea tiene que estar puesto **desde el principio**
+  en el tablero: si se pone al empezar a arrastrar, el navegador ya ha decidido
+  que ese dedo hace scroll. La casilla se mueve al soltar y el servidor
+  confirma detrás; si dice que no, vuelve.
+- **Deshacer** guarda cómo estaban las capturas tocadas y qué bajas se crearon
+  (`CambioDeCaja`), no una lista de operaciones inversas: volver atrás es
+  dejarlas como estaban y borrar esas bajas.
+- **Sin campeón.** Se supera cuando todos los que siguen se han pasado la Liga,
+  y en el palmarés cuenta como ganado para todos, en su propia categoría. Al
+  mirarlo salió un fallo viejo: las acciones del hall pedían campeón y en
+  solitario no dejaban apuntar el equipo; ahora preguntan `lockeTerminado()`.
+- **Sin `@unique` en `Capture.deathId`**: una restricción única hace que
+  `db push` pida permiso para perder datos y el despliegue se pararía.
+
 ---
 
 ## 4. Reglas del locke que están implementadas
@@ -2907,10 +2954,24 @@ Piezas con truco:
   caps, **las parejas** (`versionesDelJuego`, `repartirVersiones`) y **los no
   oficiales** (`leerJuego`, `nombreDelJuego`, `versionesDeLaEdicion`), probados
   en `tests/juegos.test.ts`. El selector es `components/juego-picker.tsx`.
+- `lib/equipo-y-caja.ts` — las cuentas del Soul Link sin base de datos, que
+  usan igual el servidor y el navegador: `colocar` (dónde se pinta cada uno),
+  `mover`, `sitioParaUnaNueva`, y los vínculos (`vinculosDe`, `companerasDe`,
+  `vinculoAlCapturar`, `sePuedenVincular`). Probadas en
+  `tests/soul-link.test.ts`. `lib/soul-link.ts` lee los tableros de todos
+  (`getEquiposDelLocke`), vincula lo recién apuntado (`vincularCapturaNueva`,
+  la llaman el mapa y Equipo y PC) y dice si el grupo ya se pasó la Liga
+  (`getLigaEnCooperativo`). `actions/equipo-y-caja.ts` son las acciones, cada
+  una con su permiso y su foto para deshacer; `(app)/soul-link/` la pantalla
+  (`tablero.tsx` lleva el arrastre y la ficha) y
+  `components/resumen-soul-link.tsx` la portada.
+- `lib/evoluciones.ts` — a qué evoluciona cada uno, con las formas regionales.
+  Los datos salen de `scripts/generate-evoluciones.ts` a `lib/evoluciones.json`.
 - `lib/campeon.ts` — `getCampeonDelLocke`: quién ha ganado el locke (mayoría de
   jornadas en el dual, abandono o final) y si queda algo por jugar. **Cualquier
   pantalla que quiera saber el campeón, aquí**; `lib/hall.ts` lo usa para el
-  podio y el "cómo lo ganó".
+  podio y el "cómo lo ganó". `lockeTerminado()` es si se abre el hall, que no
+  siempre es tener campeón (solitario y Soul Link se acaban con la Liga).
 - `lib/solitario.ts` — cómo va una partida de una persona (hitos, siguiente,
   caídos, zonas). `components/resumen-solitario.tsx` lo pinta, y sale tanto en
   la portada como en la pantalla de la tabla.
@@ -3051,6 +3112,19 @@ se juega igual sin cambiar nada. Ver "Quién gana el locke" en el apartado 3.
 Se planteó esconder Retos y la Ruleta en los lockes de dos y el usuario lo
 descartó: la ruleta se usa para sortearle algo al ganador y los retos también
 pueden caer.
+
+**Soul Link, lo que queda para más adelante** (hablado con el usuario):
+
+- **Equipo y caja en los lockes normales**, pero privados como el mapa, y que
+  sirvan para dar por muerto desde ahí lo capturado. La pantalla ya existe para
+  todos (`/soul-link`), solo que fuera del Soul Link dice que no toca.
+- Las acciones de Equipo y PC **no van a la cola sin conexión**; apuntar una
+  captura desde el mapa sí.
+- Una baja apuntada **desde el cementerio** no sabe de vínculos: la pareja no
+  cae sola. El cementerio de un Soul Link avisa de usar Equipo y PC.
+- Pedir un Soul Link desde las solicitudes: de momento se pide el locke y quien
+  lo crea le cambia el estilo.
+- Las guías no hablan todavía del Soul Link.
 
 Ideas comentadas y no hechas:
 
@@ -3430,3 +3504,5 @@ del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
 90. **Logos en los lockes de antes**, que salen en el historial y en la vitrina.
 91. **Guías al día**: las dos rehechas con lo nuevo y fotos con HeartGold y
     SoulSilver en pareja.
+92. **Soul Link**: estilo de juego cooperativo y editable, con el Equipo y PC
+    de todos, vínculos por ruta, muertes en pareja, evoluciones y deshacer.

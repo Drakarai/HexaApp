@@ -42,6 +42,13 @@ export type CampeonDeUnLocke = {
   campeon: { displayName: string; color: string; avatarImage: string | null } | null;
   subcampeon: { displayName: string; color: string } | null;
   categoria: Categoria;
+  /**
+   * En un Soul Link no hay un campeón: lo superan **todos juntos**. Aquí van
+   * todos (el primero es también `campeon`, para lo que solo pinta uno).
+   */
+  juntos?: { displayName: string; color: string; avatarImage: string | null }[];
+  /** Todas las cuentas que lo ganaron: una, o todo el grupo en un Soul Link */
+  ganadoresUserIds: string[];
   /** El logo de la edición, si tiene */
   logo: string | null;
   /** La descripción de la edición; los de antes llevan sus notas en `notas` */
@@ -77,11 +84,21 @@ export type DatosDeLockeDeAntes = {
  * Las categorías del palmarés, por tamaño del locke: ganar un Hexalocke de seis
  * no es lo mismo que ganar un dualocke, y así se cuentan por separado.
  */
-export type Categoria = "grupo" | "dual" | "solitario";
-export const CATEGORIAS: Categoria[] = ["grupo", "dual", "solitario"];
+export type Categoria = "grupo" | "dual" | "solitario" | "soullink";
+export const CATEGORIAS: Categoria[] = ["grupo", "dual", "solitario", "soullink"];
 
 export function categoriaDelLocke(jugadores: number): Categoria {
   return jugadores <= 1 ? "solitario" : jugadores === 2 ? "dual" : "grupo";
+}
+
+/**
+ * La de una edición de la aplicación, que además del tamaño tiene estilo: un
+ * Soul Link va aparte sea de dos o de cuatro, porque no se gana a nadie.
+ */
+export function categoriaDeUnaEdicion(edicion: { maxPlayers: number; estilo: string }): Categoria {
+  return perfilDeLocke(edicion.maxPlayers, edicion.estilo).cooperativo
+    ? "soullink"
+    : categoriaDelLocke(edicion.maxPlayers);
 }
 
 export type Cuenta = {
@@ -178,13 +195,12 @@ export async function getPalmares(): Promise<Palmares> {
       description: true,
       startedAt: true,
       maxPlayers: true,
+      estilo: true,
       jornadasPrevistas: true,
     },
   });
   const ids = competiciones.map((competicion) => competicion.id);
-  const categoriaDe = new Map(
-    competiciones.map((c) => [c.id, categoriaDelLocke(c.maxPlayers)]),
-  );
+  const categoriaDe = new Map(competiciones.map((c) => [c.id, categoriaDeUnaEdicion(c)]));
 
   const deAntes = await prisma.lockeDeAntes.findMany({
     where: {
@@ -201,8 +217,9 @@ export async function getPalmares(): Promise<Palmares> {
 
   if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
-  const enSolitario = competiciones
-    .filter((c) => categoriaDelLocke(c.maxPlayers) === "solitario")
+  // Los que se ganan pasándose la Liga: en solitario y en Soul Link
+  const porLaLiga = competiciones
+    .filter((c) => ["solitario", "soullink"].includes(categoriaDe.get(c.id)!))
     .map((c) => c.id);
 
   const [participantes, finales, bajas, combates, ligas] = await Promise.all([
@@ -240,16 +257,21 @@ export async function getPalmares(): Promise<Palmares> {
      * de tipo Campeón marcado. Antes esos lockes sumaban como jugados y nunca
      * como ganados.
      */
-    enSolitario.length
+    porLaLiga.length
       ? prisma.gymClear.findMany({
           where: {
-            levelCap: { competitionId: { in: enSolitario }, kind: LEVEL_CAP_KINDS.CHAMPION },
+            levelCap: { competitionId: { in: porLaLiga }, kind: LEVEL_CAP_KINDS.CHAMPION },
           },
           select: { participantId: true, levelCap: { select: { competitionId: true } } },
         })
       : [],
   ]);
-  const ligaPasadaEn = new Map(ligas.map((marca) => [marca.levelCap.competitionId, marca.participantId]));
+  /** Quién se ha pasado la Liga en cada edición */
+  const ligaPasadaEn = new Map<string, Set<string>>();
+  for (const marca of ligas) {
+    const edicion = marca.levelCap.competitionId;
+    ligaPasadaEn.set(edicion, (ligaPasadaEn.get(edicion) ?? new Set()).add(marca.participantId));
+  }
 
   /**
    * Las fotos de perfil, como **dirección** y no como imagen. Se pidieron mal
@@ -301,8 +323,8 @@ export async function getPalmares(): Promise<Palmares> {
       : null;
   };
 
-  /** Qué cuenta ganó cada edición, para la tabla de personas de abajo */
-  const campeonPorEdicion = new Map<string, string | null>();
+  /** Qué cuentas ganaron cada edición, para la tabla de personas de abajo */
+  const campeonPorEdicion = new Map<string, Set<string>>();
 
   const ediciones: CampeonDeUnLocke[] = competiciones.map((competicion) => {
     const final = finales.find((fila) => fila.competitionId === competicion.id);
@@ -326,8 +348,20 @@ export async function getPalmares(): Promise<Palmares> {
             competicion.jornadasPrevistas,
           )
         : null;
-    const { campeon, subcampeon } = categoriaDe.get(competicion.id) === "solitario"
-      ? { campeon: ligaPasadaEn.get(competicion.id) ?? null, subcampeon: null }
+    /**
+     * En un Soul Link lo ganan **todos los que siguen**, y solo cuando se la
+     * han pasado todos: el que va delante no ha ganado nada todavía.
+     */
+    const juntos =
+      categoriaDe.get(competicion.id) === "soullink" &&
+      enPie.length > 0 &&
+      enPie.every((p) => ligaPasadaEn.get(competicion.id)?.has(p.id))
+        ? enPie.map((p) => p.id)
+        : null;
+    const { campeon, subcampeon } = categoriaDe.get(competicion.id) === "soullink"
+      ? { campeon: juntos?.[0] ?? null, subcampeon: null }
+      : categoriaDe.get(competicion.id) === "solitario"
+      ? { campeon: [...(ligaPasadaEn.get(competicion.id) ?? [])][0] ?? null, subcampeon: null }
       : porJornadas
       ? {
           campeon: porJornadas,
@@ -343,10 +377,10 @@ export async function getPalmares(): Promise<Palmares> {
           ? { campeon: enPie[0].id, subcampeon: null }
           : { campeon: null, subcampeon: null };
 
-    campeonPorEdicion.set(
-      competicion.id,
-      campeon ? (porParticipante.get(campeon)?.userId ?? null) : null,
-    );
+    const ganadores = (juntos ?? (campeon ? [campeon] : []))
+      .map((id) => porParticipante.get(id)?.userId)
+      .filter((id): id is string => Boolean(id));
+    campeonPorEdicion.set(competicion.id, new Set(ganadores));
 
     return {
       competitionId: competicion.id,
@@ -360,6 +394,8 @@ export async function getPalmares(): Promise<Palmares> {
       campeon: ficha(campeon),
       subcampeon: ficha(subcampeon),
       categoria: categoriaDe.get(competicion.id) ?? "grupo",
+      juntos: juntos ? juntos.map((id) => ficha(id)!).filter(Boolean) : undefined,
+      ganadoresUserIds: ganadores,
       logo: logos(competicion.id),
       descripcion: competicion.description,
       deFuera: !misIds.has(competicion.id),
@@ -403,6 +439,7 @@ export async function getPalmares(): Promise<Palmares> {
         ? { displayName: locke.subcampeonNombre, color: SIN_CUENTA }
         : null,
     categoria: categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length),
+    ganadoresUserIds: locke.ganadorId ? [locke.ganadorId] : [],
     logo: logosDeAntes(locke.id),
     descripcion: null,
     deFuera: !misDeAntes.has(locke.id),
@@ -443,7 +480,12 @@ export async function getPalmares(): Promise<Palmares> {
         color: quien.color,
         avatarImage: avatares(quien.userId),
         total: cuentaVacia(),
-        porCategoria: { grupo: cuentaVacia(), dual: cuentaVacia(), solitario: cuentaVacia() },
+        porCategoria: {
+          grupo: cuentaVacia(),
+          dual: cuentaVacia(),
+          solitario: cuentaVacia(),
+          soullink: cuentaVacia(),
+        },
         titulos: [],
       });
     }
@@ -465,7 +507,7 @@ export async function getPalmares(): Promise<Palmares> {
     const categoria = categoriaDe.get(p.competitionId) ?? "grupo";
     sumar(fila, categoria, "lockes");
     sumar(fila, categoria, "bajas", bajasPorParticipante.get(p.id) ?? 0);
-    if (campeonPorEdicion.get(p.competitionId) === p.userId) {
+    if (campeonPorEdicion.get(p.competitionId)?.has(p.userId)) {
       sumar(fila, categoria, "ganados");
       const edicion = porId.get(p.competitionId);
       if (edicion) {
@@ -547,12 +589,17 @@ export async function getPalmares(): Promise<Palmares> {
    */
   const deTuGente = (userId: string | null) => Boolean(userId && genteIds.has(userId));
   const historial = [...ediciones, ...apuntados]
-    .filter((e) => !e.deFuera || (e.terminado && deTuGente(e.campeonUserId)))
-    .map((e) =>
-      e.deFuera && !deTuGente(e.subcampeonUserId)
-        ? { ...e, subcampeon: null, subcampeonUserId: null }
-        : e,
-    );
+    .filter((e) => !e.deFuera || (e.terminado && e.ganadoresUserIds.some(deTuGente)))
+    .map((e) => {
+      if (!e.deFuera) return e;
+      // De un Soul Link de fuera, solo se nombra a los tuyos
+      const tuyos = e.juntos?.filter((_, i) => deTuGente(e.ganadoresUserIds[i] ?? null));
+      return {
+        ...e,
+        ...(e.juntos ? { juntos: tuyos, campeon: tuyos?.[0] ?? null } : {}),
+        ...(deTuGente(e.subcampeonUserId) ? {} : { subcampeon: null, subcampeonUserId: null }),
+      };
+    });
 
   return {
     ediciones: historial.sort(

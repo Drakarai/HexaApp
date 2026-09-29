@@ -191,6 +191,17 @@ export default async function DeathsPage({
         subtitle="La caja de los caídos. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
       />
 
+      {/* Apuntada aquí, la baja no sabe de vínculos: la pareja no cae sola */}
+      {competition.estilo === "soullink" ? (
+        <p className="mb-5 rounded-xl border border-brand-400/30 bg-brand-600/10 px-3 py-2 text-sm text-slate-300">
+          En un Soul Link, las bajas se marcan mejor desde{" "}
+          <Link href="/soul-link" className="text-brand-300 hover:underline">
+            Equipo y PC
+          </Link>
+          : así cae también su pareja y se puede deshacer.
+        </p>
+      ) : null}
+
       <div className="mb-5 flex flex-wrap gap-2">
         <Link
           href="/muertes"

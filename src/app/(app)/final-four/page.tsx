@@ -47,7 +47,7 @@ export default async function FinalFourPage() {
    * jornadas, y esto solo desempata (ver lib/campeon.ts). Se dice arriba para
    * que nadie crea que lo que se juega aquí cambia el campeón.
    */
-  const porJornadas = perfilDeLocke(competition.maxPlayers).victoria === "jornadas";
+  const porJornadas = perfilDeLocke(competition.maxPlayers, competition.estilo).victoria === "jornadas";
   const [ganador, marcador] = porJornadas
     ? await Promise.all([getCampeonDelLocke(competition.id, state), getMarcador(competition.id)])
     : [null, null];

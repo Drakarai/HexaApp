@@ -17,7 +17,12 @@ import { Icono } from "@/components/icono";
 export const metadata = { title: "Palmarés" };
 
 /** La categoría de cada edición, dicha corta junto a su fecha */
-const DE_QUE_TAMANO = { grupo: "De grupo", dual: "Dualocke", solitario: "En solitario" } as const;
+const DE_QUE_TAMANO = {
+  grupo: "De grupo",
+  dual: "Dualocke",
+  solitario: "En solitario",
+  soullink: "Soul Link",
+} as const;
 
 export default async function PalmaresPage({
   searchParams,
@@ -41,7 +46,7 @@ export default async function PalmaresPage({
    */
   const quitado = new Set(ocultos);
   const conMiGente = todas
-    .filter((e) => !e.deFuera || !quitado.has(e.campeonUserId ?? ""))
+    .filter((e) => !e.deFuera || e.ganadoresUserIds.some((id) => !quitado.has(id)))
     .map((e) =>
       e.deFuera && quitado.has(e.subcampeonUserId ?? "") ? { ...e, subcampeon: null } : e,
     );
@@ -258,7 +263,30 @@ function Ficha({ edicion }: { edicion: CampeonDeUnLocke }) {
           </p>
         ) : null}
       </div>
-      {edicion.campeon ? (
+      {edicion.juntos && edicion.juntos.length > 1 ? (
+        // Un Soul Link: lo superaron todos, así que salen todos
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="flex -space-x-2">
+            {edicion.juntos.map((quien) => (
+              <Avatar
+                key={quien.displayName}
+                name={quien.displayName}
+                color={quien.color}
+                image={quien.avatarImage}
+                size={26}
+              />
+            ))}
+          </div>
+          <div className="max-w-[9rem] text-right">
+            <p className="truncate text-sm font-semibold text-amber-200">
+              {edicion.juntos.map((quien) => quien.displayName).join(" y ")}
+            </p>
+            <p className="text-[11px] text-slate-500">
+              {edicion.deFuera ? "lo han superado" : "lo superaron juntos"}
+            </p>
+          </div>
+        </div>
+      ) : edicion.campeon ? (
         <div className="flex shrink-0 items-center gap-2">
           <Avatar
             name={edicion.campeon.displayName}

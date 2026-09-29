@@ -79,7 +79,7 @@ export default async function MatchdaysPage() {
     }),
     combatesEsperandoRetirada(competition.id),
     // Solo en los lockes que se ganan por jornadas: ver lib/marcador.ts
-    perfilDeLocke(competition.maxPlayers).victoria === "jornadas"
+    perfilDeLocke(competition.maxPlayers, competition.estilo).victoria === "jornadas"
       ? getMarcador(competition.id)
       : null,
   ]);

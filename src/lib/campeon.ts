@@ -4,6 +4,8 @@ import { prisma } from "@/lib/db";
 import { getFinalFourState, type BracketPlayer, type FinalFourState } from "@/lib/final-four";
 import { getMarcador, type Marcador } from "@/lib/marcador";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getLigaEnCooperativo } from "@/lib/soul-link";
+import { getProgresoEnSolitario } from "@/lib/solitario";
 
 /**
  * Quién ha ganado el locke. **Todas las pantallas lo preguntan aquí** —portada,
@@ -43,12 +45,14 @@ export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
     estado ?? getFinalFourState(competitionId),
     prisma.competition.findUnique({
       where: { id: competitionId },
-      select: { maxPlayers: true },
+      select: { maxPlayers: true, estilo: true },
     }),
   ]);
 
-  const esDual =
-    competition !== null && perfilDeLocke(competition.maxPlayers).victoria === "jornadas";
+  const perfil = competition ? perfilDeLocke(competition.maxPlayers, competition.estilo) : null;
+  // En un Soul Link no hay campeón: se gana entre todos (ver lib/soul-link.ts)
+  if (perfil?.cooperativo) return null;
+  const esDual = perfil?.victoria === "jornadas";
   return decidirCampeon(state, esDual ? await getMarcador(competitionId) : null);
 });
 
@@ -96,4 +100,22 @@ export function decidirCampeon(
     };
   }
   return null;
+}
+
+/**
+ * Si el locke se ha acabado, que es cuando se abre el hall de la fama. No
+ * siempre es tener campeón: en solitario es pasarse la Liga, y en un Soul Link
+ * que se la pasen todos los que siguen. Las acciones del hall preguntaban solo
+ * por el campeón y en esos dos no dejaban apuntar el equipo.
+ */
+export async function lockeTerminado(competitionId: string): Promise<boolean> {
+  const competicion = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { maxPlayers: true, estilo: true },
+  });
+  if (!competicion) return false;
+  const perfil = perfilDeLocke(competicion.maxPlayers, competicion.estilo);
+  if (perfil.cooperativo) return (await getLigaEnCooperativo(competitionId)).superada;
+  if (perfil.enSolitario) return Boolean((await getProgresoEnSolitario(competitionId))?.ligaSuperada);
+  return Boolean(await getCampeonDelLocke(competitionId));
 }

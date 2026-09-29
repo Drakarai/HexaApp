@@ -31,6 +31,8 @@ import { MarcadorDual } from "@/components/marcador-dual";
 import { getCastigosPendientes } from "@/lib/premios";
 import { Castigos } from "@/components/castigos";
 import { getProgresoEnSolitario } from "@/lib/solitario";
+import { getEquiposDelLocke, getLigaEnCooperativo } from "@/lib/soul-link";
+import { ResumenSoulLink } from "@/components/resumen-soul-link";
 import { ResumenEnSolitario } from "@/components/resumen-solitario";
 import {
   getGraficoClasificacion,
@@ -60,10 +62,10 @@ export default async function DashboardPage() {
    * En un locke de dos, la portada no enseña una clasificación sino el
    * marcador: quién va ganando más jornadas y cuántas le faltan.
    */
-  const perfil = perfilDeLocke(competition.maxPlayers);
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, jornadas, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico] =
+  const [standings, levelCaps, activity, recentSpins, jornadas, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico, liga] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -105,10 +107,26 @@ export default async function DashboardPage() {
        * Va en la misma tanda que el resto, así que no se espera más por ella.
        * Sin tabla —dualocke o solitario— no hace falta.
        */
-      porJornadas || perfil.enSolitario
+      porJornadas || perfil.sinJornadas
         ? null
         : getGraficoClasificacion(competition.id),
+      // En un Soul Link se acaba cuando todos se han pasado la Liga
+      perfil.cooperativo ? getLigaEnCooperativo(competition.id) : null,
     ]);
+  /**
+   * En un Soul Link la portada enseña los equipos de todos en vez de una
+   * clasificación: es lo que se viene a mirar. Va aparte porque necesita saber
+   * si quien mira administra (`canManage`), que sale de la tanda de arriba.
+   */
+  const equipos = perfil.cooperativo
+    ? await getEquiposDelLocke(competition, {
+        userId: user.id,
+        gestiona: canManage,
+        soloLectura: true,
+      })
+    : null;
+  /** Sin la tarjeta de la jornada (solitario y Soul Link), lo de la izquierda ocupa todo */
+  const aLoAncho = Boolean(progreso || equipos);
 
   /**
    * Quién va primero, dicho como toque: por puntos o por jornadas ganadas.
@@ -177,7 +195,7 @@ export default async function DashboardPage() {
      * sin jornadas jugadas tampoco: ahí se queda el último hito, que es lo
      * único que se puede contar.
      */
-    !perfil.enSolitario &&
+    !perfil.sinJornadas &&
     estadoFinal.status !== "POCA_GENTE" &&
     estadoFinal.status !== "SIN_JORNADAS";
   const currentCap = capPendiente ?? levelCaps[levelCaps.length - 1];
@@ -190,7 +208,7 @@ export default async function DashboardPage() {
   const pasadosPorTodos = capPendiente
     ? levelCaps.indexOf(capPendiente)
     : levelCaps.length;
-  const checkpoints = perfil.enSolitario ? [] : checkpointsDelLocke(levelCaps, jornadas);
+  const checkpoints = perfil.sinJornadas ? [] : checkpointsDelLocke(levelCaps, jornadas);
   const abierto = checkpointAbierto(checkpoints, pasadosPorTodos);
 
   /** La jornada de la tarjeta de la derecha: la que toca, o la próxima por jugar */
@@ -250,7 +268,7 @@ export default async function DashboardPage() {
       ? miLlave.b
       : miLlave.a
     : null;
-  const ganador = perfil.enSolitario
+  const ganador = perfil.sinJornadas
     ? null
     : await getCampeonDelLocke(competition.id, estadoFinal);
   const campeon = ganador?.champion ?? null;
@@ -265,8 +283,8 @@ export default async function DashboardPage() {
    * y la portada lo tiene que decir: antes seguía poniendo "En curso" y pidiendo
    * que se creara otra jornada.
    */
-  const terminado =
-    Boolean(campeon) && !sigueTrasGanar && competition.status !== COMPETITION_STATUS.ARCHIVED;
+  const acabado = (Boolean(campeon) && !sigueTrasGanar) || Boolean(liga?.superada);
+  const terminado = acabado && competition.status !== COMPETITION_STATUS.ARCHIVED;
 
   /**
    * La tarjeta de la izquierda: la jornada si hay un checkpoint abierto, si no
@@ -388,7 +406,7 @@ export default async function DashboardPage() {
               : `${activos}/${competition.maxPlayers}`
           }
           hint={
-            perfil.enSolitario
+            perfil.enSolitario || perfil.cooperativo
               ? perfil.nombre
               : quienesFaltan
               ? // Con gente fuera, eso es lo que importa: los puntos de salida
@@ -404,7 +422,19 @@ export default async function DashboardPage() {
           hint={perfil.enSolitario ? "En tu partida" : "En toda la competición"}
           href="/muertes"
         />
-        {progreso ? (
+        {equipos ? (
+          <StatCard
+            label="Vínculos"
+            value={String(
+              equipos.vinculos.filter((v) => v.miembros.every((m) => !m.muerta)).length,
+            )}
+            hint={(() => {
+              const rotos = equipos.vinculos.filter((v) => v.miembros.some((m) => m.muerta)).length;
+              return rotos ? `vivos · ${rotos} rotos` : "Parejas vivas";
+            })()}
+            href="/soul-link"
+          />
+        ) : progreso ? (
           <StatCard
             label="Hitos"
             value={`${progreso.hitos.hechos}/${progreso.hitos.total}`}
@@ -428,18 +458,29 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        <section className={progreso ? "card lg:col-span-3" : "card lg:col-span-2"}>
+        <section className={aLoAncho ? "card lg:col-span-3" : "card lg:col-span-2"}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-title">
-              {progreso ? "Tu partida" : marcador ? "Marcador" : "Clasificación"}
+              {equipos
+                ? "Vuestros equipos"
+                : progreso
+                  ? "Tu partida"
+                  : marcador
+                    ? "Marcador"
+                    : "Clasificación"}
             </h2>
             {progreso ? null : (
-              <Link href="/puntos" className="text-xs text-brand-400 hover:underline">
-                Ver detalle →
+              <Link
+                href={equipos ? "/soul-link" : "/puntos"}
+                className="text-xs text-brand-400 hover:underline"
+              >
+                {equipos ? "Equipo y PC →" : "Ver detalle →"}
               </Link>
             )}
           </div>
-          {progreso ? (
+          {equipos && liga ? (
+            <ResumenSoulLink equipos={equipos} liga={liga} />
+          ) : progreso ? (
             <ResumenEnSolitario progreso={progreso} />
           ) : marcador ? (
             <MarcadorDual marcador={marcador} compacto />
@@ -470,7 +511,7 @@ export default async function DashboardPage() {
             quedaba con media pantalla de vacío debajo. */}
         <section
           className={cx(
-            progreso ? "hidden" : "card self-start",
+            aLoAncho ? "hidden" : "card self-start",
             abierto && "border-brand-400/50 ring-1 ring-brand-400/20",
           )}
         >

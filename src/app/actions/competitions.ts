@@ -19,7 +19,12 @@ import { COMPETITION_STATUS, PALETTE } from "@/lib/constants";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
-import { JORNADAS_DEL_DUALOCKE, JUGADORES_MAXIMOS } from "@/lib/perfiles-de-locke";
+import {
+  JORNADAS_DEL_DUALOCKE,
+  JUGADORES_DEL_SOUL_LINK,
+  JUGADORES_MAXIMOS,
+  leerEstilo,
+} from "@/lib/perfiles-de-locke";
 import { slugify } from "@/lib/utils";
 import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
@@ -113,11 +118,18 @@ export async function createCompetitionAction(
   if (!Number.isFinite(startingPoints) || !Number.isFinite(maxPlayers)) {
     return { error: "Puntos iniciales y jugadores tienen que ser números." };
   }
-  const plazas = Math.min(JUGADORES_MAXIMOS, Math.max(2, Math.trunc(maxPlayers)));
-  // En un dualocke hace falta saber de cuántas va (ver JORNADAS_DEL_DUALOCKE)
-  const jornadasPrevistas =
-    numeroOpcional(formData.get("jornadasPrevistas"), 50) ??
-    (plazas === 2 ? JORNADAS_DEL_DUALOCKE : null);
+  const estilo = leerEstilo(String(formData.get("estilo") ?? ""));
+  const soulLink = estilo === "soullink";
+  const plazas = Math.min(
+    soulLink ? JUGADORES_DEL_SOUL_LINK.maximo : JUGADORES_MAXIMOS,
+    Math.max(2, Math.trunc(maxPlayers)),
+  );
+  // En un dualocke hace falta saber de cuántas va (ver JORNADAS_DEL_DUALOCKE);
+  // en un Soul Link no hay jornadas
+  const jornadasPrevistas = soulLink
+    ? null
+    : (numeroOpcional(formData.get("jornadasPrevistas"), 50) ??
+      (plazas === 2 ? JORNADAS_DEL_DUALOCKE : null));
 
   /**
    * Si los jugadores del locke de origen no caben, no se crea nada. Antes se
@@ -155,6 +167,7 @@ export async function createCompetitionAction(
       description,
       startingPoints: Math.trunc(startingPoints),
       maxPlayers: plazas,
+      estilo,
       jornadasPrevistas,
       createdById: admin.id,
     },
@@ -319,10 +332,42 @@ export async function updateCompetitionAction(
   });
   if ("error" in juego) return juego;
 
+  /**
+   * El estilo y las plazas, que **se pueden cambiar con el locke empezado**
+   * (ver EditCompetitionForm). Lo que no se puede es dejar a nadie fuera: menos
+   * plazas que apuntados, o un Soul Link de más de cuatro.
+   */
+  const actual = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { maxPlayers: true, estilo: true, _count: { select: { participants: true } } },
+  });
+  if (!actual) return { error: "Competición no encontrada." };
+  const enSolitario = actual.maxPlayers === 1;
+  const estilo = enSolitario
+    ? actual.estilo
+    : leerEstilo(String(formData.get("estilo") ?? actual.estilo));
+  const pedidas = Number(formData.get("maxPlayers") ?? actual.maxPlayers);
+  const tope = estilo === "soullink" ? JUGADORES_DEL_SOUL_LINK.maximo : JUGADORES_MAXIMOS;
+  const plazas = enSolitario
+    ? 1
+    : Number.isFinite(pedidas)
+      ? Math.min(tope, Math.max(2, Math.trunc(pedidas)))
+      : actual.maxPlayers;
+  if (plazas < actual._count.participants) {
+    return {
+      error:
+        estilo === "soullink" && actual._count.participants > tope
+          ? `Un Soul Link es de ${tope} como mucho y aquí hay ${actual._count.participants} apuntados.`
+          : `Ya hay ${actual._count.participants} apuntados: no se puede bajar a ${plazas} plazas.`,
+    };
+  }
+
   await prisma.competition.update({
     where: { id: competitionId },
     data: {
       name,
+      estilo,
+      maxPlayers: plazas,
       game: juego.game,
       gameId: juego.gameId,
       juegoNoOficial: juego.juegoNoOficial,

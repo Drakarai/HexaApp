@@ -41,6 +41,8 @@ const S = {
   sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
+  // Solo en un Soul Link: el equipo y la caja de todos, con sus vínculos
+  soulLink: { href: "/soul-link", label: "Equipo y PC", icon: "🔗" },
   // Va con las ediciones y no con los combates: no es de este locke, es de
   // todos los que esa persona puede abrir
   palmares: { href: "/palmares", label: "Palmarés", icon: "👑" },
@@ -129,7 +131,7 @@ export default async function AppLayout({
     !active &&
     (await prisma.lockeDeAntes.count({ where: { jugadoresIds: { has: user.id } } })) > 0;
   /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
-  const perfil = perfilDeLocke(active?.maxPlayers ?? 6);
+  const perfil = perfilDeLocke(active?.maxPlayers ?? 6, active?.estilo);
 
   /**
    * Los atajos de apuntar: solo los que esa persona puede usar de verdad. Un
@@ -160,6 +162,14 @@ export default async function AppLayout({
       icon: "🗺️",
       label: "Apuntar una captura",
       hint: "Busca la ruta y apunta lo que salió",
+    });
+  } else if (!archivadaParaMi && yo && perfil.cooperativo) {
+    // Sin mapa, en un Soul Link las capturas se apuntan en Equipo y PC
+    atajos.push({
+      href: "/soul-link?apuntar=1",
+      icon: "🔗",
+      label: "Apuntar una captura",
+      hint: "Va a tu equipo o a tu caja, y se vincula por la ruta",
     });
   }
   if (!archivadaParaMi && yo) {
@@ -223,6 +233,18 @@ export default async function AppLayout({
          */
         perfil.enSolitario
         ? []
+        : perfil.cooperativo
+        ? /**
+           * En un Soul Link no se compite: fuera jornadas y final. Se quedan los
+           * retos, por si se quiere echar alguno de risas, el sorteo y la
+           * ruleta; el hall se muda a "La edición", como en solitario.
+           */
+          [
+            {
+              ...grupo,
+              children: [S.retos, S.sorteo, S.ruleta],
+            },
+          ]
         : [
             {
               ...grupo,
@@ -236,19 +258,21 @@ export default async function AppLayout({
           {
             ...grupo,
             children: [
+              // En un Soul Link, lo primero es el equipo y la caja de todos
+              ...(perfil.cooperativo ? [S.soulLink] : []),
               // En un locke de dos, "Puntos" es en realidad el marcador de
               // jornadas ganadas: el menú tiene que decir lo mismo que la
-              // pantalla. Y en solitario no hay clasificación que enseñar.
+              // pantalla. Y sin jornadas no hay clasificación que enseñar.
               ...grupo.children
                 .filter(
-                  (item) => !(perfil.enSolitario && item.href === S.puntos.href),
+                  (item) => !(perfil.sinJornadas && item.href === S.puntos.href),
                 )
                 .map((item) =>
                   item.href === S.puntos.href
                     ? { ...item, label: perfil.rotuloDeLaTabla }
                     : item,
                 ),
-              ...(perfil.enSolitario ? [S.hall] : []),
+              ...(perfil.sinJornadas ? [S.hall] : []),
             ],
           },
         ]

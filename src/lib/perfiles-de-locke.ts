@@ -68,7 +68,50 @@ export type PerfilDeLocke = {
    * pantallas no tengan que saberse el número.
    */
   enSolitario: boolean;
+  /**
+   * Un locke **cooperativo** (Soul Link): se juega juntos, no unos contra
+   * otros. No hay jornadas, ni puntos, ni final; hay un equipo y una caja de
+   * cada uno a la vista de todos, con las capturas vinculadas. Los retos se
+   * quedan, por si se quiere echar alguno de risas, pero no deciden nada.
+   */
+  cooperativo: boolean;
+  /**
+   * Sin jornadas ni checkpoints ni final: en solitario y en cooperativo. Es la
+   * pregunta que se hacen casi todas las pantallas, mejor que saberse los dos.
+   */
+  sinJornadas: boolean;
+  estilo: EstiloDeJuego;
 };
+
+/**
+ * Los estilos de juego. El de siempre es competir; el Soul Link es jugar a la
+ * vez y vinculados. Se guarda en `Competition.estilo` y **se puede cambiar**
+ * después de crear el locke: el grupo que lo pidió ya lo había montado como
+ * dualocke antes de que existiera.
+ */
+export const ESTILOS = {
+  competitivo: {
+    nombre: "Competitivo",
+    explicacion: "Unos contra otros: jornadas, puntos y final.",
+  },
+  soullink: {
+    nombre: "Soul Link",
+    explicacion:
+      "Cooperativo: las capturas de cada ruta van vinculadas y, si cae una, caen todas. Sin jornadas ni puntos.",
+  },
+} as const;
+export type EstiloDeJuego = keyof typeof ESTILOS;
+
+export function leerEstilo(valor: string | null | undefined): EstiloDeJuego {
+  return valor === "soullink" ? "soullink" : "competitivo";
+}
+
+/**
+ * De cuántos puede ser un Soul Link. Lo normal son dos; con más ya es una
+ * locura, y de cuatro para arriba la pantalla de los equipos no se podría ni
+ * leer.
+ */
+export const JUGADORES_DEL_SOUL_LINK = { minimo: 2, maximo: 4 };
 
 /**
  * El menos que puede tener un locke.
@@ -96,9 +139,32 @@ export const JUGADORES_MAXIMOS = 8;
  */
 export const JORNADAS_DEL_DUALOCKE = 6;
 
-export function perfilDeLocke(jugadores: number): PerfilDeLocke {
+export function perfilDeLocke(
+  jugadores: number,
+  estiloGuardado?: string | null,
+): PerfilDeLocke {
   const cuantos = Math.max(MINIMO_DE_JUGADORES, Math.trunc(jugadores || 0));
   const solo = cuantos === 1;
+  // Un Soul Link de uno no existe: sería un locke en solitario
+  const estilo = solo ? "competitivo" : leerEstilo(estiloGuardado);
+  if (estilo === "soullink") {
+    return {
+      jugadores: cuantos,
+      nombre: "Soul Link",
+      liguillaEntera: false,
+      serieAlMejorDe: null,
+      /**
+       * Se gana como en solitario, **pasándose la Liga**, pero entre todos: el
+       * locke está superado cuando la han pasado todos los que siguen.
+       */
+      victoria: "liga",
+      rotuloDeLaTabla: "Equipo y PC",
+      enSolitario: false,
+      cooperativo: true,
+      sinJornadas: true,
+      estilo,
+    };
+  }
   const esDual = cuantos === 2;
   return {
     jugadores: cuantos,
@@ -108,6 +174,9 @@ export function perfilDeLocke(jugadores: number): PerfilDeLocke {
     victoria: solo ? "liga" : esDual ? "jornadas" : "puntos",
     rotuloDeLaTabla: solo ? "Mi partida" : esDual ? "Marcador" : "Puntos",
     enSolitario: solo,
+    cooperativo: false,
+    sinJornadas: solo,
+    estilo,
   };
 }
 
