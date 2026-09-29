@@ -80,6 +80,19 @@ export type Cuenta = {
 
 const cuentaVacia = (): Cuenta => ({ lockes: 0, ganados: 0, victorias: 0, derrotas: 0, bajas: 0 });
 
+/** Un locke ganado, para la vitrina de cada persona */
+export type Titulo = {
+  id: string;
+  nombre: string;
+  /** El logo de la edición, si tiene; los de antes no tienen */
+  logo: string | null;
+  categoria: Categoria;
+  anio: number;
+  /** Cuándo empezó, en milisegundos: para ordenarlos dentro del mismo año */
+  cuando: number;
+  deAntes: boolean;
+};
+
 export type FilaDelPalmares = {
   userId: string;
   displayName: string;
@@ -88,6 +101,8 @@ export type FilaDelPalmares = {
   /** Todo junto */
   total: Cuenta;
   porCategoria: Record<Categoria, Cuenta>;
+  /** Los lockes que ha ganado, del más nuevo al más viejo */
+  titulos: Titulo[];
 };
 
 export type Palmares = {
@@ -228,11 +243,16 @@ export async function getPalmares(): Promise<Palmares> {
    * `lib/db.ts`), justo para que no se cuelen enteras en el HTML. Lo que hace
    * falta es la dirección, y eso lo da `urlsDeImagen`.
    */
-  const avatares = await urlsDeImagen("avatar", [
-    ...participantes.map((p) => p.userId),
-    // También los de los lockes de antes, que pueden ser gente que ya no juega
-    ...deAntes.flatMap((locke) => locke.jugadoresIds),
+  const [avatares, logos] = await Promise.all([
+    urlsDeImagen("avatar", [
+      ...participantes.map((p) => p.userId),
+      // También los de los lockes de antes, que pueden ser gente que ya no juega
+      ...deAntes.flatMap((locke) => locke.jugadoresIds),
+    ]),
+    // Los logos de las ediciones, para la vitrina de títulos de cada uno
+    urlsDeImagen("logo", ids),
   ]);
+  const porId = new Map(competiciones.map((c) => [c.id, c]));
 
   const porParticipante = new Map(participantes.map((p) => [p.id, p]));
   // De qué edición es cada jornada, para repartir los combates
@@ -396,6 +416,7 @@ export async function getPalmares(): Promise<Palmares> {
         avatarImage: avatares(quien.userId),
         total: cuentaVacia(),
         porCategoria: { grupo: cuentaVacia(), dual: cuentaVacia(), solitario: cuentaVacia() },
+        titulos: [],
       });
     }
     return gente.get(quien.userId)!;
@@ -416,7 +437,26 @@ export async function getPalmares(): Promise<Palmares> {
     const categoria = categoriaDe.get(p.competitionId) ?? "grupo";
     sumar(fila, categoria, "lockes");
     sumar(fila, categoria, "bajas", bajasPorParticipante.get(p.id) ?? 0);
-    if (campeonPorEdicion.get(p.competitionId) === p.userId) sumar(fila, categoria, "ganados");
+    if (campeonPorEdicion.get(p.competitionId) === p.userId) {
+      sumar(fila, categoria, "ganados");
+      const edicion = porId.get(p.competitionId);
+      if (edicion) {
+        /**
+         * El nombre y el logo de lo que ganó, **también de lockes en los que tú
+         * no estás**: es lo que se enseña para presumir entre amigos. Solo eso,
+         * como las cifras; de quién jugó o cómo fue no se cuenta nada.
+         */
+        fila.titulos.push({
+          id: edicion.id,
+          nombre: edicion.name,
+          logo: logos(edicion.id),
+          categoria,
+          anio: edicion.startedAt.getFullYear(),
+          cuando: edicion.startedAt.getTime(),
+          deAntes: false,
+        });
+      }
+    }
   }
 
   for (const combate of combates) {
@@ -455,7 +495,18 @@ export async function getPalmares(): Promise<Palmares> {
       });
       const categoria = categoriaDelLocke(locke.jugadoresIds.length + locke.sinCuenta.length);
       sumar(fila, categoria, "lockes");
-      if (userId === locke.ganadorId) sumar(fila, categoria, "ganados");
+      if (userId === locke.ganadorId) {
+        sumar(fila, categoria, "ganados");
+        fila.titulos.push({
+          id: locke.id,
+          nombre: locke.nombre,
+          logo: null,
+          categoria,
+          anio: locke.cuando.getFullYear(),
+          cuando: locke.cuando.getTime(),
+          deAntes: true,
+        });
+      }
     }
   }
 
@@ -467,7 +518,10 @@ export async function getPalmares(): Promise<Palmares> {
     ].sort(
       (a, b) => b.startedAt.getTime() - a.startedAt.getTime(),
     ),
-    gente: [...gente.values()].filter((fila) => genteIds.has(fila.userId)).sort(
+    gente: [...gente.values()]
+      .filter((fila) => genteIds.has(fila.userId))
+      .map((fila) => ({ ...fila, titulos: fila.titulos.sort((a, b) => b.cuando - a.cuando) }))
+      .sort(
       (a, b) =>
         b.total.ganados - a.total.ganados ||
         b.total.victorias - a.total.victorias ||
