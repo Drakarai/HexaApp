@@ -3,6 +3,10 @@ import { prisma } from "@/lib/db";
 import { getZonasMasMortiferas } from "@/lib/mapas";
 import { getMvpStates } from "@/lib/mvp";
 import { primerosEnPasar } from "@/lib/coronas";
+import { getCampeonDelLocke } from "@/lib/campeon";
+import { cuandoSeGanoPorJornadas, getMarcador } from "@/lib/marcador";
+import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { LEVEL_CAP_KINDS } from "@/lib/constants";
 
 /**
  * Las cifras de un locke entero, para cerrarlo en el hall de la fama.
@@ -54,7 +58,7 @@ export async function getResumenDelLocke(
     await Promise.all([
       prisma.competition.findUnique({
         where: { id: competitionId },
-        select: { startedAt: true, endedAt: true },
+        select: { startedAt: true },
       }),
       prisma.matchday.findMany({
         where: { competitionId },
@@ -174,7 +178,12 @@ export async function getResumenDelLocke(
     ? new Date(Math.max(...jugados.map((fecha) => fecha.getTime())))
     : null;
   const desde = competition?.startedAt ?? new Date();
-  const hasta = competition?.endedAt ?? ultimo;
+  /**
+   * **Un locke dura hasta que tiene ganador**, no hasta que se archiva: antes
+   * mandaba la fecha de archivarlo, y reabrirlo y volver a cerrarlo lo alargaba
+   * hasta ese día. Sin ganador todavía, hasta lo último que se jugó.
+   */
+  const hasta = (await cuandoSeDecidio(competitionId)) ?? ultimo;
 
   return {
     desde,
@@ -200,4 +209,58 @@ export async function getResumenDelLocke(
     causaMasRepetida: causa && causa.veces >= 2 ? causa : null,
     jugadores: participantes.length,
   };
+}
+
+/**
+ * Cuándo se decidió quién ganaba el locke, según cómo se ganó (ver
+ * `lib/campeon.ts`): el último combate de la final, la jornada que dio la
+ * mayoría en un dualocke, la marcha del penúltimo que quedaba o, en solitario,
+ * el día que se pasó la Liga. Null si todavía no hay ganador.
+ */
+async function cuandoSeDecidio(competitionId: string): Promise<Date | null> {
+  const competicion = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { maxPlayers: true },
+  });
+  if (!competicion) return null;
+
+  if (perfilDeLocke(competicion.maxPlayers).enSolitario) {
+    const liga = await prisma.gymClear.findFirst({
+      where: { levelCap: { competitionId, kind: LEVEL_CAP_KINDS.CHAMPION } },
+      orderBy: { clearedAt: "asc" },
+      select: { clearedAt: true },
+    });
+    return liga?.clearedAt ?? null;
+  }
+
+  const ganador = await getCampeonDelLocke(competitionId);
+  if (!ganador) return null;
+
+  if (ganador.como === "final") {
+    const ultimo = await prisma.finalMatch.findFirst({
+      where: { finalFour: { competitionId }, winnerId: { not: null }, playedAt: { not: null } },
+      orderBy: { playedAt: "desc" },
+      select: { playedAt: true },
+    });
+    return ultimo?.playedAt ?? null;
+  }
+
+  if (ganador.como === "abandono") {
+    const ultimoEnIrse = await prisma.participant.findFirst({
+      where: { competitionId, retiredAt: { not: null } },
+      orderBy: { retiredAt: "desc" },
+      select: { retiredAt: true },
+    });
+    return ultimoEnIrse?.retiredAt ?? null;
+  }
+
+  // Por mayoría de jornadas, en el dualocke
+  const [marcador, jornadas] = await Promise.all([
+    getMarcador(competitionId),
+    prisma.matchday.findMany({
+      where: { competitionId },
+      select: { matches: { select: { winnerId: true, playedAt: true } } },
+    }),
+  ]);
+  return cuandoSeGanoPorJornadas(jornadas, ganador.champion.participantId, marcador.hacenFalta);
 }

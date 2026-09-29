@@ -217,3 +217,34 @@ export function calcularMarcador(
     empate: !campeon && quedanPorDecidir < 1,
   };
 }
+
+/**
+ * Cuándo se ganó un dualocke por mayoría: el momento en que el campeón se
+ * llevó la jornada que le dio la mayoría. Cada jornada se decide con su último
+ * combate jugado (los que sobran tras un 2-0 se borran, ver `lib/series.ts`).
+ * Sin base de datos, para poder probarlo.
+ */
+export function cuandoSeGanoPorJornadas(
+  jornadas: { matches: { winnerId: string | null; playedAt: Date | null }[] }[],
+  campeonId: string,
+  hacenFalta: number,
+): Date | null {
+  const decididas = jornadas
+    .map((jornada) => {
+      const { ganadorId } = ganadorDeLaJornada(jornada.matches);
+      const fechas = jornada.matches
+        .map((combate) => combate.playedAt?.getTime())
+        .filter((t): t is number => t !== undefined);
+      return { ganadorId, cuando: fechas.length ? Math.max(...fechas) : null };
+    })
+    .filter((j) => j.ganadorId && j.cuando !== null)
+    .sort((a, b) => a.cuando! - b.cuando!);
+
+  let suyas = 0;
+  for (const jornada of decididas) {
+    if (jornada.ganadorId !== campeonId) continue;
+    suyas += 1;
+    if (suyas >= hacenFalta) return new Date(jornada.cuando!);
+  }
+  return null;
+}

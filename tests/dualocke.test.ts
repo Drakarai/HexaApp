@@ -178,3 +178,33 @@ describe("quién gana el dualocke", () => {
     assert.equal(c?.champion.participantId, "pablo");
   });
 });
+
+import { cuandoSeGanoPorJornadas } from "@/lib/marcador";
+
+describe("cuándo se ganó un dualocke", () => {
+  const dia = (n: number) => new Date(2026, 0, n);
+  const jornada = (ganador: string, ...dias: number[]) => ({
+    matches: dias.map((d) => ({ winnerId: ganador, playedAt: dia(d) })),
+  });
+
+  test("el día de la jornada que dio la mayoría, no el de las que se jugaron después", () => {
+    const jornadas = [
+      jornada("draka", 1, 2),
+      jornada("draka", 5, 6),
+      jornada("draka", 10, 11),
+      jornada("draka", 20, 21), // la cuarta: aquí gana
+      jornada("pablo", 30, 31), // se sigue jugando, por el honor
+    ];
+    assert.deepEqual(cuandoSeGanoPorJornadas(jornadas, "draka", 4), dia(21));
+  });
+
+  test("cuenta por fecha, aunque las jornadas se jugaran en otro orden", () => {
+    const jornadas = [jornada("draka", 20), jornada("draka", 1), jornada("draka", 5), jornada("draka", 3)]
+      .map((j) => ({ matches: [...j.matches, ...j.matches] }));
+    assert.deepEqual(cuandoSeGanoPorJornadas(jornadas, "draka", 4), dia(20));
+  });
+
+  test("si no ha llegado a la mayoría, no hay fecha", () => {
+    assert.equal(cuandoSeGanoPorJornadas([jornada("draka", 1, 2)], "draka", 4), null);
+  });
+});
