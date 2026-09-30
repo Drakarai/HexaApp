@@ -134,13 +134,20 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
   ]);
 
   // Quién es, en limpio: lo que mejor lo identifica de lo que haya
-  const laCaptura =
-    captura ??
-    baja?.capturas[0] ??
-    // Desde el hall, la que siga viva antes que una caída con el mismo mote
-    capturas.find((c) => entrada && !c.deathId && esElMismo(c, entrada)) ??
-    capturas.find((c) => entrada && esElMismo(c, entrada)) ??
-    null;
+  /**
+   * La captura **solo si quien mira puede ver la caja**. Si no, ni se usa para
+   * reconocerlo en las jornadas: lo de otro se busca solo con lo que ya es
+   * público (su baja o su casilla del hall), y así nada de lo que ve sale de
+   * una caja privada, ni siquiera de rebote.
+   */
+  const laCaptura = !veLaCaja
+    ? null
+    : (captura ??
+      baja?.capturas[0] ??
+      // Desde el hall, la que siga viva antes que una caída con el mismo mote
+      capturas.find((c) => entrada && !c.deathId && esElMismo(c, entrada)) ??
+      capturas.find((c) => entrada && esElMismo(c, entrada)) ??
+      null);
   const quien = laCaptura ?? baja ?? entrada!;
   const laBaja =
     baja ??
@@ -155,7 +162,7 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
   const sucesos: Suceso[] = [];
 
   // Lo de la caja, solo si se puede ver
-  if (laCaptura && veLaCaja) {
+  if (laCaptura) {
     const evoluciones = leerHistoria(laCaptura.historia);
     const sitio = laCaptura.zone?.name ?? laCaptura.sitio;
     sucesos.push({
@@ -256,12 +263,12 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
   }
 
   const ordenados = ordenarSucesos(sucesos);
-  const desde = laCaptura && veLaCaja ? laCaptura.createdAt.toISOString() : null;
+  const desde = laCaptura ? laCaptura.createdAt.toISOString() : null;
   const hasta = laBaja?.diedAt.toISOString() ?? enElHall?.createdAt.toISOString() ?? new Date().toISOString();
   return {
     sucesos: ordenados,
     cifras: cifrasDeLaHistoria(ordenados, desde, hasta),
-    conLaCaja: Boolean(laCaptura && veLaCaja),
+    conLaCaja: Boolean(laCaptura),
     cajaAjena: !veLaCaja,
   };
 }
