@@ -50,6 +50,11 @@ export type Juego = {
   /** El tema de `themes.ts` que le pega, para proponerlo al crear la edición */
   tema?: string;
   /**
+   * La generación del juego cuando **no es la de su región**: los remakes.
+   * Rubí Omega es de la 6ª aunque se juegue en Hoenn, y ahí Clefairy ya es Hada.
+   */
+  generacion?: number;
+  /**
    * Si es una **pareja** (Rojo y Azul, Rubí Omega y Zafiro Alfa…), las dos
    * versiones que la forman. Se juega a la vez en las dos: cada jugador lleva
    * la suya, que es como se reparte el grupo normalmente.
@@ -118,12 +123,12 @@ const SUELTOS: Juego[] = [
   { id: "ultraluna", name: "Ultraluna", grupo: "7ª generación", region: "alola", mapas: ISLAS_DE_ALOLA, tema: "luna" },
 
   // Los remakes, aparte pero con la región del original
-  { id: "rojo-fuego", name: "Rojo Fuego", grupo: "Remakes", region: "kanto", tema: "rojo" },
-  { id: "verde-hoja", name: "Verde Hoja", grupo: "Remakes", region: "kanto", tema: "azul" },
-  { id: "heartgold", name: "HeartGold", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "oro" },
-  { id: "soulsilver", name: "SoulSilver", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "plata" },
-  { id: "rubi-omega", name: "Rubí Omega", grupo: "Remakes", region: "hoenn", tema: "rubi" },
-  { id: "zafiro-alfa", name: "Zafiro Alfa", grupo: "Remakes", region: "hoenn", tema: "zafiro" },
+  { id: "rojo-fuego", name: "Rojo Fuego", grupo: "Remakes", region: "kanto", tema: "rojo", generacion: 3 },
+  { id: "verde-hoja", name: "Verde Hoja", grupo: "Remakes", region: "kanto", tema: "azul", generacion: 3 },
+  { id: "heartgold", name: "HeartGold", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "oro", generacion: 4 },
+  { id: "soulsilver", name: "SoulSilver", grupo: "Remakes", region: "johto", extra: ["kanto"], tema: "plata", generacion: 4 },
+  { id: "rubi-omega", name: "Rubí Omega", grupo: "Remakes", region: "hoenn", tema: "rubi", generacion: 6 },
+  { id: "zafiro-alfa", name: "Zafiro Alfa", grupo: "Remakes", region: "hoenn", tema: "zafiro", generacion: 6 },
 ];
 
 /**
@@ -253,17 +258,22 @@ export function regionesDelJuego(id: string | null | undefined): Region[] {
 }
 
 /**
- * La generación de una edición, que es la que manda en la tabla de tipos.
+ * La generación de una edición, que es la que manda en la tabla de tipos y en
+ * los tipos de cada pokémon.
  *
- * Sale de la región principal, así que los remakes cuentan como el original:
- * HeartGold da 2ª. Da igual que el juego sea de la 4ª, porque **la tabla de
- * tipos no cambió entre la 2ª y la 5ª** (está comprobado en los datos), ni los
- * tipos de ningún pokémon en ese tramo.
+ * **La del juego, no la de su región**: los remakes van con su generación
+ * (Rojo Fuego 3ª, HeartGold 4ª, Rubí Omega 6ª). Antes salía de la región y
+ * Rubí Omega contaba como 3ª: Clefairy salía Normal en vez de Hada. Los demás
+ * juegos se juegan en la región de su generación y la sacan de ahí.
  */
 export function generacionDelJuego(id: string | null | undefined) {
-  const slug = regionDelJuego(id);
-  if (!slug) return null;
-  return REGIONES.find((region) => region.slug === slug)?.generacion ?? null;
+  const juego = juegoPorId(id);
+  if (!juego) return null;
+  return (
+    juego.generacion ??
+    REGIONES.find((region) => region.slug === juego.region)?.generacion ??
+    null
+  );
 }
 
 export function nombreDeRegion(slug: string) {

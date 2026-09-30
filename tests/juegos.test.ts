@@ -96,3 +96,29 @@ describe("juegos no oficiales (fangames)", () => {
     assert.deepEqual(regionesDelJuego("rojo-azul"), ["kanto"]);
   });
 });
+
+import { generacionDelJuego } from "@/lib/juegos";
+import { tipoPorId, tiposDePokemon } from "@/lib/tipos";
+
+describe("la generación de cada juego", () => {
+  test("los remakes van con la suya, no con la de su región", () => {
+    assert.equal(generacionDelJuego("rojofuego-verdehoja"), 3);
+    assert.equal(generacionDelJuego("heartgold-soulsilver"), 4);
+    assert.equal(generacionDelJuego("rubiomega-zafiroalfa"), 6);
+    assert.equal(generacionDelJuego("zafiro-alfa"), 6);
+  });
+
+  test("los demás, la de su región", () => {
+    assert.equal(generacionDelJuego("oro-plata"), 2);
+    assert.equal(generacionDelJuego("esmeralda"), 3);
+    assert.equal(generacionDelJuego("sol-luna"), 7);
+    assert.equal(generacionDelJuego(null), null);
+  });
+
+  test("Clefairy es Hada en Rubí Omega y Normal en Esmeralda", () => {
+    const tipos = (juego: string) =>
+      tiposDePokemon(35, generacionDelJuego(juego)!).map((id) => tipoPorId(id)?.slug);
+    assert.deepEqual(tipos("rubiomega-zafiroalfa"), ["fairy"]);
+    assert.deepEqual(tipos("esmeralda"), ["normal"]);
+  });
+});
