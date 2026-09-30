@@ -14,6 +14,7 @@ import {
   type Lugar,
 } from "@/lib/equipo-y-caja";
 import type { PokemonDelTablero, TableroDeJugador } from "@/lib/soul-link";
+import type { OpcionDeEvolucion } from "@/lib/evoluciones";
 import {
   borrarDeLaCajaAction,
   cambiarMoteAction,
@@ -689,6 +690,12 @@ function Ficha({
 }) {
   const [pendiente, empezar] = useTransition();
   const [causa, setCausa] = useState("");
+  // Evolucionar va en dos pasos: primero se elige, luego se confirma
+  const [aEvolucionar, setAEvolucionar] = useState<OpcionDeEvolucion | null>(null);
+  // Y justo después, su deshacer: a qué evolucionó y cómo se llama el cambio
+  const [evolucionado, setEvolucionado] = useState<{ rotulo: string; deshacer: string } | null>(
+    null,
+  );
   const [mote, setMote] = useState(pokemon.nickname ?? "");
   const [conId, setConId] = useState("");
   const dueno = tableros.find((t) => t.participantId === pokemon.participantId)!;
@@ -730,6 +737,45 @@ function Ficha({
       }
       if (respuesta.aviso || ok) onAviso({ tipo: "ok", texto: respuesta.aviso ?? ok! });
       if (cerrar) onCerrar();
+    });
+  }
+
+  function evolucionar() {
+    const opcion = aEvolucionar;
+    if (!opcion) return;
+    empezar(async () => {
+      const respuesta = await directaConCola(
+        () => evolucionarAction({ captureId: pokemon.id, pokemonId: opcion.pokemonId }),
+        "evolucion",
+        { captureId: pokemon.id, pokemonId: String(opcion.pokemonId) },
+        `${pokemon.nickname ?? pokemon.species} → ${opcion.rotulo}`,
+      );
+      setAEvolucionar(null);
+      if ("enCola" in respuesta) {
+        onAviso({ tipo: "ok", texto: respuesta.aviso });
+        return;
+      }
+      if (respuesta.error) {
+        onAviso({ tipo: "error", texto: respuesta.error });
+        return;
+      }
+      if (respuesta.aviso) onAviso({ tipo: "ok", texto: respuesta.aviso });
+      if (respuesta.deshacer) setEvolucionado({ rotulo: opcion.rotulo, deshacer: respuesta.deshacer });
+    });
+  }
+
+  function deshacerEvolucion() {
+    if (!evolucionado) return;
+    empezar(async () => {
+      const respuesta = await sinConexion(() =>
+        deshacerEnCajaAction({ participantId: pokemon.participantId, soloSi: evolucionado.deshacer }),
+      );
+      if (respuesta.error) {
+        onAviso({ tipo: "error", texto: respuesta.error });
+        return;
+      }
+      onAviso({ tipo: "ok", texto: "Deshecho: la evolución no ha pasado." });
+      setEvolucionado(null);
     });
   }
 
@@ -890,9 +936,50 @@ function Ficha({
               </button>
             </div>
 
+            {/* En dos pasos, y con su deshacer al lado: evolucionar sin querer
+                cambia la especie, el sprite y los tipos de golpe */}
             <div>
               <p className="label">Evolucionar</p>
-              {pokemon.evoluciones.length ? (
+              {evolucionado ? (
+                <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+                  <span className="min-w-0 flex-1">
+                    ¡Ha evolucionado en <strong>{evolucionado.rotulo}</strong>!
+                  </span>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm"
+                    disabled={pendiente}
+                    onClick={deshacerEvolucion}
+                  >
+                    <Icono emoji="↩️" /> Deshacer
+                  </button>
+                </div>
+              ) : aEvolucionar ? (
+                <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
+                  <p className="text-sm text-slate-200">
+                    ¿Evolucionar a <strong className="text-white">{pokemon.nickname ?? pokemon.species}</strong>{" "}
+                    en <strong className="text-white">{aEvolucionar.rotulo}</strong>?
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      className="btn-primary btn-sm"
+                      disabled={pendiente}
+                      onClick={evolucionar}
+                    >
+                      <Icono emoji="🧬" /> Sí, evolucionar
+                    </button>
+                    <button
+                      type="button"
+                      className="btn-ghost btn-sm"
+                      disabled={pendiente}
+                      onClick={() => setAEvolucionar(null)}
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : pokemon.evoluciones.length ? (
                 <div className="flex flex-wrap gap-2">
                   {pokemon.evoluciones.map((opcion) => (
                     <button
@@ -900,17 +987,7 @@ function Ficha({
                       type="button"
                       className="btn-ghost btn-sm"
                       disabled={pendiente}
-                      onClick={() =>
-                        lanzar(() =>
-                          directaConCola(
-                            () =>
-                              evolucionarAction({ captureId: pokemon.id, pokemonId: opcion.pokemonId }),
-                            "evolucion",
-                            { captureId: pokemon.id, pokemonId: String(opcion.pokemonId) },
-                            `${(pokemon.nickname ?? pokemon.species)} → ${opcion.rotulo}`,
-                          ),
-                        )
-                      }
+                      onClick={() => setAEvolucionar(opcion)}
                     >
                       <Icono emoji="🧬" /> {opcion.rotulo}
                     </button>

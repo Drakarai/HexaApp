@@ -38,7 +38,12 @@ import type { FormState } from "@/app/actions/auth";
  * botón de deshacer.
  */
 
-type Resultado = { error?: string; aviso?: string };
+type Resultado = {
+  error?: string;
+  aviso?: string;
+  /** Lo que hay que pasarle a deshacer para deshacer justo esto (ver `soloSi`) */
+  deshacer?: string;
+};
 
 async function conError(accion: () => Promise<Resultado | void>): Promise<Resultado> {
   try {
@@ -237,13 +242,13 @@ export async function evolucionarAction(entrada: {
         ...(sprites.boxImage ? { image: sprites.boxImage } : {}),
       },
     });
-    await apuntarCambio(
-      captura.participantId,
-      `Evolucionar a ${nombreDe(captura)} en ${elegida.rotulo}`,
-      foto,
-    );
+    const descripcion = `Evolucionar a ${nombreDe(captura)} en ${elegida.rotulo}`;
+    await apuntarCambio(captura.participantId, descripcion, foto);
     refrescar();
-    return { aviso: `¡${nombreDe(captura)} ha evolucionado en ${elegida.rotulo}!` };
+    return {
+      aviso: `¡${nombreDe(captura)} ha evolucionado en ${elegida.rotulo}!`,
+      deshacer: descripcion,
+    };
   });
 }
 
@@ -366,7 +371,15 @@ export async function borrarDeLaCajaAction(entrada: { captureId: string }): Prom
  * capturas como estaban y borra las bajas que se crearon (las de la pareja
  * incluidas). Se puede pulsar varias veces, hasta veinte cambios atrás.
  */
-export async function deshacerEnCajaAction(entrada: { participantId: string }): Promise<Resultado> {
+export async function deshacerEnCajaAction(entrada: {
+  participantId: string;
+  /**
+   * Deshacer **solo si** lo último es esto. Es el botón de deshacer que sale
+   * en la ficha justo después de evolucionar: si entre medias se ha movido
+   * algo, deshacer "lo último" ya no sería la evolución.
+   */
+  soloSi?: string;
+}): Promise<Resultado> {
   return conError(async () => {
     await assertPuedeTocarLaCaja(entrada.participantId);
     const cambio = await prisma.cambioDeCaja.findFirst({
@@ -374,6 +387,11 @@ export async function deshacerEnCajaAction(entrada: { participantId: string }): 
       orderBy: { createdAt: "desc" },
     });
     if (!cambio) return { error: "No hay nada que deshacer." };
+    if (entrada.soloSi && cambio.descripcion !== entrada.soloSi) {
+      return {
+        error: "Después has hecho otra cosa: deshazlo con el botón de Deshacer de arriba, paso a paso.",
+      };
+    }
 
     const antes = cambio.antes as unknown as Foto[];
     const existen = new Set(
