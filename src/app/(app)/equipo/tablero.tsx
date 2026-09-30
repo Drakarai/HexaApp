@@ -366,10 +366,15 @@ function Tablero({
           className={cx(
             "relative isolate min-w-0 flex-1 overflow-hidden rounded-md",
             FORMA_DE_LA_CAJA,
-            fondo === "liso" && "rounded-xl border border-white/5 bg-ink-950/40",
+            fondo === "liso" ? "rounded-xl border border-white/5 bg-ink-950/40" : "bg-ink-950",
           )}
         >
-          <FondoDeCajaImagen fondo={fondo} className="-z-10" />
+          {/**
+           * El fondo, apagado: a todo color se comía a los pokémon (un Magneton
+           * sobre el de Reshiram, un Clefairy sobre el de Ho-Oh). Transparente
+           * sobre el negro de debajo, se oscurece sin perder el dibujo.
+           */}
+          <FondoDeCajaImagen fondo={fondo} className={cx("-z-10", APAGADO)} />
           {/* Dentro del marco de la imagen: seis columnas y cinco filas */}
           <div className="grid h-full grid-cols-6 grid-rows-5 gap-px p-[3%]">
             {[
@@ -509,7 +514,15 @@ function Casilla({
           )}
         >
           {/* En la caja, algo más grande que su hueco: los sprites traen mucho aire alrededor */}
-          <Sprite pokemon={pokemon} className={grande ? "h-14 w-14" : "h-full w-full scale-[1.3]"} />
+          <Sprite
+            pokemon={pokemon}
+            className={
+              grande
+                ? "h-14 w-14"
+                : // Y una sombra al borde, que el contorno se lea sobre cualquier fondo
+                  "h-full w-full scale-[1.3] [filter:drop-shadow(0_0_1px_rgb(0_0_0/0.9))_drop-shadow(0_1px_2px_rgb(0_0_0/0.6))]"
+            }
+          />
           {grande ? (
             <>
               <span className="mt-0.5 w-full truncate text-center text-xs font-medium text-slate-100">
@@ -547,6 +560,9 @@ function Casilla({
     </div>
   );
 }
+
+/** Cuánto se apaga el fondo de una caja para que los pokémon se lean encima */
+const APAGADO = "opacity-35 saturate-[.7]";
 
 /** La flecha de un lado de la caja. `data-pagina` es lo que mira el arrastre */
 function FlechaDeCaja({
