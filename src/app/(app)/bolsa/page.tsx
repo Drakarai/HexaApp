@@ -31,6 +31,7 @@ export default async function BolsaPage() {
       <>
         <Cabecera admin={admin} />
         <EmptyState
+          dibujo="mochila"
           title="No juegas esta edición"
           hint="La bolsa es de cada participante, así que aquí no hay nada tuyo."
         />
@@ -67,6 +68,7 @@ export default async function BolsaPage() {
         puedoUsar={!soloLectura(competition, admin)}
         vacia={
           <EmptyState
+            dibujo="mochila"
             title="La bolsa está vacía"
             hint="Los objetos los reparte quien administra el locke: pídeselos."
           />

@@ -51,6 +51,7 @@ export default async function MapaPage({
       <>
         <Cabecera region={region} />
         <EmptyState
+          dibujo="mapa"
           title="No juegas esta edición"
           hint="El mapa es de cada participante, así que aquí no hay nada tuyo."
         />
@@ -65,11 +66,13 @@ export default async function MapaPage({
         {/* Un fangame hecho desde cero no tiene mapa, y es a propósito */}
         {competition.juegoNoOficial ? (
           <EmptyState
+            dibujo="mapa"
             title="Este juego no tiene mapa de capturas"
             hint="Es un juego no oficial hecho desde cero, sin un juego de base del que sacar el mapa. Las capturas se apuntan en Equipo y PC, escribiendo la ruta; y si se parece a una región, en Ediciones se le puede poner como base."
           />
         ) : (
           <EmptyState
+            dibujo="mapa"
             title="Esta edición no tiene juego elegido"
             hint={
               esCreador(user)
@@ -102,6 +105,7 @@ export default async function MapaPage({
         <Cabecera region={region} admin={esCreador(user)} />
         {pestanas}
         <EmptyState
+          dibujo="mapa"
           title={`El mapa de ${nombreDeRegion(region)} está vacío`}
           hint={
             esCreador(user)

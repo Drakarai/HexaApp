@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { createPortal } from "react-dom";
 import {
   deshacerUsoAction,
   usarObjetoAction,
@@ -12,6 +11,7 @@ import { FormMessage, SubmitButton } from "@/components/ui";
 import type { ObjetoEnBolsa, OpcionDeObjeto } from "@/lib/bolsa";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { Hoja } from "@/components/hoja";
 
 /**
  * La bolsa de alguien. Cada objeto con su cantidad y, si es tuya, su botón de
@@ -251,67 +251,47 @@ function Eleccion({
   formulario: string;
   onClose: () => void;
 }) {
-  useEffect(() => {
-    const alPulsar = (evento: KeyboardEvent) => {
-      if (evento.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", alPulsar);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", alPulsar);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/80 p-4 backdrop-blur-sm"
-      onClick={(evento) => {
-        if (evento.target === evento.currentTarget) onClose();
-      }}
-    >
-      <div className="my-auto w-full max-w-md rounded-2xl border border-white/10 bg-ink-900 p-4 shadow-2xl sm:p-5">
-        <div className="mb-1 flex items-start justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
-            {nombre}
-          </p>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost btn-sm shrink-0"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-        <p className="mb-3 text-sm text-slate-300">
-          Elige con qué te quedas. Se gasta el objeto y se avisa al resto.
+  return (
+    <Hoja onCerrar={onClose} ancho="max-w-md" fondo="bg-black/80" className="p-4 sm:p-5">
+      <div className="mb-1 flex items-start justify-between gap-3">
+        <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+          {nombre}
         </p>
-
-        <ul className="space-y-2">
-          {opciones.map((opcion) => (
-            <li key={opcion.id}>
-              <button
-                type="submit"
-                form={formulario}
-                name="optionId"
-                value={opcion.id}
-                className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition hover:border-brand-500/40 hover:bg-brand-600/15"
-              >
-                <Dibujo src={opcion.image} nombre={opcion.name} pequeno />
-                <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
-                  {opcion.name}
-                </span>
-                <span aria-hidden className="shrink-0 text-slate-500">
-                  ▸
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn-ghost btn-sm shrink-0"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
       </div>
-    </div>,
-    document.body,
+      <p className="mb-3 text-sm text-slate-300">
+        Elige con qué te quedas. Se gasta el objeto y se avisa al resto.
+      </p>
+
+      <ul className="space-y-2">
+        {opciones.map((opcion) => (
+          <li key={opcion.id}>
+            <button
+              type="submit"
+              form={formulario}
+              name="optionId"
+              value={opcion.id}
+              className="flex w-full items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-2.5 text-left transition hover:border-brand-500/40 hover:bg-brand-600/15"
+            >
+              <Dibujo src={opcion.image} nombre={opcion.name} pequeno />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
+                {opcion.name}
+              </span>
+              <span aria-hidden className="shrink-0 text-slate-500">
+                ▸
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Hoja>
   );
 }
 

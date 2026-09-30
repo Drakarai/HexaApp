@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useFormStatus } from "react-dom";
 import { cx, initials, readableTextColor } from "@/lib/utils";
+import { DibujoVacio, type Dibujo } from "@/components/dibujo-vacio";
 
 export function SubmitButton({
   children,
@@ -179,17 +180,26 @@ export function EnlaceDeJugador({
   );
 }
 
+/**
+ * Lo que sale cuando todavía no hay nada: un dibujo en línea fina y el texto
+ * debajo. Antes era una caja con el borde a rayas, que parecía un hueco a
+ * medio hacer; con el dibujo se lee como «aquí irá algo», que es lo que es.
+ */
 export function EmptyState({
   title,
   hint,
+  dibujo,
 }: {
   title: string;
   hint?: string;
+  /** Qué se dibuja; sin decirlo, una ball */
+  dibujo?: Dibujo;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-white/10 bg-white/[0.02] px-4 py-8 text-center">
-      <p className="text-sm font-medium text-slate-300">{title}</p>
-      {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+    <div className="px-4 py-6 text-center">
+      <DibujoVacio dibujo={dibujo} />
+      <p className="mt-3 text-sm font-medium text-slate-300">{title}</p>
+      {hint ? <p className="mx-auto mt-1 max-w-sm text-xs text-slate-500">{hint}</p> : null}
     </div>
   );
 }

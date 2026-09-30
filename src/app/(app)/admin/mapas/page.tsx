@@ -13,6 +13,7 @@ import {
   FondoDelMapa,
   NuevaZona,
 } from "./editor";
+import { DibujoVacio } from "@/components/dibujo-vacio";
 
 export const metadata = { title: "Mapas de las regiones" };
 
@@ -83,8 +84,9 @@ export default async function MapasPage({
           {mapa.zones.length ? (
             <EditorDeMapa mapa={mapa} />
           ) : (
-            <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
-              <p className="text-sm text-slate-300">Este mapa está vacío.</p>
+            <div className="px-4 py-6 text-center">
+              <DibujoVacio dibujo="mapa" />
+              <p className="mt-3 text-sm text-slate-300">Este mapa está vacío.</p>
               <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
                 Ponle abajo la imagen del mapa y saca las zonas de ella, o ve
                 añadiéndolas a mano y colocándolas encima.

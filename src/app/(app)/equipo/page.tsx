@@ -15,6 +15,7 @@ import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { Icono } from "@/components/icono";
 import { EquiposYCajas } from "./tablero";
+import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 import { ApuntarEnCaja } from "./apuntar-form";
 import { Pendientes } from "@/components/pendientes";
 
@@ -53,6 +54,7 @@ export default async function EquipoYPcPage({
       <>
         <PageHeader title="Equipo y PC" />
         <EmptyState
+          dibujo="caja"
           title="No juegas esta edición"
           hint="El equipo y la caja son de cada jugador y privados, como el mapa: aquí no hay nada tuyo."
         />
@@ -98,6 +100,7 @@ export default async function EquipoYPcPage({
 
   return (
     <>
+      <TirarParaRefrescar />
       <PageHeader
         title="Equipo y PC"
         subtitle={
@@ -130,6 +133,7 @@ export default async function EquipoYPcPage({
         <EquiposYCajas tableros={tableros} numeros={numeros} esSoulLink={perfil.cooperativo} />
       ) : (
         <EmptyState
+          dibujo="caja"
           title="Todavía no hay nadie apuntado"
           hint="Cuando haya jugadores en el locke, aquí saldrán sus equipos y sus cajas."
         />

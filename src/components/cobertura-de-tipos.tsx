@@ -18,6 +18,7 @@ import {
   tipoPorId,
 } from "@/lib/tipos";
 import { cx } from "@/lib/utils";
+import { DibujoVacio } from "@/components/dibujo-vacio";
 
 /**
  * La calculadora de cobertura: metes tu equipo y te dice, tipo por tipo, cuánto
@@ -304,9 +305,10 @@ export function CoberturaDeTipos({
           </p>
         </>
       ) : (
-        <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-slate-500">
-          Mete algún pokémon arriba y sale la tabla.
-        </p>
+        <div className="px-4 py-5 text-center">
+          <DibujoVacio />
+          <p className="mt-3 text-sm text-slate-500">Mete algún pokémon arriba y sale la tabla.</p>
+        </div>
       )}
 
       <p className="text-xs text-slate-600">

@@ -78,6 +78,7 @@ export default async function PalmaresPage({
       <>
         <PageHeader title="Palmarés" />
         <EmptyState
+          dibujo="trofeo"
           title="Todavía no hay ninguna edición"
           hint="Aquí se juntarán todos los lockes que hayas jugado."
         />

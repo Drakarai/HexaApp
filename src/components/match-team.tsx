@@ -1,7 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useOptimistic, useState } from "react";
-import { createPortal } from "react-dom";
+import { startTransition, useOptimistic, useState } from "react";
 import {
   addMatchPokemonAction,
   removeMatchPokemonAction,
@@ -11,6 +10,7 @@ import { Avatar, ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { spriteCandidates } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
+import { Hoja } from "@/components/hoja";
 
 export type TeamPokemon = {
   id: string;
@@ -384,157 +384,137 @@ function TeamEditor({
     setLimpiezas((veces) => veces + 1);
   }
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
   // Portal, como el resto de diálogos: las tarjetas llevan backdrop-blur y eso
   // rompe el posicionamiento fijo de lo que tienen dentro.
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="my-auto w-full max-w-lg rounded-2xl border border-white/10 bg-ink-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
-              {sides.length > 1 ? "Equipos del combate" : "El equipo que sacaste"}
-            </p>
-            <p className="text-sm text-slate-400">
-              {rotulo ??
-                (sides.length > 1
-                  ? `${sides[0].displayName} vs ${sides[1].displayName}`
-                  : sides[0].displayName)}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost btn-sm"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
+  return (
+    <Hoja onCerrar={onClose} ancho="max-w-lg" fondo="bg-black/70" className="p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+            {sides.length > 1 ? "Equipos del combate" : "El equipo que sacaste"}
+          </p>
+          <p className="text-sm text-slate-400">
+            {rotulo ??
+              (sides.length > 1
+                ? `${sides[0].displayName} vs ${sides[1].displayName}`
+                : sides[0].displayName)}
+          </p>
         </div>
-
-        <div className="space-y-3">
-          {equipos.map((side) => (
-            <div
-              key={side.participantId}
-              className="rounded-xl border border-white/5 bg-white/[0.02] p-3"
-            >
-              <div className="mb-2 flex items-center gap-2">
-                <Avatar
-                  name={side.displayName}
-                  color={side.color}
-                  image={side.avatarImage}
-                  size={20}
-                />
-                <span className="text-sm font-semibold text-white">
-                  {side.displayName}
-                </span>
-                <span className="ml-auto text-xs text-slate-500">
-                  {side.team.length}/{maximo}
-                </span>
-              </div>
-
-              {side.team.length ? (
-                <ul className="flex flex-wrap gap-2">
-                  {side.team.map((pokemon) => (
-                    <li
-                      key={pokemon.id}
-                      className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.04] py-1 pl-1 pr-1.5"
-                    >
-                      <Sprite pokemon={pokemon} owner={side.displayName} size={28} />
-                      <span className="text-xs text-slate-300">
-                        {pokemon.nickname ?? pokemon.species}
-                      </span>
-                      <form action={removeMatchPokemonAction}>
-                        <input
-                          type="hidden"
-                          name="matchPokemonId"
-                          value={pokemon.id}
-                        />
-                        <ConfirmSubmit
-                          message={`¿Quitar a ${pokemon.nickname ?? pokemon.species} del equipo?`}
-                          className="btn-ghost btn-sm px-1.5"
-                          title="Quitar del equipo"
-                        >
-                          ✕
-                        </ConfirmSubmit>
-                      </form>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="muted">Sin pokémon todavía.</p>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <form
-          onSubmit={enviar}
-          className="mt-4 space-y-3 border-t border-white/10 pt-4"
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn-ghost btn-sm"
+          aria-label="Cerrar"
         >
-          <input type="hidden" name="matchId" value={matchId} />
-          {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
-          {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
-          {royaleId ? (
-            <input type="hidden" name="royaleId" value={royaleId} />
-          ) : null}
-          {levelCapId ? (
-            <input type="hidden" name="levelCapId" value={levelCapId} />
-          ) : null}
-          {finalFourId ? (
-            <input type="hidden" name="finalFourId" value={finalFourId} />
-          ) : null}
-          <SpeciesPicker key={limpiezas} />
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="label">Entrenador</label>
-              <select
-                name="participantId"
-                className="input"
-                value={owner}
-                onChange={(event) => setOwner(event.target.value)}
-              >
-                {sides.map((side) => (
-                  <option key={side.participantId} value={side.participantId}>
-                    {side.displayName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="label">Mote</label>
-              <input
-                key={limpiezas}
-                name="nickname"
-                className="input"
-                placeholder="Chispas"
-              />
-            </div>
-          </div>
-          <FormMessage state={state} />
-          {/* Sin bloquearse mientras guarda: se pueden encadenar varios */}
-          <button type="submit" className="btn-primary">
-            Añadir al equipo
-          </button>
-        </form>
+          ✕
+        </button>
       </div>
-    </div>,
-    document.body,
+
+      <div className="space-y-3">
+        {equipos.map((side) => (
+          <div
+            key={side.participantId}
+            className="rounded-xl border border-white/5 bg-white/[0.02] p-3"
+          >
+            <div className="mb-2 flex items-center gap-2">
+              <Avatar
+                name={side.displayName}
+                color={side.color}
+                image={side.avatarImage}
+                size={20}
+              />
+              <span className="text-sm font-semibold text-white">
+                {side.displayName}
+              </span>
+              <span className="ml-auto text-xs text-slate-500">
+                {side.team.length}/{maximo}
+              </span>
+            </div>
+
+            {side.team.length ? (
+              <ul className="flex flex-wrap gap-2">
+                {side.team.map((pokemon) => (
+                  <li
+                    key={pokemon.id}
+                    className="flex items-center gap-1.5 rounded-lg border border-white/5 bg-white/[0.04] py-1 pl-1 pr-1.5"
+                  >
+                    <Sprite pokemon={pokemon} owner={side.displayName} size={28} />
+                    <span className="text-xs text-slate-300">
+                      {pokemon.nickname ?? pokemon.species}
+                    </span>
+                    <form action={removeMatchPokemonAction}>
+                      <input
+                        type="hidden"
+                        name="matchPokemonId"
+                        value={pokemon.id}
+                      />
+                      <ConfirmSubmit
+                        message={`¿Quitar a ${pokemon.nickname ?? pokemon.species} del equipo?`}
+                        className="btn-ghost btn-sm px-1.5"
+                        title="Quitar del equipo"
+                      >
+                        ✕
+                      </ConfirmSubmit>
+                    </form>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="muted">Sin pokémon todavía.</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <form
+        onSubmit={enviar}
+        className="mt-4 space-y-3 border-t border-white/10 pt-4"
+      >
+        <input type="hidden" name="matchId" value={matchId} />
+        {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
+        {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
+        {royaleId ? (
+          <input type="hidden" name="royaleId" value={royaleId} />
+        ) : null}
+        {levelCapId ? (
+          <input type="hidden" name="levelCapId" value={levelCapId} />
+        ) : null}
+        {finalFourId ? (
+          <input type="hidden" name="finalFourId" value={finalFourId} />
+        ) : null}
+        <SpeciesPicker key={limpiezas} />
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <label className="label">Entrenador</label>
+            <select
+              name="participantId"
+              className="input"
+              value={owner}
+              onChange={(event) => setOwner(event.target.value)}
+            >
+              {sides.map((side) => (
+                <option key={side.participantId} value={side.participantId}>
+                  {side.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="label">Mote</label>
+            <input
+              key={limpiezas}
+              name="nickname"
+              className="input"
+              placeholder="Chispas"
+            />
+          </div>
+        </div>
+        <FormMessage state={state} />
+        {/* Sin bloquearse mientras guarda: se pueden encadenar varios */}
+        <button type="submit" className="btn-primary">
+          Añadir al equipo
+        </button>
+      </form>
+    </Hoja>
   );
 }

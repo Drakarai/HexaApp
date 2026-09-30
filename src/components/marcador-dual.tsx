@@ -148,6 +148,7 @@ export function MarcadorDual({
           </ul>
         ) : (
           <EmptyState
+            dibujo="espadas"
             title="Todavía no hay jornadas"
             hint="Créalas desde la sección Jornadas."
           />
@@ -230,6 +231,7 @@ export function CampeonesDeLiga({
         </ul>
       ) : (
         <EmptyState
+          dibujo="trofeo"
           title="Todavía no la ha superado nadie"
           hint="Se marca sola al pasar el último hito de los level caps."
         />

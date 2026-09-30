@@ -215,7 +215,7 @@ export default async function RoulettePage({
               </div>
 
               {selected.options.length === 0 ? (
-                <EmptyState title="Esta ruleta no tiene opciones" />
+                <EmptyState dibujo="ruleta" title="Esta ruleta no tiene opciones" />
               ) : (
                 <ul className="space-y-2">
                   {selected.options.map((option) => (
@@ -321,7 +321,7 @@ export default async function RoulettePage({
                 ) : null}
               </div>
               {selected.spins.length === 0 ? (
-                <EmptyState title="Sin giros todavía" />
+                <EmptyState dibujo="ruleta" title="Sin giros todavía" />
               ) : (
                 <ol className="space-y-2">
                   {selected.spins.map((spin) => {
@@ -398,6 +398,7 @@ export default async function RoulettePage({
         </div>
       ) : (
         <EmptyState
+          dibujo="ruleta"
           title="No hay ninguna ruleta creada"
           hint={canManage ? "Crea la primera abajo." : undefined}
         />

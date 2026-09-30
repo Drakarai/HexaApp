@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   castMvpVoteAction,
   clearMvpVoteAction,
@@ -12,6 +11,7 @@ import type { FormState } from "@/app/actions/auth";
 import { Avatar, FormMessage, SubmitButton } from "@/components/ui";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { Hoja } from "@/components/hoja";
 
 export type MvpCandidateView = {
   id: string;
@@ -123,60 +123,40 @@ export function MvpBadge({ mvp }: { mvp: MvpView }) {
 }
 
 function MvpCard({ mvp, onClose }: { mvp: MvpView; onClose: () => void }) {
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
   // Portal: las tarjetas llevan backdrop-blur y eso hace que un position:fixed
   // de dentro se coloque respecto a la tarjeta en vez de a la pantalla.
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="my-auto w-full max-w-lg rounded-2xl border border-white/10 bg-ink-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
-              MVP de la jornada
-            </p>
-            <p className="text-sm text-slate-400">{mvp.matchdayLabel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost btn-sm"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
-        </div>
-
-        {mvp.winner ? (
-          <Ficha mvp={mvp} winner={mvp.winner} />
-        ) : mvp.tied.length ? (
-          <Empate mvp={mvp} />
-        ) : (
-          <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-6 text-center text-sm text-slate-400">
-            Todavía no ha votado nadie. El MVP sale por mayoría de entre los
-            pokémon que jugaron la jornada.
+  return (
+    <Hoja onCerrar={onClose} ancho="max-w-lg" fondo="bg-black/70" className="p-5">
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-amber-300">
+            MVP de la jornada
           </p>
-        )}
-
-        <Votacion mvp={mvp} />
+          <p className="text-sm text-slate-400">{mvp.matchdayLabel}</p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn-ghost btn-sm"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
       </div>
-    </div>,
-    document.body,
+
+      {mvp.winner ? (
+        <Ficha mvp={mvp} winner={mvp.winner} />
+      ) : mvp.tied.length ? (
+        <Empate mvp={mvp} />
+      ) : (
+        <p className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-6 text-center text-sm text-slate-400">
+          Todavía no ha votado nadie. El MVP sale por mayoría de entre los
+          pokémon que jugaron la jornada.
+        </p>
+      )}
+
+      <Votacion mvp={mvp} />
+    </Hoja>
   );
 }
 

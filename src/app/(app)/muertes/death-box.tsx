@@ -1,7 +1,6 @@
 "use client";
 
 import { useActionState, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   deleteDeathAction,
   updateDeathAction,
@@ -22,6 +21,7 @@ import { IMAGE_SIZES } from "@/lib/image";
 import type { ZonaParaElegir } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { Hoja } from "@/components/hoja";
 
 export type AceSummary = {
   species: string | null;
@@ -216,233 +216,213 @@ function DeathDetail({
     if (state?.success) setEditing(false);
   }, [state]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div className="my-auto w-full max-w-lg rounded-2xl border border-white/10 bg-ink-900 p-5 shadow-2xl">
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <Avatar
-              name={death.participant.displayName}
-              color={death.participant.color}
-              image={death.participant.avatarImage}
-              size={30}
-              participantId={death.participant.id}
-            />
-            <div>
-              <p className="text-sm text-slate-400">
-                {death.participant.displayName}
-              </p>
-              <p className="text-xs text-slate-500">{death.diedAtLabel}</p>
-            </div>
+  return (
+    <Hoja onCerrar={onClose} ancho="max-w-lg" className="p-5" etiqueta={death.nickname ?? death.species}>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <Avatar
+            name={death.participant.displayName}
+            color={death.participant.color}
+            image={death.participant.avatarImage}
+            size={30}
+            participantId={death.participant.id}
+          />
+          <div>
+            <p className="text-sm text-slate-400">
+              {death.participant.displayName}
+            </p>
+            <p className="text-xs text-slate-500">{death.diedAtLabel}</p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost btn-sm"
-            aria-label="Cerrar"
-          >
-            ✕
-          </button>
         </div>
-
-        <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
-          {death.detailImage ?? death.boxImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={death.detailImage ?? death.boxImage ?? ""}
-              alt={death.species}
-              className="h-full w-full object-contain p-2"
-            />
-          ) : (
-            <span className="text-slate-600">
-              <PokeballGlyph />
-            </span>
-          )}
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-xl font-bold text-white">
-            {death.nickname ?? death.species}
-          </h3>
-          <p className="muted">
-            {death.species}
-            {death.level ? ` · Nv. ${death.level}` : ""}
-          </p>
-          <dl className="mt-3 space-y-1.5 text-sm">
-            {death.cause ? (
-              <Row label="Causa" value={death.cause} />
-            ) : null}
-            {death.sitio ? <Row label="Dónde" value={death.sitio} /> : null}
-            {death.notes ? <Row label="Notas" value={death.notes} /> : null}
-          </dl>
-        </div>
-
-        {death.editable ? (
-          editing ? (
-            <form action={formAction} className="mt-5 space-y-4 border-t border-white/10 pt-4">
-              <input type="hidden" name="deathId" value={death.id} />
-              <div>
-                <label className="label">Mote</label>
-                <input
-                  name="nickname"
-                  className="input"
-                  defaultValue={death.nickname ?? ""}
-                />
-              </div>
-
-              {manualImages ? (
-                <>
-                  <div>
-                    <label className="label">Especie</label>
-                    <input
-                      name="species"
-                      className="input"
-                      defaultValue={death.species}
-                      required
-                    />
-                  </div>
-                  <ImageInput
-                    name="detailImage"
-                    label="Imagen de la ficha"
-                    defaultValue={death.detailImage}
-                    maxSize={IMAGE_SIZES.detail}
-                    hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
-                  />
-                  <ImageInput
-                    name="boxImage"
-                    label="Sprite de la caja"
-                    defaultValue={death.boxImage}
-                    maxSize={IMAGE_SIZES.box}
-                  />
-                </>
-              ) : (
-                <SpeciesPicker
-                  defaultSpecies={death.species}
-                  defaultBoxImage={death.boxImage}
-                  defaultDetailImage={death.detailImage}
-                />
-              )}
-
-              <button
-                type="button"
-                className="text-xs text-brand-400 hover:underline"
-                onClick={() => setManualImages((manual) => !manual)}
-              >
-                {manualImages
-                  ? "← Volver a las imágenes automáticas"
-                  : "Prefiero poner mis propias imágenes →"}
-              </button>
-
-              <div>
-                <label className="label">Causa</label>
-                <input
-                  name="cause"
-                  className="input"
-                  defaultValue={death.cause ?? ""}
-                />
-              </div>
-
-              {/* El sitio va a la vista y no dentro de "más detalles": es lo que
-                  alimenta las calaveras del mapa y el ranking de rutas, así que
-                  escondido no lo pondría nadie. */}
-              <SitioPicker
-                zonas={zonas}
-                defaultZoneId={death.zoneId}
-                defaultLocation={death.location}
-                label="Dónde cayó"
-              />
-
-              <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-slate-400">
-                  <span className="mr-2 inline-block transition group-open:rotate-90">
-                    ▸
-                  </span>
-                  Más detalles (opcional)
-                </summary>
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label className="label">Nivel</label>
-                    <input
-                      name="level"
-                      type="number"
-                      min={1}
-                      max={100}
-                      className="input"
-                      defaultValue={death.level ?? ""}
-                    />
-                  </div>
-                  <div>
-                    <label className="label">Fecha</label>
-                    <input
-                      name="diedAt"
-                      type="date"
-                      className="input"
-                      defaultValue={death.diedAtInput}
-                    />
-                  </div>
-                  <div className="sm:col-span-2">
-                    <label className="label">Notas</label>
-                    <input
-                      name="notes"
-                      className="input"
-                      defaultValue={death.notes ?? ""}
-                    />
-                  </div>
-                </div>
-              </details>
-
-              <FormMessage state={state} />
-              <div className="flex gap-2">
-                <SubmitButton>Guardar ficha</SubmitButton>
-                <button
-                  type="button"
-                  className="btn-ghost"
-                  onClick={() => setEditing(false)}
-                >
-                  Cancelar
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4">
-              <button
-                type="button"
-                className="btn-primary btn-sm"
-                onClick={() => setEditing(true)}
-              >
-                <Icono emoji="🖼️" /> Editar ficha e imágenes
-              </button>
-              <form action={deleteDeathAction} onSubmit={() => onClose()}>
-                <input type="hidden" name="deathId" value={death.id} />
-                <ConfirmSubmit
-                  message={`¿Borrar a ${death.nickname ?? death.species} del cementerio?`}
-                >
-                  Borrar
-                </ConfirmSubmit>
-              </form>
-            </div>
-          )
-        ) : null}
+        <button
+          type="button"
+          onClick={onClose}
+          className="btn-ghost btn-sm"
+          aria-label="Cerrar"
+        >
+          ✕
+        </button>
       </div>
-    </div>,
-    document.body,
+
+      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
+        {death.detailImage ?? death.boxImage ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={death.detailImage ?? death.boxImage ?? ""}
+            alt={death.species}
+            className="h-full w-full object-contain p-2"
+          />
+        ) : (
+          <span className="text-slate-600">
+            <PokeballGlyph />
+          </span>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <h3 className="text-xl font-bold text-white">
+          {death.nickname ?? death.species}
+        </h3>
+        <p className="muted">
+          {death.species}
+          {death.level ? ` · Nv. ${death.level}` : ""}
+        </p>
+        <dl className="mt-3 space-y-1.5 text-sm">
+          {death.cause ? (
+            <Row label="Causa" value={death.cause} />
+          ) : null}
+          {death.sitio ? <Row label="Dónde" value={death.sitio} /> : null}
+          {death.notes ? <Row label="Notas" value={death.notes} /> : null}
+        </dl>
+      </div>
+
+      {death.editable ? (
+        editing ? (
+          <form action={formAction} className="mt-5 space-y-4 border-t border-white/10 pt-4">
+            <input type="hidden" name="deathId" value={death.id} />
+            <div>
+              <label className="label">Mote</label>
+              <input
+                name="nickname"
+                className="input"
+                defaultValue={death.nickname ?? ""}
+              />
+            </div>
+
+            {manualImages ? (
+              <>
+                <div>
+                  <label className="label">Especie</label>
+                  <input
+                    name="species"
+                    className="input"
+                    defaultValue={death.species}
+                    required
+                  />
+                </div>
+                <ImageInput
+                  name="detailImage"
+                  label="Imagen de la ficha"
+                  defaultValue={death.detailImage}
+                  maxSize={IMAGE_SIZES.detail}
+                  hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
+                />
+                <ImageInput
+                  name="boxImage"
+                  label="Sprite de la caja"
+                  defaultValue={death.boxImage}
+                  maxSize={IMAGE_SIZES.box}
+                />
+              </>
+            ) : (
+              <SpeciesPicker
+                defaultSpecies={death.species}
+                defaultBoxImage={death.boxImage}
+                defaultDetailImage={death.detailImage}
+              />
+            )}
+
+            <button
+              type="button"
+              className="text-xs text-brand-400 hover:underline"
+              onClick={() => setManualImages((manual) => !manual)}
+            >
+              {manualImages
+                ? "← Volver a las imágenes automáticas"
+                : "Prefiero poner mis propias imágenes →"}
+            </button>
+
+            <div>
+              <label className="label">Causa</label>
+              <input
+                name="cause"
+                className="input"
+                defaultValue={death.cause ?? ""}
+              />
+            </div>
+
+            {/* El sitio va a la vista y no dentro de "más detalles": es lo que
+                alimenta las calaveras del mapa y el ranking de rutas, así que
+                escondido no lo pondría nadie. */}
+            <SitioPicker
+              zonas={zonas}
+              defaultZoneId={death.zoneId}
+              defaultLocation={death.location}
+              label="Dónde cayó"
+            />
+
+            <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-3">
+              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-slate-400">
+                <span className="mr-2 inline-block transition group-open:rotate-90">
+                  ▸
+                </span>
+                Más detalles (opcional)
+              </summary>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="label">Nivel</label>
+                  <input
+                    name="level"
+                    type="number"
+                    min={1}
+                    max={100}
+                    className="input"
+                    defaultValue={death.level ?? ""}
+                  />
+                </div>
+                <div>
+                  <label className="label">Fecha</label>
+                  <input
+                    name="diedAt"
+                    type="date"
+                    className="input"
+                    defaultValue={death.diedAtInput}
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <label className="label">Notas</label>
+                  <input
+                    name="notes"
+                    className="input"
+                    defaultValue={death.notes ?? ""}
+                  />
+                </div>
+              </div>
+            </details>
+
+            <FormMessage state={state} />
+            <div className="flex gap-2">
+              <SubmitButton>Guardar ficha</SubmitButton>
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => setEditing(false)}
+              >
+                Cancelar
+              </button>
+            </div>
+          </form>
+        ) : (
+          <div className="mt-5 flex flex-wrap gap-2 border-t border-white/10 pt-4">
+            <button
+              type="button"
+              className="btn-primary btn-sm"
+              onClick={() => setEditing(true)}
+            >
+              <Icono emoji="🖼️" /> Editar ficha e imágenes
+            </button>
+            <form action={deleteDeathAction} onSubmit={() => onClose()}>
+              <input type="hidden" name="deathId" value={death.id} />
+              <ConfirmSubmit
+                message={`¿Borrar a ${death.nickname ?? death.species} del cementerio?`}
+              >
+                Borrar
+              </ConfirmSubmit>
+            </form>
+          </div>
+        )
+      ) : null}
+    </Hoja>
   );
 }
 

@@ -65,6 +65,7 @@ export default async function RulesPage() {
 
       {rules.length === 0 ? (
         <EmptyState
+          dibujo="libreta"
           title="Todavía no hay reglas cargadas"
           hint={
             canManage

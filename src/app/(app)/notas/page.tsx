@@ -46,6 +46,7 @@ export default async function NotesPage({
           subtitle="Cuaderno privado para planear estrategias. Nadie más puede leer estas notas, ni siquiera los administradores."
         />
         <EmptyState
+          dibujo="libreta"
           title="No juegas esta edición"
           hint="Las notas son de quien juega el locke; tú lo estás mirando."
         />
@@ -171,6 +172,7 @@ export default async function NotesPage({
 
       {notes.length === 0 ? (
         <EmptyState
+          dibujo="libreta"
           title="Aquí no hay nada escrito todavía"
           hint={
             scope === "general"

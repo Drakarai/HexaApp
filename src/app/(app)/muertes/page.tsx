@@ -293,6 +293,7 @@ export default async function DeathsPage({
 
       {boxDeaths.length === 0 ? (
         <EmptyState
+          dibujo="lapida"
           title={
             selected
               ? `${selected.displayName} no ha perdido a nadie`

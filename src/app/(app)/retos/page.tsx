@@ -115,6 +115,7 @@ export default async function RetosPage() {
 
       {retos.length === 0 ? (
         <EmptyState
+          dibujo="espadas"
           title="Todavía no hay retos"
           hint={canManage ? "Crea el primero abajo." : undefined}
         />

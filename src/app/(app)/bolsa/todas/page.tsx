@@ -311,6 +311,7 @@ export default async function BolsasPage() {
           </ul>
         ) : (
           <EmptyState
+            dibujo="mochila"
             title="Todavía no hay objetos"
             hint="Búscalos en la lista de los juegos o invéntate uno."
           />

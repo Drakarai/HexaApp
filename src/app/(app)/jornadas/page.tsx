@@ -158,6 +158,7 @@ export default async function MatchdaysPage() {
 
       {matchdays.length === 0 ? (
         <EmptyState
+          dibujo="espadas"
           title="No hay jornadas creadas"
           hint={canManage ? "Crea la primera abajo." : undefined}
         />

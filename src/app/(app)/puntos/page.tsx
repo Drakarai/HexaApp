@@ -231,7 +231,7 @@ export default async function PointsPage() {
       <section className={perfil.enSolitario ? "hidden" : "card mt-6"}>
         <h2 className="section-title mb-4">Historial de movimientos</h2>
         {history.length === 0 ? (
-          <EmptyState title="Todavía no se han movido puntos" />
+          <EmptyState dibujo="trofeo" title="Todavía no se han movido puntos" />
         ) : (
           <ul className="space-y-2">
             {history.map((entry) => (

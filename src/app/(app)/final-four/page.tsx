@@ -137,6 +137,7 @@ export default async function FinalFourPage() {
 
       {state.status === "POCA_GENTE" ? (
         <EmptyState
+          dibujo="trofeo"
           title="No hay final que jugar"
           hint={`Queda${state.activos === 1 ? "" : "n"} ${state.activos} jugador${state.activos === 1 ? "" : "es"} en el locke: hacen falta al menos ${MINIMO_DE_JUGADORES}.`}
         />
@@ -169,6 +170,7 @@ export default async function FinalFourPage() {
 
       {state.status === "SIN_JORNADAS" ? (
         <EmptyState
+          dibujo="espadas"
           title="Todavía no hay jornadas"
           hint={`La ${nombre} se desbloquea cuando estén jugados todos los combates de todas las jornadas.`}
         />

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { spinRouletteAction } from "@/app/actions/roulette";
 import { readableTextColor } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { DibujoVacio } from "@/components/dibujo-vacio";
 
 export type WheelOption = {
   id: string;
@@ -98,8 +99,9 @@ export function RouletteWheel({
 
   if (!options.length) {
     return (
-      <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-slate-400">
-        Esta ruleta no tiene opciones activas.
+      <div className="px-4 py-8 text-center text-sm text-slate-400">
+        <DibujoVacio dibujo="ruleta" />
+        <p className="mt-3">Esta ruleta no tiene opciones activas.</p>
       </div>
     );
   }

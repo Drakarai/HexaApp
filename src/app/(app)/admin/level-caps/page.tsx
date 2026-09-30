@@ -15,6 +15,7 @@ import {
   ItemDeLaPlantilla,
   NuevoItemDePlantilla,
 } from "./editor";
+import { DibujoVacio } from "@/components/dibujo-vacio";
 
 export const metadata = { title: "Level caps de los juegos" };
 
@@ -134,8 +135,9 @@ export default async function PlantillasPage({
             </ul>
           </>
         ) : (
-          <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center">
-            <p className="text-sm text-slate-300">
+          <div className="px-4 py-6 text-center">
+            <DibujoVacio dibujo="trofeo" />
+            <p className="mt-3 text-sm text-slate-300">
               {elegido.nombre} todavía no tiene plantilla.
             </p>
             <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">

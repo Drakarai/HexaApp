@@ -17,6 +17,7 @@ import {
 } from "@/lib/final-four";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, EmptyState } from "@/components/ui";
+import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
@@ -372,6 +373,7 @@ export default async function DashboardPage() {
 
   return (
     <>
+      <TirarParaRefrescar />
       <PageHeader
         title={competition.name}
         fondo={logos(competition.id)}
@@ -701,6 +703,7 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <EmptyState
+              dibujo="espadas"
               title="No hay combates pendientes"
               hint={
                 // Crear jornadas solo puede quien administra: al resto se le
@@ -748,7 +751,7 @@ export default async function DashboardPage() {
               ))}
             </ul>
           ) : (
-            <EmptyState title="Sin giros todavía" />
+            <EmptyState dibujo="ruleta" title="Sin giros todavía" />
           )}
         </section>
       </div>

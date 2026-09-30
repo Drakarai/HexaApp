@@ -244,9 +244,22 @@ body {
   animation: aparece-el-fondo 0.18s ease-out;
 }
 
+/* Las fichas (components/hoja.tsx) suben igual, pero solo en el móvil */
+.hoja-fondo {
+  animation: aparece-el-fondo 0.18s ease-out;
+}
+
+@media (max-width: 639px) {
+  .hoja {
+    animation: sube-el-menu 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu-movil,
-  .menu-fondo {
+  .menu-fondo,
+  .hoja,
+  .hoja-fondo {
     animation: none;
   }
 }
