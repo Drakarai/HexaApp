@@ -491,3 +491,39 @@ html[data-estilo="nuevo"] .etiqueta-formato {
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
+
+/* La evolución de Equipo y PC (ver equipo/evolucion.tsx): la silueta que
+   late mientras contesta el servidor, el nuevo que aparece y sus destellitos */
+@keyframes evo-latido {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+@keyframes evo-aparece {
+  from {
+    transform: scale(0.85);
+    opacity: 0.4;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes evo-destellito {
+  0% {
+    opacity: 0;
+    transform: scale(0.2) rotate(0deg);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1) rotate(45deg);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.3) rotate(90deg);
+  }
+}

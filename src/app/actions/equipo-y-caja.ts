@@ -6,6 +6,7 @@ import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
 import { evolucionesDe } from "@/lib/evoluciones";
+import { urlsDeImagen } from "@/lib/imagenes";
 import {
   mover,
   sePuedenVincular,
@@ -43,6 +44,8 @@ type Resultado = {
   aviso?: string;
   /** Lo que hay que pasarle a deshacer para deshacer justo esto (ver `soloSi`) */
   deshacer?: string;
+  /** Al evolucionar: la dirección del sprite nuevo, para la animación */
+  imagen?: string | null;
 };
 
 async function conError(accion: () => Promise<Resultado | void>): Promise<Resultado> {
@@ -245,9 +248,11 @@ export async function evolucionarAction(entrada: {
     const descripcion = `Evolucionar a ${nombreDe(captura)} en ${elegida.rotulo}`;
     await apuntarCambio(captura.participantId, descripcion, foto);
     refrescar();
+    const imagenes = await urlsDeImagen("captura", [captura.id]);
     return {
       aviso: `¡${nombreDe(captura)} ha evolucionado en ${elegida.rotulo}!`,
       deshacer: descripcion,
+      imagen: imagenes(captura.id),
     };
   });
 }
