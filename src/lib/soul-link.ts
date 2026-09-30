@@ -4,7 +4,7 @@ import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { urlsDeImagen } from "@/lib/imagenes";
 import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
-import { GENERACION_POR_DEFECTO, colorDeTipo, tipoPorId, tiposDePokemon } from "@/lib/tipos";
+import { GENERACION_POR_DEFECTO, tipoPorId, tiposDePokemon } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
 
 /**
@@ -22,7 +22,7 @@ export type PokemonDelTablero = {
   nickname: string | null;
   pokemonId: number | null;
   imagen: string | null;
-  tipos: { slug: string; nombre: string; color: string }[];
+  tipos: { slug: string; nombre: string }[];
   /** Dónde se capturó: la zona del mapa o lo escrito a mano */
   sitio: string | null;
   lugar: string;
@@ -134,7 +134,7 @@ export async function getEquiposDelLocke(
         ? tiposDePokemon(quien.pokemonId, generacion)
             .map((id) => tipoPorId(id))
             .filter((t) => t !== undefined)
-            .map((t) => ({ slug: t.slug, nombre: t.nombre, color: colorDeTipo(t.slug) }))
+            .map((t) => ({ slug: t.slug, nombre: t.nombre }))
         : [],
       sitio: c.zone?.name ?? c.sitio,
       lugar: c.lugar,

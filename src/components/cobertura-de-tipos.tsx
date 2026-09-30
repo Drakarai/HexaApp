@@ -1,5 +1,7 @@
 "use client";
 
+import { ChapaDeTipo } from "@/components/chapa-de-tipo";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   guardarEquipoDeTiposAction,
@@ -8,7 +10,6 @@ import {
 } from "@/app/actions/tipos";
 import { searchSpecies, spriteCandidates } from "@/lib/pokedex";
 import {
-  colorDeTipo,
   comoSeLee,
   GENERACION_POR_DEFECTO,
   multiplicador,
@@ -438,22 +439,14 @@ function Sprite({ pokemonId }: { pokemonId: number }) {
   );
 }
 
+/** La chapa de un tipo, la de los juegos; en pequeño, solo su icono */
 function Chapa({ tipoId, mini = false }: { tipoId: number; mini?: boolean }) {
   const tipo = tipoPorId(tipoId);
   if (!tipo) return null;
-  const color = colorDeTipo(tipo.slug);
-
-  return (
-    <span
-      title={tipo.nombre}
-      className={cx(
-        "inline-block rounded font-semibold text-white",
-        mini ? "px-1 py-0.5 text-[9px]" : "px-1.5 py-0.5 text-[10px]",
-      )}
-      style={{ background: color }}
-    >
-      {mini ? tipo.nombre.slice(0, 3) : tipo.nombre}
-    </span>
+  return mini ? (
+    <ChapaDeTipo slug={tipo.slug} nombre={tipo.nombre} forma="icono" alto={14} className="inline-block" />
+  ) : (
+    <ChapaDeTipo slug={tipo.slug} nombre={tipo.nombre} alto={16} className="inline-block" />
   );
 }
 

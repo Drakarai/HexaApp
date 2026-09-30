@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 import { Avatar } from "@/components/ui";
 import { Icono } from "@/components/icono";
+import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { cx } from "@/lib/utils";
 import {
   HUECOS_POR_CAJA,
@@ -401,13 +402,19 @@ function Casilla({
               <span className="mt-0.5 w-full truncate text-center text-xs font-medium text-slate-100">
                 {pokemon.nickname ?? pokemon.species}
               </span>
-              <Tipos tipos={pokemon.tipos} />
+              <Tipos tipos={pokemon.tipos} enColumna />
             </>
           ) : (
-            // En la caja no caben los nombres de los tipos: su color, abajo
-            <span className="absolute inset-x-1 bottom-0.5 flex h-1 overflow-hidden rounded-full">
+            // En la caja no caben los nombres de los tipos: sus iconos, en la esquina
+            <span className="pointer-events-none absolute bottom-0.5 right-0.5 flex gap-px">
               {pokemon.tipos.map((tipo) => (
-                <span key={tipo.slug} className="flex-1" style={{ background: tipo.color }} />
+                <ChapaDeTipo
+                  key={tipo.slug}
+                  slug={tipo.slug}
+                  nombre={tipo.nombre}
+                  forma="icono"
+                  alto={11}
+                />
               ))}
             </span>
           )}
@@ -444,18 +451,30 @@ function Sprite({ pokemon, className }: { pokemon: PokemonDelTablero; className?
   );
 }
 
-function Tipos({ tipos }: { tipos: PokemonDelTablero["tipos"] }) {
+/**
+ * Los tipos con sus chapas de los juegos. En la casilla del equipo van una
+ * encima de otra, que dos en fila no caben en el ancho de un móvil; en la
+ * ficha, en fila y más grandes.
+ */
+function Tipos({
+  tipos,
+  alto = 12,
+  enColumna = false,
+}: {
+  tipos: PokemonDelTablero["tipos"];
+  alto?: number;
+  enColumna?: boolean;
+}) {
   if (!tipos.length) return null;
   return (
-    <span className="mt-1 flex flex-wrap justify-center gap-0.5">
+    <span
+      className={cx(
+        "mt-1 flex items-center justify-center gap-0.5",
+        enColumna ? "flex-col" : "flex-wrap",
+      )}
+    >
       {tipos.map((tipo) => (
-        <span
-          key={tipo.slug}
-          className="rounded px-1 py-px text-[9px] font-semibold uppercase leading-tight text-white"
-          style={{ background: tipo.color }}
-        >
-          {tipo.nombre}
-        </span>
+        <ChapaDeTipo key={tipo.slug} slug={tipo.slug} nombre={tipo.nombre} alto={alto} />
       ))}
     </span>
   );
@@ -813,7 +832,7 @@ function Ficha({
             {/* Sin mote, el nombre de arriba ya es la especie */}
             {pokemon.nickname ? <p className="muted">{pokemon.species}</p> : null}
             <div className="mt-1.5">
-              <Tipos tipos={pokemon.tipos} />
+              <Tipos tipos={pokemon.tipos} alto={20} />
             </div>
           </div>
         </div>
