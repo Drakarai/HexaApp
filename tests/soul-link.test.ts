@@ -6,6 +6,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import {
   HUECOS_POR_CAJA,
+  MINIMO_DE_CAJAS,
   colocar,
   companerasDe,
   mismoSitio,
@@ -28,7 +29,8 @@ describe("colocar", () => {
   test("respeta los huecos y deja libres los que no se usan", () => {
     const { equipo, caja } = colocar([poke("a", "equipo", 0), poke("b", "equipo", 3), poke("c", "caja", 5)]);
     assert.deepEqual(equipo.map((p) => p?.id ?? null), ["a", null, null, "b", null, null]);
-    assert.equal(caja.length, HUECOS_POR_CAJA);
+    // Siempre las cajas de serie, aunque solo haya un pokémon
+    assert.equal(caja.length, HUECOS_POR_CAJA * MINIMO_DE_CAJAS);
     assert.equal(caja[5]?.id, "c");
   });
 
@@ -50,14 +52,41 @@ describe("colocar", () => {
     assert.deepEqual(caja.slice(0, 3).map((p) => p?.id), ["a", "b", "c"]);
   });
 
-  test("con más de treinta en la caja hay una segunda caja", () => {
-    const muchas = Array.from({ length: 31 }, (_, i) => poke(`c${i}`, "caja", i));
-    assert.equal(colocar(muchas).caja.length, HUECOS_POR_CAJA * 2);
+  test("cuando se llenan las de serie, sale una caja más", () => {
+    const pocas = Array.from({ length: 31 }, (_, i) => poke(`c${i}`, "caja", i));
+    assert.equal(colocar(pocas).caja.length, HUECOS_POR_CAJA * MINIMO_DE_CAJAS);
+    const total = HUECOS_POR_CAJA * MINIMO_DE_CAJAS + 1;
+    const muchas = Array.from({ length: total }, (_, i) => poke(`c${i}`, "caja", i));
+    assert.equal(colocar(muchas).caja.length, HUECOS_POR_CAJA * (MINIMO_DE_CAJAS + 1));
   });
 });
 
 describe("mover", () => {
   const base = () => [poke("a", "equipo", 0), poke("b", "equipo", 1), poke("c", "caja", 0)];
+
+  test("a otra caja: al primer hueco libre de esa caja", () => {
+    const r = mover(base(), "a", { lugar: "caja", caja: 2 });
+    assert.ok("posiciones" in r);
+    assert.deepEqual(r.posiciones.find((p) => p.id === "a"), {
+      id: "a",
+      lugar: "caja",
+      hueco: HUECOS_POR_CAJA * 2,
+    });
+    // Si ya está en esa caja, se queda donde está
+    const quieto = mover(base(), "c", { lugar: "caja", caja: 0 });
+    assert.ok("posiciones" in quieto);
+    assert.equal(quieto.posiciones.find((p) => p.id === "c")?.hueco, 0);
+  });
+
+  test("a una caja llena o que no existe, no", () => {
+    const llena = [
+      ...Array.from({ length: HUECOS_POR_CAJA }, (_, i) => poke(`l${i}`, "caja", HUECOS_POR_CAJA + i)),
+      poke("x", "caja", 0),
+    ];
+    const r = mover(llena, "x", { lugar: "caja", caja: 1 });
+    assert.ok("error" in r && /llena/.test(r.error));
+    assert.ok("error" in mover(base(), "a", { lugar: "caja", caja: MINIMO_DE_CAJAS }));
+  });
 
   test("a un hueco libre", () => {
     const r = mover(base(), "c", { lugar: "equipo", hueco: 4 });
@@ -249,30 +278,30 @@ describe("estilo de juego", () => {
 
 describe("Fondos de las cajas", () => {
   test("sin elegir nada, cada caja lleva el suyo de fábrica y van cambiando", () => {
-    assert.equal(fondoDeCaja([], 0), "bosque");
-    assert.equal(fondoDeCaja([], 1), "pradera");
+    assert.equal(fondoDeCaja([], 0), "1");
+    assert.equal(fondoDeCaja([], 1), "13");
     // Después del último de fábrica, vuelta a empezar (el liso no sale solo)
-    assert.equal(fondoDeCaja([], 8), "bosque");
+    assert.equal(fondoDeCaja([], 15), "1");
   });
 
   test("se guarda uno por caja y lo de fábrica va vacío", () => {
-    const guardado = elegirFondo(null, 2, "nieve");
-    assert.equal(guardado, ",,nieve");
+    const guardado = elegirFondo(null, 2, "5");
+    assert.equal(guardado, ",,5");
     const fondos = leerFondos(guardado);
-    assert.equal(fondoDeCaja(fondos, 0), "bosque");
-    assert.equal(fondoDeCaja(fondos, 2), "nieve");
+    assert.equal(fondoDeCaja(fondos, 0), "1");
+    assert.equal(fondoDeCaja(fondos, 2), "5");
   });
 
   test("volver al de fábrica no deja la lista creciendo", () => {
-    const guardado = elegirFondo(",,nieve", 2, "playa"); // la 3 es la playa de fábrica
-    assert.equal(guardado, null);
-    assert.equal(elegirFondo("cueva,,nieve", 2, "playa"), "cueva");
+    assert.equal(elegirFondo(",,5", 2, "14"), null); // la 3 es la arena de fábrica
+    assert.equal(elegirFondo("3,,5", 2, "14"), "3");
   });
 
   test("lo que no es un fondo se lee como el de fábrica, y las cajas raras no se aceptan", () => {
-    assert.deepEqual(leerFondos("inventado,liso"), [null, "liso"]);
-    assert.throws(() => elegirFondo(null, -1, "mar"));
-    assert.throws(() => elegirFondo(null, 1.5, "mar"));
-    assert.throws(() => elegirFondo(null, MAXIMO_DE_CAJAS, "mar"));
+    // "noche" es de los paisajes dibujados de la primera prueba
+    assert.deepEqual(leerFondos("noche,liso"), [null, "liso"]);
+    assert.throws(() => elegirFondo(null, -1, "2"));
+    assert.throws(() => elegirFondo(null, 1.5, "2"));
+    assert.throws(() => elegirFondo(null, MAXIMO_DE_CAJAS, "2"));
   });
 });

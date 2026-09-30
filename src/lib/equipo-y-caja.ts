@@ -16,6 +16,11 @@
 export const TAMANO_DEL_EQUIPO = 6;
 /** Como en los juegos: seis columnas y cinco filas */
 export const HUECOS_POR_CAJA = 30;
+/**
+ * Las cajas que hay siempre, aunque estén vacías: con una sola no había a
+ * dónde mover nada, y en los juegos el PC ya viene con todas desde el principio.
+ */
+export const MINIMO_DE_CAJAS = 4;
 
 export type Lugar = "equipo" | "caja";
 
@@ -29,7 +34,7 @@ export type Colocable = {
 
 export type Colocacion<T> = {
   equipo: (T | null)[];
-  /** Siempre cajas enteras, de 30 en 30, y al menos una */
+  /** Siempre cajas enteras, de 30 en 30, y al menos `MINIMO_DE_CAJAS` */
   caja: (T | null)[];
 };
 
@@ -70,8 +75,8 @@ export function colocar<T extends Colocable>(capturas: T[]): Colocacion<T> {
     caja[primerHuecoLibre(caja)] = captura;
   }
 
-  // Cajas enteras: las que hagan falta, y siempre al menos una
-  const cajas = Math.max(1, Math.ceil(caja.length / HUECOS_POR_CAJA));
+  // Cajas enteras: las que hagan falta, y nunca menos de las de siempre
+  const cajas = Math.max(MINIMO_DE_CAJAS, Math.ceil(caja.length / HUECOS_POR_CAJA));
   const llena: (T | null)[] = Array.from(
     { length: cajas * HUECOS_POR_CAJA },
     (_, i) => caja[i] ?? null,
@@ -101,7 +106,9 @@ export function posicionesDe<T extends Colocable>(colocacion: Colocacion<T>): Po
 /**
  * Mover una captura a un hueco. Si está ocupado, **se cambian**: el que estaba
  * ahí se va al sitio de donde salió el otro, que es lo que hace el PC de los
- * juegos. Sin hueco, al primero libre de ese sitio.
+ * juegos. Sin hueco, al primero libre de ese sitio; y con `caja` (contando
+ * desde 0), al primero libre de esa caja, que es el «Mover a la caja…» de la
+ * ficha.
  *
  * Devuelve las posiciones nuevas de todas, o un error si no se puede (meter un
  * séptimo en el equipo sin decir por cuál se cambia).
@@ -109,7 +116,7 @@ export function posicionesDe<T extends Colocable>(colocacion: Colocacion<T>): Po
 export function mover<T extends Colocable>(
   capturas: T[],
   id: string,
-  destino: { lugar: Lugar; hueco?: number | null },
+  destino: { lugar: Lugar; hueco?: number | null; caja?: number | null },
 ): { posiciones: Posicion[] } | { error: string } {
   const colocacion = colocar(capturas);
   const origen = buscar(colocacion, id);
@@ -117,6 +124,19 @@ export function mover<T extends Colocable>(
 
   const fila = destino.lugar === "equipo" ? colocacion.equipo : colocacion.caja;
   let hueco = destino.hueco ?? null;
+  if (hueco === null && destino.lugar === "caja" && destino.caja != null) {
+    const caja = destino.caja;
+    const cajas = colocacion.caja.length / HUECOS_POR_CAJA;
+    if (!Number.isInteger(caja) || caja < 0 || caja >= cajas) return { error: "Esa caja no existe." };
+    const desde = caja * HUECOS_POR_CAJA;
+    // Si ya está en esa caja, no se mueve
+    if (origen.lugar === "caja" && origen.hueco >= desde && origen.hueco < desde + HUECOS_POR_CAJA) {
+      return { posiciones: posicionesDe(colocacion) };
+    }
+    const libre = colocacion.caja.slice(desde, desde + HUECOS_POR_CAJA).indexOf(null);
+    if (libre < 0) return { error: `La caja ${caja + 1} está llena.` };
+    hueco = desde + libre;
+  }
   if (hueco === null) {
     if (origen.lugar === destino.lugar) return { posiciones: posicionesDe(colocacion) };
     hueco = primerHuecoLibre(fila);

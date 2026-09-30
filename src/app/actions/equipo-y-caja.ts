@@ -176,6 +176,8 @@ export async function moverPokemonAction(entrada: {
   captureId: string;
   lugar: Lugar;
   hueco: number | null;
+  /** Sin hueco: a la primera libre de esta caja (desde 0) */
+  caja?: number | null;
 }): Promise<Resultado> {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
@@ -189,7 +191,7 @@ export async function moverPokemonAction(entrada: {
     const resultado = mover(
       suyas.map((c) => ({ ...c, creado: c.createdAt.getTime() })),
       captura.id,
-      { lugar: entrada.lugar, hueco: entrada.hueco },
+      { lugar: entrada.lugar, hueco: entrada.hueco, caja: entrada.caja ?? null },
     );
     if ("error" in resultado) return resultado;
 
@@ -209,7 +211,11 @@ export async function moverPokemonAction(entrada: {
     );
     await apuntarCambio(
       captura.participantId,
-      entrada.lugar === "equipo" ? `Meter a ${nombreDe(captura)} en el equipo` : `Mover a ${nombreDe(captura)}`,
+      entrada.lugar === "equipo"
+        ? `Meter a ${nombreDe(captura)} en el equipo`
+        : entrada.caja != null && entrada.hueco == null
+          ? `Mover a ${nombreDe(captura)} a la caja ${entrada.caja + 1}`
+          : `Mover a ${nombreDe(captura)}`,
       foto,
     );
     refrescar();

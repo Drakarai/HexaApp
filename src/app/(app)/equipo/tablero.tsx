@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ui";
 import { Icono } from "@/components/icono";
 import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { Hoja } from "@/components/hoja";
-import { FondoDeCajaDibujo } from "@/components/fondo-de-caja";
+import { FORMA_DE_LA_CAJA, FondoDeCajaImagen } from "@/components/fondo-de-caja";
 import { FONDOS_DE_CAJA, fondoDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
@@ -225,11 +225,18 @@ function Tablero({
     habilitado: tablero.editable,
     participantId: tablero.participantId,
     onSoltar: soltar,
-    onCambiarPagina: (paso) => setPagina((actual) => Math.max(0, Math.min(cajas - 1, actual + paso))),
+    // Como en los juegos, de la última se pasa a la primera
+    onCambiarPagina: (paso) => setPagina((actual) => (Math.min(actual, cajas - 1) + paso + cajas) % cajas),
   });
 
   const enEquipo = equipo.filter(Boolean).length;
   const enCaja = caja.filter(Boolean).length;
+  const visibles = caja.slice(paginaVisible * HUECOS_POR_CAJA, (paginaVisible + 1) * HUECOS_POR_CAJA);
+  const cogido = arrastre.fantasma?.id;
+  const cogidoDeOtraCaja =
+    cogido && !visibles.some((p) => p?.id === cogido)
+      ? (caja.find((p) => p?.id === cogido) ?? null)
+      : null;
 
   return (
     <section ref={arrastre.contenedor} className="card select-none">
@@ -294,71 +301,45 @@ function Tablero({
         ))}
       </div>
 
-      <div className="mb-1.5 mt-4 flex max-w-md items-center gap-2">
+      <div className="mb-1.5 mt-4 flex max-w-lg items-center gap-2">
         <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Caja {cajas > 1 ? `${paginaVisible + 1} de ${cajas}` : ""}
+          Caja {paginaVisible + 1} <span className="text-slate-600">de {cajas}</span>
         </p>
-        <div className="ml-auto flex gap-1">
-          {tablero.editable ? (
-            <button
-              type="button"
-              className={cx("btn-ghost btn-sm px-2", eligiendoFondo && "border-brand-400/50")}
-              onClick={() => setEligiendoFondo((abierto) => !abierto)}
-              aria-expanded={eligiendoFondo}
-              title="El fondo de esta caja"
-            >
-              <Icono emoji="🎨" />
-              <span className="text-xs">Fondo</span>
-            </button>
-          ) : null}
-          {cajas > 1 ? (
-            <>
-              <button
-                type="button"
-                data-pagina="-1"
-                data-dueno={tablero.participantId}
-                className="btn-ghost btn-sm px-2"
-                disabled={paginaVisible === 0}
-                onClick={() => setPagina(paginaVisible - 1)}
-                aria-label="Caja anterior"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                data-pagina="1"
-                data-dueno={tablero.participantId}
-                className="btn-ghost btn-sm px-2"
-                disabled={paginaVisible === cajas - 1}
-                onClick={() => setPagina(paginaVisible + 1)}
-                aria-label="Caja siguiente"
-              >
-                ›
-              </button>
-            </>
-          ) : null}
-        </div>
+        {tablero.editable ? (
+          <button
+            type="button"
+            className={cx("btn-ghost btn-sm ml-auto px-2", eligiendoFondo && "border-brand-400/50")}
+            onClick={() => setEligiendoFondo((abierto) => !abierto)}
+            aria-expanded={eligiendoFondo}
+            title="El fondo de esta caja"
+          >
+            <Icono emoji="🎨" />
+            <span className="text-xs">Fondo</span>
+          </button>
+        ) : null}
       </div>
       {eligiendoFondo && tablero.editable ? (
-        <div className="mb-2 flex max-w-md gap-1.5 overflow-x-auto pb-1">
+        <div className="mb-2 flex max-w-lg gap-1.5 overflow-x-auto pb-1">
           {FONDOS_DE_CAJA.map((opcion) => (
             <button
               key={opcion.slug}
               type="button"
               disabled={pendiente}
               onClick={() => elegirFondo(opcion.slug)}
-              className="w-14 shrink-0 text-center"
+              className="w-[60px] shrink-0 text-center"
               aria-pressed={opcion.slug === fondo}
+              title={opcion.nombre}
             >
               <span
                 className={cx(
-                  "relative block h-11 w-14 overflow-hidden rounded-md border bg-ink-950/40",
+                  "relative block w-[60px] overflow-hidden rounded-md border bg-ink-950/60",
+                  FORMA_DE_LA_CAJA,
                   opcion.slug === fondo
                     ? "border-brand-400 ring-2 ring-brand-400/40"
                     : "border-white/10",
                 )}
               >
-                <FondoDeCajaDibujo fondo={opcion.slug} />
+                <FondoDeCajaImagen fondo={opcion.slug} />
               </span>
               <span className="mt-0.5 block truncate text-[10px] text-slate-400">
                 {opcion.nombre}
@@ -367,25 +348,74 @@ function Tablero({
           ))}
         </div>
       ) : null}
-      {/* Del tamaño de la de los juegos: a lo ancho del PC, 30 casillas eran media pantalla */}
-      <div className="relative isolate grid max-w-md grid-cols-6 gap-1 overflow-hidden rounded-xl border border-white/5 bg-ink-950/40 p-1.5">
-        <FondoDeCajaDibujo fondo={fondo} className="-z-10" />
-        {caja
-          .slice(paginaVisible * HUECOS_POR_CAJA, (paginaVisible + 1) * HUECOS_POR_CAJA)
-          .map((pokemon, i) => {
-            const hueco = paginaVisible * HUECOS_POR_CAJA + i;
-            return (
-              <Casilla
-                key={pokemon?.id ?? `caja-${hueco}`}
-                pokemon={pokemon}
-                destino={`${tablero.participantId}|caja|${hueco}`}
-                numero={pokemon?.vinculo ? numeros[pokemon.vinculo] : undefined}
-                resaltado={Boolean(pokemon && resaltados.has(pokemon.id))}
-                arrastre={arrastre}
-                onAbrir={onAbrir}
-              />
-            );
-          })}
+      {/**
+       * La caja, con la forma de sus fondos (los de los juegos) y una flecha a
+       * cada lado, altas y anchas: se tocan para cambiar de caja y, con un
+       * pokémon cogido, **quedarse encima pasa de caja** para soltarlo en otra.
+       * En el móvil gana ancho metiéndose en el margen de la tarjeta, que a 260
+       * píxeles los pokémon se quedaban en nada.
+       */}
+      <div className="-mx-4 flex max-w-lg items-stretch gap-1 sm:mx-0">
+        <FlechaDeCaja
+          paso={-1}
+          dueno={tablero.participantId}
+          encendida={arrastre.flecha === -1}
+          onClick={() => setPagina((paginaVisible - 1 + cajas) % cajas)}
+        />
+        <div
+          className={cx(
+            "relative isolate min-w-0 flex-1 overflow-hidden rounded-md",
+            FORMA_DE_LA_CAJA,
+            fondo === "liso" && "rounded-xl border border-white/5 bg-ink-950/40",
+          )}
+        >
+          <FondoDeCajaImagen fondo={fondo} className="-z-10" />
+          {/* Dentro del marco de la imagen: seis columnas y cinco filas */}
+          <div className="grid h-full grid-cols-6 grid-rows-5 gap-px p-[3%]">
+            {[
+              ...visibles.map((pokemon, i) => {
+                const hueco = paginaVisible * HUECOS_POR_CAJA + i;
+                return (
+                  <Casilla
+                    key={pokemon?.id ?? `caja-${hueco}`}
+                    pokemon={pokemon}
+                    destino={`${tablero.participantId}|caja|${hueco}`}
+                    numero={pokemon?.vinculo ? numeros[pokemon.vinculo] : undefined}
+                    resaltado={Boolean(pokemon && resaltados.has(pokemon.id))}
+                    rejilla={fondo === "liso"}
+                    arrastre={arrastre}
+                    onAbrir={onAbrir}
+                  />
+                );
+              }),
+              /**
+               * El que se lleva cogido de otra caja **sigue en la página**,
+               * escondido y con la misma `key` (así React no lo quita, solo lo
+               * mueve). Con el dedo, los eventos van al elemento donde empezó
+               * el toque: si se quitaba al pasar de caja, dejaban de llegar y
+               * no había forma de soltarlo.
+               */
+              cogidoDeOtraCaja ? (
+                <Casilla
+                  key={cogidoDeOtraCaja.id}
+                  pokemon={cogidoDeOtraCaja}
+                  destino=""
+                  oculta
+                  numero={undefined}
+                  resaltado={false}
+                  arrastre={arrastre}
+                  onAbrir={onAbrir}
+                />
+              ) : null,
+            ]}
+          </div>
+        </div>
+        <FlechaDeCaja
+          paso={1}
+          dueno={tablero.participantId}
+          encendida={arrastre.flecha === 1}
+          onClick={() => setPagina((paginaVisible + 1) % cajas)}
+        />
       </div>
 
       {tablero.caidos.length ? (
@@ -429,6 +459,8 @@ function Casilla({
   numero,
   resaltado,
   grande = false,
+  rejilla = false,
+  oculta = false,
   arrastre,
   onAbrir,
 }: {
@@ -437,6 +469,10 @@ function Casilla({
   numero: number | undefined;
   resaltado: boolean;
   grande?: boolean;
+  /** En la caja sin fondo, cada hueco se marca; sobre un fondo, no, como en los juegos */
+  rejilla?: boolean;
+  /** El cogido de otra caja: está, pero ni se ve ni es un sitio donde soltar */
+  oculta?: boolean;
   arrastre: Arrastre;
   onAbrir: (id: string) => void;
 }) {
@@ -444,12 +480,13 @@ function Casilla({
   const debajo = arrastre.destino === destino;
   return (
     <div
-      data-destino={destino}
+      data-destino={oculta ? undefined : destino}
       className={cx(
         "relative flex flex-col items-center justify-center rounded-lg transition",
+        oculta && "hidden",
         grande
           ? "min-h-[6.5rem] border border-white/10 bg-white/[0.03] p-1.5"
-          : "aspect-square bg-white/[0.02]",
+          : cx("min-h-0 min-w-0", rejilla && "bg-white/[0.03]"),
         !pokemon && grande && "border-dashed",
         debajo && "bg-brand-500/20 ring-2 ring-brand-400",
         resaltado && "ring-2 ring-amber-300",
@@ -471,7 +508,8 @@ function Casilla({
             levantado && "opacity-30",
           )}
         >
-          <Sprite pokemon={pokemon} className={grande ? "h-14 w-14" : "h-full w-full p-0.5"} />
+          {/* En la caja, algo más grande que su hueco: los sprites traen mucho aire alrededor */}
+          <Sprite pokemon={pokemon} className={grande ? "h-14 w-14" : "h-full w-full scale-[1.3]"} />
           {grande ? (
             <>
               <span className="mt-0.5 w-full truncate text-center text-xs font-medium text-slate-100">
@@ -507,6 +545,38 @@ function Casilla({
         </span>
       ) : null}
     </div>
+  );
+}
+
+/** La flecha de un lado de la caja. `data-pagina` es lo que mira el arrastre */
+function FlechaDeCaja({
+  paso,
+  dueno,
+  encendida,
+  onClick,
+}: {
+  paso: -1 | 1;
+  dueno: string;
+  /** Con un pokémon cogido encima: está a punto de pasar de caja */
+  encendida: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-pagina={paso}
+      data-dueno={dueno}
+      onClick={onClick}
+      aria-label={paso < 0 ? "Caja anterior" : "Caja siguiente"}
+      className={cx(
+        "flex w-7 shrink-0 items-center justify-center rounded-lg border text-xl transition sm:w-8",
+        encendida
+          ? "border-brand-400 bg-brand-500/25 text-white"
+          : "border-white/10 bg-white/[0.03] text-slate-400 hover:bg-white/[0.08] hover:text-white active:bg-brand-500/20",
+      )}
+    >
+      {paso < 0 ? "‹" : "›"}
+    </button>
   );
 }
 
@@ -578,6 +648,8 @@ type Arrastre = ReturnType<typeof useArrastre>;
 const PULSACION = 250;
 /** Cuánto se puede mover el dedo antes de que cuente como scroll */
 const HOLGURA = 8;
+/** Lo que hay que quedarse encima de una flecha para pasar de caja */
+const ESPERA_EN_LA_FLECHA = 550;
 
 /**
  * Arrastrar sin librerías. Se hace con eventos de puntero, que valen igual para
@@ -609,6 +681,8 @@ function useArrastre({
 }) {
   const [fantasma, setFantasma] = useState<{ id: string; x: number; y: number } | null>(null);
   const [destino, setDestino] = useState<string | null>(null);
+  // La flecha de la caja que hay debajo del pokémon cogido, para encenderla
+  const [flecha, setFlecha] = useState<number | null>(null);
   const contenedor = useRef<HTMLElement | null>(null);
   const estado = useRef<{
     id: string;
@@ -657,6 +731,7 @@ function useArrastre({
     estado.current = null;
     setFantasma(null);
     setDestino(null);
+    setFlecha(null);
     window.removeEventListener("pointermove", alMover);
     window.removeEventListener("pointerup", alSoltar);
     window.removeEventListener("pointercancel", alCancelar);
@@ -669,13 +744,18 @@ function useArrastre({
     navigator.vibrate?.(15);
     setFantasma({ id: actual.id, x: actual.x, y: actual.y });
     setDestino(destinoEn(actual.x, actual.y));
-    // Desplazar la página cerca de los bordes, aunque el dedo no se mueva
+    // Desplazar la página cerca de los bordes y pasar de caja encima de una
+    // flecha, **aunque el dedo no se mueva**: quieto no llega ningún evento
     actual.desplazar = window.setInterval(() => {
       const ahora = estado.current;
       if (!ahora?.activo) return;
       const margen = 70;
       if (ahora.y < margen) window.scrollBy(0, -14);
       else if (ahora.y > window.innerHeight - margen) window.scrollBy(0, 14);
+      if (ahora.pagina && Date.now() - ahora.pagina.desde > ESPERA_EN_LA_FLECHA) {
+        avisos.current.onCambiarPagina(ahora.pagina.paso);
+        ahora.pagina = { paso: ahora.pagina.paso, desde: Date.now() };
+      }
     }, 16);
   }
 
@@ -698,11 +778,9 @@ function useArrastre({
     setFantasma({ id: actual.id, x: actual.x, y: actual.y });
     setDestino(destinoEn(actual.x, actual.y));
     const paso = paginaEn(actual.x, actual.y);
+    setFlecha(paso);
     if (paso === null) actual.pagina = null;
     else if (!actual.pagina || actual.pagina.paso !== paso) {
-      actual.pagina = { paso, desde: Date.now() };
-    } else if (Date.now() - actual.pagina.desde > 600) {
-      avisos.current.onCambiarPagina(paso);
       actual.pagina = { paso, desde: Date.now() };
     }
   }
@@ -731,6 +809,7 @@ function useArrastre({
     habilitado,
     fantasma,
     destino,
+    flecha,
     /** Tras soltar llega un clic que no hay que tomar por un toque */
     acabaDeSoltar: () => Date.now() - soltadoEn.current < 400,
     propsDe: (id: string) =>
@@ -802,6 +881,11 @@ function Ficha({
   const [conId, setConId] = useState("");
   const dueno = tableros.find((t) => t.participantId === pokemon.participantId)!;
   const editable = dueno.editable && !pokemon.muerta;
+  // Las cajas del dueño y en cuál está este, para «Mover a la caja…»
+  const cajaDelDueno = colocar(dueno.vivos).caja;
+  const cajasDelDueno = cajaDelDueno.length / HUECOS_POR_CAJA;
+  const posicionEnCaja = cajaDelDueno.findIndex((p) => p?.id === pokemon.id);
+  const cajaActual = posicionEnCaja >= 0 ? Math.floor(posicionEnCaja / HUECOS_POR_CAJA) : null;
   const nombreDe = (id: string) => tableros.find((t) => t.participantId === id)?.displayName ?? "";
 
   const lista = vinculables(todos);
@@ -1029,6 +1113,41 @@ function Ficha({
               >
                 <Icono emoji="🔁" /> {enEquipo ? "A la caja" : "Al equipo"}
               </button>
+              {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre */}
+              <select
+                className="input w-auto min-w-0 flex-1 py-1.5 text-sm sm:flex-none"
+                value=""
+                disabled={pendiente}
+                aria-label="Mover a otra caja"
+                onChange={(evento) => {
+                  const caja = Number(evento.target.value);
+                  if (evento.target.value === "" || Number.isNaN(caja)) return;
+                  lanzar(
+                    () =>
+                      directaConCola(
+                        () =>
+                          moverPokemonAction({
+                            captureId: pokemon.id,
+                            lugar: "caja",
+                            hueco: null,
+                            caja,
+                          }),
+                        "movimiento",
+                        { captureId: pokemon.id, lugar: "caja", hueco: "", caja: String(caja) },
+                        `${pokemon.nickname ?? pokemon.species} → caja ${caja + 1}`,
+                      ),
+                    { ok: `A la caja ${caja + 1}.` },
+                  );
+                }}
+              >
+                <option value="">Mover a la caja…</option>
+                {Array.from({ length: cajasDelDueno }, (_, caja) => (
+                  <option key={caja} value={caja} disabled={caja === cajaActual}>
+                    Caja {caja + 1}
+                    {caja === cajaActual ? " (está aquí)" : ""}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* En dos pasos, y con su deshacer al lado: evolucionar sin querer

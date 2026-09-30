@@ -173,10 +173,13 @@ async function ejecutar(tipo: string, formData: FormData): Promise<string | null
     case "movimiento": {
       const hueco = String(formData.get("hueco") ?? "");
       const lugar = String(formData.get("lugar") ?? "");
+      // La caja solo viene del «Mover a la caja…» de la ficha
+      const caja = String(formData.get("caja") ?? "");
       const estado = await moverPokemonAction({
         captureId: String(formData.get("captureId") ?? ""),
         lugar: lugar === "equipo" ? "equipo" : "caja",
         hueco: hueco === "" ? null : Number(hueco),
+        caja: caja === "" ? null : Number(caja),
       });
       return estado.error ?? null;
     }
