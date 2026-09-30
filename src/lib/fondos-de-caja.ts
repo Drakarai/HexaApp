@@ -8,7 +8,7 @@
  * tocar lo que ya haya guardado nadie.
  *
  * Se guardan en `Participant.fondosDeCaja` como una lista separada por comas,
- * una posición por caja: `"5,,liso"` es la 1 con el fondo 5, la 2 con el suyo
+ * una posición por caja: `"5,,liso"` es la 1 con Corazón (el 5), la 2 con el suyo
  * de siempre y la 3 sin fondo. Por jugador y por locke, porque la caja es de
  * ese locke. Sin nada elegido, cada caja lleva **el suyo de fábrica**, que va
  * cambiando de una caja a la siguiente, como en los juegos. Lo que no se
@@ -16,21 +16,21 @@
  */
 
 export const FONDOS_DE_CAJA = [
-  { slug: "1", nombre: "Fondo 1" },
-  { slug: "2", nombre: "Fondo 2" },
-  { slug: "3", nombre: "Fondo 3" },
-  { slug: "4", nombre: "Fondo 4" },
-  { slug: "5", nombre: "Fondo 5" },
-  { slug: "6", nombre: "Fondo 6" },
-  { slug: "7", nombre: "Fondo 7" },
-  { slug: "8", nombre: "Fondo 8" },
-  { slug: "9", nombre: "Fondo 9" },
-  { slug: "10", nombre: "Fondo 10" },
-  { slug: "11", nombre: "Fondo 11" },
-  { slug: "12", nombre: "Fondo 12" },
-  { slug: "13", nombre: "Fondo 13" },
-  { slug: "14", nombre: "Fondo 14" },
-  { slug: "15", nombre: "Fondo 15" },
+  { slug: "1", nombre: "Poké Ball" },
+  { slug: "2", nombre: "Distorsión" },
+  { slug: "3", nombre: "Dioses" },
+  { slug: "4", nombre: "Demonio" },
+  { slug: "5", nombre: "Corazón" },
+  { slug: "6", nombre: "Alma" },
+  { slug: "7", nombre: "Verdad" },
+  { slug: "8", nombre: "Ideales" },
+  { slug: "9", nombre: "Yin" },
+  { slug: "10", nombre: "Yang" },
+  { slug: "11", nombre: "Munna" },
+  { slug: "12", nombre: "Croagunk" },
+  { slug: "13", nombre: "Césped" },
+  { slug: "14", nombre: "Cueva" },
+  { slug: "15", nombre: "Ciudad" },
   // La caja gris de antes, por si alguien la prefiere
   { slug: "liso", nombre: "Sin fondo" },
 ] as const;
@@ -38,9 +38,9 @@ export const FONDOS_DE_CAJA = [
 export type FondoDeCaja = (typeof FONDOS_DE_CAJA)[number]["slug"];
 
 /**
- * El orden en que salen de fábrica, caja a caja: primero los tranquilos (la
- * ball, la hierba, la arena, los ladrillos), que son los que se ven al empezar,
- * y después los de los legendarios.
+ * El orden en que salen de fábrica, caja a caja: primero los tranquilos (Poké
+ * Ball, Césped, Cueva y Ciudad), que son los que se ven al empezar, y después
+ * los de los legendarios.
  */
 const DE_FABRICA: FondoDeCaja[] = ["1", "13", "14", "15", "11", "12", "5", "6", "2", "3", "4", "7", "8", "9", "10"];
 
