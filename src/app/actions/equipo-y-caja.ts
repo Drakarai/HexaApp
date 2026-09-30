@@ -5,7 +5,6 @@ import { requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
-import { generacionDelJuego } from "@/lib/juegos";
 import { evolucionesDe } from "@/lib/evoluciones";
 import {
   mover,
@@ -219,14 +218,9 @@ export async function evolucionarAction(entrada: {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
     if (captura.deathId) return { error: "Un pokémon caído ya no evoluciona." };
-    const { competition } = captura.participant;
 
     // Solo a lo que de verdad puede evolucionar: el formulario se puede falsear
-    const opciones = evolucionesDe(
-      captura.pokemonId,
-      captura.species,
-      competition.juegoNoOficial ? null : generacionDelJuego(competition.gameId),
-    );
+    const opciones = evolucionesDe(captura.pokemonId, captura.species);
     const elegida = opciones.find((o) => o.pokemonId === entrada.pokemonId);
     if (!elegida) return { error: "No puede evolucionar a eso." };
 

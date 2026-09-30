@@ -1,6 +1,6 @@
 /**
  * Genera src/lib/evoluciones.json a partir de los datos abiertos de PokéAPI:
- * de qué especie evoluciona cada una y en qué generación salió.
+ * de qué especie evoluciona cada una.
  *
  *   npx tsx scripts/generate-evoluciones.ts
  *
@@ -27,20 +27,16 @@ async function main() {
   const columnas = cabecera.split(",");
   const col = (nombre: string) => columnas.indexOf(nombre);
 
-  const generacion: Record<string, number> = {};
   const de: Record<string, number> = {};
   for (const fila of filas) {
     const campos = fila.split(",");
     const id = campos[col("id")];
-    generacion[id] = Number(campos[col("generation_id")]);
     const origen = campos[col("evolves_from_species_id")];
     if (origen) de[id] = Number(origen);
   }
 
-  writeFileSync(OUTPUT, JSON.stringify({ generacion, de }));
-  console.log(
-    `${Object.keys(generacion).length} especies, ${Object.keys(de).length} evoluciones → ${OUTPUT}`,
-  );
+  writeFileSync(OUTPUT, JSON.stringify({ de }));
+  console.log(`${Object.keys(de).length} evoluciones → ${OUTPUT}`);
 }
 
 main().catch((error) => {

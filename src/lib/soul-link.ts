@@ -68,13 +68,11 @@ export async function getEquiposDelLocke(
   soloDe?: string,
 ): Promise<EquiposDelLocke> {
   /**
-   * La generación manda en los tipos (Clefairy es Normal en Johto) y en qué
-   * evoluciones existen. En un fangame los tipos son los de su base, pero las
-   * evoluciones se ofrecen todas: meten pokémon de cualquier época.
+   * La generación manda en los tipos (Clefairy es Normal en Johto); en un
+   * fangame, los de su base. Las evoluciones no dependen de ella: se ofrecen
+   * todas (ver lib/evoluciones.ts).
    */
-  const generacionDelJuegoBase = generacionDelJuego(competicion.gameId);
-  const generacion = generacionDelJuegoBase ?? GENERACION_POR_DEFECTO;
-  const generacionDeEvoluciones = competicion.juegoNoOficial ? null : generacionDelJuegoBase;
+  const generacion = generacionDelJuego(competicion.gameId) ?? GENERACION_POR_DEFECTO;
 
   const [jugadores, capturas, cambios] = await Promise.all([
     prisma.participant.findMany({
@@ -145,7 +143,7 @@ export async function getEquiposDelLocke(
       vinculo: c.vinculo,
       muerta: Boolean(c.deathId),
       causa: c.muerte?.cause ?? null,
-      evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species, generacionDeEvoluciones),
+      evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species),
     };
   });
 

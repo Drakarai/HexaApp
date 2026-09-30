@@ -180,35 +180,44 @@ describe("vínculos", () => {
 describe("evoluciones", () => {
   const nombres = (opciones: { rotulo: string }[]) => opciones.map((o) => o.rotulo);
 
-  test("Eevee en un juego de Johto: solo las de hasta la 2ª", () => {
-    assert.deepEqual(nombres(evolucionesDe(133, "Eevee", 2)).sort(), [
-      "Espeon",
-      "Flareon",
-      "Jolteon",
-      "Umbreon",
-      "Vaporeon",
+  test("Eevee: las ocho, sin límite de generación", () => {
+    assert.equal(evolucionesDe(133, "Eevee").length, 8);
+  });
+
+  test("las que faltaban en HeartGold y Rojo Fuego por mirar la región", () => {
+    assert.deepEqual(nombres(evolucionesDe(null, "Budew")), ["Roselia"]);
+    assert.deepEqual(nombres(evolucionesDe(null, "Roselia")), ["Roserade"]);
+    assert.deepEqual(nombres(evolucionesDe(null, "Magneton")), ["Magnezone"]);
+    assert.deepEqual(nombres(evolucionesDe(null, "Golbat")), ["Crobat"]);
+    assert.deepEqual(nombres(evolucionesDe(null, "Onix")), ["Steelix"]);
+  });
+
+  test("las formas regionales salen siempre, sin megas ni Gigamax", () => {
+    assert.deepEqual(nombres(evolucionesDe(25, "Pikachu")), ["Raichu", "Raichu de Alola"]);
+    assert.deepEqual(nombres(evolucionesDe(null, "Charmeleon")), ["Charizard"]);
+  });
+
+  test("las formas que sí salen de evolucionar", () => {
+    assert.deepEqual(nombres(evolucionesDe(null, "Rockruff")), [
+      "Lycanroc",
+      "Lycanroc Nocturna",
+      "Lycanroc Crepuscular",
     ]);
-  });
-
-  test("sin generación (un fangame), todas", () => {
-    assert.equal(evolucionesDe(133, "Eevee", null).length, 8);
-  });
-
-  test("las formas regionales salen cuando el juego las tiene", () => {
-    assert.deepEqual(nombres(evolucionesDe(25, "Pikachu", 4)), ["Raichu"]);
-    assert.deepEqual(nombres(evolucionesDe(25, "Pikachu", 7)), ["Raichu", "Raichu de Alola"]);
+    // Aegislash Filo es de combate: no se evoluciona a ella
+    assert.deepEqual(nombres(evolucionesDe(null, "Doublade")), ["Aegislash"]);
   });
 
   test("un regional evoluciona antes a su forma", () => {
     // Vulpix de Alola
-    assert.equal(evolucionesDe(10103, "Vulpix", 7)[0]?.rotulo, "Ninetales de Alola");
+    assert.equal(evolucionesDe(10103, "Vulpix")[0]?.rotulo, "Ninetales de Alola");
   });
 
   test("por el nombre, si la captura no guardó el número", () => {
-    assert.deepEqual(nombres(evolucionesDe(null, "Cyndaquil", 2)), ["Quilava"]);
-    assert.deepEqual(evolucionesDe(null, "Typhlosion", 2), []);
+    assert.deepEqual(nombres(evolucionesDe(null, "Cyndaquil")), ["Quilava"]);
+    assert.deepEqual(evolucionesDe(null, "Typhlosion"), []);
   });
 });
+
 
 describe("estilo de juego", () => {
   test("un Soul Link es cooperativo: sin jornadas y se gana con la Liga", () => {
