@@ -450,8 +450,9 @@ function Tablero({
       {arrastre.fantasma ? (
         <Fantasma
           pokemon={vivos.find((p) => p.id === arrastre.fantasma!.id) ?? null}
-          x={arrastre.fantasma.x}
-          y={arrastre.fantasma.y}
+          x={arrastre.posicion().x}
+          y={arrastre.posicion().y}
+          nodo={arrastre.nodoFantasma}
         />
       ) : null}
     </section>
@@ -487,7 +488,9 @@ function Casilla({
     <div
       data-destino={oculta ? undefined : destino}
       className={cx(
-        "relative flex flex-col items-center justify-center rounded-lg transition",
+        // Sin transición: al arrastrar, el resaltado salta de casilla en casilla,
+        // y con ella cada una por la que se pasaba se repintaba varios fotogramas
+        "relative flex flex-col items-center justify-center rounded-lg",
         oculta && "hidden",
         grande
           ? "min-h-[6.5rem] border border-white/10 bg-white/[0.03] p-1.5"
@@ -519,8 +522,10 @@ function Casilla({
             className={
               grande
                 ? "h-14 w-14"
-                : // Y una sombra al borde, que el contorno se lea sobre cualquier fondo
-                  "h-full w-full [filter:drop-shadow(0_0_1px_rgb(0_0_0/0.9))_drop-shadow(0_1px_2px_rgb(0_0_0/0.6))]"
+                : // Y una sombra al borde, que el contorno se lea sobre cualquier
+                  // fondo. Una sola y casi sin desenfoque: con dos, repintar una
+                  // casilla costaba el triple
+                  "h-full w-full [filter:drop-shadow(0_0_1px_rgb(0_0_0/0.9))]"
             }
           />
           {grande ? (
@@ -643,17 +648,38 @@ function Tipos({
   );
 }
 
-function Fantasma({ pokemon, x, y }: { pokemon: PokemonDelTablero | null; x: number; y: number }) {
+/**
+ * El pokémon que sigue al dedo. Lo mueve `useArrastre` **tocando su estilo
+ * directamente**, sin pasar por React, y con `transform` en su propia capa:
+ * así cada movimiento del dedo ni repinta lo que hay debajo ni vuelve a
+ * dibujar el tablero entero.
+ */
+function Fantasma({
+  pokemon,
+  x,
+  y,
+  nodo,
+}: {
+  pokemon: PokemonDelTablero | null;
+  x: number;
+  y: number;
+  nodo: React.RefObject<HTMLDivElement | null>;
+}) {
   if (!pokemon) return null;
   return createPortal(
     <div
-      className="pointer-events-none fixed z-[70] flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-xl border border-brand-400/60 bg-ink-900/90 shadow-2xl"
-      style={{ left: x, top: y }}
+      ref={nodo}
+      className="pointer-events-none fixed left-0 top-0 z-[70] flex h-16 w-16 items-center justify-center rounded-xl border border-brand-400/60 bg-ink-900/90 shadow-2xl will-change-transform"
+      style={{ transform: posicionDelFantasma(x, y) }}
     >
       <Sprite pokemon={pokemon} className="h-14 w-14" />
     </div>,
     document.body,
   );
+}
+
+function posicionDelFantasma(x: number, y: number) {
+  return `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
 }
 
 // ---------------------------------------------------------------------------
@@ -697,7 +723,9 @@ function useArrastre({
   onSoltar: (id: string, destino: Destino) => void;
   onCambiarPagina: (paso: number) => void;
 }) {
-  const [fantasma, setFantasma] = useState<{ id: string; x: number; y: number } | null>(null);
+  // Quién va cogido. Dónde está no es estado: se mueve a mano (ver Fantasma)
+  const [fantasma, setFantasma] = useState<{ id: string } | null>(null);
+  const nodoFantasma = useRef<HTMLDivElement | null>(null);
   const [destino, setDestino] = useState<string | null>(null);
   // La flecha de la caja que hay debajo del pokémon cogido, para encenderla
   const [flecha, setFlecha] = useState<number | null>(null);
@@ -760,7 +788,7 @@ function useArrastre({
     if (!actual) return;
     actual.activo = true;
     navigator.vibrate?.(15);
-    setFantasma({ id: actual.id, x: actual.x, y: actual.y });
+    setFantasma({ id: actual.id });
     setDestino(destinoEn(actual.x, actual.y));
     // Desplazar la página cerca de los bordes y pasar de caja encima de una
     // flecha, **aunque el dedo no se mueva**: quieto no llega ningún evento
@@ -793,7 +821,11 @@ function useArrastre({
       return;
     }
     evento.preventDefault();
-    setFantasma({ id: actual.id, x: actual.x, y: actual.y });
+    if (nodoFantasma.current) {
+      nodoFantasma.current.style.transform = posicionDelFantasma(actual.x, actual.y);
+    }
+    // Estos dos solo cambian al pasar a otra casilla o a una flecha: React no
+    // vuelve a pintar nada mientras sigan igual
     setDestino(destinoEn(actual.x, actual.y));
     const paso = paginaEn(actual.x, actual.y);
     setFlecha(paso);
@@ -826,6 +858,9 @@ function useArrastre({
     contenedor,
     habilitado,
     fantasma,
+    nodoFantasma,
+    /** Dónde está el dedo, para el primer dibujo del fantasma */
+    posicion: () => ({ x: estado.current?.x ?? 0, y: estado.current?.y ?? 0 }),
     destino,
     flecha,
     /** Tras soltar llega un clic que no hay que tomar por un toque */
