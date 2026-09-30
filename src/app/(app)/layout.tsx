@@ -90,7 +90,9 @@ const GRUPOS: NavGroup[] = [
     // La guía va la última y **no se cae nunca**: es de la aplicación, no del
     // locke, así que la ve igual quien juega, quien mira y quien acaba de
     // entrar sin saber dónde se aprieta
-    children: [S.mapa, S.bolsa, S.notas, S.perfil, S.guia],
+    // Ediciones volvió al menú aquí, en lo tuyo: son tus lockes, y escondida
+    // dentro de Mi perfil no la encontraba nadie
+    children: [S.mapa, S.bolsa, S.notas, S.perfil, S.ediciones, S.guia],
   },
 ];
 
@@ -192,14 +194,13 @@ export default async function AppLayout({
   }
 
   /**
-   * **Ediciones, Administración y Diagnóstico no salen en el menú**: viven
-   * dentro de *Mi perfil*, a un toque del avatar de arriba.
+   * **Administración y Diagnóstico no salen en el menú**: viven dentro de
+   * *Mi perfil*, a un toque del avatar de arriba. Son pantallas de gestionar
+   * que se abren de uvas a peras.
    *
-   * Es lo que hacía ya el diagnóstico y se extendió a los otros dos: son
-   * pantallas de gestionar, se abren de uvas a peras, y al final de "La
-   * edición" la dejaban en ocho entradas. Lo de todos los días —clasificación,
-   * caja, actividad, level caps, reglas— no tiene por qué compartir sitio con
-   * lo de montar el tinglado.
+   * Ediciones también vivía ahí y **volvió**: escondida en el perfil no la
+   * encontraba nadie. Está en "Lo mío" y con un botón al lado del selector de
+   * lockes, que es donde se piensa en ellos.
    */
   const finalConSuNombre: NavItem = {
     ...S.finalFour,
@@ -291,7 +292,7 @@ export default async function AppLayout({
           {
             ...grupo,
             children: !yo
-              ? [S.perfil, S.guia]
+              ? [S.perfil, S.ediciones, S.guia]
               : // La bolsa es de los premios que se reparten en un locke de
                 // varios: en solitario no la llena nadie. Y el equipo y la
                 // caja van aquí, al lado del mapa, cuando son privados: en
@@ -348,6 +349,18 @@ export default async function AppLayout({
     S.ediciones.href,
   ];
 
+  // El selector y, pegado a él, el botón de Ediciones: tus lockes, a mano
+  const botonDeEdiciones = (
+    <Link
+      href={S.ediciones.href}
+      className="btn-ghost flex h-[42px] shrink-0 items-center px-2.5"
+      title="Ediciones: tus lockes, sus jugadores y sus ajustes"
+      aria-label="Ediciones"
+    >
+      <Icono emoji="🗂️" />
+    </Link>
+  );
+
   const switcher = (
     <CompetitionSwitcher
       /**
@@ -381,6 +394,7 @@ export default async function AppLayout({
           <div className="min-w-0 max-w-44 flex-1 [&_.label]:sr-only">
             {switcher}
           </div>
+          {botonDeEdiciones}
           <Link href="/perfil" aria-label="Mi perfil">
             <Avatar
               name={user.displayName}
@@ -415,7 +429,10 @@ export default async function AppLayout({
           </Link>
         </div>
 
-        <div className="mt-5">{switcher}</div>
+        <div className="mt-5 flex items-end gap-2">
+          <div className="min-w-0 flex-1">{switcher}</div>
+          {botonDeEdiciones}
+        </div>
 
         <div className="mt-5 lg:sticky lg:top-6">
           <Nav items={sidebarItems} avisos={avisos} />

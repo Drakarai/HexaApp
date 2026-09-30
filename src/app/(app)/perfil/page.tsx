@@ -241,8 +241,8 @@ export default async function ProfilePage() {
       <section className="card">
         <h2 className="section-title mb-1">Gestionar</h2>
         <p className="muted mb-4">
-          Lo que se toca de vez en cuando. No está en el menú de abajo para no
-          llenarlo: se llega desde aquí, tocando tu foto.
+          Lo que se toca de vez en cuando. Ediciones está también en el menú,
+          en «Lo mío», y al lado del selector de lockes.
         </p>
         <div className="flex flex-wrap gap-2">
           <Link href="/competiciones" className="btn-ghost">
