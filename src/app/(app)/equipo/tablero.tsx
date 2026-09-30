@@ -376,7 +376,7 @@ function Tablero({
            */}
           <FondoDeCajaImagen fondo={fondo} className={cx("-z-10", APAGADO)} />
           {/* Dentro del marco de la imagen: seis columnas y cinco filas */}
-          <div className="grid h-full grid-cols-6 grid-rows-5 gap-px p-[3%]">
+          <div className="grid h-full grid-cols-6 grid-rows-5 gap-x-[2%] gap-y-[2.5%] p-[4%]">
             {[
               ...visibles.map((pokemon, i) => {
                 const hueco = paginaVisible * HUECOS_POR_CAJA + i;
@@ -520,7 +520,7 @@ function Casilla({
               grande
                 ? "h-14 w-14"
                 : // Y una sombra al borde, que el contorno se lea sobre cualquier fondo
-                  "h-full w-full scale-[1.3] [filter:drop-shadow(0_0_1px_rgb(0_0_0/0.9))_drop-shadow(0_1px_2px_rgb(0_0_0/0.6))]"
+                  "h-full w-full [filter:drop-shadow(0_0_1px_rgb(0_0_0/0.9))_drop-shadow(0_1px_2px_rgb(0_0_0/0.6))]"
             }
           />
           {grande ? (
@@ -540,6 +540,8 @@ function Casilla({
                   nombre={tipo.nombre}
                   forma="icono"
                   alto={11}
+                  // En el móvil el hueco es más pequeño: más pequeños, que no tapen al pokémon
+                  className="max-sm:h-[9px] max-sm:w-[9px]"
                 />
               ))}
             </span>
