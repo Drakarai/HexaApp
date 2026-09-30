@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
+import { precargarGrito, sonarGrito } from "@/lib/gritos";
 
 /**
  * La evolución, como en los juegos.
@@ -31,6 +32,8 @@ export function AnimacionDeEvolucion({
   nombre,
   nueva,
   resultado,
+  gritoAntes,
+  gritoDespues,
   onCerrar,
   onDeshacer,
 }: {
@@ -41,6 +44,9 @@ export function AnimacionDeEvolucion({
   /** En qué evoluciona: "Quilava" */
   nueva: string;
   resultado: ResultadoDeEvolucion;
+  /** Los números de PokéAPI de antes y de después, para sus gritos */
+  gritoAntes?: number | null;
+  gritoDespues?: number | null;
   onCerrar: () => void;
   onDeshacer: () => void;
 }) {
@@ -55,11 +61,15 @@ export function AnimacionDeEvolucion({
     temporizadores.current.push(window.setTimeout(hacer, ms));
   };
 
-  // Al abrir: el pokémon se queda en blanco
+  // Al abrir: el pokémon grita y se queda en blanco, como en los juegos
   useEffect(() => {
+    sonarGrito(gritoAntes);
+    precargarGrito(gritoDespues);
     luego(80, () => setEnBlanco(true));
     const todos = temporizadores.current;
     return () => todos.forEach((t) => window.clearTimeout(t));
+    // Solo al abrir: los gritos no cambian a mitad de animación
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Cuando contesta el servidor, lo que toque
@@ -82,6 +92,7 @@ export function AnimacionDeEvolucion({
       setEnBlanco(false);
       setSiluetaNueva(true);
       setFase("final");
+      sonarGrito(gritoDespues);
       return;
     }
 
@@ -102,6 +113,8 @@ export function AnimacionDeEvolucion({
       luego(t + 330, () => {
         setEnBlanco(false);
         setFase("final");
+        // Y el grito del nuevo, que es lo que suena en los juegos al salir
+        sonarGrito(gritoDespues);
       });
       luego(t + 800, () => setDestello(false));
     };
@@ -113,7 +126,7 @@ export function AnimacionDeEvolucion({
     } else {
       arrancar();
     }
-  }, [resultado, despues]);
+  }, [resultado, despues, gritoDespues]);
 
   function darleALaB() {
     temporizadores.current.forEach((t) => window.clearTimeout(t));

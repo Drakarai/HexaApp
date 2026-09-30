@@ -22,6 +22,8 @@ import type { ZonaParaElegir } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
+import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
+import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 
 export type AceSummary = {
   species: string | null;
@@ -35,6 +37,7 @@ export type AceSummary = {
 export type BoxDeath = {
   id: string;
   species: string;
+  pokemonId: number | null;
   nickname: string | null;
   cause: string | null;
   level: number | null;
@@ -216,6 +219,11 @@ function DeathDetail({
     if (state?.success) setEditing(false);
   }, [state]);
 
+  // Su grito al abrirla, grave: como suena en los juegos al debilitarse
+  useEffect(() => {
+    sonarGrito(death.pokemonId, { tono: TONO_DE_CAIDO });
+  }, [death.id, death.pokemonId]);
+
   return (
     <Hoja onCerrar={onClose} ancho="max-w-lg" className="p-5" etiqueta={death.nickname ?? death.species}>
       <div className="mb-4 flex items-start justify-between gap-3">
@@ -275,6 +283,8 @@ function DeathDetail({
           {death.notes ? <Row label="Notas" value={death.notes} /> : null}
         </dl>
       </div>
+
+      <HistoriaDelPokemon de={{ tipo: "baja", id: death.id }} nombre={death.nickname ?? death.species} />
 
       {death.editable ? (
         editing ? (

@@ -19,6 +19,7 @@ import { regionesDelJuego } from "@/lib/juegos";
 import { colorDeZona } from "@/lib/zonas";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
+import { findSpecies } from "@/lib/pokedex";
 
 export const metadata = { title: "Cementerio" };
 
@@ -209,6 +210,8 @@ export default async function DeathsPage({
   const boxDeaths: BoxDeath[] = deaths.map((death) => ({
     id: death.id,
     species: death.species,
+    // Para su grito: la especie basta, la forma exacta no la guarda la baja
+    pokemonId: findSpecies(death.species)?.dex ?? null,
     nickname: death.nickname,
     cause: death.cause,
     level: death.level,

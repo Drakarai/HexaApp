@@ -12,10 +12,14 @@ import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { sonarGrito } from "@/lib/gritos";
+import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 
 export type HallPokemon = {
   id: string;
   species: string;
+  /** El número de PokéAPI, para su grito y su número en la entrada al hall */
+  pokemonId: number | null;
   nickname: string | null;
   image: string | null;
   /** La ilustración grande. Los equipos de antes no la tienen. */
@@ -158,6 +162,10 @@ function FichaEnGrande({
   onClose: () => void;
 }) {
   useEffect(() => {
+    sonarGrito(pokemon.pokemonId);
+  }, [pokemon.pokemonId]);
+
+  useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
@@ -211,6 +219,13 @@ function FichaEnGrande({
           {destacado ? <><Icono emoji="🏆" /> Del equipo campeón · </> : null}
           {duenoName}
         </p>
+
+        <div className="text-left">
+          <HistoriaDelPokemon
+            de={{ tipo: "hall", id: pokemon.id }}
+            nombre={pokemon.nickname ?? pokemon.species}
+          />
+        </div>
 
         <button type="button" className="btn-ghost mt-5" onClick={onClose}>
           Cerrar

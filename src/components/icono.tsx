@@ -47,6 +47,7 @@ import {
   PenLine,
   Pencil,
   Pin,
+  Play,
   ScrollText,
   Search,
   Settings,
@@ -183,6 +184,7 @@ const LINEA: Record<string, Linea> = {
   "📖": { icono: BookOpenText },
   "🛠️": { icono: Wrench },
   "🧭": { icono: Compass },
+  "▶️": { icono: Play },
   "❔": { icono: CircleHelp },
 };
 

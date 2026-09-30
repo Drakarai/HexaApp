@@ -27,6 +27,8 @@ import { ResumenDelLocke } from "./resumen";
 import { CompartirResumen } from "./compartir";
 import { Icono } from "@/components/icono";
 import { ordenDelHall } from "@/lib/hall";
+import { findSpecies } from "@/lib/pokedex";
+import { BotonDeEntrada, EntradasPendientes, type EquipoDelHall } from "./entrada";
 
 export const metadata = { title: "Hall de la fama" };
 
@@ -193,12 +195,22 @@ export default async function HallOfFamePage() {
       .map((entry) => ({
         id: entry.id,
         species: entry.species,
+        pokemonId: findSpecies(entry.species)?.dex ?? null,
         nickname: entry.nickname,
         image: sprites(entry.id),
         detailImage: fichas(entry.id),
       }));
 
   const { jugadores, podio } = ordenDelHall(standings, elFinal, campeon);
+
+  // Cada equipo tal y como lo necesita su entrada al hall, en el orden del hall
+  const equiposDelHall: EquipoDelHall[] = jugadores.map((row) => ({
+    participantId: row.participantId,
+    displayName: row.displayName,
+    color: row.color,
+    campeon: campeon?.champion.participantId === row.participantId,
+    equipo: teamOf(row.participantId),
+  }));
 
   /**
    * La huella de la imagen del resumen: **todo lo que sale en ella**. Antes era
@@ -254,6 +266,12 @@ export default async function HallOfFamePage() {
           </p>
         </section>
       )}
+
+      <EntradasPendientes
+        equipos={equiposDelHall}
+        edicion={competition.name}
+        tamano={TEAM_SIZE}
+      />
 
       <ResumenDelLocke resumen={resumen} cooperativo={perfil.cooperativo} />
 
@@ -323,9 +341,15 @@ export default async function HallOfFamePage() {
                   </p>
                 </div>
                 {vacia ? null : (
-                  <span className="chip shrink-0">
-                    {team.length}/{TEAM_SIZE}
-                  </span>
+                  <>
+                    <BotonDeEntrada
+                      equipo={equiposDelHall.find((e) => e.participantId === row.participantId)!}
+                      edicion={competition.name}
+                    />
+                    <span className="chip shrink-0">
+                      {team.length}/{TEAM_SIZE}
+                    </span>
+                  </>
                 )}
               </div>
 

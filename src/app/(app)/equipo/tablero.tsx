@@ -10,6 +10,8 @@ import { FORMA_DE_LA_CAJA, FondoDeCajaImagen } from "@/components/fondo-de-caja"
 import { FONDOS_DE_CAJA, fondoDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
+import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
+import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 import {
   HUECOS_POR_CAJA,
   colocar,
@@ -929,6 +931,8 @@ function Ficha({
     nombre: string;
     nueva: string;
     resultado: ResultadoDeEvolucion;
+    gritoAntes: number | null;
+    gritoDespues: number | null;
   } | null>(null);
   const [mote, setMote] = useState(pokemon.nickname ?? "");
   const [conId, setConId] = useState("");
@@ -977,6 +981,8 @@ function Ficha({
       nombre: pokemon.nickname ?? pokemon.species,
       nueva: opcion.rotulo,
       resultado: "esperando",
+      gritoAntes: pokemon.pokemonId,
+      gritoDespues: opcion.pokemonId,
     });
     setAEvolucionar(null);
     empezar(async () => {
@@ -1018,6 +1024,11 @@ function Ficha({
 
   const enEquipo = pokemon.lugar === "equipo";
 
+  // Al abrir la ficha, su grito; el de un caído, grave, como al debilitarse
+  useEffect(() => {
+    sonarGrito(pokemon.pokemonId, { tono: pokemon.muerta ? TONO_DE_CAIDO : 1 });
+  }, [pokemon.id, pokemon.pokemonId, pokemon.muerta]);
+
   return (
     <>
       <Hoja onCerrar={onCerrar} className="p-5" etiqueta={pokemon.nickname ?? pokemon.species}>
@@ -1058,6 +1069,11 @@ function Ficha({
           />
           {pokemon.muerta && pokemon.causa ? <Fila etiqueta="Causa" valor={pokemon.causa} /> : null}
         </dl>
+
+        <HistoriaDelPokemon
+          de={{ tipo: "captura", id: pokemon.id }}
+          nombre={pokemon.nickname ?? pokemon.species}
+        />
 
         {esSoulLink ? (
           <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
@@ -1326,6 +1342,7 @@ function Ficha({
                         .join(" y ")}. Se puede deshacer.`
                     : `¿${pokemon.nickname ?? pokemon.species} ha caído? Se puede deshacer.`;
                   if (!window.confirm(pregunta)) return;
+                  sonarGrito(pokemon.pokemonId, { tono: TONO_DE_CAIDO });
                   lanzar(
                     () =>
                       directaConCola(

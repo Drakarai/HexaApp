@@ -15,13 +15,14 @@ import { BotonApuntar, type AtajoDeApunte } from "@/components/boton-apuntar";
 import { MarcarVisto } from "@/components/marcar-visto";
 import { EstadoDeConexion } from "@/components/estado-conexion";
 import { Avatar } from "@/components/ui";
-import { regionDelJuego } from "@/lib/juegos";
+import { generacionDelJuego, regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { APARTADOS_CON_AVISO, getAvisos } from "@/lib/novedades";
 import { Logo } from "@/components/logo";
 import { Icono } from "@/components/icono";
 import { COMPETITION_STATUS } from "@/lib/constants";
+import { GritosDelLocke } from "@/components/gritos-del-locke";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -424,6 +425,8 @@ export default async function AppLayout({
        * el botón se comía la última fila de la pantalla.
        */}
       <main className="min-w-0 flex-1 pb-32 lg:pb-16">
+        {/* Los gritos clásicos van con los juegos que los tenían: hasta la 5ª */}
+        <GritosDelLocke clasicos={(generacionDelJuego(active?.gameId) ?? 99) <= 5} />
         {archivadaParaMi ? (
           <div className="mb-5 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
             <Icono emoji="🗄️" className="mt-0.5 shrink-0 text-slate-400" />

@@ -319,6 +319,14 @@ model Capture {
    * el despliegue se pararía ahí.
    */
   deathId       String?
+  /**
+   * Lo que le ha pasado por el camino y no se puede sacar de otro sitio, para
+   * su historia (ver lib/historia.ts): de momento, **sus evoluciones**, como
+   * `{ tipo: "evoluciona", de, a, fecha }`. Lo demás —jornadas, MVP, hall,
+   * la caída— ya está en sus tablas. Va en la foto de deshacer: si se le da a
+   * la B, la evolución tampoco pasó en su historia.
+   */
+  historia      Json     @default("[]")
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

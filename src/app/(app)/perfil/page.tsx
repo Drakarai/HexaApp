@@ -23,6 +23,8 @@ import { cx } from "@/lib/utils";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
+import { findSpecies } from "@/lib/pokedex";
+import { PreferenciaDeGritosPicker } from "./gritos";
 import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mi perfil" };
@@ -206,6 +208,20 @@ export default async function ProfilePage() {
             detalle="El de antes: tarjetas redondeadas, brillos y emojis."
           />
         </form>
+      </section>
+
+      <section className="card">
+        <h2 className="section-title mb-1">Gritos</h2>
+        <p className="muted mb-4">
+          Los pokémon gritan al abrir su ficha, al evolucionar y al caer. Solo
+          cambia en este dispositivo, y con el móvil en silencio no suenan.
+        </p>
+        <PreferenciaDeGritosPicker
+          muestra={
+            // De muestra, tu as si lo tienes; si no, el de siempre
+            (myParticipant?.aceSpecies && findSpecies(myParticipant.aceSpecies)?.dex) || 25
+          }
+        />
       </section>
 
       <section className="card">

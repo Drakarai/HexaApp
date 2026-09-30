@@ -6,6 +6,7 @@ import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
 import { evolucionesDe } from "@/lib/evoluciones";
+import { leerHistoria } from "@/lib/historia";
 import { urlsDeImagen } from "@/lib/imagenes";
 import {
   mover,
@@ -243,11 +244,17 @@ export async function evolucionarAction(entrada: {
       fotos([captura.id]),
       descargarSprites(elegida.pokemonId, false),
     ]);
+    // Queda en su historia; deshacer la quita con el resto de la foto
+    const historia = [
+      ...leerHistoria(foto[0]?.historia),
+      { tipo: "evoluciona", de: captura.species, a: elegida.rotulo, fecha: new Date().toISOString() },
+    ];
     await prisma.capture.update({
       where: { id: captura.id },
       data: {
         species: elegida.especie,
         pokemonId: elegida.pokemonId,
+        historia,
         // Si no se pudo bajar el sprite nuevo, mejor el viejo que ninguno
         ...(sprites.boxImage ? { image: sprites.boxImage } : {}),
       },
@@ -469,6 +476,8 @@ export async function deshacerEnCajaAction(entrada: {
               pokemonId: f.pokemonId,
               vinculo: f.vinculo,
               image: f.image,
+              // Las fotos de antes de que hubiera historia no la traen: se deja como está
+              ...(f.historia !== undefined ? { historia: f.historia ?? [] } : {}),
               deathId: f.deathId && bajasVivas.has(f.deathId) ? f.deathId : null,
             },
           }),

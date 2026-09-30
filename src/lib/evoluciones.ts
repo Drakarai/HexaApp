@@ -125,3 +125,19 @@ export function evolucionesDe(
     .sort((a, b) => Number(b.primero) - Number(a.primero))
     .map(({ primero: _primero, ...opcion }) => opcion);
 }
+
+/**
+ * El primero de su familia: Typhlosion → Cyndaquil, Raichu → Pichu. Dos
+ * pokémon con la misma raíz pueden ser **el mismo, evolucionado**, que es lo
+ * que hace falta para seguirle la pista por las jornadas (ver lib/historia.ts).
+ */
+export function raizDeLaFamilia(pokemonId: number | null | undefined, especie: string) {
+  const quien = queEs(pokemonId, especie);
+  if (!quien) return null;
+  let dex = quien.especie.dex;
+  // Por si los datos trajeran un ciclo, que no se quede aquí para siempre
+  for (let vueltas = 0; D.de[String(dex)] && vueltas < 5; vueltas++) {
+    dex = D.de[String(dex)];
+  }
+  return dex;
+}

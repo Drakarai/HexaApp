@@ -540,3 +540,57 @@ html[data-estilo="nuevo"] .etiqueta-formato {
     transform: scale(0.3) rotate(90deg);
   }
 }
+
+/* La entrada al Hall de la Fama (ver hall-de-la-fama/entrada.tsx): cada
+   pokémon entra en diagonal como en la 3ª generación, los rayos de luz de
+   detrás giran despacio y al final cae confeti */
+@keyframes hall-entra {
+  0% {
+    transform: translate(70vw, 45vh) scale(0.6);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+    opacity: 1;
+  }
+}
+@keyframes hall-rotulo {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes hall-rayos {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@keyframes hall-casilla {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes hall-confeti {
+  0% {
+    transform: translateY(-10vh) rotate(0deg);
+  }
+  100% {
+    transform: translateY(110vh) rotate(720deg);
+  }
+}

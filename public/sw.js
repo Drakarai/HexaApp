@@ -110,8 +110,13 @@ function esPantalla(request) {
   return request.mode === "navigate";
 }
 
+// Los gritos de los pokémon tampoco cambian nunca: se guardan con las imágenes
 function esInmutable(url) {
-  return url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/api/imagen/");
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/api/imagen/") ||
+    url.pathname.startsWith("/api/grito/")
+  );
 }
 
 /**
