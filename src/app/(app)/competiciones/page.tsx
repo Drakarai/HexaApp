@@ -18,6 +18,7 @@ import {
   retirarParticipanteAction,
   selectCompetitionAction,
   setCompetitionStatusAction,
+  cambiarArranqueAction,
 } from "@/app/actions/competitions";
 import { getMisSolicitudes } from "@/lib/solicitudes";
 import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
@@ -541,7 +542,7 @@ export default async function CompetitionsPage() {
                     {competition.name}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    {formatDate(competition.startedAt)}
+                    {competition.sinEmpezar ? "Sin empezar" : formatDate(competition.startedAt)}
                     {competition.endedAt
                       ? ` → ${formatDate(competition.endedAt)}`
                       : ""}
@@ -550,7 +551,13 @@ export default async function CompetitionsPage() {
                 </div>
                 <span className="chip shrink-0">
                   <Icono
-                    emoji={competition.status === COMPETITION_STATUS.ACTIVE ? "🟢" : "🗄️"}
+                    emoji={
+                      competition.status !== COMPETITION_STATUS.ACTIVE
+                        ? "🗄️"
+                        : competition.sinEmpezar
+                          ? "⏳"
+                          : "🟢"
+                    }
                   />
                 </span>
               </div>
@@ -569,6 +576,28 @@ export default async function CompetitionsPage() {
 
                 {mandoEn(competition.id) ? (
                   <>
+                    {/* Para montarlo con tiempo: mientras no empieza no corren
+                        los días, y al empezar cuentan desde ese día */}
+                    {competition.status === COMPETITION_STATUS.ACTIVE ? (
+                      <form action={cambiarArranqueAction}>
+                        <input type="hidden" name="competitionId" value={competition.id} />
+                        <input
+                          type="hidden"
+                          name="sinEmpezar"
+                          value={competition.sinEmpezar ? "no" : "si"}
+                        />
+                        <ConfirmSubmit
+                          message={
+                            competition.sinEmpezar
+                              ? `¿Empezar "${competition.name}" hoy? Los días del locke cuentan desde hoy.`
+                              : `¿Marcar "${competition.name}" como sin empezar? Los días dejan de contar, y al empezarlo contarán desde ese día.`
+                          }
+                          className={competition.sinEmpezar ? "btn-primary btn-sm" : "btn-ghost btn-sm"}
+                        >
+                          {competition.sinEmpezar ? "Empezar el locke" : "Aún no ha empezado"}
+                        </ConfirmSubmit>
+                      </form>
+                    ) : null}
                     <form action={setCompetitionStatusAction}>
                       <input
                         type="hidden"

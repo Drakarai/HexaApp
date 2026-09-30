@@ -416,6 +416,26 @@ export async function setCompetitionStatusAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+/**
+ * Marcar un locke como **sin empezar**, o empezarlo. Al empezarlo, su fecha de
+ * inicio pasa a ser hoy: lo que se haya tardado en montarlo no cuenta como
+ * días de locke. Lo decide quien lo administra, como archivarlo.
+ */
+export async function cambiarArranqueAction(formData: FormData) {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  await requireCompetitionManager(competitionId);
+  const sinEmpezar = formData.get("sinEmpezar") === "si";
+
+  // Solo si cambia de verdad: un doble clic en «Empezar» no puede mover la
+  // fecha de un locke que ya estaba en marcha
+  await prisma.competition.updateMany({
+    where: { id: competitionId, sinEmpezar: !sinEmpezar },
+    data: sinEmpezar ? { sinEmpezar: true } : { sinEmpezar: false, startedAt: new Date() },
+  });
+
+  revalidatePath("/", "layout");
+}
+
 /** Y borrarlo, igual: es suyo. Se lleva por delante todo lo que tenga dentro. */
 export async function deleteCompetitionAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");

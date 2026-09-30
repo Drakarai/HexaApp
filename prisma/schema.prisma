@@ -550,6 +550,12 @@ model Competition {
    */
   logo                String?
   startedAt           DateTime  @default(now())
+  /**
+   * Creado pero **sin empezar**: para montarlo con tiempo sin que corran los
+   * días. Al empezarlo desde Ediciones, `startedAt` pasa a ser ese día, que es
+   * de donde cuenta lo que duró el locke.
+   */
+  sinEmpezar          Boolean   @default(false)
   endedAt             DateTime?
   createdAt           DateTime  @default(now())
   updatedAt           DateTime  @updatedAt

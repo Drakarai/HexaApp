@@ -391,11 +391,29 @@ export default async function DashboardPage() {
             <span className="chip"><Icono emoji="🗄️" /> Archivada</span>
           ) : terminado ? (
             <span className="chip"><Icono emoji="🏆" /> Terminado</span>
+          ) : competition.sinEmpezar ? (
+            <span className="chip"><Icono emoji="⏳" /> Sin empezar</span>
           ) : (
             <span className="chip"><Icono emoji="🟢" /> En curso</span>
           )
         }
       />
+
+      {competition.sinEmpezar && competition.status === COMPETITION_STATUS.ACTIVE ? (
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
+          <Icono emoji="⏳" className="shrink-0 text-slate-400" />
+          <p className="min-w-0 flex-1">
+            <strong className="text-white">Este locke aún no ha empezado.</strong> Los días no
+            corren hasta que se empiece
+            {canManage ? " desde Ediciones" : ""}, y contarán desde ese día.
+          </p>
+          {canManage ? (
+            <Link href="/competiciones" className="btn-ghost btn-sm">
+              Ir a Ediciones
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard
@@ -767,7 +785,7 @@ export default async function DashboardPage() {
         <p className="mt-6 text-xs text-slate-500">
           Juegas como <strong className="text-slate-300">{myParticipant.displayName}</strong>
           {myParticipant.gameVersion ? ` · ${myParticipant.gameVersion}` : ""} ·
-          desde {formatDate(competition.startedAt)}
+          {competition.sinEmpezar ? "sin empezar todavía" : `desde ${formatDate(competition.startedAt)}`}
         </p>
       ) : (
         <p className="mt-6 text-xs text-slate-500">
