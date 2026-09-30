@@ -628,6 +628,10 @@ model Participant {
   aceImage       String?
   aceDetailImage String?
 
+  // El fondo de cada caja de su Equipo y PC, separados por comas (ver
+  // lib/fondos-de-caja.ts). Vacío: el de fábrica de cada caja.
+  fondosDeCaja   String?
+
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 

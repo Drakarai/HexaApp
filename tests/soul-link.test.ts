@@ -19,6 +19,7 @@ import {
 import { evolucionesDe } from "@/lib/evoluciones";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { categoriaDeUnaEdicion } from "@/lib/palmares";
+import { MAXIMO_DE_CAJAS, elegirFondo, fondoDeCaja, leerFondos } from "@/lib/fondos-de-caja";
 
 let reloj = 0;
 const poke = (id: string, lugar: string, hueco: number) => ({ id, lugar, hueco, creado: reloj++ });
@@ -243,5 +244,35 @@ describe("estilo de juego", () => {
     assert.equal(categoriaDeUnaEdicion({ maxPlayers: 2, estilo: "soullink" }), "soullink");
     assert.equal(categoriaDeUnaEdicion({ maxPlayers: 4, estilo: "soullink" }), "soullink");
     assert.equal(categoriaDeUnaEdicion({ maxPlayers: 2, estilo: "competitivo" }), "dual");
+  });
+});
+
+describe("Fondos de las cajas", () => {
+  test("sin elegir nada, cada caja lleva el suyo de fábrica y van cambiando", () => {
+    assert.equal(fondoDeCaja([], 0), "bosque");
+    assert.equal(fondoDeCaja([], 1), "pradera");
+    // Después del último de fábrica, vuelta a empezar (el liso no sale solo)
+    assert.equal(fondoDeCaja([], 8), "bosque");
+  });
+
+  test("se guarda uno por caja y lo de fábrica va vacío", () => {
+    const guardado = elegirFondo(null, 2, "nieve");
+    assert.equal(guardado, ",,nieve");
+    const fondos = leerFondos(guardado);
+    assert.equal(fondoDeCaja(fondos, 0), "bosque");
+    assert.equal(fondoDeCaja(fondos, 2), "nieve");
+  });
+
+  test("volver al de fábrica no deja la lista creciendo", () => {
+    const guardado = elegirFondo(",,nieve", 2, "playa"); // la 3 es la playa de fábrica
+    assert.equal(guardado, null);
+    assert.equal(elegirFondo("cueva,,nieve", 2, "playa"), "cueva");
+  });
+
+  test("lo que no es un fondo se lee como el de fábrica, y las cajas raras no se aceptan", () => {
+    assert.deepEqual(leerFondos("inventado,liso"), [null, "liso"]);
+    assert.throws(() => elegirFondo(null, -1, "mar"));
+    assert.throws(() => elegirFondo(null, 1.5, "mar"));
+    assert.throws(() => elegirFondo(null, MAXIMO_DE_CAJAS, "mar"));
   });
 });

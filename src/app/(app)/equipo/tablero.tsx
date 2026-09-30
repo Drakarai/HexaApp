@@ -6,6 +6,8 @@ import { Avatar } from "@/components/ui";
 import { Icono } from "@/components/icono";
 import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { Hoja } from "@/components/hoja";
+import { FondoDeCajaDibujo } from "@/components/fondo-de-caja";
+import { FONDOS_DE_CAJA, fondoDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
 import {
@@ -20,6 +22,7 @@ import type { PokemonDelTablero, TableroDeJugador } from "@/lib/soul-link";
 import type { OpcionDeEvolucion } from "@/lib/evoluciones";
 import {
   borrarDeLaCajaAction,
+  cambiarFondoDeCajaAction,
   cambiarMoteAction,
   darPorMuertoAction,
   desvincularAction,
@@ -167,6 +170,33 @@ function Tablero({
   const paginaVisible = Math.min(pagina, cajas - 1);
   const [pendiente, empezar] = useTransition();
 
+  /**
+   * El fondo de la caja que se ve. Al elegir uno se pone al momento, sin
+   * esperar al servidor; lo de aquí se tira cuando llegan los datos nuevos.
+   */
+  const [fondosElegidos, setFondosElegidos] = useState<Record<number, FondoDeCaja>>({});
+  useEffect(() => setFondosElegidos({}), [tablero]);
+  const [eligiendoFondo, setEligiendoFondo] = useState(false);
+  const fondo = fondosElegidos[paginaVisible] ?? fondoDeCaja(tablero.fondos, paginaVisible);
+
+  function elegirFondo(nuevo: FondoDeCaja) {
+    const caja = paginaVisible;
+    setFondosElegidos((antes) => ({ ...antes, [caja]: nuevo }));
+    empezar(async () => {
+      const respuesta = await sinConexion(() =>
+        cambiarFondoDeCajaAction({ participantId: tablero.participantId, caja, fondo: nuevo }),
+      );
+      if (respuesta.error) {
+        setFondosElegidos((antes) => {
+          const sin = { ...antes };
+          delete sin[caja];
+          return sin;
+        });
+        onAviso({ tipo: "error", texto: respuesta.error });
+      }
+    });
+  }
+
   function soltar(id: string, destino: Destino) {
     const resultado = mover(vivos, id, destino);
     if ("error" in resultado) {
@@ -268,35 +298,78 @@ function Tablero({
         <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
           Caja {cajas > 1 ? `${paginaVisible + 1} de ${cajas}` : ""}
         </p>
-        {cajas > 1 ? (
-          <div className="ml-auto flex gap-1">
+        <div className="ml-auto flex gap-1">
+          {tablero.editable ? (
             <button
               type="button"
-              data-pagina="-1"
-              data-dueno={tablero.participantId}
-              className="btn-ghost btn-sm px-2"
-              disabled={paginaVisible === 0}
-              onClick={() => setPagina(paginaVisible - 1)}
-              aria-label="Caja anterior"
+              className={cx("btn-ghost btn-sm px-2", eligiendoFondo && "border-brand-400/50")}
+              onClick={() => setEligiendoFondo((abierto) => !abierto)}
+              aria-expanded={eligiendoFondo}
+              title="El fondo de esta caja"
             >
-              ‹
+              <Icono emoji="🎨" />
+              <span className="text-xs">Fondo</span>
             </button>
-            <button
-              type="button"
-              data-pagina="1"
-              data-dueno={tablero.participantId}
-              className="btn-ghost btn-sm px-2"
-              disabled={paginaVisible === cajas - 1}
-              onClick={() => setPagina(paginaVisible + 1)}
-              aria-label="Caja siguiente"
-            >
-              ›
-            </button>
-          </div>
-        ) : null}
+          ) : null}
+          {cajas > 1 ? (
+            <>
+              <button
+                type="button"
+                data-pagina="-1"
+                data-dueno={tablero.participantId}
+                className="btn-ghost btn-sm px-2"
+                disabled={paginaVisible === 0}
+                onClick={() => setPagina(paginaVisible - 1)}
+                aria-label="Caja anterior"
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                data-pagina="1"
+                data-dueno={tablero.participantId}
+                className="btn-ghost btn-sm px-2"
+                disabled={paginaVisible === cajas - 1}
+                onClick={() => setPagina(paginaVisible + 1)}
+                aria-label="Caja siguiente"
+              >
+                ›
+              </button>
+            </>
+          ) : null}
+        </div>
       </div>
+      {eligiendoFondo && tablero.editable ? (
+        <div className="mb-2 flex max-w-md gap-1.5 overflow-x-auto pb-1">
+          {FONDOS_DE_CAJA.map((opcion) => (
+            <button
+              key={opcion.slug}
+              type="button"
+              disabled={pendiente}
+              onClick={() => elegirFondo(opcion.slug)}
+              className="w-14 shrink-0 text-center"
+              aria-pressed={opcion.slug === fondo}
+            >
+              <span
+                className={cx(
+                  "relative block h-11 w-14 overflow-hidden rounded-md border bg-ink-950/40",
+                  opcion.slug === fondo
+                    ? "border-brand-400 ring-2 ring-brand-400/40"
+                    : "border-white/10",
+                )}
+              >
+                <FondoDeCajaDibujo fondo={opcion.slug} />
+              </span>
+              <span className="mt-0.5 block truncate text-[10px] text-slate-400">
+                {opcion.nombre}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : null}
       {/* Del tamaño de la de los juegos: a lo ancho del PC, 30 casillas eran media pantalla */}
-      <div className="grid max-w-md grid-cols-6 gap-1 rounded-xl border border-white/5 bg-ink-950/40 p-1.5">
+      <div className="relative isolate grid max-w-md grid-cols-6 gap-1 overflow-hidden rounded-xl border border-white/5 bg-ink-950/40 p-1.5">
+        <FondoDeCajaDibujo fondo={fondo} className="-z-10" />
         {caja
           .slice(paginaVisible * HUECOS_POR_CAJA, (paginaVisible + 1) * HUECOS_POR_CAJA)
           .map((pokemon, i) => {

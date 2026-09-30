@@ -15,6 +15,7 @@ import {
   type Lugar,
 } from "@/lib/equipo-y-caja";
 import { capturasParaVincular, vincularCapturaNueva } from "@/lib/soul-link";
+import { elegirFondo, esFondo } from "@/lib/fondos-de-caja";
 import {
   apuntarCambio,
   assertPuedeTocarLaCaja,
@@ -363,6 +364,34 @@ export async function borrarDeLaCajaAction(entrada: { captureId: string }): Prom
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
     await prisma.capture.delete({ where: { id: captura.id } });
+    refrescar();
+  });
+}
+
+// ---------------------------------------------------------------------------
+// El fondo de una caja
+// ---------------------------------------------------------------------------
+
+/**
+ * Cambia el fondo de una caja. Lo puede cambiar quien puede tocar esa caja, y
+ * no pasa por deshacer: es decoración, y se vuelve atrás eligiendo otro.
+ */
+export async function cambiarFondoDeCajaAction(entrada: {
+  participantId: string;
+  caja: number;
+  fondo: string;
+}): Promise<Resultado> {
+  return conError(async () => {
+    const { participant } = await assertPuedeTocarLaCaja(entrada.participantId);
+    if (!esFondo(entrada.fondo)) return { error: "Ese fondo no existe." };
+    const actual = await prisma.participant.findUnique({
+      where: { id: participant.id },
+      select: { fondosDeCaja: true },
+    });
+    await prisma.participant.update({
+      where: { id: participant.id },
+      data: { fondosDeCaja: elegirFondo(actual?.fondosDeCaja, entrada.caja, entrada.fondo) },
+    });
     refrescar();
   });
 }

@@ -6,6 +6,7 @@ import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { GENERACION_POR_DEFECTO, tipoPorId, tiposDePokemon } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
+import { leerFondos, type FondoDeCaja } from "@/lib/fondos-de-caja";
 
 /**
  * El equipo y la caja de todos los de un locke, para la pantalla de Equipo y
@@ -47,6 +48,8 @@ export type TableroDeJugador = {
   caidos: PokemonDelTablero[];
   /** Lo que haría el botón de deshacer, si hay algo */
   deshacer: string | null;
+  /** El fondo elegido para cada caja; vacío donde va el de fábrica */
+  fondos: (FondoDeCaja | null)[];
 };
 
 export type EquiposDelLocke = {
@@ -78,7 +81,14 @@ export async function getEquiposDelLocke(
     prisma.participant.findMany({
       where: { competitionId: competicion.id, ...(soloDe ? { id: soloDe } : {}) },
       orderBy: { joinedAt: "asc" },
-      select: { id: true, userId: true, displayName: true, color: true, retiredAt: true },
+      select: {
+        id: true,
+        userId: true,
+        displayName: true,
+        color: true,
+        retiredAt: true,
+        fondosDeCaja: true,
+      },
     }),
     prisma.capture.findMany({
       where: {
@@ -163,6 +173,7 @@ export async function getEquiposDelLocke(
       vivos: suyos.filter((p) => !p.muerta),
       caidos: suyos.filter((p) => p.muerta),
       deshacer: editable ? (ultimo.get(j.id) ?? null) : null,
+      fondos: leerFondos(j.fondosDeCaja),
     };
   });
 
