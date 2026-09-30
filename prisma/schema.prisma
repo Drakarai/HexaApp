@@ -4,6 +4,9 @@
 
 generator client {
   provider = "prisma-client-js"
+  // Los `include` en una sola consulta con JOIN, y no una por relación: cada
+  // una era otra ida y vuelta a la base de datos, que está en internet
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {

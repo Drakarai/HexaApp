@@ -41,10 +41,24 @@ export default async function MapaPage({
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { apuntar, region: pedida } = await searchParams;
-  const participant = await getMyParticipant(competition.id, user.id);
   const regiones = regionesDelJuego(competition.gameId);
   // La pedida solo vale si es del juego; si no, la principal
   const region = regiones.find((slug) => slug === pedida) ?? regiones[0] ?? null;
+
+  /**
+   * **Todo a la vez.** Las capturas y las bajas son de una sola persona, y se
+   * buscan por su cuenta dentro del locke en vez de esperar a saber qué
+   * participante es; el permiso tampoco espera a nada. Antes eran tres idas y
+   * vueltas en fila.
+   */
+  const tuyo = { competitionId: competition.id, userId: user.id };
+  const [participant, gestiona, mapa, capturas, bajas] = await Promise.all([
+    getMyParticipant(competition.id, user.id),
+    canManageCompetition(competition.id, user),
+    region ? getMapa(region) : null,
+    getMisCapturas(tuyo),
+    getMisBajasPorZona(tuyo),
+  ]);
 
   if (!participant) {
     return (
@@ -86,13 +100,7 @@ export default async function MapaPage({
   }
 
   // Archivada y sin administrarla: se ve lo apuntado, sin formularios
-  const cerrada = soloLectura(competition, await canManageCompetition(competition.id, user));
-
-  const [mapa, capturas, bajas] = await Promise.all([
-    getMapa(region),
-    getMisCapturas(participant.id),
-    getMisBajasPorZona(participant.id),
-  ]);
+  const cerrada = soloLectura(competition, gestiona);
 
   const pestanas =
     regiones.length > 1 ? (

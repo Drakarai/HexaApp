@@ -12,7 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx, formatDate, toDateInputValue } from "@/lib/utils";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmasDeDosImagenes } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { getZonasMasMortiferas, getZonasParaElegir } from "@/lib/mapas";
 import { regionesDelJuego } from "@/lib/juegos";
 import { colorDeZona } from "@/lib/zonas";
@@ -48,13 +49,41 @@ export default async function DeathsPage({
     Math.max(Number(ver) || POR_TANDA, POR_TANDA),
     POR_TANDA * 20,
   );
+  // De las más nuevas a las más viejas, que es el orden en el que se corta la
+  // tanda: lo que acaba de pasar es lo que se quiere ver al entrar.
+  const deLaMasNueva: Prisma.DeathOrderByWithRelationInput[] = [
+    { diedAt: "desc" },
+    { createdAt: "desc" },
+  ];
+  /** Primero solo quién y cuándo, que pesa nada, para saber **qué** casillas entran */
+  const ordenDe = (soloDe?: string) =>
+    prisma.death.findMany({
+      where: { participant: { competitionId: competition.id, ...(soloDe ? { id: soloDe } : {}) } },
+      orderBy: deLaMasNueva,
+      select: { id: true, participantId: true },
+    });
+
+  /**
+   * Todo lo que no depende de nada, **a la vez**. Antes las bajas esperaban a
+   * tener los jugadores (solo para comprobar el `?jugador=`), luego se pedían
+   * sus fichas y luego las firmas de sus imágenes: ocho idas y vueltas en fila
+   * contra la base de datos, y ahora son cuatro. El filtro por jugador se usa
+   * tal cual y se comprueba después (ver abajo).
+   */
   // Todas las regiones del juego: en la 2ª generación se muere igual en Kanto
-  const [canManage, participants, zonas, mortiferas] = await Promise.all([
-    canManageCompetition(competition.id, user),
-    getParticipants(competition.id),
-    getZonasParaElegir(regionesDelJuego(competition.gameId)),
-    getZonasMasMortiferas(competition.id),
-  ]);
+  const [canManage, participants, zonas, mortiferas, ordenPedido, counts] =
+    await Promise.all([
+      canManageCompetition(competition.id, user),
+      getParticipants(competition.id),
+      getZonasParaElegir(regionesDelJuego(competition.gameId)),
+      getZonasMasMortiferas(competition.id),
+      ordenDe(jugador),
+      prisma.death.groupBy({
+        by: ["participantId"],
+        where: { participant: { competitionId: competition.id } },
+        _count: { _all: true },
+      }),
+    ]);
   const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));
   const myParticipantId = participants.find((p) => p.userId === user.id)?.id ?? null;
 
@@ -70,63 +99,38 @@ export default async function DeathsPage({
       : myParticipantId
         ? [myParticipantId]
         : [];
-  const capturasQueCaen = deQuien.length
-    ? (
-        await prisma.capture.findMany({
-          where: { participantId: { in: deQuien }, failed: false, deathId: null },
-          orderBy: { createdAt: "asc" },
-          select: {
-            id: true,
-            participantId: true,
-            species: true,
-            nickname: true,
-            sitio: true,
-            zone: { select: { name: true } },
-          },
-        })
-      ).map((c) => {
-        const sitio = c.zone?.name ?? c.sitio;
-        return {
-          id: c.id,
-          participantId: c.participantId,
-          rotulo: `${c.nickname ? `${c.nickname} (${c.species})` : c.species}${sitio ? ` · ${sitio}` : ""}`,
-        };
-      })
-    : [];
+  const pedirCapturasQueCaen = async () => {
+    if (!deQuien.length) return [];
+    const capturas = await prisma.capture.findMany({
+      where: { participantId: { in: deQuien }, failed: false, deathId: null },
+      orderBy: { createdAt: "asc" },
+      select: {
+        id: true,
+        participantId: true,
+        species: true,
+        nickname: true,
+        sitio: true,
+        zone: { select: { name: true } },
+      },
+    });
+    return capturas.map((c) => {
+      const sitio = c.zone?.name ?? c.sitio;
+      return {
+        id: c.id,
+        participantId: c.participantId,
+        rotulo: `${c.nickname ? `${c.nickname} (${c.species})` : c.species}${sitio ? ` · ${sitio}` : ""}`,
+      };
+    });
+  };
 
   const selected = participants.find((participant) => participant.id === jugador);
   const myParticipant = participants.find(
     (participant) => participant.userId === user.id,
   );
 
-  const deathsWhere = {
-    participant: {
-      competitionId: competition.id,
-      ...(selected ? { id: selected.id } : {}),
-    },
-  };
-
-  // De las más nuevas a las más viejas, que es el orden en el que se corta la
-  // tanda: lo que acaba de pasar es lo que se quiere ver al entrar.
-  const deLaMasNueva: Prisma.DeathOrderByWithRelationInput[] = [
-    { diedAt: "desc" },
-    { createdAt: "desc" },
-  ];
-
-  const [orden, counts] = await Promise.all([
-    // Primero solo quién y cuándo, que pesa nada, para saber **qué** casillas
-    // entran en la tanda de cada uno. La ficha entera se pide después.
-    prisma.death.findMany({
-      where: deathsWhere,
-      orderBy: deLaMasNueva,
-      select: { id: true, participantId: true },
-    }),
-    prisma.death.groupBy({
-      by: ["participantId"],
-      where: { participant: { competitionId: competition.id } },
-      _count: { _all: true },
-    }),
-  ]);
+  // Un `?jugador=` que no es de este locke no filtra nada, como siempre: en
+  // ese caso raro se vuelven a pedir todas
+  const orden = jugador && !selected ? await ordenDe() : ordenPedido;
 
   // La tanda se corta por jugador: cada caja se llena hasta el tope con las
   // suyas, sin que las bajas de uno le quiten sitio a las de otro.
@@ -144,27 +148,27 @@ export default async function DeathsPage({
     return row._count._all > cuantas;
   });
 
-  // Sin `include` del participante: los 6 jugadores ya están cargados arriba
-  // y repetirlos en cada baja multiplicaba el peso de la página.
-  //
-  // Y se leen de la más antigua a la más nueva, como siempre.
-  const deaths = (
-    await prisma.death.findMany({
-      where: { id: { in: losDeLaTanda } },
-      orderBy: deLaMasNueva,
-    })
-  ).reverse();
-
-  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
-  const ids = deaths.map((death) => death.id);
-  const [cajas, fichas, asesFicha] = await Promise.all([
-    urlsDeImagen("baja", ids),
-    urlsDeImagen("baja-ficha", ids),
-    urlsDeImagen(
-      "as-ficha",
-      participants.map((participante) => participante.id),
-    ),
-  ]);
+  /**
+   * Las fichas de la tanda, las firmas de sus dos imágenes y las capturas que
+   * se pueden dar por muertas, a la vez: ya se sabe qué bajas son.
+   *
+   * Sin `include` del participante: los 6 jugadores ya están cargados arriba
+   * y repetirlos en cada baja multiplicaba el peso de la página.
+   */
+  const [deLaMasNuevaALaMasVieja, [firmasCaja, firmasFicha], capturasQueCaen] =
+    await Promise.all([
+      prisma.death.findMany({
+        where: { id: { in: losDeLaTanda } },
+        orderBy: deLaMasNueva,
+      }),
+      // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
+      firmasDeDosImagenes("baja", "baja-ficha", losDeLaTanda),
+      pedirCapturasQueCaen(),
+    ]);
+  // Y se leen de la más antigua a la más nueva, como siempre
+  const deaths = deLaMasNuevaALaMasVieja.reverse();
+  const cajas = (id: string) => urlDeImagen("baja", id, firmasCaja.get(id));
+  const fichas = (id: string) => urlDeImagen("baja-ficha", id, firmasFicha.get(id));
   const porId = new Map(participants.map((p) => [p.id, p]));
 
   const countFor = (participantId: string) =>
@@ -196,7 +200,7 @@ export default async function DeathsPage({
         nickname: jugador.aceNickname,
         reason: jugador.aceReason,
         image: jugador.aceImage,
-        detailImage: asesFicha(jugador.id),
+        detailImage: jugador.aceDetailImage,
         editable: esMio(jugador.id),
       },
     };

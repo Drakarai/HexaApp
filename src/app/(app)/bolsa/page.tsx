@@ -22,9 +22,22 @@ export default async function BolsaPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const participant = await getMyParticipant(competition.id, user.id);
-  // Repartir objetos es de quien administra el locke, no solo del Creador
-  const admin = await canManageCompetition(competition.id, user);
+  /**
+   * Todo a la vez: la bolsa y lo gastado se buscan por tu cuenta en el locke,
+   * sin esperar a saber qué participante eres, y el catálogo a la par.
+   */
+  const tuyo = { competitionId: competition.id, userId: user.id };
+  const [participant, admin, objetos, usos] = await Promise.all([
+    getMyParticipant(competition.id, user.id),
+    // Repartir objetos es de quien administra el locke, no solo del Creador
+    canManageCompetition(competition.id, user),
+    getBolsa(tuyo, getCatalogo()),
+    prisma.bagUse.findMany({
+      where: { participant: tuyo },
+      orderBy: { usedAt: "desc" },
+      take: 12,
+    }),
+  ]);
 
   if (!participant) {
     return (
@@ -39,15 +52,6 @@ export default async function BolsaPage() {
     );
   }
 
-  const catalogo = await getCatalogo();
-  const [objetos, usos] = await Promise.all([
-    getBolsa(participant.id, catalogo),
-    prisma.bagUse.findMany({
-      where: { participantId: participant.id },
-      orderBy: { usedAt: "desc" },
-      take: 12,
-    }),
-  ]);
 
   const unidades = objetos.reduce((suma, objeto) => suma + objeto.quantity, 0);
 

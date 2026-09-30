@@ -39,7 +39,8 @@ export type CampeonDelLocke = {
 
 export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
   competitionId: string,
-  estado?: FinalFourState,
+  /** El estado del final, si ya se tiene o ya se ha pedido (puede no haber llegado) */
+  estado?: FinalFourState | Promise<FinalFourState>,
 ): Promise<CampeonDelLocke | null> {
   const [state, competition] = await Promise.all([
     estado ?? getFinalFourState(competitionId),

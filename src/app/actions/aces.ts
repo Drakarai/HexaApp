@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
@@ -47,8 +46,6 @@ export async function updateAceAction(
 export async function clearAceAction(formData: FormData) {
   const participantId = String(formData.get("participantId") ?? "");
   await assertCanActForParticipant(participantId);
-
-  const sprites = await spritesDelFormulario(formData);
 
   await prisma.participant.update({
     where: { id: participantId },

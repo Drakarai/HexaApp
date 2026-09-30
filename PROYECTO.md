@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 30 de septiembre de 2026 (arrastrar por la caja **ya no va a tirones**; antes: los **nombres de los fondos** de las cajas; antes: los pokémon de la caja, **separados**: aire entre huecos y sin agrandar; antes: los fondos de las cajas, **apagados** para que los pokémon se distingan bien encima; antes: las cajas del PC con **los fondos de los juegos** (hasta la 5ª generación) y su forma, **cuatro cajas como mínimo** y **cambiar de caja** arrastrando a las flechas de los lados o con «Mover a la caja…» en la ficha; antes: de prueba, fondos dibujados en las cajas; antes: detalles de app del móvil: las **fichas suben desde abajo** y se cierran deslizándolas, **tirar hacia abajo para refrescar** con la media ball en la portada y en Equipo y PC, y las **pantallas vacías con dibujo**; antes: **evolucionar como en los juegos**: «¡X está evolucionando!», la silueta que parpadea, el destello y el «¡Enhorabuena!», con **«Darle a la B»** para cortarla; antes: los tipos con **las chapas de los juegos** —icono y nombre— en Equipo y PC y en la cobertura de tipos; antes: **evolucionar en dos pasos**, con su deshacer en la ficha; antes: cada locke de la 1ª a la 5ª —y los fangames sin base— **elige sus tipos**: los de su generación o los de ahora; antes: la **generación de los remakes** es la suya y no la de su región: Rubí Omega es 6ª y Clefairy sale Hada; antes: las **evoluciones sin límite de juego**: se ofrecen todas, con las formas que sí salen de evolucionar; antes: lo que quedaba del **Equipo y PC**: en todos los lockes, **privado** fuera del Soul Link; la baja del cementerio **elegida de la caja** (con su pareja en un Soul Link); **sin conexión**; pedir un **Soul Link** en las solicitudes; y las **guías** con sus páginas; antes: el el **Soul Link**: un estilo de juego cooperativo con el **Equipo y PC** de todos a la vista —arrastrar, evolucionar, vínculos por ruta, la pareja que cae con el otro y deshacer— y el **estilo de juego editable** en un locke ya creado; antes: las las **dos guías al día** con todo lo de estos días —dualocke por mayoría, palmarés, lockes de antes, parejas, fangames— y fotos nuevas; antes: la **duración de un locke** acaba cuando se decide el ganador, no al archivarlo; antes: los **lockes de antes pueden llevar logo**, que sale en el historial y en la vitrina; antes: **juegos no oficiales**: un fangame con su nombre y, si se quiere, un juego de base del que sacar mapa y plantilla; antes: los juegos gemelos se eligen **en pareja** y cada jugador lleva una versión, con **reparto al azar**; antes: el **historial de ediciones** incluye los lockes de fuera que ha ganado tu gente, con logo, descripción y juego; la vitrina va plegada; antes: **vitrina de títulos** en el palmarés, con nombre, año y logo; antes: una captura apuntada sin conexión **va a su locke** aunque se cambie de edición; borrar una cuenta ya no se lleva sus **lockes de antes**; fotos de la guía al día; antes: los **lockes de antes** admiten jugadores **sin cuenta**, se **editan** y se **vinculan** cuando alguien se hace cuenta; antes: **palmarés a medida**: cada uno elige a quién ve, solo cuentan sus lockes, y pestañas de grupo, dualocke y solitario; antes: **pruebas automáticas** de las reglas del locke, que paran la publicación si alguna cuenta se rompe; antes: el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
+Última actualización: 30 de septiembre de 2026 (las pantallas piden a la base de datos **en 2-3 tandas en vez de 5-10**, sin cambiar nada de lo que se ve, y fuera el código que nada usaba; antes: arrastrar por la caja **ya no va a tirones**; antes: los **nombres de los fondos** de las cajas; antes: los pokémon de la caja, **separados**: aire entre huecos y sin agrandar; antes: los fondos de las cajas, **apagados** para que los pokémon se distingan bien encima; antes: las cajas del PC con **los fondos de los juegos** (hasta la 5ª generación) y su forma, **cuatro cajas como mínimo** y **cambiar de caja** arrastrando a las flechas de los lados o con «Mover a la caja…» en la ficha; antes: de prueba, fondos dibujados en las cajas; antes: detalles de app del móvil: las **fichas suben desde abajo** y se cierran deslizándolas, **tirar hacia abajo para refrescar** con la media ball en la portada y en Equipo y PC, y las **pantallas vacías con dibujo**; antes: **evolucionar como en los juegos**: «¡X está evolucionando!», la silueta que parpadea, el destello y el «¡Enhorabuena!», con **«Darle a la B»** para cortarla; antes: los tipos con **las chapas de los juegos** —icono y nombre— en Equipo y PC y en la cobertura de tipos; antes: **evolucionar en dos pasos**, con su deshacer en la ficha; antes: cada locke de la 1ª a la 5ª —y los fangames sin base— **elige sus tipos**: los de su generación o los de ahora; antes: la **generación de los remakes** es la suya y no la de su región: Rubí Omega es 6ª y Clefairy sale Hada; antes: las **evoluciones sin límite de juego**: se ofrecen todas, con las formas que sí salen de evolucionar; antes: lo que quedaba del **Equipo y PC**: en todos los lockes, **privado** fuera del Soul Link; la baja del cementerio **elegida de la caja** (con su pareja en un Soul Link); **sin conexión**; pedir un **Soul Link** en las solicitudes; y las **guías** con sus páginas; antes: el el **Soul Link**: un estilo de juego cooperativo con el **Equipo y PC** de todos a la vista —arrastrar, evolucionar, vínculos por ruta, la pareja que cae con el otro y deshacer— y el **estilo de juego editable** en un locke ya creado; antes: las las **dos guías al día** con todo lo de estos días —dualocke por mayoría, palmarés, lockes de antes, parejas, fangames— y fotos nuevas; antes: la **duración de un locke** acaba cuando se decide el ganador, no al archivarlo; antes: los **lockes de antes pueden llevar logo**, que sale en el historial y en la vitrina; antes: **juegos no oficiales**: un fangame con su nombre y, si se quiere, un juego de base del que sacar mapa y plantilla; antes: los juegos gemelos se eligen **en pareja** y cada jugador lleva una versión, con **reparto al azar**; antes: el **historial de ediciones** incluye los lockes de fuera que ha ganado tu gente, con logo, descripción y juego; la vitrina va plegada; antes: **vitrina de títulos** en el palmarés, con nombre, año y logo; antes: una captura apuntada sin conexión **va a su locke** aunque se cambie de edición; borrar una cuenta ya no se lleva sus **lockes de antes**; fotos de la guía al día; antes: los **lockes de antes** admiten jugadores **sin cuenta**, se **editan** y se **vinculan** cuando alguien se hace cuenta; antes: **palmarés a medida**: cada uno elige a quién ve, solo cuentan sus lockes, y pestañas de grupo, dualocke y solitario; antes: **pruebas automáticas** de las reglas del locke, que paran la publicación si alguna cuenta se rompe; antes: el **dualocke se gana por mayoría de jornadas** —la Jornada Final solo desempata y se puede jugar igual, por el honor—; antes: una ronda de **betatesting** haciendo de usuario en dualockes, lockes de tres y de seis: crear un locke ya no archiva los de toda la casa, borrar una jornada o a un jugador se lleva sus puntos, el dualocke que se atascaba en 1-1 con una retirada, **campeón por abandono** cuando solo queda uno, la final que espera a las jornadas previstas, quién descansa, la portada de quien está fuera y apuntar por usuario; antes: las archivadas **esconden los formularios** a los jugadores, el botón del checkpoint es un icono, el resumen en imagen de un locke **en solitario** va cuadrado y con sus cifras, y las **guías con fotos nuevas**; antes: el perfil de quien no tiene locke dice lo mismo que la bienvenida; antes: una **bienvenida** para las cuentas sin ningún locke, con el menú recortado; antes: **checkpoints de jornada** en los level caps, **ediciones archivadas de solo lectura** para los jugadores, **deshacer** al gastar un objeto y el **resumen del locke como imagen** en el hall; antes: quien había abierto la guía ya **no se queda con la vieja**: el PDF va con la huella de su contenido en la dirección; antes: **las dos guías en PDF rehechas** con el aspecto nuevo, sus novedades, una página de lo nuevo y una chuleta de iconos; antes: **pantalla de carga** al cambiar de sección; antes: repaso del aspecto: **fuera los emojis de color** de dentro de las pantallas y los restos del estilo antiguo; antes: **logo nuevo**, la *media ball*, en la cabecera, la entrada, la pestaña y los iconos del móvil; antes: el aspecto nuevo pasa a ser **el de todos**, y cada edición puede llevar **su logo** de fondo en el resumen; antes: un aspecto nuevo de prueba; flechas en la clasificación, la corona del primero en pasarse cada gimnasio y el aviso de reglas cambiadas; antes: el cuarto repaso —entrando con cada papel y en lockes raros—, las plantillas de level caps con los nombres de verdad, la portada que se entera de que el locke ha terminado; antes: la sesión que se estira al usarla, volver a la pantalla que se pedía después de entrar y refrescar al volver a la aplicación; antes: Alola repartida en sus cuatro
 islas, zonas que se giran, círculo redondo aparte del óvalo, relleno regulable
 por mapa, la guía de uso rehecha —ya con 22 páginas— y accesible desde la
 propia aplicación, el modo sin conexión con su cola de apuntes, los tipos de
@@ -1219,6 +1219,42 @@ Lo que queda en fila ya es de verdad encadenado: para pedir la firma de una
 imagen hay que saber antes de qué fila es. `getParticipants` son dos tandas por
 eso mismo, y se lleva por delante a todo lo que espera por él.
 
+### De 5-10 tandas por pantalla a 2-3
+
+Aquello de «lo que queda ya es de verdad encadenado» resultó no serlo. Medido
+con `LATENCIA_FALSA=50`, casi todas las pantallas iban en 5 tandas, y la
+portada, `/muertes` o `/palmares` en 8-10. Se bajaron así, **sin cambiar nada
+de lo que se ve** (comparado el DOM de 81 pantallas con seis cuentas contra la
+versión anterior, y los permisos entrando como gente de fuera):
+
+- **El locke se pide a la vez que la cuenta.** `getActiveCompetition` y
+  `listCompetitions` esperaban a `getCurrentUser` para saber qué lockes puede
+  ver. Ahora leen el `userId` de la cookie (`readSession`), se traen el locke con
+  dos marcas —si juega y si mira— y aplican la misma regla que
+  `filtroDeLockesVisibles` **al llegar la cuenta**, en memoria. Si la cuenta no
+  cuadra con la cookie, no se enseña nada. Es la tanda que ahorran todas.
+- **Las firmas de las imágenes se piden por el locke, no por los ids.** Para
+  firmar una imagen hacía falta saber antes de qué fila era; pidiéndolas con el
+  mismo filtro que los datos (`competitionId`, `userId`…) van en la misma tanda.
+  `firmaDeColumna` en `lib/imagenes.ts` es el `case` de SQL que calcula la
+  firma, para meterlo en cualquier consulta.
+- **`relationJoins` de Prisma**: los `include` salen en una sola consulta con
+  `join` en vez de una por relación. Menos consultas, mismo resultado.
+- **Lo que dependía de un dato que ya se sabía por otro lado**: `getMvpStates`,
+  `getBolsa(s)`, `getEquiposDelLocke`, `getMisCapturas`… aceptan ahora «el de
+  tal persona en tal locke» o una promesa, en vez de esperar al participante.
+- **`getMapa` lee antes de escribir**: hacía un `upsert` en cada visita, que es
+  una escritura; ahora solo crea el mapa si no existe.
+- **`getAvisos`** es una sola consulta con CTE.
+
+Resultado, en tandas: portada 8 → 3, `/jornadas` 7 → 2, `/puntos` 5 → 2,
+`/muertes` 8 → 3, `/palmares` 10 → 4, `/perfil` 7 → 3 y casi todas las demás
+5 → 2. Con Neon a unos 20-40 ms por viaje, cada tanda menos se nota.
+
+De paso se quitó código que nada usaba (acciones sin formulario, ayudantes
+sustituidos por su versión «del locke», imports sueltos) y el selector de lockes
+desempata por `id` a los que empezaron a la vez, que antes podían bailar.
+
 Lo que sigue pesando es **el HTML de `/jornadas`: 353 KB**, porque lleva los
 seis pokémon de cada lado de cada combate de todas las jornadas. No es lento,
 pero es lo que más datos móviles gasta de toda la aplicación.
@@ -1480,7 +1516,8 @@ sin eso quedaban **inalcanzables**, porque metías una zona en un grupo y ya no
 había forma de volver a abrirla para sacarla (pasó).
 
 **El mapa de capturas es privado de verdad, y se nota en el código.** Todas las
-consultas de `lib/mapas.ts` piden el participante y filtran por él, y **no
+consultas de `lib/mapas.ts` piden de quién son —el participante o, para no
+esperarlo, `{ competitionId, userId }` (`DeQuien`)— y filtran por él, y **no
 existe** una función que devuelva las capturas de varios: si la consulta no
 existe, no hay pantalla que pueda equivocarse. Las acciones sacan el
 participante de la sesión y nunca del formulario, así que tampoco se puede
@@ -2893,8 +2930,13 @@ Piezas con truco:
   comparten el cementerio, el as, el hall de la fama y los equipos de jornada.
 - `lib/imagenes.ts` y `lib/imagen-url.ts` — las direcciones de las imágenes y
   sus firmas. `app/api/imagen/[...partes]/route.ts` es quien las sirve.
+  `firmaDeColumna` es la firma escrita en SQL, para pedirla en la misma
+  consulta que los datos o filtrando por el locke (`firmasDeMedallasDelLocke`,
+  `firmasDeEquiposDeJornadas`) y no tener que esperar a los ids.
 - `lib/mvp.ts` — el recuento de la votación al MVP: quién gana, si hay empate y
   cuándo vale el desempate manual. Es la única fuente de verdad del MVP.
+  `getMvpStates` acepta las jornadas como promesa y a quien mira como
+  `{ participantId }` o `{ userId }`, para ir en la misma tanda que la página.
 - `components/mvp-badge.tsx` — la chapa del MVP, su ficha y la votación. Igual
   que la del as: la ilustración grande no viaja con la lista, se pide al abrir.
 - `components/favorites-grid.tsx` — la caja de favoritos, con la misma idea que
@@ -2908,7 +2950,8 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
-- `lib/titulos.ts` — los títulos de alguien y el que lleva puesto.
+- `lib/titulos.ts` — los títulos de alguien y los que llevan puestos los
+  jugadores de un locke (`getTitulosEquipadosDelLocke`, para la clasificación).
   `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
   lista del perfil, compartida por el perfil público y por Mi perfil.
 - `lib/mapas.ts` — los mapas y las capturas. `lib/detectar-zonas.ts` saca las
@@ -3008,6 +3051,8 @@ Piezas con truco:
 - `lib/bolsa.ts` — el catálogo y las bolsas. El catálogo se lee entero de una
   vez y las bolsas se juntan con él **en memoria**: son cuatro filas y así no se
   repiten por cada jugador las consultas de las firmas de las imágenes.
+  `getBolsa` y `getBolsas` aceptan el participante o `{ competitionId, userId }`
+  / `{ competitionId }`, y el catálogo como promesa, para no esperar a nadie.
   `components/objeto-picker.tsx` es de dónde sale cada objeto —de los juegos,
   propio o un grupo—, `bolsa/bolsa-client.tsx` la bolsa con el botón de gastar
   y el menú de elegir, y `bolsa/todas/` el panel del administrador.
@@ -3620,3 +3665,4 @@ del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
 101. **Fondos de caja** como en el PC de los juegos, de prueba.
 102. **Las cajas de los juegos**: sus fondos y su forma, cuatro como mínimo y
      cambiar de caja arrastrando o desde la ficha.
+103. **Optimización**: de 5-10 viajes a la base de datos por pantalla a 2-3.

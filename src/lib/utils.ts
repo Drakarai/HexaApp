@@ -80,10 +80,6 @@ export function readableTextColor(hex: string) {
   return luminance > 0.6 ? "#111827" : "#ffffff";
 }
 
-export function pluralize(count: number, singular: string, plural: string) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
 /**
  * Un enlace escrito a mano por un administrador, listo para meter en un `href`.
  *

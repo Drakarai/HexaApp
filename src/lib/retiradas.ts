@@ -172,21 +172,21 @@ export function combatesPorRetirada<
 export async function combatesEsperandoRetirada(
   competitionId: string,
 ): Promise<Set<string>> {
-  const retirados = new Set(
-    (
-      await prisma.participant.findMany({
-        where: { competitionId, retiredAt: { not: null } },
-        select: { id: true },
-      })
-    ).map((participante) => participante.id),
-  );
+  // Las dos a la vez: los combates sin resolver son pocos, y pedirlos después
+  // de saber si hay retirados era una ida y vuelta más en cada visita
+  const [filas, combates] = await Promise.all([
+    prisma.participant.findMany({
+      where: { competitionId, retiredAt: { not: null } },
+      select: { id: true },
+    }),
+    prisma.match.findMany({
+      // Los de la excepción no esperan nada: se juegan
+      where: { winnerId: null, excepcion: false, matchday: { competitionId } },
+      select: { id: true, participantAId: true, participantBId: true },
+    }),
+  ]);
+  const retirados = new Set(filas.map((participante) => participante.id));
   if (!retirados.size) return new Set();
-
-  const combates = await prisma.match.findMany({
-    // Los de la excepción no esperan nada: se juegan
-    where: { winnerId: null, excepcion: false, matchday: { competitionId } },
-    select: { id: true, participantAId: true, participantBId: true },
-  });
 
   return new Set(
     combates

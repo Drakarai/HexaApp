@@ -60,5 +60,3 @@ export const PALETTE = [
   "#06b6d4",
   "#f43f5e",
 ];
-
-export const MAX_PLAYERS_DEFAULT = 6;

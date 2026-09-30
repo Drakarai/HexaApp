@@ -9,7 +9,8 @@ import {
   getStandings,
   soloLectura,
 } from "@/lib/competition";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
 import { AceBadge } from "@/components/ace-badge";
@@ -47,39 +48,70 @@ export default async function PlayerPage({
   });
   if (!participant) notFound();
 
+  const competitionId = participant.competitionId;
+  /**
+   * El permiso y todo lo demás **a la vez**: antes el permiso, los datos, los
+   * combates, los títulos y las imágenes iban cada uno esperando al anterior.
+   * Pedir los datos antes de saber si puede verlos no enseña nada: si no puede,
+   * se corta aquí abajo y no se pinta nada.
+   */
+  const [
+    puedeVerlo,
+    canManage,
+    standings,
+    deaths,
+    clears,
+    capsTotales,
+    favoritos,
+    wipeos,
+    combates,
+    titulos,
+    firmasBaja,
+    firmasFavorito,
+    activa,
+  ] = await Promise.all([
+    puedeVerLocke(competitionId),
+    canManageCompetition(competitionId, user),
+    getStandings(competitionId),
+    prisma.death.findMany({
+      where: { participantId: id },
+      orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
+    }),
+    // Las de todos y no solo las suyas: para saber si fue el primero en
+    // pasarse cada gimnasio hay que ver cuándo se lo pasaron los demás
+    prisma.gymClear.findMany({
+      where: { levelCap: { competitionId } },
+      select: { participantId: true, levelCapId: true, clearedAt: true },
+    }),
+    prisma.levelCap.count({ where: { competitionId } }),
+    prisma.favoritePokemon.findMany({
+      where: { participantId: id },
+      orderBy: { position: "asc" },
+    }),
+    prisma.wipeo.findMany({
+      where: { participantId: id },
+      orderBy: [{ ocurridoAt: "desc" }, { createdAt: "desc" }],
+    }),
+    getResumenDeCombates(competitionId, id),
+    // Los títulos son de la persona, no del participante: la siguen de una
+    // edición a otra
+    getTitulosDeUsuario(participant.userId),
+    // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select "id", ${firmaDeColumna(`"boxImage"`)} as v from "Death" where "participantId" = ${id}
+    `,
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select "id", ${firmaDeColumna(`"image"`)} as v from "FavoritePokemon" where "participantId" = ${id}
+    `,
+    getActiveCompetition(),
+  ]);
   /**
    * A un perfil se llega por su identificador, sin pasar por la edición activa,
    * así que aquí hay que volver a preguntar si esa persona puede ver ese locke.
    * Sale un 404 y no un "no puedes": quien no tiene acceso tampoco tiene por
    * qué enterarse de que ese jugador existe.
    */
-  if (!(await puedeVerLocke(participant.competitionId))) notFound();
-
-  const competitionId = participant.competitionId;
-  const [canManage, standings, deaths, clears, capsTotales, favoritos, wipeos] =
-    await Promise.all([
-      canManageCompetition(competitionId, user),
-      getStandings(competitionId),
-      prisma.death.findMany({
-        where: { participantId: id },
-        orderBy: [{ diedAt: "desc" }, { createdAt: "desc" }],
-      }),
-      // Las de todos y no solo las suyas: para saber si fue el primero en
-      // pasarse cada gimnasio hay que ver cuándo se lo pasaron los demás
-      prisma.gymClear.findMany({
-        where: { levelCap: { competitionId } },
-        select: { participantId: true, levelCapId: true, clearedAt: true },
-      }),
-      prisma.levelCap.count({ where: { competitionId } }),
-      prisma.favoritePokemon.findMany({
-        where: { participantId: id },
-        orderBy: { position: "asc" },
-      }),
-      prisma.wipeo.findMany({
-        where: { participantId: id },
-        orderBy: [{ ocurridoAt: "desc" }, { createdAt: "desc" }],
-      }),
-    ]);
+  if (!puedeVerlo) notFound();
 
   const fila = standings.find((row) => row.participantId === id);
   const misGimnasios = clears.filter((clear) => clear.participantId === id).length;
@@ -88,29 +120,19 @@ export default async function PlayerPage({
     .sinJornadas
     ? 0
     : coronasDe(id, clears);
-  const combates = await getResumenDeCombates(competitionId, id);
   const esMio = participant.userId === user.id;
   // Los títulos son de la persona y se pueden elegir siempre; lo del locke
   // (as, favoritos, wipeos) no, si la edición está archivada y no la administras
   const editable = esMio || canManage;
   const editableDelLocke = editable && !soloLectura(participant.competition, canManage);
 
-  // Los títulos son de la persona, no del participante: la siguen de una
-  // edición a otra
-  const titulos = await getTitulosDeUsuario(participant.userId);
   const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
 
-  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
-  const [sprites, spritesFavoritos] = await Promise.all([
-    urlsDeImagen(
-      "baja",
-      deaths.map((baja) => baja.id),
-    ),
-    urlsDeImagen(
-      "favorito",
-      favoritos.map((favorito) => favorito.id),
-    ),
-  ]);
+  const firmaDeBaja = new Map(firmasBaja.map((fila) => [fila.id, fila.v]));
+  const firmaDeFavorito = new Map(firmasFavorito.map((fila) => [fila.id, fila.v]));
+  const sprites = (bajaId: string) => urlDeImagen("baja", bajaId, firmaDeBaja.get(bajaId));
+  const spritesFavoritos = (favoritoId: string) =>
+    urlDeImagen("favorito", favoritoId, firmaDeFavorito.get(favoritoId));
 
   const misFavoritos: Favorito[] = favoritos.map((favorito) => ({
     id: favorito.id,
@@ -119,7 +141,6 @@ export default async function PlayerPage({
     image: spritesFavoritos(favorito.id),
   }));
 
-  const activa = await getActiveCompetition();
   const esOtraEdicion = activa?.id !== competitionId;
 
   return (

@@ -121,9 +121,6 @@ export const JUGADORES_DEL_SOUL_LINK = { minimo: 2, maximo: 4 };
  */
 export const MINIMO_DE_JUGADORES = 1;
 
-/** De cuántos hace falta ser para que haya combates entre jugadores. */
-export const MINIMO_PARA_COMPETIR = 2;
-
 /**
  * El más que puede tener. No es un capricho: los formatos de la final llegan
  * hasta seis y de siete para arriba se juega el de seis dejando fuera a los

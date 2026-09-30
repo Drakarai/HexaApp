@@ -58,7 +58,15 @@ export type TipoConsultable = keyof typeof FUENTES;
  * y sobre `ref:pkm-445-detail` no cuesta nada.
  */
 function firmaSql(columna: string) {
-  const col = `"${columna}"`;
+  return firmaDeColumna(`"${columna}"`);
+}
+
+/**
+ * Lo mismo con la columna ya escrita, con su tabla delante si hace falta
+ * (`u."avatarImage"`): para las consultas que juntan varias tablas y sacan las
+ * firmas **a la vez que los datos**, sin esperar a tener los ids.
+ */
+export function firmaDeColumna(col: string) {
   return Prisma.raw(
     `case
        when nullif(${col}, '') is null then null
@@ -86,11 +94,6 @@ export async function firmasDeImagen(
   `;
   for (const fila of filas) firmas.set(fila.id, fila.v);
   return firmas;
-}
-
-/** Atajo para cuando solo hace falta una fila. */
-export async function firmaDeImagen(tipo: TipoConsultable, id: string) {
-  return (await firmasDeImagen(tipo, [id])).get(id) ?? null;
 }
 
 /**
@@ -134,17 +137,17 @@ export async function firmasDeDosImagenes(
 }
 
 /**
- * Igual pero para las medallas de un level cap, que son una lista. Devuelve
+ * Igual pero para las medallas de los level caps, que son una lista. Devuelve
  * una firma por imagen, ya resuelta la lista efectiva (la nueva `images` y, si
- * está vacía, la `image` suelta de las primeras versiones).
+ * está vacía, la `image` suelta de las primeras versiones). Se piden las de
+ * **todos los hitos del locke** para poder hacerlo a la vez que los propios
+ * hitos y no después, cuando ya se saben sus ids.
  */
-export async function firmasDeMedallas(
-  ids: string[],
-): Promise<Map<string, string[]>> {
-  const firmas = new Map<string, string[]>();
-  const unicos = [...new Set(ids)];
-  if (!unicos.length) return firmas;
+export async function firmasDeMedallasDelLocke(competitionId: string) {
+  return firmasDeMedallasDonde(Prisma.sql`"competitionId" = ${competitionId}`);
+}
 
+async function firmasDeMedallasDonde(donde: Prisma.Sql): Promise<Map<string, string[]>> {
   const filas = await prisma.$queryRaw<{ id: string; v: string[] }[]>`
     select "id", array(
       select case when x like 'ref:%' then x else substr(md5(x), 1, 10) end
@@ -156,10 +159,9 @@ export async function firmasDeMedallas(
       ) as x
     ) as v
     from "LevelCap"
-    where "id" in (${Prisma.join(unicos)})
+    where ${donde}
   `;
-  for (const fila of filas) firmas.set(fila.id, fila.v);
-  return firmas;
+  return new Map(filas.map((fila) => [fila.id, fila.v]));
 }
 
 /**
@@ -234,10 +236,45 @@ export async function urlsDeCarteles(ids: string[]) {
     );
 }
 
-export async function urlsDeMedallas(ids: string[]) {
-  const firmas = await firmasDeMedallas(ids);
+export async function urlsDeMedallasDelLocke(competitionId: string) {
+  return urlsConFirmasDeMedallas(await firmasDeMedallasDelLocke(competitionId));
+}
+
+function urlsConFirmasDeMedallas(firmas: Map<string, string[]>) {
   return (id: string) =>
     (firmas.get(id) ?? []).map(
       (firma, indice) => urlDeMedalla(id, indice, firma)!,
     );
+}
+
+/**
+ * Las firmas del sprite y la ilustración de **todos los equipos de las
+ * jornadas de un locke** (combates y royales), buscadas por el locke y no por
+ * los ids. Así se piden a la vez que las jornadas, en vez de esperar a tenerlas
+ * para saber qué pokémon hay: la pantalla de jornadas se ahorra una ida y
+ * vuelta, y el MVP otra.
+ */
+export async function firmasDeEquiposDeJornadas(
+  competitionId: string,
+): Promise<[Map<string, string>, Map<string, string>]> {
+  const filas = await prisma.$queryRaw<
+    { id: string; va: string | null; vb: string | null }[]
+  >`
+    select mp."id",
+           ${firmaDeColumna(`mp."boxImage"`)} as va,
+           ${firmaDeColumna(`mp."detailImage"`)} as vb
+    from "MatchPokemon" mp
+    left join "Match" m on m."id" = mp."matchId"
+    left join "Royale" r on r."id" = mp."royaleId"
+    where coalesce(m."matchdayId", r."matchdayId") in (
+      select "id" from "Matchday" where "competitionId" = ${competitionId}
+    )
+  `;
+  const sprites = new Map<string, string>();
+  const ilustraciones = new Map<string, string>();
+  for (const fila of filas) {
+    if (fila.va) sprites.set(fila.id, fila.va);
+    if (fila.vb) ilustraciones.set(fila.id, fila.vb);
+  }
+  return [sprites, ilustraciones];
 }

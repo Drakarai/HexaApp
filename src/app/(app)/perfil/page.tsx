@@ -9,14 +9,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { AceBadge } from "@/components/ace-badge";
 import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
-import { urlsDeImagen } from "@/lib/imagenes";
-import { firmaDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { Avatar } from "@/components/ui";
 import { RepararLaAplicacion } from "@/components/service-worker";
 import { logoutAction } from "@/app/actions/auth";
-import { ROLES } from "@/lib/constants";
 import { ProfileForms } from "./profile-forms";
 import { ThemePicker } from "./theme-picker";
 import { getEstilo } from "@/lib/estilo";
@@ -31,45 +29,53 @@ export const metadata = { title: "Mi perfil" };
 
 export default async function ProfilePage() {
   const user = await requireUser();
-  const estilo = await getEstilo();
-  const competition = await getActiveCompetition();
-  const myParticipant = competition
-    ? await getMyParticipant(competition.id, user.id)
-    : null;
+  /**
+   * En dos tandas y no en ocho: antes cada dato esperaba al anterior aunque no
+   * lo necesitara (las dos imágenes del as, una detrás de otra; los títulos, al
+   * final de todo). Lo tuyo del locke (el as y los favoritos) se busca por tu
+   * cuenta dentro de él, sin esperar a saber qué participante eres.
+   */
+  const [estilo, competition, titulos] = await Promise.all([
+    getEstilo(),
+    getActiveCompetition(),
+    getTitulosDeUsuario(user.id),
+  ]);
+  const tuyo = competition ? { competitionId: competition.id, userId: user.id } : null;
+  const [myParticipant, gestiona, firmasAs, favoritos, firmasFavoritos] = tuyo
+    ? await Promise.all([
+        getMyParticipant(tuyo.competitionId, user.id),
+        canManageCompetition(tuyo.competitionId, user),
+        prisma.$queryRaw<{ id: string; va: string | null; vb: string | null }[]>`
+          select "id",
+                 ${firmaDeColumna(`"aceImage"`)} as va,
+                 ${firmaDeColumna(`"aceDetailImage"`)} as vb
+          from "Participant"
+          where "competitionId" = ${tuyo.competitionId} and "userId" = ${user.id}
+        `,
+        prisma.favoritePokemon.findMany({
+          where: { participant: tuyo },
+          orderBy: { position: "asc" },
+        }),
+        prisma.$queryRaw<{ id: string; v: string | null }[]>`
+          select f."id", ${firmaDeColumna(`f."image"`)} as v
+          from "FavoritePokemon" f join "Participant" p on p."id" = f."participantId"
+          where p."competitionId" = ${tuyo.competitionId} and p."userId" = ${user.id}
+        `,
+      ])
+    : [null, false, [], [], []];
   // Archivada y sin administrarla: el as y los favoritos de esa edición se ven
   // pero se quedan como estaban
-  const cerrada = competition
-    ? soloLectura(competition, await canManageCompetition(competition.id, user))
-    : false;
+  const cerrada = competition ? soloLectura(competition, gestiona) : false;
 
-  // Direcciones de las imágenes del as, que ya no viajan dentro de la página
+  // Las imágenes del as y de cada favorito, que ya no viajan dentro de la página
   const miAs = myParticipant
     ? {
-        image: urlDeImagen(
-          "as",
-          myParticipant.id,
-          await firmaDeImagen("as", myParticipant.id),
-        ),
-        detailImage: urlDeImagen(
-          "as-ficha",
-          myParticipant.id,
-          await firmaDeImagen("as-ficha", myParticipant.id),
-        ),
+        image: urlDeImagen("as", myParticipant.id, firmasAs[0]?.va),
+        detailImage: urlDeImagen("as-ficha", myParticipant.id, firmasAs[0]?.vb),
       }
     : { image: null, detailImage: null };
-
-  // Los favoritos de esta edición, con la dirección de cada sprite
-  const favoritos = myParticipant
-    ? await prisma.favoritePokemon.findMany({
-        where: { participantId: myParticipant.id },
-        orderBy: { position: "asc" },
-      })
-    : [];
-  const spritesFavoritos = await urlsDeImagen(
-    "favorito",
-    favoritos.map((favorito) => favorito.id),
-  );
-  const titulos = await getTitulosDeUsuario(user.id);
+  const firmaDeFavorito = new Map(firmasFavoritos.map((fila) => [fila.id, fila.v]));
+  const spritesFavoritos = (id: string) => urlDeImagen("favorito", id, firmaDeFavorito.get(id));
   const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
 
   const misFavoritos: Favorito[] = favoritos.map((favorito) => ({

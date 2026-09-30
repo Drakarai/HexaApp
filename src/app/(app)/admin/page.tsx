@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { esCreador, requireCreadorPage } from "@/lib/auth";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import Link from "next/link";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
@@ -33,41 +34,49 @@ export const maxDuration = 60;
 export default async function AdminPage() {
   const me = await requireCreadorPage();
 
-  const users = await prisma.user.findMany({
-    orderBy: [{ role: "asc" }, { displayName: "asc" }],
-    include: { _count: { select: { participations: true } } },
-  });
-
-  // Las peticiones de locke en solitario que esperan respuesta
-  const solicitudes = await getSolicitudesPendientes();
-
-  // Sin el volcado: son varios megas por copia y aquí solo se listan
-  const copias = await prisma.backup.findMany({
-    where: COPIAS_HECHAS,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      createdAt: true,
-      kind: true,
-      authorName: true,
-      summary: true,
-      rawSize: true,
-    },
-  });
+  /**
+   * Las cinco cosas de la pantalla **a la vez**: ninguna necesita a otra. Iban
+   * una detrás de otra, cinco idas y vueltas a la base de datos; las fotos de
+   * perfil se piden de toda la tabla, que es lo que se lista.
+   */
+  const [users, solicitudes, copias, titulos, firmasAvatar] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: [{ role: "asc" }, { displayName: "asc" }],
+      include: { _count: { select: { participations: true } } },
+    }),
+    // Las peticiones de locke en solitario que esperan respuesta
+    getSolicitudesPendientes(),
+    // Sin el volcado: son varios megas por copia y aquí solo se listan
+    prisma.backup.findMany({
+      where: COPIAS_HECHAS,
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        createdAt: true,
+        kind: true,
+        authorName: true,
+        summary: true,
+        rawSize: true,
+      },
+    }),
+    prisma.title.findMany({
+      orderBy: { createdAt: "asc" },
+      include: {
+        awards: {
+          orderBy: { awardedAt: "desc" },
+          include: { user: { select: { id: true, displayName: true } } },
+        },
+      },
+    }),
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select "id", ${firmaDeColumna(`"avatarImage"`)} as v from "User"
+    `,
+  ]);
   const copiasView: CopiaView[] = copias.map((copia) => ({
     ...copia,
     createdAt: copia.createdAt.toISOString(),
   }));
 
-  const titulos = await prisma.title.findMany({
-    orderBy: { createdAt: "asc" },
-    include: {
-      awards: {
-        orderBy: { awardedAt: "desc" },
-        include: { user: { select: { id: true, displayName: true } } },
-      },
-    },
-  });
   const titulosView: TituloAdmin[] = titulos.map((titulo) => ({
     id: titulo.id,
     name: titulo.name,
@@ -85,10 +94,8 @@ export default async function AdminPage() {
   }));
 
   // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
-  const avatares = await urlsDeImagen(
-    "avatar",
-    users.map((usuario) => usuario.id),
-  );
+  const firmaDeAvatar = new Map(firmasAvatar.map((fila) => [fila.id, fila.v]));
+  const avatares = (userId: string) => urlDeImagen("avatar", userId, firmaDeAvatar.get(userId));
 
   return (
     <>

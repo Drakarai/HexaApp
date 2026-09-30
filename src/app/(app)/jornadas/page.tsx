@@ -11,7 +11,8 @@ import {
 import { getMvpStates } from "@/lib/mvp";
 import { combatesEsperandoRetirada } from "@/lib/retiradas";
 import { comoEstaFuera, puedeVotarElMvp } from "@/lib/wipeos";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmasDeEquiposDeJornadas } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
@@ -46,11 +47,14 @@ export default async function MatchdaysPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, myParticipant, participants, matchdays, esperando, marcador] = await Promise.all([
-    canManageCompetition(competition.id, user),
-    getMyParticipant(competition.id, user.id),
-    getParticipants(competition.id),
-    prisma.matchday.findMany({
+  /**
+   * **Todo en la misma tanda**, también lo que depende de las jornadas: los
+   * sprites de los equipos y el MVP se piden por el locke y no por los ids de
+   * las jornadas, así que no hay que esperar a tenerlas. Antes eran cuatro
+   * idas y vueltas en fila en la pantalla que más se abre.
+   */
+  const firmasDeEquipos = firmasDeEquiposDeJornadas(competition.id);
+  const jornadasPedidas = prisma.matchday.findMany({
       where: { competitionId: competition.id },
       orderBy: { position: "asc" },
       include: {
@@ -76,12 +80,33 @@ export default async function MatchdaysPage() {
           },
         },
       },
-    }),
+    });
+  const [
+    canManage,
+    myParticipant,
+    participants,
+    matchdays,
+    esperando,
+    marcador,
+    [firmasSprite],
+    mvpStates,
+  ] = await Promise.all([
+    canManageCompetition(competition.id, user),
+    getMyParticipant(competition.id, user.id),
+    getParticipants(competition.id),
+    jornadasPedidas,
     combatesEsperandoRetirada(competition.id),
     // Solo en los lockes que se ganan por jornadas: ver lib/marcador.ts
     perfilDeLocke(competition.maxPlayers, competition.estilo).victoria === "jornadas"
       ? getMarcador(competition.id)
       : null,
+    firmasDeEquipos,
+    getMvpStates(
+      competition.id,
+      jornadasPedidas.then((jornadas) => jornadas.map((jornada) => jornada.id)),
+      { userId: user.id },
+      firmasDeEquipos,
+    ),
   ]);
 
   /**
@@ -116,24 +141,8 @@ export default async function MatchdaysPage() {
     ]),
   );
 
-  // Las dos a la vez: la votación del MVP no necesita los sprites, y pedidas
-  // en fila era una ida y vuelta de más en la pantalla que más se abre.
-  const [sprites, mvpStates] = await Promise.all([
-    // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
-    urlsDeImagen("equipo", [
-      ...matchdays.flatMap((jornada) =>
-        jornada.matches.flatMap((combate) => combate.team.map((p) => p.id)),
-      ),
-      ...matchdays.flatMap((jornada) =>
-        jornada.royales.flatMap((royale) => royale.equipos.map((p) => p.id)),
-      ),
-    ]),
-    getMvpStates(
-      competition.id,
-      matchdays.map((matchday) => matchday.id),
-      myParticipant?.id ?? null,
-    ),
-  ]);
+  // Direcciones de los sprites de los equipos: ver lib/imagen-url.ts
+  const sprites = (id: string) => urlDeImagen("equipo", id, firmasSprite.get(id));
 
   /** Añade la foto de perfil del dueño, que no viaja con el recuento */
   const withAvatar = (

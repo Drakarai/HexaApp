@@ -22,7 +22,8 @@ import {
 import { getMisSolicitudes } from "@/lib/solicitudes";
 import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { perderElLockeAction } from "@/app/actions/wipeos";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna, urlsDeImagen } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { leerEstilo } from "@/lib/perfiles-de-locke";
 import { NewUserForm } from "../admin/user-forms";
 import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
@@ -53,11 +54,22 @@ export default async function CompetitionsPage() {
     getActiveCompetition(),
   ]);
 
-  const canManageActive = active
-    ? await canManageCompetition(active.id, user)
-    : false;
-
-  const [participants, users, misSolicitudes, espectadores] = await Promise.all([
+  /**
+   * El resto, **en una sola tanda**: antes el permiso, los participantes, en qué
+   * lockes manda y juega quien mira y las fotos iban cada uno esperando al
+   * anterior. Las fotos se buscan por el locke, sin esperar a los ids.
+   */
+  const [
+    canManageActive,
+    participants,
+    users,
+    misSolicitudes,
+    espectadores,
+    misFichas,
+    firmasAvatar,
+    logos,
+  ] = await Promise.all([
+    active ? canManageCompetition(active.id, user) : false,
     active
       ? prisma.participant.findMany({
           where: { competitionId: active.id },
@@ -92,6 +104,28 @@ export default async function CompetitionsPage() {
           },
         })
       : Promise.resolve([]),
+    /**
+     * En qué lockes juega y en cuáles es administrador quien mira: de la misma
+     * tabla y con el mismo filtro, así que en una sola consulta. Al Creador le
+     * sobra saber dónde manda (lo lleva todo), y a quien no organiza, dónde
+     * juega (es para archivar al crear).
+     */
+    !admin || organiza
+      ? prisma.participant.findMany({
+          where: { userId: user.id },
+          select: { competitionId: true, isAdmin: true },
+        })
+      : Promise.resolve([]),
+    // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
+    active
+      ? prisma.$queryRaw<{ id: string; v: string | null }[]>`
+          select u."id", ${firmaDeColumna(`u."avatarImage"`)} as v
+          from "User" u join "Participant" p on p."userId" = u."id"
+          where p."competitionId" = ${active.id}
+        `
+      : Promise.resolve([]),
+    // El logo de la edición, para verlo en su formulario
+    urlsDeImagen("logo", active ? [active.id] : []),
   ]);
 
   /**
@@ -101,14 +135,7 @@ export default async function CompetitionsPage() {
    */
   const mando = admin
     ? null
-    : new Set(
-        (
-          await prisma.participant.findMany({
-            where: { userId: user.id, isAdmin: true },
-            select: { competitionId: true },
-          })
-        ).map((ficha) => ficha.competitionId),
-      );
+    : new Set(misFichas.filter((ficha) => ficha.isAdmin).map((ficha) => ficha.competitionId));
   const mandoEn = (competitionId: string) =>
     admin || Boolean(mando?.has(competitionId));
 
@@ -120,14 +147,7 @@ export default async function CompetitionsPage() {
    * que juega quien crea: es la edición anterior, la que se quiere cerrar.
    */
   const juegoEn = organiza
-    ? new Set(
-        (
-          await prisma.participant.findMany({
-            where: { userId: user.id },
-            select: { competitionId: true },
-          })
-        ).map((ficha) => ficha.competitionId),
-      )
+    ? new Set(misFichas.map((ficha) => ficha.competitionId))
     : new Set<string>();
   const archivables = competitions
     .filter(
@@ -142,15 +162,8 @@ export default async function CompetitionsPage() {
       marcado: juegoEn.has(competition.id) && competition.maxPlayers > 1,
     }));
 
-  // Las fotos, por dirección: dentro de la página serían 36 KB por jugador
-  const [avatares, logos] = await Promise.all([
-    urlsDeImagen(
-      "avatar",
-      participants.map((participant) => participant.user.id),
-    ),
-    // El logo de la edición, para verlo en su formulario
-    urlsDeImagen("logo", active ? [active.id] : []),
-  ]);
+  const firmaDeAvatar = new Map(firmasAvatar.map((fila) => [fila.id, fila.v]));
+  const avatares = (userId: string) => urlDeImagen("avatar", userId, firmaDeAvatar.get(userId));
   const logoActual = active ? logos(active.id) : null;
 
   // Si el juego es una pareja, cada jugador lleva una de sus dos versiones

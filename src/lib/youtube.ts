@@ -97,8 +97,3 @@ export function urlIncrustada(video: VideoDeYouTube): string {
   const desde = video.desde ? `?start=${video.desde}` : "";
   return `https://www.youtube-nocookie.com/embed/${video.id}${desde}`;
 }
-
-/** La miniatura del vídeo, que la sirve YouTube ya hecha. */
-export function miniaturaDeYouTube(video: VideoDeYouTube): string {
-  return `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
-}

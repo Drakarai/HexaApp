@@ -105,33 +105,3 @@ export function comoSeLee(multiplicador: number): string {
   if (multiplicador === 1) return "×1";
   return `×${multiplicador}`;
 }
-
-/**
- * El color de cada tipo, el de toda la vida. Van aquí y no en `globals.css`
- * porque hay que poder pintarlos desde JavaScript (la tabla se arma sola) y
- * porque son datos, no estilo de la aplicación.
- */
-export const COLOR_DE_TIPO: Record<string, string> = {
-  normal: "#9fa19f",
-  fighting: "#ff8000",
-  flying: "#81b9ef",
-  poison: "#9141cb",
-  ground: "#915121",
-  rock: "#afa981",
-  bug: "#91a119",
-  ghost: "#704170",
-  steel: "#60a1b8",
-  fire: "#e62829",
-  water: "#2980ef",
-  grass: "#3fa129",
-  electric: "#fac000",
-  psychic: "#ef4179",
-  ice: "#3dcef3",
-  dragon: "#5060e1",
-  dark: "#624d4e",
-  fairy: "#ef70ef",
-};
-
-export function colorDeTipo(slug: string) {
-  return COLOR_DE_TIPO[slug] ?? "#64748b";
-}

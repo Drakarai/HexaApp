@@ -28,7 +28,9 @@ import {
 import { MyTickets, TicketsPanel } from "./tickets";
 import { EntregarPremio } from "./entregar-premio";
 import { describirPremio } from "@/lib/premios-de-ruleta";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
+import type { Prisma } from "@prisma/client";
 import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Ruleta" };
@@ -43,7 +45,43 @@ export default async function RoulettePage({
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { r } = await searchParams;
-  const [canManage, roulettes, participants, balances] = await Promise.all([
+  /**
+   * Con sus casillas y sus giros, la que se mira: la que diga `?r=` si es de
+   * este locke, y si no la primera. Se piden **a la vez que la lista** (la del
+   * `?r=` y la primera, por si aquella no vale) en vez de esperar a tenerla;
+   * igual que los dibujos de los objetos y el catálogo, que antes iban cada
+   * uno en su ida y vuelta.
+   */
+  const conTodo = {
+    options: {
+      orderBy: { position: "asc" },
+      // Sin el dibujo: es una data URL y se pide aparte, por el almacén
+      include: {
+        item: { select: { id: true, name: true } },
+        ticketsDe: { select: { name: true } },
+      },
+    },
+    spins: {
+      orderBy: { createdAt: "desc" },
+      take: 20,
+      include: {
+        spunBy: { select: { displayName: true } },
+        premioItem: { select: { id: true, name: true } },
+        premioTickets: { select: { name: true } },
+        entregado: { select: { displayName: true, color: true } },
+      },
+    },
+  } satisfies Prisma.RouletteInclude;
+  const [
+    canManage,
+    roulettes,
+    participants,
+    balances,
+    pedida,
+    primera,
+    firmasObjeto,
+    todosLosObjetos,
+  ] = await Promise.all([
     canManageCompetition(competition.id, user),
     prisma.roulette.findMany({
       where: { competitionId: competition.id },
@@ -52,13 +90,36 @@ export default async function RoulettePage({
     }),
     getParticipants(competition.id),
     getTicketBalances(competition.id),
+    r
+      ? prisma.roulette.findFirst({
+          where: { id: r, competitionId: competition.id },
+          include: conTodo,
+        })
+      : null,
+    prisma.roulette.findFirst({
+      where: { competitionId: competition.id },
+      orderBy: { createdAt: "asc" },
+      include: conTodo,
+    }),
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select "id", ${firmaDeColumna(`"image"`)} as v from "Item"
+    `,
+    /**
+     * El catálogo de la bolsa, para poder poner objetos de premio. Es global y
+     * no de cada edición: ver el modelo `Item`. Solo se enseña si administras.
+     */
+    prisma.item.findMany({
+      orderBy: { name: "asc" },
+      // Sin el dibujo: son data URLs y en un desplegable no se ven
+      select: { id: true, name: true },
+    }),
   ]);
+  const selected = pedida ?? primera;
 
   const myParticipant = participants.find(
     (participant) => participant.userId === user.id,
   );
-  const selectedId = roulettes.find((roulette) => roulette.id === r)?.id ??
-    roulettes[0]?.id;
+  const selectedId = selected?.id;
 
   // Los tickets son de cada ruleta, así que el saldo depende de cuál se mire
   const myTickets =
@@ -68,56 +129,15 @@ export default async function RoulettePage({
   const cerrada = soloLectura(competition, canManage);
   const canSpin = canManage || (!cerrada && myTickets > 0);
 
-  const selected = selectedId
-    ? await prisma.roulette.findUnique({
-        where: { id: selectedId },
-        include: {
-          options: {
-            orderBy: { position: "asc" },
-            // Sin el dibujo: es una data URL y se pide aparte, por el almacén
-            include: {
-              item: { select: { id: true, name: true } },
-              ticketsDe: { select: { name: true } },
-            },
-          },
-          spins: {
-            orderBy: { createdAt: "desc" },
-            take: 20,
-            include: {
-              spunBy: { select: { displayName: true } },
-              premioItem: { select: { id: true, name: true } },
-              premioTickets: { select: { name: true } },
-              entregado: { select: { displayName: true, color: true } },
-            },
-          },
-        },
-      })
-    : null;
 
   /**
    * Los dibujos de los objetos, **como direcciones y no como imágenes**: ver
    * `lib/imagen-url.ts`. Metiendo la columna en el `select` viajaba la data URL
    * entera dentro del HTML, que es lo que el almacén está para evitar.
    */
-  const dibujos = await urlsDeImagen(
-    "objeto",
-    [
-      ...(selected?.options ?? []).map((casilla) => casilla.itemId),
-      ...(selected?.spins ?? []).map((giro) => giro.premioItemId),
-    ].filter((id): id is string => Boolean(id)),
-  );
-
-  /**
-   * El catálogo de la bolsa, para poder poner objetos de premio. Es global y no
-   * de cada edición: ver el modelo `Item`. Solo hace falta si administras.
-   */
-  const catalogo = canManage
-    ? await prisma.item.findMany({
-        orderBy: { name: "asc" },
-        // Sin el dibujo: son data URLs y en un desplegable no se ven
-        select: { id: true, name: true },
-      })
-    : [];
+  const firmaDeObjeto = new Map(firmasObjeto.map((fila) => [fila.id, fila.v]));
+  const dibujos = (id: string) => urlDeImagen("objeto", id, firmaDeObjeto.get(id));
+  const catalogo = canManage ? todosLosObjetos : [];
 
   return (
     <>

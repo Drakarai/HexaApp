@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { resolverImagen } from "@/lib/almacen-de-imagenes";
 import { buscarValor } from "@/lib/imagen-por-tipo";

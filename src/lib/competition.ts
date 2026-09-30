@@ -2,10 +2,11 @@ import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
-import { getTitulosEquipados, type TituloPuesto } from "@/lib/titulos";
+import { getTitulosEquipadosDelLocke, type TituloPuesto } from "@/lib/titulos";
 import { getCurrentUser, esCreador, type CurrentUser } from "@/lib/auth";
+import { readSession } from "@/lib/session";
 import { filtroDeLockesVisibles } from "@/lib/acceso";
-import { firmasDeDosImagenes, urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { COMPETITION_STATUS } from "@/lib/constants";
 
@@ -60,19 +61,44 @@ export type StandingRow = {
  * identificador en la cookie a mano.
  */
 export const getActiveCompetition = cache(async () => {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  const visibles = filtroDeLockesVisibles(user);
-
   const store = await cookies();
   const preferredId = store.get(COMPETITION_COOKIE)?.value;
+  const sesion = preferredId ? await readSession() : null;
 
-  if (preferredId) {
-    const preferred = await prisma.competition.findFirst({
-      where: { AND: [{ id: preferredId }, visibles] },
-    });
-    if (preferred) return preferred;
+  /**
+   * La elegida se pide **a la vez que la cuenta**, y no después: es la
+   * segunda ida y vuelta de todas las pantallas, y solo esperaba para saber
+   * quién mira. El id viene en la propia sesión (sin base de datos), así que
+   * se trae el locke con dos recuentos —si juega en él y si lo mira de
+   * espectador— y cuando llega la cuenta se aplica **la misma regla** que
+   * `filtroDeLockesVisibles`: el Creador lo ve todo, y los demás, si juegan o
+   * miran. Si no puede verlo o no existe, se sigue como siempre.
+   */
+  const [user, preferida] = await Promise.all([
+    getCurrentUser(),
+    preferredId && sesion
+      ? prisma.competition.findUnique({
+          where: { id: preferredId },
+          include: {
+            _count: {
+              select: {
+                participants: { where: { userId: sesion.userId } },
+                espectadores: { where: { userId: sesion.userId } },
+              },
+            },
+          },
+        })
+      : null,
+  ]);
+  if (!user) return null;
+  if (preferida && user.id === sesion?.userId) {
+    const { _count, ...competicion } = preferida;
+    if (esCreador(user) || _count.participants > 0 || _count.espectadores > 0) {
+      return competicion;
+    }
   }
+
+  const visibles = filtroDeLockesVisibles(user);
 
   return (
     (await prisma.competition.findFirst({
@@ -88,12 +114,31 @@ export const getActiveCompetition = cache(async () => {
 
 /** Las ediciones que esa persona puede abrir, para el selector y el histórico. */
 export const listCompetitions = cache(async () => {
-  const user = await getCurrentUser();
-  return prisma.competition.findMany({
-    where: filtroDeLockesVisibles(user),
-    orderBy: [{ status: "asc" }, { startedAt: "desc" }],
-    include: { _count: { select: { participants: true } } },
-  });
+  const sesion = await readSession();
+  if (!sesion) return [];
+  /**
+   * Como `getActiveCompetition`: **a la vez que la cuenta**. Se traen todas con
+   * dos marcas —si juega y si mira— y la regla de `filtroDeLockesVisibles` se
+   * aplica al llegar la cuenta: el Creador las ve todas; los demás, las suyas.
+   */
+  const [user, todas] = await Promise.all([
+    getCurrentUser(),
+    prisma.competition.findMany({
+      // El `id` desempata dos que empezaron a la vez, que si no Postgres los
+      // devuelve en cualquier orden y el selector bailaría de una carga a otra.
+      orderBy: [{ status: "asc" }, { startedAt: "desc" }, { id: "asc" }],
+      include: {
+        _count: { select: { participants: true } },
+        participants: { where: { userId: sesion.userId }, select: { id: true }, take: 1 },
+        espectadores: { where: { userId: sesion.userId }, select: { id: true }, take: 1 },
+      },
+    }),
+  ]);
+  if (!user || user.id !== sesion.userId) return [];
+  const creador = esCreador(user);
+  return todas
+    .filter((c) => creador || c.participants.length > 0 || c.espectadores.length > 0)
+    .map(({ participants: _juega, espectadores: _mira, ...competicion }) => competicion);
 });
 
 /**
@@ -102,39 +147,48 @@ export const listCompetitions = cache(async () => {
  * sola vez. Ver lib/imagen-url.ts.
  */
 export const getParticipants = cache(async (competitionId: string) => {
-  const participantes = await prisma.participant.findMany({
-    where: { competitionId },
-    orderBy: { displayName: "asc" },
-    include: {
-      user: { select: { id: true, username: true, role: true } },
-    },
-  });
-
-  // Dos consultas en vez de tres: las dos imágenes del as salen juntas porque
-  // son de la misma tabla. Cada consulta es un viaje a la base de datos.
-  const [avatares, [firmasAs, firmasAsFicha]] = await Promise.all([
-    urlsDeImagen(
-      "avatar",
-      participantes.map((p) => p.userId),
-    ),
-    firmasDeDosImagenes(
-      "as",
-      "as-ficha",
-      participantes.map((p) => p.id),
-    ),
+  /**
+   * Los participantes y las firmas de sus tres imágenes (avatar, as y su
+   * ilustración) **a la vez**. Antes las firmas se pedían después, con los ids
+   * de los participantes: una ida y vuelta más en casi todas las pantallas,
+   * porque casi todas pintan jugadores. Filtrando por el locke no hace falta
+   * esperar a tener los ids.
+   */
+  const [participantes, firmas] = await Promise.all([
+    prisma.participant.findMany({
+      where: { competitionId },
+      orderBy: { displayName: "asc" },
+      include: {
+        user: { select: { id: true, username: true, role: true } },
+      },
+    }),
+    prisma.$queryRaw<
+      { id: string; avatar: string | null; as: string | null; asFicha: string | null }[]
+    >`
+      select p."id",
+             ${firmaDeColumna(`u."avatarImage"`)} as "avatar",
+             ${firmaDeColumna(`p."aceImage"`)} as "as",
+             ${firmaDeColumna(`p."aceDetailImage"`)} as "asFicha"
+      from "Participant" p
+      join "User" u on u."id" = p."userId"
+      where p."competitionId" = ${competitionId}
+    `,
   ]);
+  const firmaDe = new Map(firmas.map((fila) => [fila.id, fila]));
 
-  return participantes.map((participante) => ({
-    ...participante,
-    aceImage: urlDeImagen("as", participante.id, firmasAs.get(participante.id)),
-    /** La ilustración grande del as, para su ficha */
-    aceDetailImage: urlDeImagen(
-      "as-ficha",
-      participante.id,
-      firmasAsFicha.get(participante.id),
-    ),
-    user: { ...participante.user, avatarImage: avatares(participante.userId) },
-  }));
+  return participantes.map((participante) => {
+    const suyas = firmaDe.get(participante.id);
+    return {
+      ...participante,
+      aceImage: urlDeImagen("as", participante.id, suyas?.as),
+      /** La ilustración grande del as, para su ficha */
+      aceDetailImage: urlDeImagen("as-ficha", participante.id, suyas?.asFicha),
+      user: {
+        ...participante.user,
+        avatarImage: urlDeImagen("avatar", participante.userId, suyas?.avatar),
+      },
+    };
+  });
 });
 
 /**
@@ -320,7 +374,7 @@ export const getStandings = cache(async (
    * que está en internet eso es una ida y vuelta entera de más para leer dos
    * números. Ninguna de las demás la necesita.
    */
-  const [competition, participants, pointSums, deathCounts, wipeoCounts, matches, challenges] =
+  const [competition, participants, pointSums, deathCounts, wipeoCounts, matches, challenges, titulos] =
     await Promise.all([
       prisma.competition.findUnique({
         where: { id: competitionId },
@@ -360,6 +414,9 @@ export const getStandings = cache(async (
           pokemonDiff: true,
         },
       }),
+      // Los títulos que lleva puestos cada uno, por el locke: pedidos con los
+      // ids de los participantes eran otra ida y vuelta después de esta
+      getTitulosEquipadosDelLocke(competitionId),
     ]);
 
   const startingPoints = competition?.startingPoints ?? 0;
@@ -378,10 +435,6 @@ export const getStandings = cache(async (
     matches,
     challenges,
     competition?.challengeDiffCounts ?? false,
-  );
-
-  const titulos = await getTitulosEquipados(
-    participants.map((participante) => participante.userId),
   );
 
   const rows = participants.map((participant) => {

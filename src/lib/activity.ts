@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { getParticipants } from "@/lib/competition";
 
 export type ActivityEntry = {
@@ -43,8 +44,14 @@ export async function getActivity(competitionId: string, limit = 60) {
    * consultas de abajo necesita a los jugadores —todas filtran por la edición—,
    * así que esperarlos costaba dos idas y vueltas enteras de la portada.
    */
+  /**
+   * Y las firmas de las imágenes, **también a la vez**: se buscan por la
+   * edición (las bajas) o de toda la tabla (los objetos, que son un catálogo
+   * pequeño), no por los ids de lo que salga. Esperar a saberlos era otra ida
+   * y vuelta; las fotos de los jugadores ya vienen con `getParticipants`.
+   */
   // prettier-ignore
-  const [jugadores, [deaths, points, clears, spins, tickets, matches, usos]] = await Promise.all([
+  const [jugadores, [deaths, points, clears, spins, tickets, matches, usos], [firmasBaja, firmasObjeto, firmasOpcion]] = await Promise.all([
     getParticipants(competitionId),
     Promise.all([
     prisma.death.findMany({
@@ -98,6 +105,19 @@ export async function getActivity(competitionId: string, limit = 60) {
       take,
     }),
     ] as const),
+    Promise.all([
+      firmasDe(prisma.$queryRaw<FilaDeFirma[]>`
+        select d."id", ${firmaDeColumna(`d."boxImage"`)} as v
+        from "Death" d join "Participant" p on p."id" = d."participantId"
+        where p."competitionId" = ${competitionId}
+      `),
+      firmasDe(prisma.$queryRaw<FilaDeFirma[]>`
+        select "id", ${firmaDeColumna(`"image"`)} as v from "Item"
+      `),
+      firmasDe(prisma.$queryRaw<FilaDeFirma[]>`
+        select "id", ${firmaDeColumna(`"image"`)} as v from "ItemOption"
+      `),
+    ]),
   ]);
 
   const porId = new Map(jugadores.map((jugador) => [jugador.id, jugador]));
@@ -105,23 +125,12 @@ export async function getActivity(competitionId: string, limit = 60) {
 
   // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts. Antes
   // el muro incrustaba el sprite de cada baja y la foto de cada jugador.
-  const usuarios = jugadores.map((jugador) => jugador.userId);
-
-  const [avatares, sprites, objetos, opciones] = await Promise.all([
-    urlsDeImagen("avatar", usuarios),
-    urlsDeImagen(
-      "baja",
-      deaths.map((death) => death.id),
-    ),
-    urlsDeImagen(
-      "objeto",
-      usos.map((uso) => uso.itemId).filter((id): id is string => Boolean(id)),
-    ),
-    urlsDeImagen(
-      "objeto-opcion",
-      usos.map((uso) => uso.optionId).filter((id): id is string => Boolean(id)),
-    ),
-  ]);
+  // La foto es la de los jugadores del locke: quien gira sin jugar no tiene
+  const avatarDe = new Map(jugadores.map((jugador) => [jugador.userId, jugador.user.avatarImage]));
+  const avatares = (userId: string) => avatarDe.get(userId) ?? null;
+  const sprites = (id: string) => urlDeImagen("baja", id, firmasBaja.get(id));
+  const objetos = (id: string) => urlDeImagen("objeto", id, firmasObjeto.get(id));
+  const opciones = (id: string) => urlDeImagen("objeto-opcion", id, firmasOpcion.get(id));
 
   const entries: ActivityEntry[] = [];
 
@@ -268,4 +277,10 @@ function aQuienSeSupera(hito: string): string {
   if (/^campeona(?=\s|$)/i.test(nombre)) return `a la ${nombre}`;
   if (/^(liga|gran prueba|prueba)(?=\s|$)/i.test(nombre)) return `la ${nombre}`;
   return `a ${nombre}`;
+}
+
+type FilaDeFirma = { id: string; v: string | null };
+
+async function firmasDe(filas: Promise<FilaDeFirma[]>) {
+  return new Map((await filas).map((fila) => [fila.id, fila.v]));
 }

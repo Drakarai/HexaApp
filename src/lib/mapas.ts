@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { firmasDeImagen, urlsDeImagen } from "@/lib/imagenes";
+import { Prisma } from "@prisma/client";
+import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import {
   REGIONES_DE_MAPA,
@@ -84,19 +85,37 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
   const region = REGIONES_DE_MAPA.find((candidata) => candidata.slug === slug);
   if (!region) return null;
 
-  const fila = await prisma.mapRegion.upsert({
-    where: { slug },
-    create: {
-      slug,
-      name: region.nombre,
-      width: LIENZO.ancho,
-      height: LIENZO.alto,
-    },
-    update: {},
-    // La imagen puede ser de varios cientos de KB: solo se quiere su firma
+  // La imagen puede ser de varios cientos de KB: solo se quiere su firma
+  const conZonas = {
     omit: { image: true },
-    include: { zones: { orderBy: [{ y: "asc" }, { x: "asc" }] } },
-  });
+    include: { zones: { orderBy: [{ y: "asc" as const }, { x: "asc" as const }] } },
+  };
+  /**
+   * **Primero se lee**, con la firma de su imagen a la vez, y solo si no existe
+   * se crea. Antes era un `upsert` en cada visita: una escritura cada vez que
+   * alguien abría el mapa, para algo que pasa una vez por región.
+   */
+  const [existente, firmas] = await Promise.all([
+    prisma.mapRegion.findUnique({ where: { slug }, ...conZonas }),
+    prisma.$queryRaw<{ v: string | null }[]>`
+      select ${firmaDeColumna(`"image"`)} as v from "MapRegion" where "slug" = ${slug}
+    `,
+  ]);
+  const fila =
+    existente ??
+    // El `upsert` sigue ahí para la primera vez: si dos la abren a la vez, no
+    // choca
+    (await prisma.mapRegion.upsert({
+      where: { slug },
+      create: {
+        slug,
+        name: region.nombre,
+        width: LIENZO.ancho,
+        height: LIENZO.alto,
+      },
+      update: {},
+      ...conZonas,
+    }));
 
   /**
    * Las hijas se cuelgan de su padre y salen de la lista de arriba: en el mapa
@@ -135,7 +154,8 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
       })),
   });
 
-  const firma = (await firmasDeImagen("mapa", [fila.id])).get(fila.id);
+  // Recién creada no tiene imagen
+  const firma = existente ? firmas[0]?.v : null;
 
   return {
     id: fila.id,
@@ -257,11 +277,11 @@ export async function zonaValidaParaCompeticion(
  * es, así que se piden igual que las capturas: filtrando por el participante.
  */
 export async function getMisBajasPorZona(
-  participantId: string,
+  quien: DeQuien,
 ): Promise<Record<string, number>> {
   const filas = await prisma.death.groupBy({
     by: ["zoneId"],
-    where: { participantId, zoneId: { not: null } },
+    where: { ...dondeEsDe(quien), zoneId: { not: null } },
     _count: { _all: true },
   });
 
@@ -283,46 +303,48 @@ export async function getZonasMasMortiferas(
   competitionId: string,
   cuantas = 4,
 ): Promise<{ id: string; name: string; kind: string; bajas: number }[]> {
-  const filas = await prisma.death.groupBy({
-    by: ["zoneId"],
-    where: { participant: { competitionId }, zoneId: { not: null } },
-    _count: { _all: true },
-    orderBy: { _count: { zoneId: "desc" } },
-    take: cuantas,
-  });
-  if (!filas.length) return [];
-
-  const zonas = await prisma.mapZone.findMany({
-    where: { id: { in: filas.map((fila) => fila.zoneId!) } },
-    select: { id: true, name: true, kind: true },
-  });
-  const porId = new Map(zonas.map((zona) => [zona.id, zona]));
-
-  return filas
-    .map((fila) => {
-      const zona = porId.get(fila.zoneId!);
-      return zona ? { ...zona, bajas: fila._count._all } : null;
-    })
-    .filter((fila) => fila !== null);
+  /**
+   * El recuento y el nombre de cada zona **en una sola consulta**: antes se
+   * contaba y luego se buscaban los nombres, dos idas y vueltas. Una zona
+   * borrada suelta sus bajas (`SetNull`), así que el JOIN no pierde nada.
+   */
+  const filas = await prisma.$queryRaw<{ id: string; name: string; kind: string; bajas: number }[]>`
+    select z."id", z."name", z."kind", count(*)::int as bajas
+    from "Death" d
+    join "Participant" p on p."id" = d."participantId"
+    join "MapZone" z on z."id" = d."zoneId"
+    where p."competitionId" = ${competitionId}
+    group by z."id", z."name", z."kind"
+    order by count(*) desc
+    limit ${cuantas}
+  `;
+  return filas;
 }
 
 /**
  * Las capturas de **una sola persona**. El participante no es opcional y no hay
  * versión que acepte varios: ver el comentario de arriba.
  */
-export async function getMisCapturas(
-  participantId: string,
-): Promise<CapturaApuntada[]> {
-  const filas = await prisma.capture.findMany({
-    where: { participantId },
-    orderBy: { createdAt: "desc" },
-    omit: { image: true },
-  });
-
-  const imagenes = await urlsDeImagen(
-    "captura",
-    filas.map((fila) => fila.id),
-  );
+export async function getMisCapturas(quien: DeQuien): Promise<CapturaApuntada[]> {
+  // Las capturas y las firmas de sus fotos, a la vez
+  const [filas, firmas] = await Promise.all([
+    prisma.capture.findMany({
+      where: dondeEsDe(quien),
+      orderBy: { createdAt: "desc" },
+      omit: { image: true },
+    }),
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select c."id", ${firmaDeColumna(`c."image"`)} as v
+      from "Capture" c join "Participant" p on p."id" = c."participantId"
+      where ${
+        typeof quien === "string"
+          ? Prisma.sql`p."id" = ${quien}`
+          : Prisma.sql`p."competitionId" = ${quien.competitionId} and p."userId" = ${quien.userId}`
+      }
+    `,
+  ]);
+  const firmaDe = new Map(firmas.map((fila) => [fila.id, fila.v]));
+  const imagenes = (id: string) => urlDeImagen("captura", id, firmaDe.get(id));
 
   return filas.map((fila) => ({
     id: fila.id,
@@ -334,4 +356,16 @@ export async function getMisCapturas(
     failed: fila.failed,
     createdAt: fila.createdAt,
   }));
+}
+
+/**
+ * **Una sola persona**: su participante, o su cuenta dentro de un locke (que es
+ * lo mismo, y deja pedir sus cosas sin esperar a saber qué participante es).
+ */
+export type DeQuien = string | { competitionId: string; userId: string };
+
+function dondeEsDe(quien: DeQuien) {
+  return typeof quien === "string"
+    ? { participantId: quien }
+    : { participant: { competitionId: quien.competitionId, userId: quien.userId } };
 }

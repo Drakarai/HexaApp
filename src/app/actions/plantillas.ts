@@ -12,7 +12,6 @@ import {
 import {
   asegurarPlantilla,
   deFabricaParaGrupo,
-  getPlantilla,
   getPlantillaConImagenes,
 } from "@/lib/plantillas";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";

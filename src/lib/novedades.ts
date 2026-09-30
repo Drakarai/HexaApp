@@ -1,7 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { getMyParticipant } from "@/lib/competition";
-import { puedeVotarElMvp } from "@/lib/wipeos";
+import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
 
 /**
  * El punto de "hay algo nuevo aquí" de las pestañas.
@@ -53,69 +53,65 @@ export async function getAvisos({
   esAdmin?: boolean;
 }): Promise<Avisos> {
   /**
-   * El participante se pide **aquí dentro y a la vez** que las marcas de
-   * visita. Antes lo pasaba el layout ya resuelto, así que esto no empezaba
-   * hasta que aquello volvía: una ida y vuelta de más en todas las pantallas.
-   * `getMyParticipant` va con `cache()`, así que pedirlo otra vez no es otro
-   * viaje —es el mismo que ya está en el aire—.
-   */
-  const [yo, marcas] = await Promise.all([
-    getMyParticipant(competitionId, userId),
-    prisma.tabSeen.findMany({
-      where: { userId, competitionId },
-      select: { tab: true, seenAt: true },
-    }),
-  ]);
-
-  const participantId = yo?.id ?? null;
-  /**
-   * Si le toca votar al MVP. El que se retiró no vota, y sin esto se quedaría
+   * **Una sola ida y vuelta.** Antes eran tres en fila: el participante y las
+   * marcas de visita, luego esta consulta con lo que devolvían, y luego el
+   * recuento de peticiones para el administrador. Ahora las tres cosas van
+   * dentro, como subconsultas: quién eres (`yo`), desde cuándo mirar cada
+   * pestaña (`desde`) y si hay peticiones.
+   *
+   * Sin participante (quien administra sin jugar) `yo` sale vacía, y todo lo
+   * que la compara se queda en falso solo, igual que antes con el id vacío.
+   *
+   * Si le toca votar al MVP: el que se retiró no vota, y sin esto se quedaría
    * con el punto ámbar de "tienes algo que hacer" encendido **para siempre**,
-   * porque lo que lo apaga es justamente votar. Ver `lib/wipeos.ts`.
+   * porque lo que lo apaga es justamente votar. Es `puedeVotarElMvp`, dicho en
+   * SQL (ver `lib/wipeos.ts`).
    */
-  const puedeVotar = yo ? puedeVotarElMvp(yo) : false;
-  const desde = (tab: PestanaConAviso) =>
-    marcas.find((marca) => marca.tab === tab)?.seenAt ?? EPOCA;
-
-  const combatesDesde = desde("Combates");
-  const edicionDesde = desde("La edición");
-  const loMioDesde = desde("Lo mío");
-  const reglasDesde = desde("Reglas");
-  // En SQL no hay "sin participante": se usa un id que no existe y las
-  // subconsultas suyas se quedan vacías solas.
-  const miId = participantId ?? "";
-  /** El mismo truco para el voto: si no votas, la subconsulta se queda vacía */
-  const votante = puedeVotar ? miId : "";
-
   const [fila] = await prisma.$queryRaw<
-    { combates: boolean; edicion: boolean; lomio: boolean; reglas: boolean }[]
+    { combates: boolean; edicion: boolean; lomio: boolean; reglas: boolean; peticiones: boolean }[]
   >`
+    WITH yo AS (
+      SELECT id,
+             ("retiredAt" IS NULL OR "motivoDeSalida" = ${MOTIVOS_DE_SALIDA.WIPEO}) AS vota
+        FROM "Participant"
+       WHERE "competitionId" = ${competitionId} AND "userId" = ${userId}
+       LIMIT 1
+    ),
+    desde AS (
+      SELECT
+        COALESCE(MAX("seenAt") FILTER (WHERE tab = 'Combates'), ${EPOCA}) AS combates,
+        COALESCE(MAX("seenAt") FILTER (WHERE tab = 'La edición'), ${EPOCA}) AS edicion,
+        COALESCE(MAX("seenAt") FILTER (WHERE tab = 'Lo mío'), ${EPOCA}) AS lomio,
+        COALESCE(MAX("seenAt") FILTER (WHERE tab = 'Reglas'), ${EPOCA}) AS reglas
+      FROM "TabSeen"
+      WHERE "userId" = ${userId} AND "competitionId" = ${competitionId}
+    )
     SELECT
       (
         -- Jornada o reto nuevos
         EXISTS (SELECT 1 FROM "Matchday"
                  WHERE "competitionId" = ${competitionId}
-                   AND "createdAt" > ${combatesDesde})
+                   AND "createdAt" > (SELECT combates FROM desde))
         OR EXISTS (SELECT 1 FROM "ChallengeMatch"
                     WHERE "competitionId" = ${competitionId}
-                      AND "createdAt" > ${combatesDesde})
+                      AND "createdAt" > (SELECT combates FROM desde))
         -- Un combate resuelto: el punto que reparte deja su rastro con fecha
         OR EXISTS (SELECT 1 FROM "PointEntry"
                     WHERE "competitionId" = ${competitionId}
                       AND "sourceMatchId" IS NOT NULL
-                      AND "createdAt" > ${combatesDesde})
+                      AND "createdAt" > (SELECT combates FROM desde))
         -- Un MVP que te toca votar. Este no se va por mirar: es algo que
         -- tienes que hacer, y se apaga cuando votas.
         OR EXISTS (
-          SELECT 1 FROM "Matchday" md
+          SELECT 1 FROM "Matchday" md, yo
            WHERE md."competitionId" = ${competitionId}
-             AND ${votante} <> ''
+             AND yo.vota
              AND EXISTS (SELECT 1 FROM "Match" mt
                           JOIN "MatchPokemon" mp ON mp."matchId" = mt.id
                          WHERE mt."matchdayId" = md.id)
              AND NOT EXISTS (SELECT 1 FROM "MvpVote" v
                               WHERE v."matchdayId" = md.id
-                                AND v."voterId" = ${votante})
+                                AND v."voterId" = yo.id)
         )
       ) AS combates,
       (
@@ -124,55 +120,52 @@ export async function getAvisos({
                   JOIN "Participant" p ON p.id = d."participantId"
                  WHERE p."competitionId" = ${competitionId}
                    AND p."userId" <> ${userId}
-                   AND d."createdAt" > ${edicionDesde})
+                   AND d."createdAt" > (SELECT edicion FROM desde))
         OR EXISTS (SELECT 1 FROM "PointEntry" pe
                      JOIN "Participant" p ON p.id = pe."participantId"
                     WHERE pe."competitionId" = ${competitionId}
                       AND p."userId" <> ${userId}
-                      AND pe."createdAt" > ${edicionDesde})
+                      AND pe."createdAt" > (SELECT edicion FROM desde))
         OR EXISTS (SELECT 1 FROM "GymClear" g
                      JOIN "Participant" p ON p.id = g."participantId"
                     WHERE p."competitionId" = ${competitionId}
                       AND p."userId" <> ${userId}
-                      AND g."clearedAt" > ${edicionDesde})
+                      AND g."clearedAt" > (SELECT edicion FROM desde))
       ) AS edicion,
       (
         -- Lo único de "Lo mío" que cambia sin que lo toques tú: la bolsa, que
         -- la llena la organización
-        EXISTS (SELECT 1 FROM "BagEntry"
-                 WHERE "participantId" = ${miId}
-                   AND "updatedAt" > ${loMioDesde})
+        EXISTS (SELECT 1 FROM "BagEntry" b, yo
+                 WHERE b."participantId" = yo.id
+                   AND b."updatedAt" > (SELECT lomio FROM desde))
       ) AS lomio,
       (
         -- Una regla que ha cambiado con el locke en marcha. La de quien la
         -- cambió no cuenta: ya sabe lo que ha escrito.
         EXISTS (SELECT 1 FROM "RuleSection"
                  WHERE "competitionId" = ${competitionId}
-                   AND "cambiadaAt" > ${reglasDesde}
+                   AND "cambiadaAt" > (SELECT reglas FROM desde)
                    AND "cambiadaPorId" IS DISTINCT FROM ${userId})
-      ) AS reglas
+      ) AS reglas,
+      (
+        -- Las peticiones de locke sin responder, solo para el administrador
+        ${esAdmin} AND EXISTS (SELECT 1 FROM "LockeRequest"
+                                WHERE estado = ${ESTADOS_DE_SOLICITUD.PENDIENTE})
+      ) AS peticiones
   `;
 
   /**
-   * Las peticiones de locke en solitario sin responder avisan al administrador
-   * en "La edición", que es donde vive Administración.
-   *
-   * **Este punto no se apaga por mirar la pestaña**, igual que el del MVP por
-   * votar: no es algo que ver, es algo que hacer. Se va cuando la petición se
-   * acepta o se rechaza, que es cuando de verdad está resuelta. Va aparte de la
-   * consulta grande porque solo le hace falta a los administradores y es un
-   * `count` de nada.
+   * Las peticiones avisan al administrador en "La edición", que es donde vive
+   * Administración. **Ese punto no se apaga por mirar la pestaña**, igual que el
+   * del MVP por votar: no es algo que ver, es algo que hacer. Se va cuando la
+   * petición se acepta o se rechaza, que es cuando de verdad está resuelta.
    */
-  const peticiones =
-    esAdmin &&
-    (await prisma.lockeRequest.count({ where: { estado: "PENDIENTE" } })) > 0;
-
   const reglas = Boolean(fila?.reglas);
   return {
     Combates: Boolean(fila?.combates),
     // Reglas vive en "La edición": su punto enciende también el del grupo, o
     // desde fuera no habría forma de enterarse
-    "La edición": Boolean(fila?.edicion) || peticiones || reglas,
+    "La edición": Boolean(fila?.edicion) || Boolean(fila?.peticiones) || reglas,
     "Lo mío": Boolean(fila?.lomio),
     Reglas: reglas,
   };

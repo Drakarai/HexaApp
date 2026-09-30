@@ -32,10 +32,28 @@ export default async function PalmaresPage({
   // No hace falta edición activa: esta pantalla va por encima de todas
   const user = await requireUser();
   const soloMias = (await searchParams).historial === "mias";
-  const [{ ediciones: todas, gente }, preferencias] = await Promise.all([
+  /** Apuntar lockes de antes lo puede hacer quien puede montarlos */
+  const puedeApuntar = esCreador(user) || puedeCrearLockes(user);
+  // Todo a la vez: lo del formulario de apuntar no espera al palmarés
+  const [{ ediciones: todas, gente }, preferencias, cuentas, jugandoAhora] = await Promise.all([
     getPalmares(),
     // A quién ha quitado de su palmarés: ver cuenta-de-cada-uno.tsx
     prisma.user.findUnique({ where: { id: user.id }, select: { palmaresOcultos: true } }),
+    // Las que puede poner: todas el Creador, las suyas un organizador
+    puedeApuntar ? cuentasQuePuedeApuntar(user) : [],
+    // Los del locke que se está jugando: son los que vienen marcados
+    puedeApuntar
+      ? getActiveCompetition().then((activa) =>
+          activa
+            ? prisma.participant
+                .findMany({
+                  where: { competitionId: activa.id },
+                  select: { userId: true },
+                })
+                .then((filas) => filas.map((fila) => fila.userId))
+            : [],
+        )
+      : [],
   ]);
   const ocultos = preferencias?.palmaresOcultos ?? [];
 
@@ -53,25 +71,6 @@ export default async function PalmaresPage({
   const deFuera = conMiGente.filter((e) => e.deFuera).length;
   const ediciones = soloMias ? conMiGente.filter((e) => !e.deFuera) : conMiGente;
 
-  /** Apuntar lockes de antes lo puede hacer quien puede montarlos */
-  const puedeApuntar = esCreador(user) || puedeCrearLockes(user);
-  const [cuentas, jugandoAhora] = puedeApuntar
-    ? await Promise.all([
-        // Las que puede poner: todas el Creador, las suyas un organizador
-        cuentasQuePuedeApuntar(user),
-        // Los del locke que se está jugando: son los que vienen marcados
-        getActiveCompetition().then((activa) =>
-          activa
-            ? prisma.participant
-                .findMany({
-                  where: { competitionId: activa.id },
-                  select: { userId: true },
-                })
-                .then((filas) => filas.map((fila) => fila.userId))
-            : [],
-        ),
-      ])
-    : [[], []];
 
   if (!conMiGente.length) {
     return (

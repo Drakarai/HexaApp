@@ -189,31 +189,6 @@ export async function entregarPremioAction(formData: FormData) {
   revalidatePath("/bolsa");
 }
 
-export async function updateOptionAction(formData: FormData) {
-  const id = String(formData.get("optionId") ?? "");
-  const option = await prisma.rouletteOption.findUnique({
-    where: { id },
-    include: { roulette: true },
-  });
-  if (!option) return;
-  await requireCompetitionManager(option.roulette.competitionId);
-
-  const weight = Number(formData.get("weight") ?? option.weight);
-
-  await prisma.rouletteOption.update({
-    where: { id },
-    data: {
-      label: String(formData.get("label") ?? "").trim() || option.label,
-      weight:
-        Number.isFinite(weight) && weight > 0 ? Math.trunc(weight) : option.weight,
-      color: String(formData.get("color") ?? "").trim() || option.color,
-      enabled: formData.get("enabled") === "on",
-    },
-  });
-
-  revalidatePath("/ruleta");
-}
-
 export async function toggleOptionAction(formData: FormData) {
   const id = String(formData.get("optionId") ?? "");
   const option = await prisma.rouletteOption.findUnique({

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { esCreador, getCurrentUser } from "@/lib/auth";
 import { leerCopia } from "@/lib/copias";
-import { ROLES } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;

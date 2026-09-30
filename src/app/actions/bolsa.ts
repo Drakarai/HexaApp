@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, requireCreador, esCreador } from "@/lib/auth";
+import { getCurrentUser, requireCreador } from "@/lib/auth";
 import {
   canManageCompetition,
   edicionCerradaPara,

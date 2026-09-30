@@ -1,7 +1,9 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { GENERACION_POR_DEFECTO, tipoPorId, tiposDePokemon } from "@/lib/tipos";
@@ -60,15 +62,24 @@ export type EquiposDelLocke = {
   generacion: number;
 };
 
+type QuienMiraLaCaja = { userId: string; gestiona: boolean; soloLectura: boolean };
+
 export async function getEquiposDelLocke(
   competicion: { id: string; gameId: string | null; juegoNoOficial: boolean; tipos: string | null },
-  quienMira: { userId: string; gestiona: boolean; soloLectura: boolean },
   /**
-   * Solo el tablero de este jugador. Es lo que se usa fuera del Soul Link,
-   * donde la caja es privada: lo de los demás **ni se lee**, que es la forma
-   * de que no se pueda colar en la página.
+   * Puede llegar sin resolver: solo hace falta al final, para saber qué
+   * tableros puede tocar, así que no tiene por qué retrasar las consultas.
    */
-  soloDe?: string,
+  quienMiraPedido:
+    | QuienMiraLaCaja
+    | Promise<QuienMiraLaCaja>,
+  /**
+   * Solo el tablero de este jugador: su participante, o su cuenta (que en un
+   * locke es lo mismo y no obliga a esperar a saber qué participante es). Es lo
+   * que se usa fuera del Soul Link, donde la caja es privada: lo de los demás
+   * **ni se lee**, que es la forma de que no se pueda colar en la página.
+   */
+  soloDe?: string | { userId: string },
 ): Promise<EquiposDelLocke> {
   /**
    * La generación manda en los tipos (Clefairy es Normal en Johto), y cada
@@ -77,9 +88,21 @@ export async function getEquiposDelLocke(
    */
   const generacion = generacionDeTipos(competicion) ?? GENERACION_POR_DEFECTO;
 
-  const [jugadores, capturas, cambios] = await Promise.all([
+  /**
+   * Todo a la vez, también las firmas de las imágenes (las capturas y las
+   * fotos de los jugadores): se buscan por el locke, no por los ids de lo que
+   * salga, que era otra ida y vuelta después de esta.
+   */
+  const jugador = !soloDe ? {} : typeof soloDe === "string" ? { id: soloDe } : { userId: soloDe.userId };
+  const deQuien = { competitionId: competicion.id, ...jugador };
+  const soloDeSql = !soloDe
+    ? Prisma.empty
+    : typeof soloDe === "string"
+      ? Prisma.sql` and p."id" = ${soloDe}`
+      : Prisma.sql` and p."userId" = ${soloDe.userId}`;
+  const [jugadores, capturas, cambios, firmasCaptura, firmasAvatar, quienMira] = await Promise.all([
     prisma.participant.findMany({
-      where: { competitionId: competicion.id, ...(soloDe ? { id: soloDe } : {}) },
+      where: deQuien,
       orderBy: { joinedAt: "asc" },
       select: {
         id: true,
@@ -91,11 +114,7 @@ export async function getEquiposDelLocke(
       },
     }),
     prisma.capture.findMany({
-      where: {
-        participant: { competitionId: competicion.id },
-        failed: false,
-        ...(soloDe ? { participantId: soloDe } : {}),
-      },
+      where: { participant: deQuien, failed: false },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
@@ -116,20 +135,28 @@ export async function getEquiposDelLocke(
     }),
     // El último cambio de cada uno, para el rótulo del botón de deshacer
     prisma.cambioDeCaja.findMany({
-      where: {
-        participant: { competitionId: competicion.id },
-        ...(soloDe ? { participantId: soloDe } : {}),
-      },
+      where: { participant: deQuien },
       orderBy: { createdAt: "desc" },
       distinct: ["participantId"],
       select: { participantId: true, descripcion: true },
     }),
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select c."id", ${firmaDeColumna(`c."image"`)} as v
+      from "Capture" c join "Participant" p on p."id" = c."participantId"
+      where p."competitionId" = ${competicion.id}${soloDeSql}
+    `,
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select u."id", ${firmaDeColumna(`u."avatarImage"`)} as v
+      from "User" u join "Participant" p on p."userId" = u."id"
+      where p."competitionId" = ${competicion.id}${soloDeSql}
+    `,
+    quienMiraPedido,
   ]);
 
-  const [imagenes, avatares] = await Promise.all([
-    urlsDeImagen("captura", capturas.map((c) => c.id)),
-    urlsDeImagen("avatar", jugadores.map((j) => j.userId)),
-  ]);
+  const firmaDeCaptura = new Map(firmasCaptura.map((fila) => [fila.id, fila.v]));
+  const firmaDeAvatar = new Map(firmasAvatar.map((fila) => [fila.id, fila.v]));
+  const imagenes = (id: string) => urlDeImagen("captura", id, firmaDeCaptura.get(id));
+  const avatares = (id: string) => urlDeImagen("avatar", id, firmaDeAvatar.get(id));
 
   const pokemon: PokemonDelTablero[] = capturas.map((c) => {
     const quien = queEs(c.pokemonId, c.species);

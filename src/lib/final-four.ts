@@ -8,7 +8,6 @@ import {
   ganadoresDeLaLlave,
   formatoParaJugadores,
   MINIMO_DE_JUGADORES,
-  PARA_GANAR_LA_LLAVE,
   type FormatoFinal,
 } from "@/lib/formatos-finales";
 

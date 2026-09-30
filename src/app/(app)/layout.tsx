@@ -98,8 +98,13 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireUser();
-  const [competitions, active] = await Promise.all([
+  /**
+   * La cuenta, los lockes y el activo **a la vez**: los dos últimos ya no
+   * esperan a la cuenta (ver `getActiveCompetition`). Van con `cache()`, así
+   * que la página, que los pide también, se encuentra estos mismos en marcha.
+   */
+  const [user, competitions, active] = await Promise.all([
+    requireUser(),
     listCompetitions(),
     getActiveCompetition(),
   ]);

@@ -11,10 +11,11 @@ import {
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
-import { ConfirmSubmit, EmptyState } from "@/components/ui";
+import { ConfirmSubmit } from "@/components/ui";
 import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 import { grupoDePlantillaDeJuego } from "@/lib/juegos";
-import { urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
+import { firmaDeColumna, urlsDeMedallasDelLocke } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { primerosEnPasar } from "@/lib/coronas";
 import { MatchTeams } from "@/components/match-team";
@@ -52,7 +53,13 @@ export default async function LevelCapsPage({
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, participants, levelCaps, jornadas] = await Promise.all([
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
+  /**
+   * Todo en la misma tanda: también los equipos del solitario, las firmas de
+   * sus sprites y las medallas, que se buscan por el locke. Antes eran tres
+   * idas y vueltas más, una detrás de otra.
+   */
+  const [canManage, participants, levelCaps, jornadas, equiposPorHito, firmasEquipo, medallas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getParticipants(competition.id),
     prisma.levelCap.findMany({
@@ -61,6 +68,25 @@ export default async function LevelCapsPage({
       include: { clears: true, videos: true },
     }),
     getJornadasParaCheckpoints(competition.id),
+    /**
+     * El equipo con el que se pasó cada gimnasio. **Solo en solitario**: en un
+     * locke de seis serían seis equipos por gimnasio y no lo apuntaría nadie.
+     */
+    perfil.enSolitario
+      ? prisma.matchPokemon.findMany({
+          where: { levelCap: { competitionId: competition.id } },
+          orderBy: { position: "asc" },
+        })
+      : [],
+    perfil.enSolitario
+      ? prisma.$queryRaw<{ id: string; v: string | null }[]>`
+          select mp."id", ${firmaDeColumna(`mp."boxImage"`)} as v
+          from "MatchPokemon" mp join "LevelCap" l on l."id" = mp."levelCapId"
+          where l."competitionId" = ${competition.id}
+        `
+      : [],
+    // Direcciones de las medallas: ver lib/imagen-url.ts
+    urlsDeMedallasDelLocke(competition.id),
   ]);
 
   // Archivada y sin administrarla: se ve quién pasó qué, pero no se marca nada
@@ -72,21 +98,8 @@ export default async function LevelCapsPage({
   // Para el botón de traerse los hitos: la plantilla es de la pareja de juegos
   const nombreJuego = grupoDePlantillaDeJuego(competition.gameId)?.nombre ?? null;
 
-  /**
-   * El equipo con el que se pasó cada gimnasio. **Solo en solitario**: en un
-   * locke de seis serían seis equipos por gimnasio y no lo apuntaría nadie.
-   */
-  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
-  const equiposPorHito = perfil.enSolitario
-    ? await prisma.matchPokemon.findMany({
-        where: { levelCap: { competitionId: competition.id } },
-        orderBy: { position: "asc" },
-      })
-    : [];
-  const spritesDeEquipo = await urlsDeImagen(
-    "equipo",
-    equiposPorHito.map((pokemon) => pokemon.id),
-  );
+  const firmaDeEquipo = new Map(firmasEquipo.map((fila) => [fila.id, fila.v]));
+  const spritesDeEquipo = (id: string) => urlDeImagen("equipo", id, firmaDeEquipo.get(id));
 
   /**
    * La corona de quien se pasó cada gimnasio antes que nadie. En solitario no:
@@ -125,8 +138,6 @@ export default async function LevelCapsPage({
     ),
   );
 
-  // Direcciones de las medallas: ver lib/imagen-url.ts
-  const medallas = await urlsDeMedallas(levelCaps.map((cap) => cap.id));
 
   /**
    * El primero que me queda por marcar. Es a donde lleva el botón de apuntar:

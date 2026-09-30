@@ -43,9 +43,26 @@ export default async function EquipoYPcPage({
 
   const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const { apuntar } = await searchParams;
-  const [yo, gestiona] = await Promise.all([
+  /**
+   * **Todo a la vez**: los tableros no esperan a saber qué participante eres
+   * (lo tuyo se busca por tu cuenta en el locke) ni si administras (eso solo
+   * decide al final qué se puede tocar). Antes eran dos idas y vueltas en fila.
+   */
+  const gestionaPedido = canManageCompetition(competition.id, user);
+  const quienMira = gestionaPedido.then((gestiona) => ({
+    userId: user.id,
+    // Fuera del Soul Link, quien administra no tiene aquí más mano que nadie
+    gestiona: perfil.cooperativo ? gestiona : false,
+    soloLectura: soloLectura(competition, gestiona),
+  }));
+  const [yo, gestiona, datos, zonas] = await Promise.all([
     getMyParticipant(competition.id, user.id),
-    canManageCompetition(competition.id, user),
+    gestionaPedido,
+    perfil.cooperativo
+      ? getEquiposDelLocke(competition, quienMira)
+      : // Solo lo tuyo
+        getEquiposDelLocke(competition, quienMira, { userId: user.id }),
+    getZonasParaElegir(regionesDelJuego(competition.gameId)),
   ]);
 
   // Fuera del Soul Link la caja es de cada uno: sin ficha, no hay nada tuyo
@@ -63,17 +80,6 @@ export default async function EquipoYPcPage({
   }
 
   const cerrada = soloLectura(competition, gestiona);
-  const [datos, zonas] = await Promise.all([
-    perfil.cooperativo
-      ? getEquiposDelLocke(competition, { userId: user.id, gestiona, soloLectura: cerrada })
-      : // Solo lo tuyo, y quien administra no tiene aquí más mano que nadie
-        getEquiposDelLocke(
-          competition,
-          { userId: user.id, gestiona: false, soloLectura: cerrada },
-          yo!.id,
-        ),
-    getZonasParaElegir(regionesDelJuego(competition.gameId)),
-  ]);
 
   // Lo tuyo primero: es lo que se viene a tocar
   const tableros = [...datos.tableros].sort(

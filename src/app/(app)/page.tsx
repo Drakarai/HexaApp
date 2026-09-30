@@ -22,7 +22,7 @@ import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { getActivity } from "@/lib/activity";
-import { urlsDeCarteles, urlsDeImagen, urlsDeMedallas } from "@/lib/imagenes";
+import { urlsDeCarteles, urlsDeImagen, urlsDeMedallasDelLocke } from "@/lib/imagenes";
 import { cx, formatDate, formatDateTime } from "@/lib/utils";
 import { copiarSiTocaDeFondo } from "@/lib/copia-automatica";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
@@ -66,7 +66,9 @@ export default async function DashboardPage() {
   const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
   const porJornadas = perfil.victoria === "jornadas";
 
-  const [standings, levelCaps, activity, recentSpins, jornadas, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico, liga] =
+  // Se pide una vez y lo usan dos: la tarjeta del final y el campeón
+  const estadoPedido = getFinalFourState(competition.id);
+  const [standings, levelCaps, activity, recentSpins, jornadas, myParticipant, formatoFinal, estadoFinal, marcador, castigos, canManage, progreso, grafico, liga, ganador, medallas, carteles, logos, equipos] =
     await Promise.all([
       getStandings(competition.id),
       prisma.levelCap.findMany({
@@ -96,7 +98,7 @@ export default async function DashboardPage() {
        * de enseñar el último level cap. Por dentro reaprovecha `getStandings`,
        * que esta página ya ha pedido.
        */
-      getFinalFourState(competition.id),
+      estadoPedido,
       porJornadas ? getMarcador(competition.id) : null,
       // Los castigos de los retos perdidos, que son cosa de todos
       getCastigosPendientes(competition.id),
@@ -113,19 +115,33 @@ export default async function DashboardPage() {
         : getGraficoClasificacion(competition.id),
       // En un Soul Link se acaba cuando todos se han pasado la Liga
       perfil.cooperativo ? getLigaEnCooperativo(competition.id) : null,
+      /**
+       * Quién ha ganado, y las direcciones de las imágenes de las tarjetas: van
+       * **aquí también**, aunque dependan de lo de arriba. El campeón sale del
+       * mismo estado del final (`cache()`), las medallas se piden de todos los
+       * hitos del locke y no solo del que toca, y el cartel y el logo son del
+       * locke. Pedidas después eran tres idas y vueltas más.
+       */
+      perfil.sinJornadas ? null : getCampeonDelLocke(competition.id, estadoPedido),
+      // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
+      urlsDeMedallasDelLocke(competition.id),
+      urlsDeCarteles([competition.id]),
+      // El logo de la edición, de fondo junto al nombre
+      urlsDeImagen("logo", [competition.id]),
+      /**
+       * En un Soul Link la portada enseña los equipos de todos en vez de una
+       * clasificación: es lo que se viene a mirar. Aquí son solo para mirar
+       * (`soloLectura`), así que si quien mira administra o no da igual y no
+       * hay que esperar a saberlo.
+       */
+      perfil.cooperativo
+        ? getEquiposDelLocke(competition, {
+            userId: user.id,
+            gestiona: false,
+            soloLectura: true,
+          })
+        : null,
     ]);
-  /**
-   * En un Soul Link la portada enseña los equipos de todos en vez de una
-   * clasificación: es lo que se viene a mirar. Va aparte porque necesita saber
-   * si quien mira administra (`canManage`), que sale de la tanda de arriba.
-   */
-  const equipos = perfil.cooperativo
-    ? await getEquiposDelLocke(competition, {
-        userId: user.id,
-        gestiona: canManage,
-        soloLectura: true,
-      })
-    : null;
   /** Sin la tarjeta de la jornada (solitario y Soul Link), lo de la izquierda ocupa todo */
   const aLoAncho = Boolean(progreso || equipos);
 
@@ -160,7 +176,6 @@ export default async function DashboardPage() {
       : `${standings[0].points} puntos`
     : "Sin clasificación";
 
-  const totalPlayers = standings.length;
   /** Los que siguen: un retirado ni avanza gimnasios ni tiene que esperar */
   const activos = standings.filter((row) => !row.retirado).length;
   /**
@@ -241,13 +256,6 @@ export default async function DashboardPage() {
   const rivalDeJornada =
     miParte?.tipo === "rival" ? (fichaDe.get(miParte.rivalId) ?? null) : null;
 
-  // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
-  const [medallas, carteles, logos] = await Promise.all([
-    urlsDeMedallas(currentCap ? [currentCap.id] : []),
-    tocaElFinal ? urlsDeCarteles([competition.id]) : null,
-    // El logo de la edición, de fondo junto al nombre
-    urlsDeImagen("logo", [competition.id]),
-  ]);
   const medallasDelCap = currentCap ? medallas(currentCap.id) : [];
 
   /**
@@ -269,9 +277,6 @@ export default async function DashboardPage() {
       ? miLlave.b
       : miLlave.a
     : null;
-  const ganador = perfil.sinJornadas
-    ? null
-    : await getCampeonDelLocke(competition.id, estadoFinal);
   const campeon = ganador?.champion ?? null;
   /**
    * En el dualocke se gana por mayoría de jornadas y se puede seguir jugando lo

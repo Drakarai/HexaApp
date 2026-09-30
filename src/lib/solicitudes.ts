@@ -28,13 +28,6 @@ export async function getSolicitudesPendientes() {
   });
 }
 
-/** Cuántas hay esperando. Es lo único que hace falta para el punto de aviso. */
-export async function cuantasSolicitudesPendientes() {
-  return prisma.lockeRequest.count({
-    where: { estado: ESTADOS_DE_SOLICITUD.PENDIENTE },
-  });
-}
-
 /**
  * Las de una persona, para que vea en qué quedaron las suyas. Se enseñan
  * también las rechazadas con el motivo: enterarse de que te han dicho que no

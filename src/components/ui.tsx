@@ -203,26 +203,3 @@ export function EmptyState({
     </div>
   );
 }
-
-/** <details> con estilo de tarjeta, para formularios que ocupan mucho. */
-export function Disclosure({
-  summary,
-  children,
-  defaultOpen = false,
-}: {
-  summary: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  return (
-    <details className="card group" open={defaultOpen}>
-      <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200 marker:hidden">
-        <span className="mr-2 inline-block transition group-open:rotate-90">
-          ▸
-        </span>
-        {summary}
-      </summary>
-      <div className="mt-4">{children}</div>
-    </details>
-  );
-}

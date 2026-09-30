@@ -2,7 +2,9 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { esCreador, getCurrentUser } from "@/lib/auth";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna, urlsDeImagen } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
+import { Prisma } from "@prisma/client";
 import {
   campeonYSubcampeon,
   formatoParaJugadores,
@@ -85,7 +87,6 @@ export type DatosDeLockeDeAntes = {
  * no es lo mismo que ganar un dualocke, y así se cuentan por separado.
  */
 export type Categoria = "grupo" | "dual" | "solitario" | "soullink";
-export const CATEGORIAS: Categoria[] = ["grupo", "dual", "solitario", "soullink"];
 
 export function categoriaDelLocke(jugadores: number): Categoria {
   return jugadores <= 1 ? "solitario" : jugadores === 2 ? "dual" : "grupo";
@@ -156,23 +157,28 @@ export async function getPalmares(): Promise<Palmares> {
    *   han jugado con otros. Así se lo pidió el grupo: para comparar entre amigos
    *   hace falta todo lo de cada uno. Solo se enseñan las cifras; la lista de
    *   ediciones de abajo sigue siendo solo de los lockes propios.
+   *
+   * **Tres idas y vueltas a la base de datos, no siete.** Cada paso pide a la
+   * vez todo lo que ya puede pedir: primero lo suyo, luego lo de su gente y
+   * luego todo lo que cuelga de esas ediciones.
    */
-  const mias = await prisma.competition.findMany({
-    where: {
-      OR: [
-        { participants: { some: { userId: yo.id } } },
-        { espectadores: { some: { userId: yo.id } } },
-      ],
-    },
-    select: { id: true, participants: { select: { userId: true } } },
-  });
+  const [mias, deAntesMios] = await Promise.all([
+    prisma.competition.findMany({
+      where: {
+        OR: [
+          { participants: { some: { userId: yo.id } } },
+          { espectadores: { some: { userId: yo.id } } },
+        ],
+      },
+      select: { id: true, participants: { select: { userId: true } } },
+    }),
+    /** Los lockes de antes que le tocan: los que jugó y los que apuntó él. */
+    prisma.lockeDeAntes.findMany({
+      where: { OR: [{ jugadoresIds: { has: yo.id } }, { createdById: yo.id }] },
+      select: { id: true, jugadoresIds: true },
+    }),
+  ]);
   const misIds = new Set(mias.map((c) => c.id));
-
-  /** Los lockes de antes que le tocan: los que jugó y los que apuntó él. */
-  const deAntesMios = await prisma.lockeDeAntes.findMany({
-    where: { OR: [{ jugadoresIds: { has: yo.id } }, { createdById: yo.id }] },
-    select: { id: true, jugadoresIds: true },
-  });
   const misDeAntes = new Set(deAntesMios.map((l) => l.id));
 
   const genteIds = new Set<string>([
@@ -182,38 +188,41 @@ export async function getPalmares(): Promise<Palmares> {
   ]);
   const deLaGente = [...genteIds];
 
-  // Sus lockes y todos los de su gente, para contar lo de cada uno entero
-  const competiciones = await prisma.competition.findMany({
-    where: {
-      OR: [{ id: { in: [...misIds] } }, { participants: { some: { userId: { in: deLaGente } } } }],
-    },
-    orderBy: { startedAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      game: true,
-      description: true,
-      startedAt: true,
-      maxPlayers: true,
-      estilo: true,
-      jornadasPrevistas: true,
-    },
-  });
+  const [competiciones, deAntes] = await Promise.all([
+    // Sus lockes y todos los de su gente, para contar lo de cada uno entero
+    prisma.competition.findMany({
+      where: {
+        OR: [{ id: { in: [...misIds] } }, { participants: { some: { userId: { in: deLaGente } } } }],
+      },
+      orderBy: { startedAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        game: true,
+        description: true,
+        startedAt: true,
+        maxPlayers: true,
+        estilo: true,
+        jornadasPrevistas: true,
+      },
+    }),
+    prisma.lockeDeAntes.findMany({
+      where: {
+        OR: [{ id: { in: [...misDeAntes] } }, { jugadoresIds: { hasSome: deLaGente } }],
+      },
+      orderBy: { cuando: "desc" },
+      include: {
+        ganador: { select: { id: true, displayName: true, avatarColor: true } },
+        subcampeon: {
+          select: { id: true, displayName: true, avatarColor: true },
+        },
+      },
+    }),
+  ]);
   const ids = competiciones.map((competicion) => competicion.id);
   const categoriaDe = new Map(competiciones.map((c) => [c.id, categoriaDeUnaEdicion(c)]));
-
-  const deAntes = await prisma.lockeDeAntes.findMany({
-    where: {
-      OR: [{ id: { in: [...misDeAntes] } }, { jugadoresIds: { hasSome: deLaGente } }],
-    },
-    orderBy: { cuando: "desc" },
-    include: {
-      ganador: { select: { id: true, displayName: true, avatarColor: true } },
-      subcampeon: {
-        select: { id: true, displayName: true, avatarColor: true },
-      },
-    },
-  });
+  /** La gente de los lockes de antes, que puede no jugar ya nada */
+  const deLosDeAntes = [...new Set(deAntes.flatMap((l) => l.jugadoresIds))];
 
   if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
@@ -222,7 +231,18 @@ export async function getPalmares(): Promise<Palmares> {
     .filter((c) => ["solitario", "soullink"].includes(categoriaDe.get(c.id)!))
     .map((c) => c.id);
 
-  const [participantes, finales, bajas, combates, ligas] = await Promise.all([
+  const [
+    participantes,
+    finales,
+    bajas,
+    combates,
+    ligas,
+    jornadas,
+    cuentas,
+    firmasDeAvatar,
+    logos,
+    logosDeAntes,
+  ] = await Promise.all([
     prisma.participant.findMany({
       where: { competitionId: { in: ids } },
       select: {
@@ -265,6 +285,40 @@ export async function getPalmares(): Promise<Palmares> {
           select: { participantId: true, levelCap: { select: { competitionId: true } } },
         })
       : [],
+    // De qué edición es cada jornada, para repartir los combates
+    prisma.matchday.findMany({
+      where: { competitionId: { in: ids } },
+      select: { id: true, competitionId: true },
+    }),
+    /**
+     * De los lockes de antes solo hay nombres de cuenta, no motes de edición:
+     * no existió ninguna ficha de participante de aquello. Se piden de una vez,
+     * que puede haber gente que ya no juegue nada y no salga por ningún otro
+     * lado.
+     */
+    deLosDeAntes.length
+      ? prisma.user.findMany({
+          where: { id: { in: deLosDeAntes } },
+          select: { id: true, displayName: true, avatarColor: true },
+        })
+      : [],
+    /**
+     * Las fotos de perfil, como **dirección** y no como imagen (ver
+     * `lib/imagen-url.ts`): las de quien juega estas ediciones y las de los
+     * lockes de antes. Se buscan por las ediciones y no por los ids de los
+     * participantes, para no tener que esperar a tenerlos.
+     */
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select u."id", ${firmaDeColumna(`u."avatarImage"`)} as v
+      from "User" u
+      where u."id" in (select "userId" from "Participant"
+                        where "competitionId" in (${Prisma.join(ids.length ? ids : [""])}))
+         or u."id" in (${Prisma.join(deLosDeAntes.length ? deLosDeAntes : [""])})
+    `,
+    // Los logos de las ediciones, para la vitrina de títulos de cada uno
+    urlsDeImagen("logo", ids),
+    // Y los de los lockes de antes, que también pueden tener
+    urlsDeImagen("logo-antes", deAntes.map((locke) => locke.id)),
   ]);
   /** Quién se ha pasado la Liga en cada edición */
   const ligaPasadaEn = new Map<string, Set<string>>();
@@ -273,36 +327,12 @@ export async function getPalmares(): Promise<Palmares> {
     ligaPasadaEn.set(edicion, (ligaPasadaEn.get(edicion) ?? new Set()).add(marca.participantId));
   }
 
-  /**
-   * Las fotos de perfil, como **dirección** y no como imagen. Se pidieron mal
-   * la primera vez —con un `select` de `avatarImage`— y salían vacías: el
-   * cliente de Prisma descarta las columnas de imagen por defecto (ver
-   * `lib/db.ts`), justo para que no se cuelen enteras en el HTML. Lo que hace
-   * falta es la dirección, y eso lo da `urlsDeImagen`.
-   */
-  const [avatares, logos, logosDeAntes] = await Promise.all([
-    urlsDeImagen("avatar", [
-      ...participantes.map((p) => p.userId),
-      // También los de los lockes de antes, que pueden ser gente que ya no juega
-      ...deAntes.flatMap((locke) => locke.jugadoresIds),
-    ]),
-    // Los logos de las ediciones, para la vitrina de títulos de cada uno
-    urlsDeImagen("logo", ids),
-    // Y los de los lockes de antes, que también pueden tener
-    urlsDeImagen("logo-antes", deAntes.map((locke) => locke.id)),
-  ]);
+  const firmaDeAvatar = new Map(firmasDeAvatar.map((fila) => [fila.id, fila.v]));
+  const avatares = (userId: string) => urlDeImagen("avatar", userId, firmaDeAvatar.get(userId));
   const porId = new Map(competiciones.map((c) => [c.id, c]));
 
   const porParticipante = new Map(participantes.map((p) => [p.id, p]));
-  // De qué edición es cada jornada, para repartir los combates
-  const jornadasDe = new Map(
-    (
-      await prisma.matchday.findMany({
-        where: { competitionId: { in: ids } },
-        select: { id: true, competitionId: true },
-      })
-    ).map((j) => [j.id, j.competitionId]),
-  );
+  const jornadasDe = new Map(jornadas.map((j) => [j.id, j.competitionId]));
   const bajasPorParticipante = new Map(
     bajas.map((fila) => [fila.participantId, fila._count._all]),
   );
@@ -542,17 +572,6 @@ export async function getPalmares(): Promise<Palmares> {
     if (perdedor) sumar(deLaPersona(perdedor), categoria, "derrotas");
   }
 
-  /**
-   * De los lockes de antes solo hay nombres de cuenta, no motes de edición: no
-   * existió ninguna ficha de participante de aquello. Se piden de una vez, que
-   * puede haber gente que ya no juegue nada y no salga por ningún otro lado.
-   */
-  const cuentas = deAntes.length
-    ? await prisma.user.findMany({
-        where: { id: { in: [...new Set(deAntes.flatMap((l) => l.jugadoresIds))] } },
-        select: { id: true, displayName: true, avatarColor: true },
-      })
-    : [];
   const nombreDeCuenta = new Map(cuentas.map((quien) => [quien.id, quien]));
 
   for (const locke of deAntes) {

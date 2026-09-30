@@ -52,34 +52,24 @@ export async function getTitulosDeUsuario(
   }));
 }
 
-/** Solo el que lleva puesto, para pintarlo debajo del nombre. */
-export async function getTituloEquipado(userId: string) {
-  const puesto = await prisma.titleAward.findFirst({
-    where: { userId, equipped: true },
-    include: { title: true },
-  });
-  if (!puesto) return null;
-  return {
-    name: puesto.title.name,
-    description: puesto.title.description,
-    icon: puesto.title.icon,
-    color: puesto.title.color,
-  };
-}
-
 /**
- * Los títulos que llevan puestos varias personas de una vez, para la
- * clasificación.
+ * Los títulos que llevan puestos quienes juegan un locke, para la
+ * clasificación. Se piden por el locke y no por la lista de personas para que
+ * vayan a la vez que los participantes y no después.
  *
  * Va en SQL directo y con un `join` a propósito: con `include` de Prisma serían
- * dos consultas, y la portada ya cuenta cada viaje a la base de datos (ver el
- * apartado de por qué la aplicación iba lenta).
+ * dos consultas, y cada viaje a la base de datos cuenta (ver el apartado de por
+ * qué la aplicación iba lenta).
  */
-export async function getTitulosEquipados(
-  userIds: string[],
+export async function getTitulosEquipadosDelLocke(
+  competitionId: string,
 ): Promise<Map<string, TituloPuesto>> {
-  if (!userIds.length) return new Map();
+  return titulosEquipadosDonde(
+    Prisma.sql`a."userId" in (select "userId" from "Participant" where "competitionId" = ${competitionId})`,
+  );
+}
 
+async function titulosEquipadosDonde(donde: Prisma.Sql) {
   const filas = await prisma.$queryRaw<
     ({ userId: string } & TituloPuesto)[]
   >`
@@ -87,7 +77,7 @@ export async function getTitulosEquipados(
     from "TitleAward" a
     join "Title" t on t."id" = a."titleId"
     where a."equipped" = true
-      and a."userId" in (${Prisma.join(userIds)})
+      and ${donde}
   `;
 
   return new Map(

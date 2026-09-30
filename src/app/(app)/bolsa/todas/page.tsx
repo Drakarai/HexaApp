@@ -47,14 +47,13 @@ export default async function BolsasPage() {
   if (!(await canManageCompetition(competition.id, user))) redirect("/bolsa");
   const mandaEnTodo = esCreador(user);
 
-  const [participantes, catalogo] = await Promise.all([
+  // Los jugadores, el catálogo y las bolsas de todos, a la vez
+  const catalogoPedido = getCatalogo();
+  const [participantes, catalogo, bolsas] = await Promise.all([
     getParticipants(competition.id),
-    getCatalogo(),
+    catalogoPedido,
+    getBolsas({ competitionId: competition.id }, catalogoPedido),
   ]);
-  const bolsas = await getBolsas(
-    participantes.map((participante) => participante.id),
-    catalogo,
-  );
 
   return (
     <>

@@ -10,7 +10,8 @@ import {
 } from "@/lib/competition";
 import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { getCampeonDelLocke } from "@/lib/campeon";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar } from "@/components/ui";
@@ -37,7 +38,19 @@ export default async function HallOfFamePage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const state = await getFinalFourState(competition.id);
+  /**
+   * Lo que decide si el hall se abre, **todo a la vez**: el estado del final,
+   * el progreso en solitario, la Liga en un Soul Link y el campeón (que sale
+   * del mismo estado del final, con `cache()`). Antes iban uno detrás de otro.
+   */
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
+  const estadoPedido = getFinalFourState(competition.id);
+  const [state, progreso, liga, campeon] = await Promise.all([
+    estadoPedido,
+    perfil.enSolitario ? getProgresoEnSolitario(competition.id) : null,
+    perfil.cooperativo ? getLigaEnCooperativo(competition.id) : null,
+    perfil.sinJornadas ? null : getCampeonDelLocke(competition.id, estadoPedido),
+  ]);
   // El final del locke no siempre se llama igual: ver lib/formatos-finales.ts
   const nombreFinal =
     ("formato" in state ? state.formato?.nombre : null) ?? NOMBRE_POR_DEFECTO;
@@ -47,13 +60,8 @@ export default async function HallOfFamePage() {
    * **pasarse la Liga**. Sin esto el hall no se abriría nunca en una partida de
    * una persona, porque exige campeón de la Final Four.
    */
-  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
-  const progreso = perfil.enSolitario
-    ? await getProgresoEnSolitario(competition.id)
-    : null;
   const terminadoEnSolitario = Boolean(progreso?.ligaSuperada);
-  /** En un Soul Link, lo mismo pero entre todos: todos los que siguen */
-  const liga = perfil.cooperativo ? await getLigaEnCooperativo(competition.id) : null;
+  // En un Soul Link, lo mismo pero entre todos: todos los que siguen (`liga`)
 
   if (liga && !liga.superada) {
     const faltan = liga.jugadores.filter((j) => !j.ligaPasada).map((j) => j.displayName);
@@ -103,7 +111,6 @@ export default async function HallOfFamePage() {
     );
   }
 
-  const campeon = perfil.sinJornadas ? null : await getCampeonDelLocke(competition.id, state);
   if (!perfil.sinJornadas && !campeon) {
     return (
       <>
@@ -140,7 +147,7 @@ export default async function HallOfFamePage() {
    */
   const elFinal = state.status === "TERMINADA" ? state : null;
 
-  const [canManage, standings, entries, resumen] = await Promise.all([
+  const [canManage, standings, entries, resumen, firmas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getStandings(competition.id),
     prisma.hallOfFameEntry.findMany({
@@ -148,14 +155,20 @@ export default async function HallOfFamePage() {
       orderBy: { position: "asc" },
     }),
     getResumenDelLocke(competition.id),
+    // Las firmas de los sprites, por el locke: a la vez que las entradas
+    prisma.$queryRaw<{ id: string; va: string | null; vb: string | null }[]>`
+      select h."id",
+             ${firmaDeColumna(`h."image"`)} as va,
+             ${firmaDeColumna(`h."detailImage"`)} as vb
+      from "HallOfFameEntry" h join "Participant" p on p."id" = h."participantId"
+      where p."competitionId" = ${competition.id}
+    `,
   ]);
 
   // Direcciones de los sprites, no los sprites: ver lib/imagen-url.ts
-  const ids = entries.map((entry) => entry.id);
-  const [sprites, fichas] = await Promise.all([
-    urlsDeImagen("salon", ids),
-    urlsDeImagen("salon-ficha", ids),
-  ]);
+  const firmaDe = new Map(firmas.map((fila) => [fila.id, fila]));
+  const sprites = (id: string) => urlDeImagen("salon", id, firmaDe.get(id)?.va);
+  const fichas = (id: string) => urlDeImagen("salon-ficha", id, firmaDe.get(id)?.vb);
 
   /**
    * De qué jornada se le puede traer el equipo a cada uno. Solo se mira para

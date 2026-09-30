@@ -27,10 +27,39 @@ export default async function NotesPage({
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const { sobre } = await searchParams;
-  const [participants, yo, acceso] = await Promise.all([
+  // Solo se leen notas cuyo autor es el usuario actual: privacidad total.
+  const mias = (subjectId: string | null) =>
+    prisma.note.findMany({
+      where: { competitionId: competition.id, authorId: user.id, subjectId },
+      orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
+    });
+  const sobreAlguien = sobre && sobre !== "general" ? sobre : null;
+
+  /**
+   * **Todo a la vez**: el equipo de la calculadora se busca por tu cuenta en
+   * el locke, sin esperar a tu participante, y las notas también. Las de
+   * `?sobre=` y las generales van juntas porque hasta tener a los jugadores no
+   * se sabe si ese `sobre` es de verdad uno de ellos (si no, se enseñan las
+   * generales). Antes eran tres idas y vueltas en fila.
+   */
+  const [participants, yo, acceso, equipo, notasSobre, notasGenerales, counts] = await Promise.all([
     getParticipants(competition.id),
     getMyParticipant(competition.id, user.id),
     getAcceso(competition.id),
+    /**
+     * El equipo de la calculadora de tipos. Se pide por participante, igual
+     * que las notas: no hay forma de leer el de otro.
+     */
+    prisma.typeTeam.findFirst({
+      where: { participant: { competitionId: competition.id, userId: user.id } },
+    }),
+    sobreAlguien ? mias(sobreAlguien) : null,
+    mias(null),
+    prisma.note.groupBy({
+      by: ["subjectId"],
+      where: { competitionId: competition.id, authorId: user.id },
+      _count: { _all: true },
+    }),
   ]);
 
   /**
@@ -54,13 +83,6 @@ export default async function NotesPage({
     );
   }
 
-  /**
-   * El equipo de la calculadora de tipos. Se pide por participante, igual que
-   * las notas: no hay forma de leer el de otro.
-   */
-  const equipo = yo
-    ? await prisma.typeTeam.findUnique({ where: { participantId: yo.id } })
-    : null;
   let miEquipo: MiembroDelEquipo[] = [];
   try {
     // Es JSON escrito por nosotros, pero si alguna vez se corrompe es mejor
@@ -73,22 +95,7 @@ export default async function NotesPage({
   const selected = participants.find((participant) => participant.id === sobre);
   const scope = sobre === "general" || !selected ? "general" : selected.id;
 
-  // Solo se leen notas cuyo autor es el usuario actual: privacidad total.
-  const [notes, counts] = await Promise.all([
-    prisma.note.findMany({
-      where: {
-        competitionId: competition.id,
-        authorId: user.id,
-        subjectId: scope === "general" ? null : scope,
-      },
-      orderBy: [{ pinned: "desc" }, { updatedAt: "desc" }],
-    }),
-    prisma.note.groupBy({
-      by: ["subjectId"],
-      where: { competitionId: competition.id, authorId: user.id },
-      _count: { _all: true },
-    }),
-  ]);
+  const notes = scope === "general" ? notasGenerales : (notasSobre ?? []);
 
   const countFor = (subjectId: string | null) =>
     counts.find((row) => row.subjectId === subjectId)?._count._all ?? 0;

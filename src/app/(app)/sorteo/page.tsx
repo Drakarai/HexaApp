@@ -8,7 +8,8 @@ import {
   soloActivos,
   soloLectura,
 } from "@/lib/competition";
-import { urlsDeImagen } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
+import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
@@ -29,7 +30,7 @@ export default async function SorteoPage() {
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, yo, participants, sorteos] = await Promise.all([
+  const [canManage, yo, participants, sorteos, firmas] = await Promise.all([
     canManageCompetition(competition.id, user),
     getMyParticipant(competition.id, user.id),
     getParticipants(competition.id),
@@ -41,13 +42,17 @@ export default async function SorteoPage() {
         pokemon: { orderBy: [{ tocaAId: "asc" }, { position: "asc" }] },
       },
     }),
+    // Las firmas de los sprites, por el locke: a la vez, no después
+    prisma.$queryRaw<{ id: string; v: string | null }[]>`
+      select sp."id", ${firmaDeColumna(`sp."boxImage"`)} as v
+      from "SorteoPokemon" sp join "Sorteo" s on s."id" = sp."sorteoId"
+      where s."competitionId" = ${competition.id}
+    `,
   ]);
 
   // Los sprites, por dirección y no metidos en la página: ver lib/imagen-url.ts
-  const sprites = await urlsDeImagen(
-    "sorteo",
-    sorteos.flatMap((sorteo) => sorteo.pokemon.map((pokemon) => pokemon.id)),
-  );
+  const firmaDe = new Map(firmas.map((fila) => [fila.id, fila.v]));
+  const sprites = (id: string) => urlDeImagen("sorteo", id, firmaDe.get(id));
 
   const activos = soloActivos(participants);
 

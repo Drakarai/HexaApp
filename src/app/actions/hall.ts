@@ -119,18 +119,3 @@ export async function removeHallPokemonAction(formData: FormData) {
   await prisma.hallOfFameEntry.delete({ where: { id } });
   revalidatePath("/hall-de-la-fama");
 }
-
-export async function updateHallPokemonAction(formData: FormData) {
-  const id = String(formData.get("entryId") ?? "");
-  const entry = await prisma.hallOfFameEntry.findUnique({ where: { id } });
-  if (!entry) return;
-  await assertCanActForParticipant(entry.participantId);
-
-  await prisma.hallOfFameEntry.update({
-    where: { id },
-    data: {
-      nickname: String(formData.get("nickname") ?? "").trim() || null,
-    },
-  });
-  revalidatePath("/hall-de-la-fama");
-}

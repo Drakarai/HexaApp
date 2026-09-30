@@ -51,10 +51,6 @@ export function esFondo(valor: string): valor is FondoDeCaja {
   return FONDOS_DE_CAJA.some((f) => f.slug === valor);
 }
 
-export function nombreDelFondo(fondo: FondoDeCaja) {
-  return FONDOS_DE_CAJA.find((f) => f.slug === fondo)?.nombre ?? "";
-}
-
 /** Lo guardado, leído: una posición por caja, vacía si va el de fábrica */
 export function leerFondos(guardado: string | null | undefined): (FondoDeCaja | null)[] {
   if (!guardado) return [];
