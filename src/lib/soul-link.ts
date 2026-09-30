@@ -2,7 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/db";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { urlsDeImagen } from "@/lib/imagenes";
-import { generacionDelJuego } from "@/lib/juegos";
+import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { GENERACION_POR_DEFECTO, colorDeTipo, tipoPorId, tiposDePokemon } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
@@ -58,7 +58,7 @@ export type EquiposDelLocke = {
 };
 
 export async function getEquiposDelLocke(
-  competicion: { id: string; gameId: string | null; juegoNoOficial: boolean },
+  competicion: { id: string; gameId: string | null; juegoNoOficial: boolean; tipos: string | null },
   quienMira: { userId: string; gestiona: boolean; soloLectura: boolean },
   /**
    * Solo el tablero de este jugador. Es lo que se usa fuera del Soul Link,
@@ -68,11 +68,11 @@ export async function getEquiposDelLocke(
   soloDe?: string,
 ): Promise<EquiposDelLocke> {
   /**
-   * La generación manda en los tipos (Clefairy es Normal en Johto); en un
-   * fangame, los de su base. Las evoluciones no dependen de ella: se ofrecen
+   * La generación manda en los tipos (Clefairy es Normal en Johto), y cada
+   * locke elige si usa la de su juego o la de ahora (ver `generacionDeTipos`). Las evoluciones no dependen de ella: se ofrecen
    * todas (ver lib/evoluciones.ts).
    */
-  const generacion = generacionDelJuego(competicion.gameId) ?? GENERACION_POR_DEFECTO;
+  const generacion = generacionDeTipos(competicion) ?? GENERACION_POR_DEFECTO;
 
   const [jugadores, capturas, cambios] = await Promise.all([
     prisma.participant.findMany({

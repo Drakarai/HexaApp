@@ -488,6 +488,13 @@ model Competition {
    * no su nombre ni sus versiones. Sin base, se empieza de cero y no hay mapa.
    */
   juegoNoOficial Boolean @default(false)
+  /**
+   * Qué tipos se usan: `"antiguos"` (los de la generación del juego: sin Hada,
+   * Clefairy Normal) o `"actuales"` (los de ahora). Solo se elige en juegos de
+   * la 1ª a la 5ª y en fangames sin base; vacío es lo de cada uno (ver
+   * `generacionDeTipos` en lib/juegos.ts).
+   */
+  tipos          String?
   // Modalidad ("Random", "Nuzlocke clásico", ...)
   modality            String?
   description         String?

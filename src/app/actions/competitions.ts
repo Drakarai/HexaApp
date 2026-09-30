@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { leerJuego, repartirVersiones, versionesDeLaEdicion } from "@/lib/juegos";
+import { leerJuego, leerTipos, repartirVersiones, versionesDeLaEdicion } from "@/lib/juegos";
 import {
   esCreador,
   requireOrganizador,
@@ -163,6 +163,8 @@ export async function createCompetitionAction(
       game,
       gameId,
       juegoNoOficial,
+      // Solo llega si el juego deja elegir (ver JuegoPicker); si no, lo de cada juego
+      tipos: leerTipos(formData.get("tipos")),
       modality,
       description,
       startingPoints: Math.trunc(startingPoints),
@@ -371,6 +373,7 @@ export async function updateCompetitionAction(
       game: juego.game,
       gameId: juego.gameId,
       juegoNoOficial: juego.juegoNoOficial,
+      tipos: leerTipos(formData.get("tipos")),
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),

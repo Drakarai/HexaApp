@@ -2,11 +2,16 @@
 
 import { useId, useState } from "react";
 import {
+  generacionDelJuego,
   juegoPorId,
   juegosPorGrupo,
+  leerTipos,
   nombreDeRegion,
+  puedeElegirTipos,
   regionesDelJuego,
+  tiposPorDefecto,
   versionesDelJuego,
+  type EleccionDeTipos,
 } from "@/lib/juegos";
 import { cx } from "@/lib/utils";
 
@@ -32,13 +37,26 @@ export function JuegoPicker({
   defaultGameId = "",
   defaultGame = "",
   defaultNoOficial = false,
+  conTipos = false,
+  defaultTipos = null,
 }: {
   defaultGameId?: string | null;
   defaultGame?: string | null;
   defaultNoOficial?: boolean;
+  /**
+   * Si se pregunta con qué tipos se juega (ver `generacionDeTipos`). Al crear
+   * y al editar sí; al pedir un locke no, que eso lo decide quien lo monta.
+   */
+  conTipos?: boolean;
+  defaultTipos?: string | null;
 }) {
   const [noOficial, setNoOficial] = useState(defaultNoOficial);
   const [gameId, setGameId] = useState(defaultGameId ?? "");
+  // Lo elegido a mano; sin tocar, lo que toque al juego que esté puesto
+  const [tiposElegidos, setTipos] = useState<EleccionDeTipos | null>(leerTipos(defaultTipos));
+  const tipos = tiposElegidos ?? tiposPorDefecto(gameId);
+  const eligeTipos = conTipos && puedeElegirTipos(gameId, noOficial);
+  const generacion = generacionDelJuego(gameId);
   const campo = useId();
   const region = juegoPorId(gameId)?.region;
   /**
@@ -151,6 +169,41 @@ export function JuegoPicker({
           </p>
         ) : null}
       </div>
+
+      {eligeTipos ? (
+        <div>
+          <p className="label">Tipos</p>
+          <div className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-1">
+            {(
+              [
+                ["antiguos", generacion ? `Los de la ${generacion}ª generación` : "Antiguos, sin Hada"],
+                ["actuales", "Los de ahora"],
+              ] as const
+            ).map(([cual, rotulo]) => (
+              <button
+                key={cual}
+                type="button"
+                onClick={() => setTipos(cual)}
+                aria-pressed={tipos === cual}
+                className={cx(
+                  "flex-1 rounded-md px-2 py-1.5 text-xs font-medium transition",
+                  tipos === cual
+                    ? "bg-brand-600/25 text-white ring-1 ring-brand-500/40"
+                    : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
+                )}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
+          <input type="hidden" name="tipos" value={tipos} />
+          <p className="mt-1 text-xs text-slate-500">
+            {tipos === "antiguos"
+              ? "Sin tipo Hada y con la tabla de entonces: Clefairy es Normal. Salen así en Equipo y PC y en la cobertura de tipos."
+              : "Con tipo Hada y la tabla de hoy, como en los juegos nuevos y los simuladores."}
+          </p>
+        </div>
+      ) : null}
 
       {noOficial ? null : (
         <div>

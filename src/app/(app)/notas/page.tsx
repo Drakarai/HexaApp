@@ -9,7 +9,7 @@ import { cx, formatDateTime } from "@/lib/utils";
 import { CoberturaDeTipos } from "@/components/cobertura-de-tipos";
 import type { MiembroDelEquipo } from "@/app/actions/tipos";
 import { getMyParticipant } from "@/lib/competition";
-import { generacionDelJuego, nombreDelJuego } from "@/lib/juegos";
+import { generacionDeTipos, nombreDelJuego } from "@/lib/juegos";
 import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
 import { NewNoteForm, NoteCard } from "./note-forms";
 import { getAcceso } from "@/lib/acceso";
@@ -115,7 +115,7 @@ export default async function NotesPage({
           <div className="mt-4">
             <CoberturaDeTipos
               generacionDelLocke={
-                generacionDelJuego(competition.gameId) ?? GENERACION_POR_DEFECTO
+                generacionDeTipos(competition) ?? GENERACION_POR_DEFECTO
               }
               juego={nombreDelJuego(competition.gameId, competition.game, competition.juegoNoOficial)}
               inicial={miEquipo}

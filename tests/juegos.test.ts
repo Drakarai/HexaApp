@@ -122,3 +122,42 @@ describe("la generación de cada juego", () => {
     assert.deepEqual(tipos("esmeralda"), ["normal"]);
   });
 });
+
+import { generacionDeTipos, puedeElegirTipos } from "@/lib/juegos";
+
+describe("elegir los tipos", () => {
+  const edicion = (gameId: string | null, tipos: string | null, juegoNoOficial = false) => ({
+    gameId,
+    tipos,
+    juegoNoOficial,
+  });
+
+  test("se elige de la 1ª a la 5ª y en fangames sin base, no de la 6ª en adelante", () => {
+    assert.equal(puedeElegirTipos("rojo-azul", false), true);
+    assert.equal(puedeElegirTipos("heartgold-soulsilver", false), true);
+    assert.equal(puedeElegirTipos("negro2-blanco2", false), true);
+    assert.equal(puedeElegirTipos("x-y", false), false);
+    assert.equal(puedeElegirTipos("rubiomega-zafiroalfa", false), false);
+    assert.equal(puedeElegirTipos(null, true), true);
+    // Un fangame con base va con su base
+    assert.equal(puedeElegirTipos("rojo-azul", true), true);
+    assert.equal(puedeElegirTipos(null, false), false);
+  });
+
+  test("por defecto, los de su generación; los de ahora si se eligen", () => {
+    assert.equal(generacionDeTipos(edicion("heartgold-soulsilver", null)), 4);
+    assert.equal(generacionDeTipos(edicion("heartgold-soulsilver", "antiguos")), 4);
+    assert.equal(generacionDeTipos(edicion("heartgold-soulsilver", "actuales")), null);
+    assert.equal(generacionDeTipos(edicion("rojo-azul", null)), 1);
+  });
+
+  test("de la 6ª en adelante no cambia nada", () => {
+    assert.equal(generacionDeTipos(edicion("x-y", "antiguos")), 6);
+    assert.equal(generacionDeTipos(edicion("sol-luna", null)), 7);
+  });
+
+  test("un fangame sin base: los de ahora, o los de la 5ª si se piden antiguos", () => {
+    assert.equal(generacionDeTipos(edicion(null, null, true)), null);
+    assert.equal(generacionDeTipos(edicion(null, "antiguos", true)), 5);
+  });
+});

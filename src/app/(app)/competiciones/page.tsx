@@ -464,6 +464,7 @@ export default async function CompetitionsPage() {
                   game: active.game,
                   gameId: active.gameId,
                   juegoNoOficial: active.juegoNoOficial,
+                  tipos: active.tipos,
                   modality: active.modality,
                   description: active.description,
                   startingPoints: active.startingPoints,

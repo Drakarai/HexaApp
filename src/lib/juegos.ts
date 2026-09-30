@@ -276,6 +276,52 @@ export function generacionDelJuego(id: string | null | undefined) {
   );
 }
 
+/**
+ * Los tipos de un locke: los de la generación de su juego o los de ahora.
+ *
+ * Hasta la 5ª el tipo Hada no existía y la tabla era otra (Acero resistía a
+ * Fantasma y Siniestro; en la 1ª, más cambios). Hay grupos que juegan los
+ * combates con los tipos de su juego y otros que usan los de ahora, así que
+ * **se elige por locke**. De la 6ª en adelante son los mismos y no hay nada
+ * que elegir. Un fangame sin base no tiene generación: por defecto lleva los
+ * de ahora, y "antiguos" son los de la 5ª, la última sin Hada.
+ */
+export type EleccionDeTipos = "antiguos" | "actuales";
+export const ULTIMA_GENERACION_SIN_HADA = 5;
+
+export function leerTipos(valor: unknown): EleccionDeTipos | null {
+  return valor === "antiguos" || valor === "actuales" ? valor : null;
+}
+
+/** Si ese juego deja elegir los tipos: de la 1ª a la 5ª, o un fangame sin base */
+export function puedeElegirTipos(gameId: string | null | undefined, noOficial: boolean) {
+  const generacion = generacionDelJuego(gameId);
+  return generacion === null ? noOficial : generacion <= ULTIMA_GENERACION_SIN_HADA;
+}
+
+/** Lo que se usa si nadie ha elegido nada */
+export function tiposPorDefecto(gameId: string | null | undefined): EleccionDeTipos {
+  const generacion = generacionDelJuego(gameId);
+  return generacion !== null && generacion <= ULTIMA_GENERACION_SIN_HADA ? "antiguos" : "actuales";
+}
+
+/**
+ * La generación con la que se leen los tipos de un locke. `null` es **la de
+ * ahora** (quien llama pone la última que haya en los datos de tipos, que este
+ * fichero no carga: lo lee también el navegador).
+ */
+export function generacionDeTipos(edicion: {
+  gameId: string | null;
+  juegoNoOficial: boolean;
+  tipos: string | null;
+}): number | null {
+  const generacion = generacionDelJuego(edicion.gameId);
+  const eleccion = leerTipos(edicion.tipos) ?? tiposPorDefecto(edicion.gameId);
+  if (generacion === null) return eleccion === "antiguos" ? ULTIMA_GENERACION_SIN_HADA : null;
+  if (generacion > ULTIMA_GENERACION_SIN_HADA) return generacion;
+  return eleccion === "actuales" ? null : generacion;
+}
+
 export function nombreDeRegion(slug: string) {
   return REGIONES.find((region) => region.slug === slug)?.nombre ?? slug;
 }

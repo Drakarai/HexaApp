@@ -106,7 +106,7 @@ export function NewCompetitionForm({
             />
           </div>
           <div className="sm:col-span-2">
-            <JuegoPicker />
+            <JuegoPicker conTipos />
           </div>
           <div>
             <label className="label">Modalidad</label>
@@ -261,6 +261,8 @@ export function EditCompetitionForm({
     game: string | null;
     gameId: string | null;
     juegoNoOficial: boolean;
+    /** Los tipos elegidos, si se eligieron: ver `generacionDeTipos` */
+    tipos: string | null;
     modality: string | null;
     description: string | null;
     startingPoints: number;
@@ -310,6 +312,8 @@ export function EditCompetitionForm({
               defaultGameId={competition.gameId}
               defaultGame={competition.game}
               defaultNoOficial={competition.juegoNoOficial}
+              conTipos
+              defaultTipos={competition.tipos}
             />
           </div>
           <div>
