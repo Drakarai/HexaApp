@@ -350,11 +350,19 @@ export default async function AppLayout({
 
   const switcher = (
     <CompetitionSwitcher
-      competitions={competitions.map((competition) => ({
-        id: competition.id,
-        name: competition.name,
-        status: competition.status,
-      }))}
+      /**
+       * Los suyos, y si está mirando uno de otro (el Creador supervisando),
+       * ese también, aparte. Los demás de la gente están en Ediciones: con
+       * todos aquí, el selector del Creador era una lista interminable.
+       */
+      competitions={competitions
+        .filter((competition) => competition.mio || competition.id === active?.id)
+        .map((competition) => ({
+          id: competition.id,
+          name: competition.name,
+          status: competition.status,
+          supervisando: !competition.mio,
+        }))}
       currentId={active?.id ?? null}
     />
   );

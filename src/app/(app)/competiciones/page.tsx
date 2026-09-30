@@ -154,6 +154,8 @@ export default async function CompetitionsPage() {
     .filter(
       (competition) =>
         competition.status === COMPETITION_STATUS.ACTIVE &&
+        // Los de la gente no: el Creador los ve para supervisar, no para cerrarlos
+        competition.mio &&
         (mandoEn(competition.id) || competition.createdById === user.id),
     )
     .map((competition) => ({
@@ -169,6 +171,126 @@ export default async function CompetitionsPage() {
 
   // Si el juego es una pareja, cada jugador lleva una de sus dos versiones
   const versiones = active ? versionesDeLaEdicion(active) : [];
+
+  // Los tuyos y, para el Creador, los de la gente aparte (ver abajo)
+  const mios = competitions.filter((competition) => competition.mio);
+  const deOtros = competitions.filter((competition) => !competition.mio);
+  const enMarchaDeOtros = deOtros.filter(
+    (competition) => competition.status === COMPETITION_STATUS.ACTIVE,
+  ).length;
+
+  const tarjeta = (competition: (typeof competitions)[number]) => (
+    <article
+      key={competition.id}
+      className={cx(
+        "card-tight",
+        competition.id === active?.id && "border-brand-500/40",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h3 className="truncate font-semibold text-white">
+            {competition.name}
+          </h3>
+          <p className="text-xs text-slate-500">
+            {competition.sinEmpezar ? "Sin empezar" : formatDate(competition.startedAt)}
+            {competition.endedAt
+              ? ` → ${formatDate(competition.endedAt)}`
+              : ""}
+            {` · ${competition._count.participants} jugadores`}
+            {/* De quién es, en los de los demás: es lo primero que se busca */}
+            {!competition.mio && competition.createdBy
+              ? ` · de ${competition.createdBy.displayName}`
+              : ""}
+          </p>
+        </div>
+        <span className="chip shrink-0">
+          <Icono
+            emoji={
+              competition.status !== COMPETITION_STATUS.ACTIVE
+                ? "🗄️"
+                : competition.sinEmpezar
+                  ? "⏳"
+                  : "🟢"
+            }
+          />
+        </span>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <form action={selectCompetitionAction}>
+          <input
+            type="hidden"
+            name="competitionId"
+            value={competition.id}
+          />
+          <button type="submit" className="btn-ghost btn-sm">
+            {competition.id === active?.id ? "Viendo" : "Ver"}
+          </button>
+        </form>
+
+        {mandoEn(competition.id) ? (
+          <>
+            {/* Para montarlo con tiempo: mientras no empieza no corren
+                los días, y al empezar cuentan desde ese día */}
+            {competition.status === COMPETITION_STATUS.ACTIVE ? (
+              <form action={cambiarArranqueAction}>
+                <input type="hidden" name="competitionId" value={competition.id} />
+                <input
+                  type="hidden"
+                  name="sinEmpezar"
+                  value={competition.sinEmpezar ? "no" : "si"}
+                />
+                <ConfirmSubmit
+                  message={
+                    competition.sinEmpezar
+                      ? `¿Empezar "${competition.name}" hoy? Los días del locke cuentan desde hoy.`
+                      : `¿Marcar "${competition.name}" como sin empezar? Los días dejan de contar, y al empezarlo contarán desde ese día.`
+                  }
+                  className={competition.sinEmpezar ? "btn-primary btn-sm" : "btn-ghost btn-sm"}
+                >
+                  {competition.sinEmpezar ? "Empezar el locke" : "Aún no ha empezado"}
+                </ConfirmSubmit>
+              </form>
+            ) : null}
+            <form action={setCompetitionStatusAction}>
+              <input
+                type="hidden"
+                name="competitionId"
+                value={competition.id}
+              />
+              <input
+                type="hidden"
+                name="status"
+                value={
+                  competition.status === COMPETITION_STATUS.ACTIVE
+                    ? COMPETITION_STATUS.ARCHIVED
+                    : COMPETITION_STATUS.ACTIVE
+                }
+              />
+              <button type="submit" className="btn-ghost btn-sm">
+                {competition.status === COMPETITION_STATUS.ACTIVE
+                  ? "Archivar"
+                  : "Reactivar"}
+              </button>
+            </form>
+            <form action={deleteCompetitionAction}>
+              <input
+                type="hidden"
+                name="competitionId"
+                value={competition.id}
+              />
+              <ConfirmSubmit
+                message={`¿Borrar "${competition.name}" para siempre? Se pierden reglas, muertes, puntos y notas de esa edición.`}
+              >
+                Borrar
+              </ConfirmSubmit>
+            </form>
+          </>
+        ) : null}
+      </div>
+    </article>
+  );
 
   const takenUserIds = new Set(participants.map((p) => p.userId));
   const availableUsers = users.filter((u) => !takenUserIds.has(u.id));
@@ -522,122 +644,29 @@ export default async function CompetitionsPage() {
       ) : null}
 
       {/* Sin ninguna edición el rótulo se quedaba solo, sin nada debajo */}
-      {competitions.length ? (
-      <section className="mb-6">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
-          Histórico
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {competitions.map((competition) => (
-            <article
-              key={competition.id}
-              className={cx(
-                "card-tight",
-                competition.id === active?.id && "border-brand-500/40",
-              )}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="truncate font-semibold text-white">
-                    {competition.name}
-                  </h3>
-                  <p className="text-xs text-slate-500">
-                    {competition.sinEmpezar ? "Sin empezar" : formatDate(competition.startedAt)}
-                    {competition.endedAt
-                      ? ` → ${formatDate(competition.endedAt)}`
-                      : ""}
-                    {` · ${competition._count.participants} jugadores`}
-                  </p>
-                </div>
-                <span className="chip shrink-0">
-                  <Icono
-                    emoji={
-                      competition.status !== COMPETITION_STATUS.ACTIVE
-                        ? "🗄️"
-                        : competition.sinEmpezar
-                          ? "⏳"
-                          : "🟢"
-                    }
-                  />
-                </span>
-              </div>
+      {mios.length ? (
+        <section className="mb-6">
+          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
+            Histórico
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">{mios.map(tarjeta)}</div>
+        </section>
+      ) : null}
 
-              <div className="mt-3 flex flex-wrap gap-2">
-                <form action={selectCompetitionAction}>
-                  <input
-                    type="hidden"
-                    name="competitionId"
-                    value={competition.id}
-                  />
-                  <button type="submit" className="btn-ghost btn-sm">
-                    {competition.id === active?.id ? "Viendo" : "Ver"}
-                  </button>
-                </form>
-
-                {mandoEn(competition.id) ? (
-                  <>
-                    {/* Para montarlo con tiempo: mientras no empieza no corren
-                        los días, y al empezar cuentan desde ese día */}
-                    {competition.status === COMPETITION_STATUS.ACTIVE ? (
-                      <form action={cambiarArranqueAction}>
-                        <input type="hidden" name="competitionId" value={competition.id} />
-                        <input
-                          type="hidden"
-                          name="sinEmpezar"
-                          value={competition.sinEmpezar ? "no" : "si"}
-                        />
-                        <ConfirmSubmit
-                          message={
-                            competition.sinEmpezar
-                              ? `¿Empezar "${competition.name}" hoy? Los días del locke cuentan desde hoy.`
-                              : `¿Marcar "${competition.name}" como sin empezar? Los días dejan de contar, y al empezarlo contarán desde ese día.`
-                          }
-                          className={competition.sinEmpezar ? "btn-primary btn-sm" : "btn-ghost btn-sm"}
-                        >
-                          {competition.sinEmpezar ? "Empezar el locke" : "Aún no ha empezado"}
-                        </ConfirmSubmit>
-                      </form>
-                    ) : null}
-                    <form action={setCompetitionStatusAction}>
-                      <input
-                        type="hidden"
-                        name="competitionId"
-                        value={competition.id}
-                      />
-                      <input
-                        type="hidden"
-                        name="status"
-                        value={
-                          competition.status === COMPETITION_STATUS.ACTIVE
-                            ? COMPETITION_STATUS.ARCHIVED
-                            : COMPETITION_STATUS.ACTIVE
-                        }
-                      />
-                      <button type="submit" className="btn-ghost btn-sm">
-                        {competition.status === COMPETITION_STATUS.ACTIVE
-                          ? "Archivar"
-                          : "Reactivar"}
-                      </button>
-                    </form>
-                    <form action={deleteCompetitionAction}>
-                      <input
-                        type="hidden"
-                        name="competitionId"
-                        value={competition.id}
-                      />
-                      <ConfirmSubmit
-                        message={`¿Borrar "${competition.name}" para siempre? Se pierden reglas, muertes, puntos y notas de esa edición.`}
-                      >
-                        Borrar
-                      </ConfirmSubmit>
-                    </form>
-                  </>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+      {/**
+       * Los lockes de la gente, que el Creador ve todos para supervisar. Van
+       * plegados y aparte para que no le llenen ni esto ni el selector; se
+       * abren solos si el que está mirando es uno de ellos.
+       */}
+      {deOtros.length ? (
+        <details className="group mb-6" open={Boolean(active && deOtros.some((c) => c.id === active.id))}>
+          <summary className="mb-3 flex cursor-pointer list-none items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 marker:hidden">
+            <span className="inline-block transition group-open:rotate-90">▸</span>
+            Lockes de los demás ({deOtros.length}
+            {enMarchaDeOtros ? ` · ${enMarchaDeOtros} en marcha` : ""})
+          </summary>
+          <div className="grid gap-3 sm:grid-cols-2">{deOtros.map(tarjeta)}</div>
+        </details>
       ) : null}
 
       <MisSolicitudes solicitudes={misSolicitudes} />

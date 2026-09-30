@@ -131,6 +131,7 @@ export const listCompetitions = cache(async () => {
         _count: { select: { participants: true } },
         participants: { where: { userId: sesion.userId }, select: { id: true }, take: 1 },
         espectadores: { where: { userId: sesion.userId }, select: { id: true }, take: 1 },
+        createdBy: { select: { displayName: true } },
       },
     }),
   ]);
@@ -138,7 +139,15 @@ export const listCompetitions = cache(async () => {
   const creador = esCreador(user);
   return todas
     .filter((c) => creador || c.participants.length > 0 || c.espectadores.length > 0)
-    .map(({ participants: _juega, espectadores: _mira, ...competicion }) => competicion);
+    .map(({ participants: juega, espectadores: mira, ...competicion }) => ({
+      ...competicion,
+      /**
+       * Si es **suyo**: lo juega, lo mira o lo creó. Para los demás lo son
+       * todos; el Creador los ve todos para supervisar, pero los de la gente
+       * no le llenan el selector (ver el layout y Ediciones).
+       */
+      mio: juega.length > 0 || mira.length > 0 || competicion.createdById === user.id,
+    }));
 });
 
 /**
