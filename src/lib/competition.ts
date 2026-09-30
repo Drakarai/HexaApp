@@ -121,7 +121,7 @@ export const listCompetitions = cache(async () => {
    * dos marcas —si juega y si mira— y la regla de `filtroDeLockesVisibles` se
    * aplica al llegar la cuenta: el Creador las ve todas; los demás, las suyas.
    */
-  const [user, todas] = await Promise.all([
+  const [user, todas, pedidos] = await Promise.all([
     getCurrentUser(),
     prisma.competition.findMany({
       // El `id` desempata dos que empezaron a la vez, que si no Postgres los
@@ -134,7 +134,18 @@ export const listCompetitions = cache(async () => {
         createdBy: { select: { displayName: true } },
       },
     }),
+    /**
+     * Los que salieron de una solicitud **de otra persona**. Hasta ahora, al
+     * aceptarla el locke quedaba a nombre de quien la aceptaba (el Creador), y
+     * así le contaban como suyos todos los que aprobaba. Ya no se guarda así,
+     * pero los de antes siguen con ese nombre: esto los devuelve a su dueño.
+     */
+    prisma.lockeRequest.findMany({
+      where: { competitionId: { not: null }, userId: { not: sesion.userId } },
+      select: { competitionId: true, user: { select: { displayName: true } } },
+    }),
   ]);
+  const pedidoPor = new Map(pedidos.map((p) => [p.competitionId, p.user.displayName]));
   if (!user || user.id !== sesion.userId) return [];
   const creador = esCreador(user);
   return todas
@@ -146,7 +157,12 @@ export const listCompetitions = cache(async () => {
        * todos; el Creador los ve todos para supervisar, pero los de la gente
        * no le llenan el selector (ver el layout y Ediciones).
        */
-      mio: juega.length > 0 || mira.length > 0 || competicion.createdById === user.id,
+      mio:
+        juega.length > 0 ||
+        mira.length > 0 ||
+        (competicion.createdById === user.id && !pedidoPor.has(competicion.id)),
+      /** De quién es: quien lo pidió, o si no, quien lo creó */
+      deQuien: pedidoPor.get(competicion.id) ?? competicion.createdBy?.displayName ?? null,
     }));
 });
 

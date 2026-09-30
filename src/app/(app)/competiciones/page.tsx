@@ -199,9 +199,7 @@ export default async function CompetitionsPage() {
               : ""}
             {` · ${competition._count.participants} jugadores`}
             {/* De quién es, en los de los demás: es lo primero que se busca */}
-            {!competition.mio && competition.createdBy
-              ? ` · de ${competition.createdBy.displayName}`
-              : ""}
+            {!competition.mio && competition.deQuien ? ` · de ${competition.deQuien}` : ""}
           </p>
         </div>
         <span className="chip shrink-0">

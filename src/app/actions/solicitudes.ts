@@ -148,7 +148,9 @@ export async function aceptarSolicitudAction(formData: FormData) {
       description: solicitud.description,
       maxPlayers: solicitud.maxPlayers,
       estilo: solicitud.estilo,
-      createdById: admin.id,
+      // Es de quien lo pidió, no de quien lo acepta: si no, al Creador le
+      // contaban como suyos todos los lockes que aprobaba
+      createdById: solicitud.userId,
       participants: {
         create: {
           userId: solicitud.userId,
