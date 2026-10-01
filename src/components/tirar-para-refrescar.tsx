@@ -7,9 +7,9 @@ import { cx } from "@/lib/utils";
 
 /**
  * **Tirar hacia abajo para refrescar**, con la media ball girando, como en las
- * apps del teléfono. Va en las pantallas que cambian mientras se miran —la
- * portada y Equipo y PC—, donde lo normal es querer ver lo último que ha
- * apuntado el otro.
+ * apps del teléfono. Va **en todas las pantallas** (está en el layout): empezó
+ * solo en la portada y en Equipo y PC, y en las demás se echaba de menos —ver
+ * si el otro ya ha apuntado su baja, si ya hay resultado—.
  *
  * Refresca con `router.refresh()`: vuelve a pedir los datos sin recargar la
  * página, así que no se pierde nada de lo que hubiera a medio escribir.
@@ -51,7 +51,16 @@ export function TirarParaRefrescar() {
       inicio = null;
       if (evento.touches.length !== 1 || window.scrollY > 0) return;
       if (document.body.style.overflow === "hidden") return;
-      if ((evento.target as Element | null)?.closest?.("[role=dialog]")) return;
+      // Ni dentro de una ficha, ni donde el dedo ya hace otra cosa: el mapa al
+      // editarlo (arrastrar zonas), un texto largo que se desplaza por dentro
+      // o un desplegable
+      if (
+        (evento.target as Element | null)?.closest?.(
+          "[role=dialog], .touch-none, textarea, select, [data-sin-refrescar]",
+        )
+      ) {
+        return;
+      }
       const dedo = evento.touches[0];
       inicio = { x: dedo.clientX, y: dedo.clientY };
       tirando = false;

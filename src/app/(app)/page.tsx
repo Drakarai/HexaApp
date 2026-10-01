@@ -17,7 +17,6 @@ import {
 } from "@/lib/final-four";
 import { NoCompetition } from "@/components/no-competition";
 import { Avatar, EmptyState } from "@/components/ui";
-import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 import { ActivityFeed } from "@/components/activity-feed";
 import { CarouselBackdrop } from "@/components/image-carousel";
 import { COMPETITION_STATUS } from "@/lib/constants";
@@ -378,7 +377,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      <TirarParaRefrescar />
       <PageHeader
         title={competition.name}
         fondo={logos(competition.id)}

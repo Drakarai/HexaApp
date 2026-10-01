@@ -23,6 +23,7 @@ import { Logo } from "@/components/logo";
 import { Icono } from "@/components/icono";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { GritosDelLocke } from "@/components/gritos-del-locke";
+import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -468,6 +469,9 @@ export default async function AppLayout({
       <EstadoDeConexion rutas={rutasParaGuardar} />
 
       <BotonApuntar atajos={atajos} />
+
+      {/* Tirar hacia abajo para refrescar, en el móvil y en todas las pantallas */}
+      <TirarParaRefrescar />
 
       <MobileTabBar
         primary={PRIMARY_ITEMS}

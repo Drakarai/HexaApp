@@ -26,12 +26,36 @@ const HOMBRO_BAJO = (50 + R / 2).toFixed(2);
 const HEXAGONO = `${IZQ},${HOMBRO_ALTO} 50,${ARRIBA} ${DER},${HOMBRO_ALTO} ${DER},${HOMBRO_BAJO} 50,${ABAJO} ${IZQ},${HOMBRO_BAJO}`;
 const MITAD_DE_ARRIBA = `${IZQ},${HOMBRO_ALTO} 50,${ARRIBA} ${DER},${HOMBRO_ALTO} ${DER},50 ${IZQ},50`;
 
-export const COLORES_DEL_LOGO = {
+export type ColoresDelLogo = {
+  trazo: string;
+  arriba: string;
+  abajo: string;
+  boton: string;
+  /** El hueco del botón: el fondo oscuro de la aplicación */
+  hueco: string;
+};
+
+/** Los de siempre, fijos: para los iconos de instalar, que no saben de temas */
+export const COLORES_DEL_LOGO: ColoresDelLogo = {
   trazo: "#818cf8",
   arriba: "#a5b4fc",
   abajo: "#4f46e5",
   boton: "#e0e7ff",
-  /** El hueco del botón: el fondo oscuro de la aplicación */
+  hueco: "#0b0b0e",
+};
+
+/**
+ * Los del **tema de cada uno**, para el logo dentro de la aplicación: salen de
+ * las variables del tema, así que la media ball de la cabecera y la de tirar
+ * para refrescar son rojas con Rojo, doradas con Dinotren… Con el tema de
+ * siempre quedan prácticamente como los fijos. Si las variables no están (no
+ * debería pasar), se cae a los fijos.
+ */
+export const COLORES_DEL_TEMA: ColoresDelLogo = {
+  trazo: "var(--color-brand-400, #818cf8)",
+  arriba: "color-mix(in oklab, var(--color-brand-400, #818cf8) 65%, white)",
+  abajo: "var(--color-brand-600, #4f46e5)",
+  boton: "color-mix(in oklab, var(--color-brand-400, #818cf8) 18%, white)",
   hueco: "#0b0b0e",
 };
 
@@ -40,19 +64,27 @@ export const COLORES_DEL_LOGO = {
  * misma página (la cabecera del móvil y la del PC conviven, una escondida): si
  * compartieran nombre, el de la escondida podría dejar al otro sin color.
  */
-export function logoSvg(id: string, tamano?: number): string {
-  const c = COLORES_DEL_LOGO;
+export function logoSvg(
+  id: string,
+  tamano?: number,
+  c: ColoresDelLogo = COLORES_DEL_LOGO,
+): string {
   const medida = tamano ? ` width="${tamano}" height="${tamano}"` : "";
+  /**
+   * Los colores van en `style` y no como atributos: un atributo como
+   * `stroke="var(--x)"` no entiende variables CSS, y el logo con tema las
+   * necesita. Con colores fijos da igual una forma que otra.
+   */
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"${medida} aria-hidden="true">` +
     `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1">` +
-    `<stop offset="0" stop-color="${c.arriba}"/><stop offset="1" stop-color="${c.abajo}"/>` +
+    `<stop offset="0" style="stop-color:${c.arriba}"/><stop offset="1" style="stop-color:${c.abajo}"/>` +
     `</linearGradient></defs>` +
     `<polygon points="${MITAD_DE_ARRIBA}" fill="url(#${id})"/>` +
-    `<polygon points="${HEXAGONO}" fill="none" stroke="${c.trazo}" stroke-width="6" stroke-linejoin="round"/>` +
-    `<line x1="${IZQ}" y1="50" x2="${DER}" y2="50" stroke="${c.trazo}" stroke-width="6"/>` +
-    `<circle cx="50" cy="50" r="14" fill="${c.hueco}" stroke="${c.trazo}" stroke-width="6"/>` +
-    `<circle cx="50" cy="50" r="5.5" fill="${c.boton}"/>` +
+    `<polygon points="${HEXAGONO}" style="fill:none;stroke:${c.trazo}" stroke-width="6" stroke-linejoin="round"/>` +
+    `<line x1="${IZQ}" y1="50" x2="${DER}" y2="50" style="stroke:${c.trazo}" stroke-width="6"/>` +
+    `<circle cx="50" cy="50" r="14" style="fill:${c.hueco};stroke:${c.trazo}" stroke-width="6"/>` +
+    `<circle cx="50" cy="50" r="5.5" style="fill:${c.boton}"/>` +
     `</svg>`
   );
 }

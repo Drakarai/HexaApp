@@ -1,3 +1,5 @@
+import { logoSvg } from "@/lib/logo";
+
 /**
  * Temas de la aplicación: uno por cada juego principal de Pokémon.
  *
@@ -296,21 +298,19 @@ export function colorDeBarra(theme: Theme) {
 
 /**
  * El icono de la pestaña —la media ball— pintado con los colores del tema,
- * como data URL. Es el mismo dibujo que `src/app/icon.svg` (ver
- * scripts/iconos.ts), cambiando los colores fijos por los del tema.
+ * como data URL. Sale del mismo dibujo que todos los logos (`lib/logo.ts`).
  */
 export function iconoDelTema(theme: Theme) {
   const acento = theme.vars["--color-brand-600"] ?? theme.swatch;
   const claro = theme.vars["--color-brand-400"] ?? lighten(acento, 20);
-  const arriba = lighten(claro, 10);
-  const centro = lighten(claro, 30);
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${arriba}"/><stop offset="1" stop-color="${acento}"/></linearGradient></defs>` +
-    `<polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,50 13.63,50" fill="url(#i)"/>` +
-    `<polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,71.00 50,92.00 13.63,71.00" fill="none" stroke="${claro}" stroke-width="6" stroke-linejoin="round"/>` +
-    `<line x1="13.63" y1="50" x2="86.37" y2="50" stroke="${claro}" stroke-width="6"/>` +
-    `<circle cx="50" cy="50" r="14" fill="#0b0b0e" stroke="${claro}" stroke-width="6"/>` +
-    `<circle cx="50" cy="50" r="5.5" fill="${centro}"/></svg>`;
+  // Hex y no variables: el icono de la pestaña es otro documento y no las ve
+  const svg = logoSvg("i", undefined, {
+    trazo: claro,
+    arriba: lighten(claro, 10),
+    abajo: acento,
+    boton: lighten(claro, 30),
+    hueco: "#0b0b0e",
+  });
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 

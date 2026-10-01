@@ -15,7 +15,6 @@ import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { Icono } from "@/components/icono";
 import { EquiposYCajas } from "./tablero";
-import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 import { ApuntarEnCaja } from "./apuntar-form";
 import { Pendientes } from "@/components/pendientes";
 
@@ -106,7 +105,6 @@ export default async function EquipoYPcPage({
 
   return (
     <>
-      <TirarParaRefrescar />
       <PageHeader
         title="Equipo y PC"
         subtitle={

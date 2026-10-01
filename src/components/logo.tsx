@@ -1,4 +1,4 @@
-import { logoSvg } from "@/lib/logo";
+import { COLORES_DEL_TEMA, logoSvg } from "@/lib/logo";
 import { cx } from "@/lib/utils";
 
 /**
@@ -22,7 +22,8 @@ export function Logo({
     <span
       className={cx("inline-flex shrink-0", className)}
       style={{ width: tamano, height: tamano }}
-      dangerouslySetInnerHTML={{ __html: logoSvg(id, tamano) }}
+      // Con los colores del tema de cada uno (ver COLORES_DEL_TEMA)
+      dangerouslySetInnerHTML={{ __html: logoSvg(id, tamano, COLORES_DEL_TEMA) }}
     />
   );
 }
