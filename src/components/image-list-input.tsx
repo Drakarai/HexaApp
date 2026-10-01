@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import { IMAGEN_SIN_CAMBIOS, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
+import { PISTA_DE_PEGAR, SOLO_CON_RATON, useSoltarYPegar } from "@/components/soltar-y-pegar";
 
 /**
  * Lista ordenada de imágenes. Cada una se sube del ordenador o se pega como
@@ -45,8 +46,10 @@ export function ImageListInput({
 
   const full = values.length >= max;
 
-  async function addFiles(files: FileList | null) {
-    if (!files?.length) return;
+  const { props: soltar, arrastrando } = useSoltarYPegar((archivos) => addFiles(archivos));
+
+  async function addFiles(files: FileList | File[] | null) {
+    if (!files?.length || values.length >= max) return;
     setBusy(true);
     setError(null);
     try {
@@ -76,8 +79,14 @@ export function ImageListInput({
   }
 
   return (
-    <div>
-      <span className="label">{label}</span>
+    <div
+      {...soltar}
+      className={cx(
+        "rounded-xl transition-colors",
+        arrastrando && "bg-brand-600/10 outline-2 outline-offset-4 outline-dashed outline-brand-400/70",
+      )}
+    >
+      <span className="label">{arrastrando ? "Suéltalas para añadirlas" : label}</span>
 
       {values.length ? (
         <ul className="mb-3 flex flex-wrap gap-2">
@@ -191,6 +200,9 @@ export function ImageListInput({
             ? `${values.length} imágenes: se irán alternando con un fundido.`
             : (hint ?? "Puedes añadir varias y se alternarán solas.")}
       </p>
+      {!full ? (
+        <p className={cx("mt-0.5 text-xs text-slate-500", SOLO_CON_RATON)}>{PISTA_DE_PEGAR}</p>
+      ) : null}
       {error ? <p className="mt-1 text-xs text-red-300">{error}</p> : null}
 
       {values.map((image, index) => (

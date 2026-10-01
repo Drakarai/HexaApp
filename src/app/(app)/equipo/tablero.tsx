@@ -178,11 +178,13 @@ function Tablero({
    */
   const [fondosElegidos, setFondosElegidos] = useState<Record<number, FondoDeCaja>>({});
   useEffect(() => setFondosElegidos({}), [tablero]);
-  const [eligiendoFondo, setEligiendoFondo] = useState(false);
-  const fondo = fondosElegidos[paginaVisible] ?? fondoDeCaja(tablero.fondos, paginaVisible);
+  // De qué caja se está eligiendo el fondo: en lo ancho se ven dos
+  const [eligiendoFondo, setEligiendoFondo] = useState<number | null>(null);
+  const fondoDe = (caja: number) => fondosElegidos[caja] ?? fondoDeCaja(tablero.fondos, caja);
+  // La que se ve al lado en una pantalla ancha: la siguiente, y de la última, la primera
+  const segunda = (paginaVisible + 1) % cajas;
 
-  function elegirFondo(nuevo: FondoDeCaja) {
-    const caja = paginaVisible;
+  function elegirFondo(caja: number, nuevo: FondoDeCaja) {
     setFondosElegidos((antes) => ({ ...antes, [caja]: nuevo }));
     empezar(async () => {
       const respuesta = await sinConexion(() =>
@@ -233,12 +235,117 @@ function Tablero({
 
   const enEquipo = equipo.filter(Boolean).length;
   const enCaja = caja.filter(Boolean).length;
-  const visibles = caja.slice(paginaVisible * HUECOS_POR_CAJA, (paginaVisible + 1) * HUECOS_POR_CAJA);
+  const deLaCaja = (n: number) => caja.slice(n * HUECOS_POR_CAJA, (n + 1) * HUECOS_POR_CAJA);
   const cogido = arrastre.fantasma?.id;
-  const cogidoDeOtraCaja =
-    cogido && !visibles.some((p) => p?.id === cogido)
-      ? (caja.find((p) => p?.id === cogido) ?? null)
-      : null;
+  const indiceCogido = cogido ? caja.findIndex((p) => p?.id === cogido) : -1;
+  const cajaDelCogido = indiceCogido >= 0 ? Math.floor(indiceCogido / HUECOS_POR_CAJA) : null;
+
+  /**
+   * Las cajas que se pintan: la que se ve, la de al lado (solo en lo ancho) y
+   * **la del pokémon que se lleva cogido**, aunque ya no se vea. Con el dedo,
+   * los eventos van al elemento donde empezó el toque: si su casilla se quitaba
+   * de la página al pasar de caja, dejaban de llegar y no había forma de
+   * soltarlo. Así se queda montada, escondida.
+   *
+   * Van **en el orden de su número** y se colocan con `order` de CSS: si React
+   * las recolocara al pasar de caja, movería la casilla cogida por la página y
+   * se perderían igual los eventos.
+   */
+  const columnas = [...new Set([paginaVisible, segunda, ...(cajaDelCogido !== null ? [cajaDelCogido] : [])])]
+    .sort((a, b) => a - b)
+    .map((n) => ({
+      n,
+      orden: n === paginaVisible ? 1 : n === segunda ? 2 : 3,
+      className: n === paginaVisible ? undefined : n === segunda ? "hidden xl:flex" : "hidden",
+    }));
+
+  /** Una caja con su cabecera (número y fondo) y sus 30 huecos */
+  function columnaDeCaja(n: number, orden: number, className?: string) {
+    const fondo = fondoDe(n);
+    return (
+      <div key={n} style={{ order: orden }} className={cx("flex min-w-0 flex-1 flex-col", className)}>
+        <div className="mb-1.5 flex items-center gap-2 px-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            Caja {n + 1} <span className="text-slate-600">de {cajas}</span>
+          </p>
+          {tablero.editable ? (
+            <button
+              type="button"
+              className={cx("btn-ghost btn-sm ml-auto px-2", eligiendoFondo === n && "border-brand-400/50")}
+              onClick={() => setEligiendoFondo((abierta) => (abierta === n ? null : n))}
+              aria-expanded={eligiendoFondo === n}
+              title="El fondo de esta caja"
+            >
+              <Icono emoji="🎨" />
+              <span className="text-xs">Fondo</span>
+            </button>
+          ) : null}
+        </div>
+        {eligiendoFondo === n && tablero.editable ? (
+          <div className="mb-2 flex gap-1.5 overflow-x-auto pb-1">
+            {FONDOS_DE_CAJA.map((opcion) => (
+              <button
+                key={opcion.slug}
+                type="button"
+                disabled={pendiente}
+                onClick={() => elegirFondo(n, opcion.slug)}
+                className="w-[60px] shrink-0 text-center"
+                aria-pressed={opcion.slug === fondo}
+                title={opcion.nombre}
+              >
+                <span
+                  className={cx(
+                    "relative block w-[60px] overflow-hidden rounded-md border bg-ink-950/60",
+                    FORMA_DE_LA_CAJA,
+                    opcion.slug === fondo
+                      ? "border-brand-400 ring-2 ring-brand-400/40"
+                      : "border-white/10",
+                  )}
+                >
+                  <FondoDeCajaImagen fondo={opcion.slug} />
+                </span>
+                <span className="mt-0.5 block truncate text-[10px] text-slate-400">
+                  {opcion.nombre}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <div
+          className={cx(
+            "relative isolate min-w-0 overflow-hidden rounded-md",
+            FORMA_DE_LA_CAJA,
+            fondo === "liso" ? "rounded-xl border border-white/5 bg-ink-950/40" : "bg-ink-950",
+          )}
+        >
+          {/**
+           * El fondo, apagado: a todo color se comía a los pokémon (un Magneton
+           * sobre el de Reshiram, un Clefairy sobre el de Ho-Oh). Transparente
+           * sobre el negro de debajo, se oscurece sin perder el dibujo.
+           */}
+          <FondoDeCajaImagen fondo={fondo} className={cx("-z-10", APAGADO)} />
+          {/* Dentro del marco de la imagen: seis columnas y cinco filas */}
+          <div className="grid h-full grid-cols-6 grid-rows-5 gap-x-[2%] gap-y-[2.5%] p-[4%]">
+            {deLaCaja(n).map((pokemon, i) => {
+              const hueco = n * HUECOS_POR_CAJA + i;
+              return (
+                <Casilla
+                  key={pokemon?.id ?? `caja-${hueco}`}
+                  pokemon={pokemon}
+                  destino={`${tablero.participantId}|caja|${hueco}`}
+                  numero={pokemon?.vinculo ? numeros[pokemon.vinculo] : undefined}
+                  resaltado={Boolean(pokemon && resaltados.has(pokemon.id))}
+                  rejilla={fondo === "liso"}
+                  arrastre={arrastre}
+                  onAbrir={onAbrir}
+                />
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <section ref={arrastre.contenedor} className="card select-none">
@@ -303,120 +410,26 @@ function Tablero({
         ))}
       </div>
 
-      <div className="mb-1.5 mt-4 flex max-w-lg items-center gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-          Caja {paginaVisible + 1} <span className="text-slate-600">de {cajas}</span>
-        </p>
-        {tablero.editable ? (
-          <button
-            type="button"
-            className={cx("btn-ghost btn-sm ml-auto px-2", eligiendoFondo && "border-brand-400/50")}
-            onClick={() => setEligiendoFondo((abierto) => !abierto)}
-            aria-expanded={eligiendoFondo}
-            title="El fondo de esta caja"
-          >
-            <Icono emoji="🎨" />
-            <span className="text-xs">Fondo</span>
-          </button>
-        ) : null}
-      </div>
-      {eligiendoFondo && tablero.editable ? (
-        <div className="mb-2 flex max-w-lg gap-1.5 overflow-x-auto pb-1">
-          {FONDOS_DE_CAJA.map((opcion) => (
-            <button
-              key={opcion.slug}
-              type="button"
-              disabled={pendiente}
-              onClick={() => elegirFondo(opcion.slug)}
-              className="w-[60px] shrink-0 text-center"
-              aria-pressed={opcion.slug === fondo}
-              title={opcion.nombre}
-            >
-              <span
-                className={cx(
-                  "relative block w-[60px] overflow-hidden rounded-md border bg-ink-950/60",
-                  FORMA_DE_LA_CAJA,
-                  opcion.slug === fondo
-                    ? "border-brand-400 ring-2 ring-brand-400/40"
-                    : "border-white/10",
-                )}
-              >
-                <FondoDeCajaImagen fondo={opcion.slug} />
-              </span>
-              <span className="mt-0.5 block truncate text-[10px] text-slate-400">
-                {opcion.nombre}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : null}
       {/**
        * La caja, con la forma de sus fondos (los de los juegos) y una flecha a
        * cada lado, altas y anchas: se tocan para cambiar de caja y, con un
        * pokémon cogido, **quedarse encima pasa de caja** para soltarlo en otra.
        * En el móvil gana ancho metiéndose en el margen de la tarjeta, que a 260
        * píxeles los pokémon se quedaban en nada.
+       *
+       * **En una pantalla ancha se ven dos cajas**, la de ahora y la siguiente,
+       * y se arrastra de una a otra sin pasar de caja. Va solo con CSS (la
+       * segunda está siempre y se esconde en lo estrecho) para que al cargar
+       * no salte de una a dos.
        */}
-      <div className="-mx-4 flex max-w-lg items-stretch gap-1 sm:mx-0">
+      <div className="-mx-4 mt-4 flex max-w-lg items-stretch gap-1 sm:mx-0 xl:max-w-none">
         <FlechaDeCaja
           paso={-1}
           dueno={tablero.participantId}
           encendida={arrastre.flecha === -1}
           onClick={() => setPagina((paginaVisible - 1 + cajas) % cajas)}
         />
-        <div
-          className={cx(
-            "relative isolate min-w-0 flex-1 overflow-hidden rounded-md",
-            FORMA_DE_LA_CAJA,
-            fondo === "liso" ? "rounded-xl border border-white/5 bg-ink-950/40" : "bg-ink-950",
-          )}
-        >
-          {/**
-           * El fondo, apagado: a todo color se comía a los pokémon (un Magneton
-           * sobre el de Reshiram, un Clefairy sobre el de Ho-Oh). Transparente
-           * sobre el negro de debajo, se oscurece sin perder el dibujo.
-           */}
-          <FondoDeCajaImagen fondo={fondo} className={cx("-z-10", APAGADO)} />
-          {/* Dentro del marco de la imagen: seis columnas y cinco filas */}
-          <div className="grid h-full grid-cols-6 grid-rows-5 gap-x-[2%] gap-y-[2.5%] p-[4%]">
-            {[
-              ...visibles.map((pokemon, i) => {
-                const hueco = paginaVisible * HUECOS_POR_CAJA + i;
-                return (
-                  <Casilla
-                    key={pokemon?.id ?? `caja-${hueco}`}
-                    pokemon={pokemon}
-                    destino={`${tablero.participantId}|caja|${hueco}`}
-                    numero={pokemon?.vinculo ? numeros[pokemon.vinculo] : undefined}
-                    resaltado={Boolean(pokemon && resaltados.has(pokemon.id))}
-                    rejilla={fondo === "liso"}
-                    arrastre={arrastre}
-                    onAbrir={onAbrir}
-                  />
-                );
-              }),
-              /**
-               * El que se lleva cogido de otra caja **sigue en la página**,
-               * escondido y con la misma `key` (así React no lo quita, solo lo
-               * mueve). Con el dedo, los eventos van al elemento donde empezó
-               * el toque: si se quitaba al pasar de caja, dejaban de llegar y
-               * no había forma de soltarlo.
-               */
-              cogidoDeOtraCaja ? (
-                <Casilla
-                  key={cogidoDeOtraCaja.id}
-                  pokemon={cogidoDeOtraCaja}
-                  destino=""
-                  oculta
-                  numero={undefined}
-                  resaltado={false}
-                  arrastre={arrastre}
-                  onAbrir={onAbrir}
-                />
-              ) : null,
-            ]}
-          </div>
-        </div>
+        {columnas.map((c) => columnaDeCaja(c.n, c.orden, c.className))}
         <FlechaDeCaja
           paso={1}
           dueno={tablero.participantId}
@@ -468,7 +481,6 @@ function Casilla({
   resaltado,
   grande = false,
   rejilla = false,
-  oculta = false,
   arrastre,
   onAbrir,
 }: {
@@ -479,8 +491,6 @@ function Casilla({
   grande?: boolean;
   /** En la caja sin fondo, cada hueco se marca; sobre un fondo, no, como en los juegos */
   rejilla?: boolean;
-  /** El cogido de otra caja: está, pero ni se ve ni es un sitio donde soltar */
-  oculta?: boolean;
   arrastre: Arrastre;
   onAbrir: (id: string) => void;
 }) {
@@ -488,12 +498,11 @@ function Casilla({
   const debajo = arrastre.destino === destino;
   return (
     <div
-      data-destino={oculta ? undefined : destino}
+      data-destino={destino}
       className={cx(
         // Sin transición: al arrastrar, el resaltado salta de casilla en casilla,
         // y con ella cada una por la que se pasaba se repintaba varios fotogramas
         "relative flex flex-col items-center justify-center rounded-lg",
-        oculta && "hidden",
         grande
           ? "min-h-[6.5rem] border border-white/10 bg-white/[0.03] p-1.5"
           : cx("min-h-0 min-w-0", rejilla && "bg-white/[0.03]"),
@@ -592,6 +601,8 @@ function FlechaDeCaja({
       data-pagina={paso}
       data-dueno={dueno}
       onClick={onClick}
+      // Las cajas de en medio se colocan con `order` (ver `columnas`): las flechas, a los lados
+      style={{ order: paso < 0 ? 0 : 9 }}
       aria-label={paso < 0 ? "Caja anterior" : "Caja siguiente"}
       className={cx(
         "flex w-7 shrink-0 items-center justify-center rounded-lg border text-xl transition sm:w-8",

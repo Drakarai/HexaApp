@@ -159,17 +159,20 @@ export function EnlaceDeJugador({
   name,
   className,
   children,
+  sinRotulo = false,
 }: {
   participantId: string;
   /** Solo para el rótulo al pasar el ratón */
   name: string;
   className?: string;
   children: React.ReactNode;
+  /** Cuando al pasar el ratón ya sale otra cosa (la ficha rápida), que no se pisen */
+  sinRotulo?: boolean;
 }) {
   return (
     <Link
       href={`/jugador/${participantId}`}
-      title={`Ver el perfil de ${name}`}
+      title={sinRotulo ? undefined : `Ver el perfil de ${name}`}
       className={cx(
         "flex min-w-0 items-center transition hover:brightness-125",
         className,

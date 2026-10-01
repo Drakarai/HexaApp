@@ -4,6 +4,7 @@ import { useId, useRef, useState } from "react";
 import { IMAGEN_SIN_CAMBIOS, imageToDataUrl } from "@/lib/image";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { PISTA_DE_PEGAR, SOLO_CON_RATON, useSoltarYPegar } from "@/components/soltar-y-pegar";
 
 /**
  * Selector de imagen con dos vías: subir un archivo del ordenador (se
@@ -38,6 +39,7 @@ export function ImageInput({
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const id = useId();
+  const { props: soltar, arrastrando } = useSoltarYPegar((archivos) => handleFile(archivos[0]));
 
   async function handleFile(file: File | undefined) {
     if (!file) return;
@@ -55,8 +57,14 @@ export function ImageInput({
   }
 
   return (
-    <div>
-      <span className="label">{label}</span>
+    <div
+      {...soltar}
+      className={cx(
+        "rounded-xl transition-colors",
+        arrastrando && "bg-brand-600/10 outline-2 outline-offset-4 outline-dashed outline-brand-400/70",
+      )}
+    >
+      <span className="label">{arrastrando ? "Suéltala para subirla" : label}</span>
       <div className="flex items-start gap-3">
         <div
           className={cx(
@@ -128,6 +136,9 @@ export function ImageInput({
             </p>
           ) : hint ? (
             <p className="text-xs text-slate-500">{hint}</p>
+          ) : null}
+          {!value && !busy ? (
+            <p className={cx("text-xs text-slate-500", SOLO_CON_RATON)}>{PISTA_DE_PEGAR}</p>
           ) : null}
           {error ? <p className="text-xs text-red-300">{error}</p> : null}
         </div>

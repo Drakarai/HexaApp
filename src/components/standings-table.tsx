@@ -1,6 +1,7 @@
 import type { StandingRow } from "@/lib/competition";
 import type { MovimientosEnLaTabla } from "@/lib/grafico-clasificacion";
 import { AceBadge } from "@/components/ace-badge";
+import { ConFichaRapida } from "@/components/ficha-rapida";
 import { Avatar, EnlaceDeJugador } from "@/components/ui";
 import { TitleBadge } from "@/components/title-badge";
 import { comoEstaFuera } from "@/lib/wipeos";
@@ -368,19 +369,23 @@ function Fila({
             size={24}
           />
           <div className="min-w-0">
-            <EnlaceDeJugador
-              participantId={row.participantId}
-              name={row.displayName}
-            >
-              <span
-                className={cx(
-                  "truncate font-medium text-white",
-                  row.retirado && "text-slate-400 line-through",
-                )}
+            {/* En el ordenador, al pasar el ratón: su equipo, sus bajas y su as */}
+            <ConFichaRapida participantId={row.participantId} nombre={row.displayName} color={row.color}>
+              <EnlaceDeJugador
+                participantId={row.participantId}
+                name={row.displayName}
+                sinRotulo
               >
-                {row.displayName}
-              </span>
-            </EnlaceDeJugador>
+                <span
+                  className={cx(
+                    "truncate font-medium text-white",
+                    row.retirado && "text-slate-400 line-through",
+                  )}
+                >
+                  {row.displayName}
+                </span>
+              </EnlaceDeJugador>
+            </ConFichaRapida>
             {row.retirado ? <Fuera motivo={row.motivoDeSalida} /> : null}
         <Wipeos cuantos={row.wipeos} />
             {compact ? null : row.title ? (
