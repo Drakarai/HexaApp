@@ -4,7 +4,10 @@ import { PageHeader } from "@/components/page-header";
 import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
 import { copiasSinAligerar } from "@/lib/copias";
 import { MantenimientoDelAlmacen } from "./almacen-client";
-import { cx } from "@/lib/utils";
+import { cx, formatDateTime } from "@/lib/utils";
+import { getErroresAgrupados, type GrupoDeErrores } from "@/lib/errores";
+import { resolverErrorAction, vaciarErroresAction } from "@/app/actions/errores";
+import { ConfirmSubmit } from "@/components/ui";
 
 export const metadata = { title: "Diagnóstico" };
 export const dynamic = "force-dynamic";
@@ -56,11 +59,12 @@ function leerConexion() {
 export default async function DiagnosticoPage() {
   await requireCreadorPage();
 
-  const [ida, conexion, ocupacion, copiasPesadas] = await Promise.all([
+  const [ida, conexion, ocupacion, copiasPesadas, errores] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
     medirOcupacion(),
     copiasSinAligerar(),
+    getErroresAgrupados(),
   ]);
 
   /**
@@ -97,8 +101,10 @@ export default async function DiagnosticoPage() {
     <>
       <PageHeader
         title="Diagnóstico"
-        subtitle="Para saber si la lentitud viene de la distancia a la base de datos."
+        subtitle="Para saber si la lentitud viene de la distancia a la base de datos, y lo que le falla a la gente."
       />
+
+      <Errores grupos={errores} />
 
       <section className="card mb-4">
         <h2 className="section-title mb-1">Ida y vuelta a la base de datos</h2>
@@ -357,4 +363,93 @@ function traducirRegion(region: string) {
     hnd: "ap", icn: "ap", sin: "ap", syd: "ap", bom: "ap",
   };
   return mapa[inicial] ?? inicial;
+}
+
+/**
+ * Lo que le ha fallado a la gente, del navegador o del servidor, agrupado (ver
+ * lib/errores.ts). Va lo primero porque es lo que se viene a mirar cuando
+ * alguien dice «me ha petado»; aunque lo normal es enterarse aquí antes.
+ */
+function Errores({ grupos }: { grupos: GrupoDeErrores[] }) {
+  const total = grupos.reduce((suma, g) => suma + g.veces, 0);
+  return (
+    <section className="card mb-4">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
+        <h2 className="section-title">Errores de la app</h2>
+        {grupos.length ? (
+          <form action={vaciarErroresAction} className="ml-auto">
+            <ConfirmSubmit message="¿Vaciar el registro de errores entero?" className="btn-ghost btn-sm">
+              Vaciar
+            </ConfirmSubmit>
+          </form>
+        ) : null}
+      </div>
+      <p className="muted mb-4">
+        Lo que se ha roto en los últimos 30 días, en el móvil de alguien o en el
+        servidor, con quién y dónde. Los iguales van juntos.
+        {total ? ` ${total} en total.` : ""}
+      </p>
+
+      {grupos.length ? (
+        <ul className="space-y-2">
+          {grupos.map((g) => (
+            <li key={g.huella}>
+              <details className="group rounded-xl border border-white/10 bg-white/[0.02]">
+                <summary className="flex cursor-pointer list-none items-start gap-3 p-3 marker:hidden">
+                  <span
+                    className={cx(
+                      "chip shrink-0 text-[10px]",
+                      g.origen === "servidor" ? "text-amber-200" : "text-sky-200",
+                    )}
+                  >
+                    {g.origen === "servidor" ? "Servidor" : "Navegador"}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm text-slate-100 group-open:whitespace-normal">
+                      {g.mensaje}
+                    </span>
+                    <span className="block text-xs text-slate-500">
+                      {g.veces === 1 ? "Una vez" : `${g.veces} veces`} · la última el{" "}
+                      {formatDateTime(g.ultima)}
+                      {g.quienes.length ? ` · ${g.quienes.join(", ")}` : ""}
+                    </span>
+                  </span>
+                </summary>
+                <div className="space-y-2 border-t border-white/10 p-3 text-xs">
+                  {g.rutas.length ? (
+                    <p className="text-slate-400">
+                      <span className="text-slate-500">Dónde: </span>
+                      {g.rutas.slice(0, 6).join(" · ")}
+                    </p>
+                  ) : null}
+                  {g.codigos.length ? (
+                    <p className="text-slate-400">
+                      <span className="text-slate-500">Códigos del fallo: </span>
+                      <span className="font-mono">{g.codigos.slice(0, 4).join(", ")}</span>
+                    </p>
+                  ) : null}
+                  <p className="text-slate-500">Desde el {formatDateTime(g.primera)}</p>
+                  {g.detalle ? (
+                    <pre className="max-h-56 overflow-auto rounded-lg bg-black/40 p-2 font-mono text-[11px] leading-relaxed text-slate-400">
+                      {g.detalle}
+                    </pre>
+                  ) : null}
+                  <form action={resolverErrorAction}>
+                    <input type="hidden" name="huella" value={g.huella} />
+                    <button type="submit" className="btn-ghost btn-sm">
+                      Ya está arreglado
+                    </button>
+                  </form>
+                </div>
+              </details>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.05] p-3 text-sm text-emerald-200">
+          Ni un fallo apuntado. Así da gusto.
+        </p>
+      )}
+    </section>
+  );
 }

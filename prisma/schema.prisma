@@ -576,6 +576,7 @@ model Competition {
   visitas      TabSeen[]
   espectadores Spectator[]
   sorteos      Sorteo[]
+  papelera     JornadaBorrada[]
 }
 
 /**
@@ -1848,4 +1849,56 @@ model LockeDeAntes {
   apuntadoPor User? @relation("ApuntadorDeAntes", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([ganadorId])
+}
+
+// ---------------------------------------------------------------------------
+// Registro de errores
+// ---------------------------------------------------------------------------
+
+/**
+ * Un fallo de la aplicación, del navegador de alguien o del servidor, para
+ * verlo en Diagnóstico **sin que nadie tenga que avisar**. Se guarda quién,
+ * dónde y qué; los iguales se agrupan por `huella` al enseñarlos. Es un
+ * registro de paso: se queda en los últimos 30 días y como mucho 500 filas.
+ * El nombre va copiado y no enlazado a la cuenta: si se borra la cuenta, el
+ * fallo sigue sirviendo.
+ */
+model ErrorDeApp {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  // "navegador" o "servidor"
+  origen    String
+  mensaje   String
+  // La pila del fallo, recortada
+  detalle   String?
+  // El código que enseña la pantalla de error ("Código del fallo"), si lo hay
+  codigo    String?
+  ruta      String?
+  userId    String?
+  quien     String?
+  navegador String?
+  huella    String
+
+  @@index([createdAt])
+  @@index([huella])
+}
+
+/**
+ * Una jornada borrada, **entera** —combates, equipos, royales, votos del MVP y
+ * los puntos que dio— para poder devolverla durante unos días (ver
+ * lib/papelera.ts). Borrar una jornada no tenía vuelta atrás y se llevaba
+ * resultados y equipos de golpe.
+ */
+model JornadaBorrada {
+  id            String   @id @default(cuid())
+  competitionId String
+  label         String
+  // Todo lo que se llevó, tal cual, para volver a crearlo con los mismos ids
+  datos         Json
+  borradaAt     DateTime @default(now())
+  quien         String?
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId, borradaAt])
 }

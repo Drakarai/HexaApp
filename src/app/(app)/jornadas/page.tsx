@@ -39,6 +39,8 @@ import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { Royale } from "./royale";
 import { NuevoRoyale } from "./matchday-forms";
 import { Icono } from "@/components/icono";
+import { getPapelera, DIAS_EN_LA_PAPELERA } from "@/lib/papelera";
+import { PapeleraDeJornadas } from "./papelera";
 
 export const metadata = { title: "Jornadas" };
 
@@ -90,6 +92,7 @@ export default async function MatchdaysPage() {
     marcador,
     [firmasSprite],
     mvpStates,
+    papelera,
   ] = await Promise.all([
     canManageCompetition(competition.id, user),
     getMyParticipant(competition.id, user.id),
@@ -107,6 +110,8 @@ export default async function MatchdaysPage() {
       { userId: user.id },
       firmasDeEquipos,
     ),
+    // La papelera solo la ve quien administra, pero va en la misma tanda
+    getPapelera(competition.id),
   ]);
 
   /**
@@ -295,7 +300,7 @@ export default async function MatchdaysPage() {
                     <form action={deleteMatchdayAction} className="shrink-0">
                       <input type="hidden" name="matchdayId" value={matchday.id} />
                       <ConfirmSubmit
-                        message={`¿Borrar "${matchday.label}" con todos sus combates?`}
+                        message={`¿Borrar "${matchday.label}" con todos sus combates? Se queda ${DIAS_EN_LA_PAPELERA} días en la papelera, por si acaso.`}
                       >
                         ✕
                       </ConfirmSubmit>
@@ -602,6 +607,21 @@ export default async function MatchdaysPage() {
         <div className="mt-6">
           <NewMatchdayForm competitionId={competition.id} />
         </div>
+      ) : null}
+
+      {canManage ? (
+        <PapeleraDeJornadas
+          borradas={papelera.map((b) => ({
+            id: b.id,
+            label: b.label,
+            quien: b.quien,
+            cuando: formatDate(b.borradaAt),
+            quedan: Math.max(
+              1,
+              DIAS_EN_LA_PAPELERA - Math.floor((Date.now() - b.borradaAt.getTime()) / 86_400_000),
+            ),
+          }))}
+        />
       ) : null}
     </>
   );

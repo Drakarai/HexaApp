@@ -271,3 +271,48 @@ export function themesByGroup() {
   }
   return [...groups.entries()];
 }
+
+// --- el tema fuera de la página ----------------------------------------------
+
+/** Mezcla dos colores: `t` es cuánto del segundo (0 a 1) */
+function mezclar(a: string, b: string, t: number) {
+  const x = hexToRgb(a);
+  const y = hexToRgb(b);
+  const canal = (p: number, q: number) =>
+    Math.round(p + (q - p) * t)
+      .toString(16)
+      .padStart(2, "0");
+  return `#${canal(x.r, y.r)}${canal(x.g, y.g)}${canal(x.b, y.b)}`;
+}
+
+/**
+ * El color de la barra del sistema en el móvil (la de la hora y la batería) y
+ * de la del navegador: el fondo de la app con un **toque del acento**, que se
+ * note que es tu tema sin que la barra grite más que la propia pantalla.
+ */
+export function colorDeBarra(theme: Theme) {
+  return mezclar("#0b0b0e", theme.vars["--color-brand-600"] ?? theme.swatch, 0.28);
+}
+
+/**
+ * El icono de la pestaña —la media ball— pintado con los colores del tema,
+ * como data URL. Es el mismo dibujo que `src/app/icon.svg` (ver
+ * scripts/iconos.ts), cambiando los colores fijos por los del tema.
+ */
+export function iconoDelTema(theme: Theme) {
+  const acento = theme.vars["--color-brand-600"] ?? theme.swatch;
+  const claro = theme.vars["--color-brand-400"] ?? lighten(acento, 20);
+  const arriba = lighten(claro, 10);
+  const centro = lighten(claro, 30);
+  const svg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><linearGradient id="i" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${arriba}"/><stop offset="1" stop-color="${acento}"/></linearGradient></defs>` +
+    `<polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,50 13.63,50" fill="url(#i)"/>` +
+    `<polygon points="13.63,29.00 50,8.00 86.37,29.00 86.37,71.00 50,92.00 13.63,71.00" fill="none" stroke="${claro}" stroke-width="6" stroke-linejoin="round"/>` +
+    `<line x1="13.63" y1="50" x2="86.37" y2="50" stroke="${claro}" stroke-width="6"/>` +
+    `<circle cx="50" cy="50" r="14" fill="#0b0b0e" stroke="${claro}" stroke-width="6"/>` +
+    `<circle cx="50" cy="50" r="5.5" fill="${centro}"/></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+/** Lo que se avisa al probar un tema, para que lo de fuera de la página lo siga */
+export const EVENTO_DE_TEMA = "hexaapp:tema";

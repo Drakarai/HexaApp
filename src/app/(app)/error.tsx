@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect } from "react";
 import { Icono } from "@/components/icono";
+import { avisarDeUnError } from "@/lib/avisar-de-errores";
 
 /**
  * Cuando algo falla dentro de la aplicación. Antes salía la pantalla gris de
@@ -22,6 +23,9 @@ export default function ErrorDeLaAplicacion({
 }) {
   useEffect(() => {
     console.error(error);
+    // Con `digest`, el fallo fue del servidor y ya está apuntado allí; sin él,
+    // se rompió al pintar en el navegador y solo lo sabe este navegador
+    if (!error.digest) avisarDeUnError(error.message || "Error al pintar la pantalla", error.stack);
   }, [error]);
 
   return (

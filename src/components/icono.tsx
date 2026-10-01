@@ -48,6 +48,7 @@ import {
   Pencil,
   Pin,
   Play,
+  Trash2,
   ScrollText,
   Search,
   Settings,
@@ -185,6 +186,7 @@ const LINEA: Record<string, Linea> = {
   "🛠️": { icono: Wrench },
   "🧭": { icono: Compass },
   "▶️": { icono: Play },
+  "🗑️": { icono: Trash2 },
   "❔": { icono: CircleHelp },
 };
 

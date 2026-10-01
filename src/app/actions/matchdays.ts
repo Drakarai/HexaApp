@@ -7,7 +7,7 @@ import { resolverRetiradas } from "@/lib/retiradas";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { ajustarDesempate } from "@/lib/series";
-import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
+import { borrarJornadaALaPapelera, restaurarJornada } from "@/lib/papelera";
 import { esRoyale, formatoDeCombate } from "@/lib/formatos-de-combate";
 import { enlaceSeguro } from "@/lib/utils";
 
@@ -173,14 +173,51 @@ export async function deleteMatchdayAction(formData: FormData) {
   const id = String(formData.get("matchdayId") ?? "");
   const matchday = await prisma.matchday.findUnique({ where: { id } });
   if (!matchday) return;
-  await requireCompetitionManager(matchday.competitionId);
+  const manager = await requireCompetitionManager(matchday.competitionId);
 
-  await prisma.matchday.delete({ where: { id } });
-  // Los puntos de sus combates no se van solos con ellos: ver lib/puntos-huerfanos
-  await borrarPuntosHuerfanos(matchday.competitionId);
+  // A la papelera, no a la basura: se puede devolver unos días (ver lib/papelera)
+  await borrarJornadaALaPapelera(id, manager.displayName);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
+}
+
+/** Devolver una jornada de la papelera, con todo lo que tenía */
+export async function restaurarJornadaAction(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const id = String(formData.get("borradaId") ?? "");
+  const borrada = await prisma.jornadaBorrada.findUnique({
+    where: { id },
+    select: { competitionId: true },
+  });
+  if (!borrada) return { error: "Esa jornada ya no está en la papelera." };
+  try {
+    await requireCompetitionManager(borrada.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+
+  const resultado = await restaurarJornada(id);
+  if (resultado.error) return { error: resultado.error };
+  revalidatePath("/jornadas");
+  revalidatePath("/puntos");
+  revalidatePath("/jugador", "layout");
+  return { success: `${resultado.label} ha vuelto, con todo lo que tenía.` };
+}
+
+/** Borrarla de verdad, sin esperar a que caduque */
+export async function vaciarDeLaPapeleraAction(formData: FormData) {
+  const id = String(formData.get("borradaId") ?? "");
+  const borrada = await prisma.jornadaBorrada.findUnique({
+    where: { id },
+    select: { competitionId: true },
+  });
+  if (!borrada) return;
+  await requireCompetitionManager(borrada.competitionId);
+  await prisma.jornadaBorrada.delete({ where: { id } });
+  revalidatePath("/jornadas");
 }
 
 export async function addMatchAction(

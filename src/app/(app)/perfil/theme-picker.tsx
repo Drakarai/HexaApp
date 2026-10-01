@@ -4,7 +4,7 @@ import { useActionState, useState } from "react";
 import { updateMyThemeAction } from "@/app/actions/auth";
 import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
-import { themesByGroup, type Theme } from "@/lib/themes";
+import { EVENTO_DE_TEMA, themesByGroup, type Theme } from "@/lib/themes";
 import { cx } from "@/lib/utils";
 
 /**
@@ -43,6 +43,8 @@ export function ThemePicker({ current }: { current: string }) {
       root.style.setProperty(name, value);
     }
     root.dataset.theme = theme.id;
+    // La barra del móvil y el icono de la pestaña también, al momento
+    window.dispatchEvent(new CustomEvent(EVENTO_DE_TEMA, { detail: theme.id }));
   }
 
   return (

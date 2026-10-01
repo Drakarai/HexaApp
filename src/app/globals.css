@@ -341,10 +341,6 @@ html[data-estilo="nuevo"] body::before {
   background: linear-gradient(to bottom, transparent 0, var(--color-ink-950) 55%);
 }
 
-html[data-estilo="nuevo"] ::selection {
-  background: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
-}
-
 /* Títulos: los de página, grandes y en mayúsculas; los de dentro, condensados */
 :where(html[data-estilo="nuevo"]) :is(h1, h2, h3) {
   font-family: var(--font-display);
@@ -592,5 +588,83 @@ html[data-estilo="nuevo"] .etiqueta-formato {
   }
   100% {
     transform: translateY(110vh) rotate(720deg);
+  }
+}
+
+/* El tema, también en los detalles del navegador: lo que seleccionas, el
+   cursor de escribir, las casillas y deslizadores de los formularios y las
+   barras de desplazamiento del ordenador. Todo sale de las variables del
+   tema, así que al probar otro en Mi perfil cambia con él. */
+::selection {
+  background: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
+  color: #fff;
+}
+:root {
+  accent-color: var(--color-brand-500);
+  caret-color: var(--color-brand-400);
+  scrollbar-color: color-mix(in oklab, var(--color-brand-500) 45%, var(--color-ink-700)) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-brand-500) 45%, var(--color-ink-700)) padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-brand-500) padding-box;
+}
+
+/* La franja de arriba: una línea de luz del color del tema que se funde hacia
+   abajo. En un móvil con muesca ocupa además el hueco de la barra del sistema
+   (con la app instalada en el iPhone la barra es transparente y se veía el
+   negro de debajo). No tapa nada: es pura luz. */
+.franja-del-tema {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  height: calc(env(safe-area-inset-top, 0px) + 3px);
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, transparent, var(--color-brand-400) 30%, var(--color-brand-500) 70%, transparent) top / 100% 2px no-repeat,
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-brand-600) 55%, var(--color-ink-950)), transparent);
+  opacity: 0.85;
+}
+
+/* La transición entre pantallas (ver (app)/template.tsx): cada bloque de la
+   pantalla entra fundiéndose y subiendo un poco, uno detrás de otro.
+   `backwards` y no `both` a propósito: al acabar, el bloque se queda **sin
+   transform**. Un transform que se quedara puesto haría que todo lo `fixed` de
+   dentro (avisos, el fantasma al arrastrar en Equipo y PC) se colocara
+   respecto al bloque y no a la pantalla. */
+@keyframes entrada-de-pantalla {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.entrada-de-pantalla > * {
+  animation: entrada-de-pantalla 260ms cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+.entrada-de-pantalla > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.entrada-de-pantalla > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.entrada-de-pantalla > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.entrada-de-pantalla > :nth-child(n + 5) {
+  animation-delay: 150ms;
+}
+@media (prefers-reduced-motion: reduce) {
+  .entrada-de-pantalla > * {
+    animation: none;
   }
 }
