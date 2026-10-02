@@ -327,6 +327,12 @@ model Capture {
    * la B, la evolución tampoco pasó en su historia.
    */
   historia      Json     @default("[]")
+  /**
+   * Si es **shiny**: capturado así (la casilla de Shiny al apuntarlo) o vuelto
+   * shiny después, que es uno de los premios. Su sprite es el variocolor, y al
+   * evolucionar sigue siéndolo.
+   */
+  shiny         Boolean  @default(false)
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

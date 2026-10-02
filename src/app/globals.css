@@ -668,3 +668,25 @@ html[data-estilo="nuevo"] .etiqueta-formato {
     animation: none;
   }
 }
+
+/* El destello de los shiny en Equipo y PC: titila despacio, como el brillo de
+   un shiny en los juegos, sin llamar más la atención que el propio pokémon */
+@keyframes brillo-shiny {
+  0%,
+  100% {
+    opacity: 0.75;
+    transform: scale(0.9) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.12) rotate(12deg);
+  }
+}
+.brillo-shiny {
+  animation: brillo-shiny 2.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .brillo-shiny {
+    animation: none;
+  }
+}

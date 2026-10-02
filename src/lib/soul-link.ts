@@ -25,6 +25,8 @@ export type PokemonDelTablero = {
   nickname: string | null;
   pokemonId: number | null;
   imagen: string | null;
+  /** Variocolor: capturado así o vuelto shiny con un premio */
+  shiny: boolean;
   tipos: { slug: string; nombre: string }[];
   /** Dónde se capturó: la zona del mapa o lo escrito a mano */
   sitio: string | null;
@@ -128,6 +130,7 @@ export async function getEquiposDelLocke(
         hueco: true,
         vinculo: true,
         deathId: true,
+        shiny: true,
         createdAt: true,
         zone: { select: { name: true } },
         muerte: { select: { cause: true } },
@@ -167,6 +170,7 @@ export async function getEquiposDelLocke(
       nickname: c.nickname,
       pokemonId: quien?.pokemonId ?? null,
       imagen: imagenes(c.id),
+      shiny: c.shiny,
       tipos: quien
         ? tiposDePokemon(quien.pokemonId, generacion)
             .map((id) => tipoPorId(id))

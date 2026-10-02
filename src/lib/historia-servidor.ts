@@ -46,6 +46,7 @@ const CAPTURA = {
   pokemonId: true,
   sitio: true,
   historia: true,
+  shiny: true,
   createdAt: true,
   deathId: true,
   zone: { select: { name: true } },
@@ -163,16 +164,27 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
 
   // Lo de la caja, solo si se puede ver
   if (laCaptura) {
-    const evoluciones = leerHistoria(laCaptura.historia);
+    const guardados = leerHistoria(laCaptura.historia);
+    const evoluciones = guardados.flatMap((s) => (s.tipo === "evoluciona" ? [s] : []));
+    // Shiny desde la captura: si lo fuera por un premio, saldría su suceso aparte
+    const nacioShiny = laCaptura.shiny && !guardados.some((s) => s.tipo === "shiny");
     const sitio = laCaptura.zone?.name ?? laCaptura.sitio;
     sucesos.push({
       tipo: "captura",
       texto: sitio ? `Capturado en ${sitio}` : "Capturado",
-      detalle: evoluciones.length ? `Era un ${evoluciones[0].de}` : null,
+      detalle:
+        [nacioShiny ? "shiny" : null, evoluciones.length ? `era un ${evoluciones[0].de}` : null]
+          .filter(Boolean)
+          .join(" · ")
+          .replace(/^./, (l) => l.toUpperCase()) || null,
       fecha: laCaptura.createdAt.toISOString(),
     });
-    for (const evolucion of evoluciones) {
-      sucesos.push({ tipo: "evoluciona", texto: `Evolucionó en ${evolucion.a}`, fecha: evolucion.fecha });
+    for (const suceso of guardados) {
+      sucesos.push(
+        suceso.tipo === "evoluciona"
+          ? { tipo: "evoluciona", texto: `Evolucionó en ${suceso.a}`, fecha: suceso.fecha }
+          : { tipo: "shiny", texto: "Se volvió shiny", fecha: suceso.fecha },
+      );
     }
   }
 

@@ -16,19 +16,19 @@ import { raizDeLaFamilia } from "@/lib/evoluciones";
  */
 
 /** Lo que se guarda en `Capture.historia` */
-export type SucesoGuardado = { tipo: "evoluciona"; de: string; a: string; fecha: string };
+export type SucesoGuardado =
+  | { tipo: "evoluciona"; de: string; a: string; fecha: string }
+  // Vuelto shiny después de capturarlo (un premio)
+  | { tipo: "shiny"; fecha: string };
 
 export function leerHistoria(valor: unknown): SucesoGuardado[] {
   if (!Array.isArray(valor)) return [];
-  return valor.filter(
-    (s): s is SucesoGuardado =>
-      Boolean(s) &&
-      typeof s === "object" &&
-      (s as SucesoGuardado).tipo === "evoluciona" &&
-      typeof (s as SucesoGuardado).de === "string" &&
-      typeof (s as SucesoGuardado).a === "string" &&
-      typeof (s as SucesoGuardado).fecha === "string",
-  );
+  return valor.filter((s): s is SucesoGuardado => {
+    if (!s || typeof s !== "object" || typeof (s as { fecha?: unknown }).fecha !== "string") return false;
+    const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown };
+    if (suceso.tipo === "shiny") return true;
+    return suceso.tipo === "evoluciona" && typeof suceso.de === "string" && typeof suceso.a === "string";
+  });
 }
 
 /** Sin acentos, mayúsculas ni espacios de más: "  Chíspas " es "chispas" */
@@ -65,6 +65,7 @@ export function esElMismo(a: Identificable, b: Identificable) {
 export type TipoDeSuceso =
   | "captura"
   | "evoluciona"
+  | "shiny"
   | "gimnasio"
   | "jornada"
   | "royale"
@@ -91,6 +92,7 @@ export type Suceso = {
 const ORDEN: Record<TipoDeSuceso, number> = {
   captura: 0,
   evoluciona: 1,
+  shiny: 1,
   gimnasio: 2,
   jornada: 3,
   royale: 3,

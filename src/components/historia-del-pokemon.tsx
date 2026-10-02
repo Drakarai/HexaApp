@@ -10,6 +10,7 @@ import { cx } from "@/lib/utils";
 const ICONO: Record<TipoDeSuceso, string> = {
   captura: "📍",
   evoluciona: "🧬",
+  shiny: "✨",
   gimnasio: "🏅",
   jornada: "⚔️",
   royale: "⚔️",
@@ -75,7 +76,7 @@ export function HistoriaDelPokemon({ de, nombre }: { de: DeQuienEsLaHistoria; no
                       "absolute -left-[11px] top-0 flex h-[21px] w-[21px] items-center justify-center rounded-full border bg-ink-900 text-[11px]",
                       suceso.tipo === "caida"
                         ? "border-red-400/40 text-red-300"
-                        : suceso.tipo === "mvp" || suceso.tipo === "hall"
+                        : suceso.tipo === "mvp" || suceso.tipo === "hall" || suceso.tipo === "shiny"
                           ? "border-amber-300/50 text-amber-200"
                           : "border-white/15 text-slate-300",
                     )}

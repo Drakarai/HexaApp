@@ -48,6 +48,7 @@ export const CAMPOS = {
   deathId: true,
   image: true,
   historia: true,
+  shiny: true,
 } as const;
 export type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }>;
 

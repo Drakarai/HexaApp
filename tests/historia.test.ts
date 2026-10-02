@@ -60,6 +60,9 @@ describe("leerHistoria", () => {
     const buena = { tipo: "evoluciona", de: "Cyndaquil", a: "Quilava", fecha: "2026-09-01T00:00:00.000Z" };
     assert.deepEqual(leerHistoria([buena, { tipo: "otra" }, null, 3]), [buena]);
     assert.deepEqual(leerHistoria(null), []);
+    // Y el de volverse shiny, que no lleva especies
+    const shiny = { tipo: "shiny", fecha: "2026-10-02T00:00:00.000Z" };
+    assert.deepEqual(leerHistoria([buena, shiny, { tipo: "shiny" }]), [buena, shiny]);
     assert.deepEqual(leerHistoria("[]"), []);
   });
 });

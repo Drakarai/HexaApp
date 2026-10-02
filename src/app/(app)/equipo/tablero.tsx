@@ -26,6 +26,7 @@ import {
   borrarDeLaCajaAction,
   cambiarFondoDeCajaAction,
   cambiarMoteAction,
+  cambiarShinyAction,
   darPorMuertoAction,
   desvincularAction,
   deshacerEnCajaAction,
@@ -564,6 +565,18 @@ function Casilla({
           )}
         </button>
       ) : null}
+      {pokemon?.shiny ? (
+        // El destello del shiny, en la esquina de arriba (la otra la lleva el vínculo)
+        <span
+          className={cx(
+            "pointer-events-none absolute text-amber-300 [filter:drop-shadow(0_0_3px_rgb(251_191_36/0.8))]",
+            grande ? "right-1 top-1" : "right-0.5 top-0.5",
+          )}
+          title="Shiny"
+        >
+          <Icono emoji="✨" tamano={grande ? 16 : 11} className="brillo-shiny" sinColor />
+        </span>
+      ) : null}
       {pokemon && numero ? (
         <span
           className={cx(
@@ -946,6 +959,29 @@ function Ficha({
     gritoDespues: number | null;
   } | null>(null);
   const [mote, setMote] = useState(pokemon.nickname ?? "");
+  // La ráfaga de destellos: un número que cambia cada vez, para que se repita
+  const [rafaga, setRafaga] = useState(0);
+
+  function cambiarShiny(shiny: boolean) {
+    const nombre = pokemon.nickname ?? pokemon.species;
+    const pregunta = shiny
+      ? `¿${nombre} pasa a ser shiny? Se le pone su sprite variocolor. Se puede deshacer.`
+      : `¿Quitarle lo shiny a ${nombre}? Es para si se marcó sin querer.`;
+    if (!window.confirm(pregunta)) return;
+    empezar(async () => {
+      const respuesta = await sinConexion(() => cambiarShinyAction({ captureId: pokemon.id, shiny }));
+      if (respuesta.error) {
+        onAviso({ tipo: "error", texto: respuesta.error });
+        return;
+      }
+      onAviso({ tipo: "ok", texto: respuesta.aviso ?? "Hecho." });
+      if (shiny) {
+        setRafaga(Date.now());
+        sonarGrito(pokemon.pokemonId);
+        navigator.vibrate?.([20, 40, 20]);
+      }
+    });
+  }
   const [conId, setConId] = useState("");
   const dueno = tableros.find((t) => t.participantId === pokemon.participantId)!;
   const editable = dueno.editable && !pokemon.muerta;
@@ -1054,18 +1090,43 @@ function Ficha({
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border border-white/5 bg-ink-850">
+          <div
+            className={cx(
+              "relative flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border bg-ink-850",
+              pokemon.shiny ? "border-amber-300/30" : "border-white/5",
+            )}
+          >
             <Sprite
               pokemon={pokemon}
               className={cx("h-20 w-20", pokemon.muerta && "opacity-50 grayscale")}
             />
+            {/* Al volverse shiny, la ráfaga de destellos de cuando sale uno en los juegos */}
+            {rafaga
+              ? RAFAGA.map(([x, y, retraso, tam], i) => (
+                  <span
+                    key={`${rafaga}-${i}`}
+                    aria-hidden
+                    className="pointer-events-none absolute animate-[evo-destellito_900ms_ease-out_both] bg-amber-200 [clip-path:polygon(50%_0,62%_38%,100%_50%,62%_62%,50%_100%,38%_62%,0_50%,38%_38%)]"
+                    style={{ left: `${x}%`, top: `${y}%`, width: tam, height: tam, animationDelay: `${retraso}ms` }}
+                  />
+                ))
+              : null}
           </div>
           <div className="min-w-0">
             <h3 className="truncate text-xl font-bold text-white">
               {pokemon.nickname ?? pokemon.species}
             </h3>
             {/* Sin mote, el nombre de arriba ya es la especie */}
-            {pokemon.nickname ? <p className="muted">{pokemon.species}</p> : null}
+            {pokemon.nickname || pokemon.shiny ? (
+              <p className="muted flex items-center gap-1.5">
+                {pokemon.nickname ? pokemon.species : null}
+                {pokemon.shiny ? (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                    <Icono emoji="✨" tamano={12} sinColor /> Shiny
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
             <div className="mt-1.5">
               <Tipos tipos={pokemon.tipos} alto={20} />
             </div>
@@ -1082,6 +1143,8 @@ function Ficha({
         </dl>
 
         <HistoriaDelPokemon
+          // Se vuelve a pedir si evoluciona o se vuelve shiny con la ficha abierta
+          key={`${pokemon.species}-${pokemon.shiny}`}
           de={{ tipo: "captura", id: pokemon.id }}
           nombre={pokemon.nickname ?? pokemon.species}
         />
@@ -1193,6 +1256,17 @@ function Ficha({
               >
                 <Icono emoji="🔁" /> {enEquipo ? "A la caja" : "Al equipo"}
               </button>
+              {/* Uno de los premios: volver shiny a un pokémon a elección */}
+              {!pokemon.shiny ? (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm border-amber-300/30 text-amber-200 hover:bg-amber-300/10"
+                  disabled={pendiente}
+                  onClick={() => cambiarShiny(true)}
+                >
+                  <Icono emoji="✨" sinColor /> Hacer shiny
+                </button>
+              ) : null}
               {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre */}
               <select
                 className="input w-auto min-w-0 flex-1 py-1.5 text-sm sm:flex-none"
@@ -1370,6 +1444,16 @@ function Ficha({
               </button>
             </div>
 
+            {pokemon.shiny ? (
+              <button
+                type="button"
+                className="mr-4 text-xs text-slate-500 underline-offset-2 hover:text-amber-200 hover:underline"
+                disabled={pendiente}
+                onClick={() => cambiarShiny(false)}
+              >
+                Quitar lo shiny (marcado sin querer)
+              </button>
+            ) : null}
             <button
               type="button"
               className="text-xs text-slate-500 underline-offset-2 hover:text-red-300 hover:underline"
@@ -1403,6 +1487,18 @@ function Ficha({
     </>
   );
 }
+
+/** Dónde sale cada destello de la ráfaga shiny: x e y en %, retraso en ms y tamaño */
+const RAFAGA: [number, number, number, number][] = [
+  [-6, 10, 0, 14],
+  [78, -4, 80, 12],
+  [92, 58, 160, 16],
+  [8, 78, 120, 12],
+  [44, -10, 220, 10],
+  [50, 96, 40, 14],
+  [-10, 46, 260, 10],
+  [100, 26, 300, 10],
+];
 
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (

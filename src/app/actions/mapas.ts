@@ -456,6 +456,7 @@ export async function apuntarCapturaAction(
       nickname: String(formData.get("nickname") ?? "").trim() || null,
       notes: String(formData.get("notes") ?? "").trim() || null,
       image: sprites?.boxImage ?? null,
+      shiny: !fallado && formData.get("shiny") === "on",
       failed: fallado,
       lugar: donde.lugar,
       hueco: donde.hueco,

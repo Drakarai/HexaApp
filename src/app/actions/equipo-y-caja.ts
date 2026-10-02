@@ -5,7 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
-import { evolucionesDe } from "@/lib/evoluciones";
+import { evolucionesDe, queEs } from "@/lib/evoluciones";
 import { leerHistoria } from "@/lib/historia";
 import { urlsDeImagen } from "@/lib/imagenes";
 import {
@@ -128,6 +128,8 @@ export async function apuntarEnCajaAction(
       zoneId,
       sitio,
       image: sprites?.boxImage ?? null,
+      // La casilla de Shiny del buscador: si se marcó, ya es variocolor
+      shiny: formData.get("shiny") === "on",
       lugar: donde.lugar,
       hueco: donde.hueco,
     },
@@ -242,7 +244,8 @@ export async function evolucionarAction(entrada: {
 
     const [foto, sprites] = await Promise.all([
       fotos([captura.id]),
-      descargarSprites(elegida.pokemonId, false),
+      // Un shiny evoluciona en shiny
+      descargarSprites(elegida.pokemonId, captura.shiny),
     ]);
     // Queda en su historia; deshacer la quita con el resto de la foto
     const historia = [
@@ -265,6 +268,60 @@ export async function evolucionarAction(entrada: {
     const imagenes = await urlsDeImagen("captura", [captura.id]);
     return {
       aviso: `¡${nombreDe(captura)} ha evolucionado en ${elegida.rotulo}!`,
+      deshacer: descripcion,
+      imagen: imagenes(captura.id),
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Shiny
+// ---------------------------------------------------------------------------
+
+/**
+ * Volverlo shiny (o quitárselo, si se marcó sin querer). Es uno de los premios
+ * que se reparten: se baja su sprite variocolor y queda en su historia. Se
+ * puede deshacer como lo demás de la caja.
+ */
+export async function cambiarShinyAction(entrada: {
+  captureId: string;
+  shiny: boolean;
+}): Promise<Resultado> {
+  return conError(async () => {
+    const captura = await capturaQuePuedoTocar(entrada.captureId);
+    if (captura.deathId) return { error: "Un pokémon caído ya no cambia." };
+    const shiny = entrada.shiny === true;
+    if (captura.shiny === shiny) {
+      return { error: shiny ? "Ya era shiny." : "No era shiny." };
+    }
+    const quien = queEs(captura.pokemonId, captura.species);
+
+    const [foto, sprites] = await Promise.all([
+      fotos([captura.id]),
+      quien ? descargarSprites(quien.pokemonId, shiny) : null,
+    ]);
+    const anterior = leerHistoria(foto[0]?.historia);
+    // Al quitarlo, fuera también de su historia: no llegó a pasar
+    const historia = shiny
+      ? [...anterior, { tipo: "shiny" as const, fecha: new Date().toISOString() }]
+      : anterior.filter((s) => s.tipo !== "shiny");
+    await prisma.capture.update({
+      where: { id: captura.id },
+      data: {
+        shiny,
+        historia,
+        // Sin sprite nuevo (sin línea con GitHub, una especie inventada), el de antes
+        ...(sprites?.boxImage ? { image: sprites.boxImage } : {}),
+      },
+    });
+    const descripcion = shiny
+      ? `Volver shiny a ${nombreDe(captura)}`
+      : `Quitarle lo shiny a ${nombreDe(captura)}`;
+    await apuntarCambio(captura.participantId, descripcion, foto);
+    refrescar();
+    const imagenes = await urlsDeImagen("captura", [captura.id]);
+    return {
+      aviso: shiny ? `¡${nombreDe(captura)} ahora es shiny!` : `${nombreDe(captura)} ya no es shiny.`,
       deshacer: descripcion,
       imagen: imagenes(captura.id),
     };
@@ -478,6 +535,7 @@ export async function deshacerEnCajaAction(entrada: {
               image: f.image,
               // Las fotos de antes de que hubiera historia no la traen: se deja como está
               ...(f.historia !== undefined ? { historia: f.historia ?? [] } : {}),
+              ...(f.shiny !== undefined ? { shiny: f.shiny } : {}),
               deathId: f.deathId && bajasVivas.has(f.deathId) ? f.deathId : null,
             },
           }),
