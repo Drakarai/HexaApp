@@ -100,6 +100,25 @@ export const getActiveCompetition = cache(async () => {
 
   const visibles = filtroDeLockesVisibles(user);
 
+  /**
+   * Sin ninguno elegido, el Creador —que puede abrirlos todos— entraba en **el
+   * más nuevo de cualquiera**, aunque fuera de otra persona. Primero los suyos:
+   * los que juega o mira.
+   */
+  if (esCreador(user)) {
+    const suyo = await prisma.competition.findFirst({
+      where: {
+        status: COMPETITION_STATUS.ACTIVE,
+        OR: [
+          { participants: { some: { userId: user.id } } },
+          { espectadores: { some: { userId: user.id } } },
+        ],
+      },
+      orderBy: { startedAt: "desc" },
+    });
+    if (suyo) return suyo;
+  }
+
   return (
     (await prisma.competition.findFirst({
       where: { AND: [{ status: COMPETITION_STATUS.ACTIVE }, visibles] },

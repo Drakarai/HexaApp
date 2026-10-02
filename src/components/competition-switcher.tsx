@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { selectCompetitionAction } from "@/app/actions/competitions";
 
 type Option = { id: string; name: string; status: string; supervisando?: boolean };
@@ -21,13 +21,22 @@ export function CompetitionSwitcher({
   competitions: Option[];
   currentId: string | null;
 }) {
-  const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
+  /**
+   * Lo que enseña el selector, **atado al locke de verdad**, y la acción se
+   * llama **directamente y no con un `<form>`**. Iba en un formulario, y desde
+   * React 19 un formulario se vacía solo al terminar su acción: el selector
+   * volvía a su opción de partida justo después de cambiar de locke. La
+   * pantalla era de uno y el selector decía otro, y elegir ese «otro» no hacía
+   * nada porque para el navegador ya estaba elegido.
+   */
+  const [elegido, setElegido] = useState(currentId ?? "");
+  useEffect(() => setElegido(currentId ?? ""), [currentId]);
 
   if (!competitions.length) return null;
 
   return (
-    <form ref={formRef} action={selectCompetitionAction}>
+    <div>
       <label className="label" htmlFor="competition-switcher">
         Competición
       </label>
@@ -35,10 +44,14 @@ export function CompetitionSwitcher({
         id="competition-switcher"
         name="competitionId"
         className="input"
-        defaultValue={currentId ?? ""}
+        value={elegido}
         disabled={pending}
-        onChange={() => {
-          startTransition(() => formRef.current?.requestSubmit());
+        onChange={(evento) => {
+          const id = evento.target.value;
+          setElegido(id);
+          const datos = new FormData();
+          datos.set("competitionId", id);
+          startTransition(() => selectCompetitionAction(datos));
         }}
       >
         {/* El que se está supervisando va aparte, para que se vea que no es tuyo */}
@@ -65,6 +78,6 @@ export function CompetitionSwitcher({
           ))
         )}
       </select>
-    </form>
+    </div>
   );
 }
