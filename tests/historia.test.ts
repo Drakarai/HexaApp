@@ -65,6 +65,13 @@ describe("leerHistoria", () => {
     assert.deepEqual(leerHistoria([buena, shiny, { tipo: "shiny" }]), [buena, shiny]);
     assert.deepEqual(leerHistoria("[]"), []);
   });
+
+  test("el intercambio, con lo que se fue y lo que llegó", () => {
+    const cambio = { tipo: "intercambio", de: "Sentret", a: "Abra", fecha: "2026-10-04T00:00:00.000Z" };
+    assert.deepEqual(leerHistoria([cambio]), [cambio]);
+    // Sin saber qué llegó no vale
+    assert.deepEqual(leerHistoria([{ tipo: "intercambio", de: "Sentret", fecha: cambio.fecha }]), []);
+  });
 });
 
 describe("ordenarSucesos", () => {

@@ -11,6 +11,7 @@ const ICONO: Record<TipoDeSuceso, string> = {
   captura: "📍",
   evoluciona: "🧬",
   shiny: "✨",
+  intercambio: "🔁",
   gimnasio: "🏅",
   jornada: "⚔️",
   royale: "⚔️",

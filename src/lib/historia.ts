@@ -19,7 +19,9 @@ import { raizDeLaFamilia } from "@/lib/evoluciones";
 export type SucesoGuardado =
   | { tipo: "evoluciona"; de: string; a: string; fecha: string }
   // Vuelto shiny después de capturarlo (un premio)
-  | { tipo: "shiny"; fecha: string };
+  | { tipo: "shiny"; fecha: string }
+  // Cambiado a un entrenador del juego: se fue `de` y llegó `a`, en su hueco
+  | { tipo: "intercambio"; de: string; a: string; fecha: string };
 
 export function leerHistoria(valor: unknown): SucesoGuardado[] {
   if (!Array.isArray(valor)) return [];
@@ -27,7 +29,11 @@ export function leerHistoria(valor: unknown): SucesoGuardado[] {
     if (!s || typeof s !== "object" || typeof (s as { fecha?: unknown }).fecha !== "string") return false;
     const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown };
     if (suceso.tipo === "shiny") return true;
-    return suceso.tipo === "evoluciona" && typeof suceso.de === "string" && typeof suceso.a === "string";
+    return (
+      (suceso.tipo === "evoluciona" || suceso.tipo === "intercambio") &&
+      typeof suceso.de === "string" &&
+      typeof suceso.a === "string"
+    );
   });
 }
 
@@ -66,6 +72,7 @@ export type TipoDeSuceso =
   | "captura"
   | "evoluciona"
   | "shiny"
+  | "intercambio"
   | "gimnasio"
   | "jornada"
   | "royale"
@@ -93,6 +100,7 @@ const ORDEN: Record<TipoDeSuceso, number> = {
   captura: 0,
   evoluciona: 1,
   shiny: 1,
+  intercambio: 1,
   gimnasio: 2,
   jornada: 3,
   royale: 3,

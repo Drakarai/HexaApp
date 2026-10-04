@@ -279,6 +279,68 @@ export async function evolucionarAction(entrada: {
 }
 
 // ---------------------------------------------------------------------------
+// Intercambio
+// ---------------------------------------------------------------------------
+
+/**
+ * Cambiarlo a un entrenador del juego, de los que te dan otro a cambio del
+ * tuyo. El que llega **ocupa su sitio**: el mismo hueco, el mismo vínculo en un
+ * Soul Link y el mismo sitio de captura, que es el encuentro que se gastó. Lo
+ * que era del que se va (su mote y su ficha de combate) se va con él, y el
+ * cambio queda en la historia. Se deshace como lo demás.
+ */
+export async function intercambiarAction(entrada: {
+  captureId: string;
+  species: string;
+  pokemonId: number | null;
+  nickname: string;
+  shiny: boolean;
+}): Promise<Resultado> {
+  return conError(async () => {
+    const captura = await capturaQuePuedoTocar(entrada.captureId);
+    if (captura.deathId) return { error: "Un pokémon caído ya no se cambia." };
+    const species = String(entrada.species ?? "").trim().slice(0, 40);
+    if (!species) return { error: "¿Qué pokémon te dan a cambio?" };
+    const pokemonId =
+      Number.isInteger(entrada.pokemonId) && (entrada.pokemonId ?? 0) > 0 ? entrada.pokemonId : null;
+    const shiny = entrada.shiny === true;
+
+    const [foto, completa, sprites] = await Promise.all([
+      fotos([captura.id]),
+      prisma.capture.findUniqueOrThrow({
+        where: { id: captura.id },
+        select: { nickname: true, naturaleza: true, objeto: true, movimientos: true },
+      }),
+      // Una especie inventada (un fangame) no tiene sprite que bajar
+      pokemonId ? descargarSprites(pokemonId, shiny) : null,
+    ]);
+    const historia = [
+      ...leerHistoria(foto[0]?.historia),
+      { tipo: "intercambio" as const, de: captura.species, a: species, fecha: new Date().toISOString() },
+    ];
+    await prisma.capture.update({
+      where: { id: captura.id },
+      data: {
+        species,
+        pokemonId,
+        nickname: String(entrada.nickname ?? "").trim().slice(0, 40) || null,
+        shiny,
+        historia,
+        naturaleza: null,
+        objeto: null,
+        movimientos: [],
+        // Sin sprite (sin línea con GitHub, o inventado): ninguno, mejor que el del que se fue
+        image: sprites?.boxImage ?? null,
+      },
+    });
+    const descripcion = `Cambiar a ${nombreDe(captura)} por ${species}`;
+    await apuntarCambio(captura.participantId, descripcion, [{ ...foto[0], ...completa }]);
+    refrescar();
+    return { aviso: `¡${nombreDe(captura)} se ha ido y ha llegado ${species}!`, deshacer: descripcion };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Shiny
 // ---------------------------------------------------------------------------
 
@@ -600,6 +662,11 @@ export async function deshacerEnCajaAction(entrada: {
               // Las fotos de antes de que hubiera historia no la traen: se deja como está
               ...(f.historia !== undefined ? { historia: f.historia ?? [] } : {}),
               ...(f.shiny !== undefined ? { shiny: f.shiny } : {}),
+              // Solo en la foto de un intercambio (ver `Foto`)
+              ...(f.nickname !== undefined ? { nickname: f.nickname } : {}),
+              ...(f.naturaleza !== undefined ? { naturaleza: f.naturaleza } : {}),
+              ...(f.objeto !== undefined ? { objeto: f.objeto } : {}),
+              ...(f.movimientos !== undefined ? { movimientos: f.movimientos ?? [] } : {}),
               deathId: f.deathId && bajasVivas.has(f.deathId) ? f.deathId : null,
             },
           }),

@@ -50,7 +50,17 @@ export const CAMPOS = {
   historia: true,
   shiny: true,
 } as const;
-export type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }>;
+export type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }> & {
+  /**
+   * Lo que solo cambia al intercambiarlo (el mote y su ficha de combate son del
+   * que se va). Solo lo lleva la foto de un intercambio: en las demás no se
+   * toca, que deshacer un movimiento no tiene por qué devolver un mote viejo.
+   */
+  nickname?: string | null;
+  naturaleza?: string | null;
+  objeto?: string | null;
+  movimientos?: Prisma.JsonValue;
+};
 
 export async function fotos(ids: string[]): Promise<Foto[]> {
   if (!ids.length) return [];

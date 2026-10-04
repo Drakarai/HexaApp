@@ -166,7 +166,8 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
   // Lo de la caja, solo si se puede ver
   if (laCaptura) {
     const guardados = leerHistoria(laCaptura.historia);
-    const evoluciones = guardados.flatMap((s) => (s.tipo === "evoluciona" ? [s] : []));
+    // Lo que fue al principio: lo que se capturó, antes de evolucionar o de cambiarlo
+    const cambios = guardados.flatMap((s) => (s.tipo === "evoluciona" || s.tipo === "intercambio" ? [s] : []));
     // Shiny desde la captura: si lo fuera por un premio, saldría su suceso aparte
     const nacioShiny = laCaptura.shiny && !guardados.some((s) => s.tipo === "shiny");
     const sitio = laCaptura.zone?.name ?? laCaptura.sitio;
@@ -176,7 +177,7 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       detalle:
         [
           nacioShiny ? "shiny" : null,
-          evoluciones.length ? `era un ${evoluciones[0].de}` : null,
+          cambios.length ? `era un ${cambios[0].de}` : null,
           // Lo apuntado al capturarlo: «huevo de regalo» es parte de su historia
           laCaptura.notes,
         ]
@@ -189,7 +190,9 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       sucesos.push(
         suceso.tipo === "evoluciona"
           ? { tipo: "evoluciona", texto: `Evolucionó en ${suceso.a}`, fecha: suceso.fecha }
-          : { tipo: "shiny", texto: "Se volvió shiny", fecha: suceso.fecha },
+          : suceso.tipo === "intercambio"
+            ? { tipo: "intercambio", texto: `Llegó por intercambio, a cambio de ${suceso.de}`, fecha: suceso.fecha }
+            : { tipo: "shiny", texto: "Se volvió shiny", fecha: suceso.fecha },
       );
     }
   }

@@ -6,6 +6,7 @@ import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
+import { leerHistoria } from "@/lib/historia";
 import { debilidadesDe, GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
 import { leerFondos, leerNombresDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
@@ -39,6 +40,8 @@ export type PokemonDelTablero = {
   sitio: string | null;
   /** Lo que se apuntó al capturarlo: «2ª captura», «huevo de regalo»… */
   apunte: string | null;
+  /** Si llegó cambiándolo a un entrenador: la especie que se dio a cambio */
+  llegoPorIntercambio: string | null;
   lugar: string;
   hueco: number;
   creado: number;
@@ -149,6 +152,7 @@ export async function getEquiposDelLocke(
         zoneId: true,
         sitio: true,
         notes: true,
+        historia: true,
         lugar: true,
         hueco: true,
         vinculo: true,
@@ -201,6 +205,9 @@ export async function getEquiposDelLocke(
       debilidades: { generacion, lista: debilidadesDe(quien?.pokemonId, generacion) },
       sitio: c.zone?.name ?? c.sitio,
       apunte: c.notes,
+      // El último intercambio: a cambio de quién llegó, para su ficha
+      llegoPorIntercambio:
+        leerHistoria(c.historia).findLast((s) => s.tipo === "intercambio")?.de ?? null,
       lugar: c.lugar,
       hueco: c.hueco,
       creado: c.createdAt.getTime(),

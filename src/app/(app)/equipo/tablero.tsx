@@ -23,6 +23,7 @@ import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { FichaDeCombate } from "./ficha-de-combate";
 import { Debilidades } from "./debilidades";
+import { Intercambio } from "./intercambio";
 import { ConFichaAlPasar } from "./ficha-al-pasar";
 import {
   HUECOS_POR_CAJA,
@@ -40,6 +41,7 @@ import {
   nombrarCajaAction,
   cambiarMoteAction,
   cambiarShinyAction,
+  intercambiarAction,
   darPorMuertoAction,
   desvincularAction,
   deshacerEnCajaAction,
@@ -1051,6 +1053,8 @@ function Ficha({
     shiny: boolean;
   } | null>(null);
   const [mote, setMote] = useState(pokemon.nickname ?? "");
+  // Si cambia por fuera (un intercambio, deshacer), el campo con él
+  useEffect(() => setMote(pokemon.nickname ?? ""), [pokemon.nickname]);
   // La ráfaga de destellos: un número que cambia cada vez, para que se repita
   const [rafaga, setRafaga] = useState(0);
 
@@ -1072,6 +1076,18 @@ function Ficha({
         sonarGrito(pokemon.pokemonId);
         navigator.vibrate?.([20, 40, 20]);
       }
+    });
+  }
+  function intercambiar(datos: { species: string; pokemonId: number | null; nickname: string; shiny: boolean }) {
+    empezar(async () => {
+      const respuesta = await sinConexion(() => intercambiarAction({ captureId: pokemon.id, ...datos }));
+      if (respuesta.error) {
+        onAviso({ tipo: "error", texto: respuesta.error });
+        return;
+      }
+      onAviso({ tipo: "ok", texto: respuesta.aviso ?? "Hecho." });
+      // El que llega se presenta, como al salir de una Poké Ball
+      sonarGrito(datos.pokemonId);
     });
   }
   const [conId, setConId] = useState("");
@@ -1244,7 +1260,13 @@ function Ficha({
           {pestana === "resumen" ? (
             <>
             <dl className="mt-1 space-y-1.5 text-sm">
-              {pokemon.sitio ? <Fila etiqueta="Capturado en" valor={pokemon.sitio} /> : null}
+              {pokemon.llegoPorIntercambio ? (
+                <Fila etiqueta="Llegó" valor={`Por intercambio, a cambio de ${pokemon.llegoPorIntercambio}`} />
+              ) : null}
+              {pokemon.sitio ? (
+                // Si llegó por intercambio, la ruta es la del que se fue: el encuentro que se gastó
+                <Fila etiqueta={pokemon.llegoPorIntercambio ? "Encuentro" : "Capturado en"} valor={pokemon.sitio} />
+              ) : null}
               {pokemon.apunte ? <Fila etiqueta="Apunte" valor={pokemon.apunte} /> : null}
               <Fila
                 etiqueta="Ahora"
@@ -1470,6 +1492,14 @@ function Ficha({
                     <p className="text-xs text-slate-500">No evoluciona más.</p>
                   )}
                 </div>
+
+                {/* Los entrenadores del juego que te dan uno a cambio de otro */}
+                <Intercambio
+                  key={pokemon.id}
+                  nombre={pokemon.nickname ?? pokemon.species}
+                  ocupado={pendiente}
+                  onIntercambiar={intercambiar}
+                />
 
                 <div>
                   <label className="label" htmlFor="mote-ficha">
