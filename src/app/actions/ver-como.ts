@@ -28,5 +28,5 @@ export async function verComoAction(formData: FormData) {
 export async function dejarDeVerComoAction() {
   (await cookies()).delete(VER_COMO);
   revalidatePath("/", "layout");
-  redirect("/diagnostico");
+  redirect("/diagnostico?ver=ver-como");
 }

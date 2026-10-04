@@ -13,6 +13,7 @@ import { SpeciesPicker } from "@/components/species-picker";
 import { spriteCandidates } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
 import { Hoja } from "@/components/hoja";
+import { Pestanas } from "@/components/pestanas";
 
 export type TeamPokemon = {
   id: string;
@@ -392,6 +393,9 @@ function TeamEditor({
     setLimpiezas((veces) => veces + 1);
   }
 
+  const [modo, setModo] = useState<"repeticion" | "mano" | "pegar">(
+    repeticion && !levelCapId ? "repeticion" : "mano",
+  );
   const [pegado, setPegado] = useState("");
   const [leyendo, setLeyendo] = useState(false);
 
@@ -539,7 +543,7 @@ function TeamEditor({
     <Hoja onCerrar={onClose} ancho="max-w-lg" fondo="bg-black/70" className="p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+          <p className="antetitulo">
             {sides.length > 1 ? "Equipos del combate" : "El equipo que sacaste"}
           </p>
           <p className="text-sm text-slate-400">
@@ -615,158 +619,184 @@ function TeamEditor({
         ))}
       </div>
 
-      {/* Lo cómodo: los equipos de todos, sacados del enlace de la repetición */}
-      <details className="group mt-4 rounded-xl border border-white/10 px-3 py-2" open={Boolean(repeticion)}>
-        <summary className="cursor-pointer list-none text-sm text-slate-300">
-          <span className="mr-1.5 inline-block transition group-open:rotate-90">▸</span>
-          Sacar los equipos de la repetición
-        </summary>
-        <p className="mt-2 text-xs text-slate-500">
-          Con el enlace de la repetición de Showdown salen la especie y el mote de los pokémon de
-          cada uno. Los motes, de los que llegaron a salir al campo.
-        </p>
-        <div className="mt-2 flex gap-2">
-          <input
-            className="input min-w-0 flex-1 text-sm"
-            value={enlace}
-            onChange={(evento) => setEnlace(evento.target.value)}
-            placeholder="https://replay.pokemonshowdown.com/…"
-            inputMode="url"
-            autoComplete="off"
-          />
-          <button
-            type="button"
-            className="btn-ghost btn-sm shrink-0"
-            disabled={leyendo || !enlace.trim()}
-            onClick={leerLaRepeticion}
-          >
-            {leyendo && !deLaRepeticion ? "Leyendo…" : "Leer"}
-          </button>
-        </div>
-        {deLaRepeticion ? (
-          <div className="mt-3 space-y-2">
-            {deLaRepeticion.map((jugador, i) => (
-              <div key={jugador.lado} className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-white">{jugador.nombre}</span>
-                  <span className="text-xs text-slate-500">
-                    {jugador.equipo.length} pokémon{jugador.completo ? "" : ", solo los que salieron"}
-                  </span>
-                  <select
-                    className="input ml-auto w-auto py-1 text-sm"
-                    value={quienEs[i] ?? ""}
-                    onChange={(evento) =>
-                      setQuienEs((antes) => {
-                        const nuevo = [...antes];
-                        nuevo[i] = evento.target.value;
-                        return nuevo;
-                      })
-                    }
-                    aria-label={`Quién es ${jugador.nombre}`}
-                  >
-                    <option value="">No añadir</option>
-                    {sides.map((lado) => (
-                      <option key={lado.participantId} value={lado.participantId}>
-                        Es {lado.displayName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <p className="mt-1 text-xs text-slate-400">
-                  {jugador.equipo.map((p) => (p.mote ? `${p.mote} (${p.especie})` : p.especie)).join(" · ")}
-                </p>
+      {/**
+       * Tres formas de añadir, y se ve una: apiladas, el editor se había vuelto
+       * un pergamino. Si el combate ya tiene repetición se abre en esa, que es
+       * la que menos se teclea.
+       */}
+      <div className="mt-4 border-t border-white/10 pt-4">
+        <Pestanas
+          ancha
+          etiqueta="Cómo añadir"
+          valor={modo}
+          onCambiar={setModo}
+          opciones={[
+            ...(levelCapId ? [] : [{ valor: "repeticion" as const, rotulo: "Repetición" }]),
+            { valor: "mano" as const, rotulo: "A mano" },
+            { valor: "pegar" as const, rotulo: "Pegar" },
+          ]}
+        />
+        <div className="mt-3">
+          {modo === "repeticion" ? (
+            <div>
+            <p className="text-xs text-slate-500">
+              Con el enlace de la repetición de Showdown salen la especie y el mote de los pokémon de
+              cada uno. Los motes, de los que llegaron a salir al campo.
+            </p>
+            <div className="mt-2 flex gap-2">
+              <input
+                className="input min-w-0 flex-1 text-sm"
+                value={enlace}
+                onChange={(evento) => setEnlace(evento.target.value)}
+                placeholder="https://replay.pokemonshowdown.com/…"
+                inputMode="url"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="btn-ghost btn-sm shrink-0"
+                disabled={leyendo || !enlace.trim()}
+                onClick={leerLaRepeticion}
+              >
+                {leyendo && !deLaRepeticion ? "Leyendo…" : "Leer"}
+              </button>
+            </div>
+            {deLaRepeticion ? (
+              <div className="mt-3 space-y-2">
+                {deLaRepeticion.map((jugador, i) => (
+                  <div key={jugador.lado} className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-white">{jugador.nombre}</span>
+                      <span className="text-xs text-slate-500">
+                        {jugador.equipo.length} pokémon{jugador.completo ? "" : ", solo los que salieron"}
+                      </span>
+                      <select
+                        className="input ml-auto w-auto py-1 text-sm"
+                        value={quienEs[i] ?? ""}
+                        onChange={(evento) =>
+                          setQuienEs((antes) => {
+                            const nuevo = [...antes];
+                            nuevo[i] = evento.target.value;
+                            return nuevo;
+                          })
+                        }
+                        aria-label={`Quién es ${jugador.nombre}`}
+                      >
+                        <option value="">No añadir</option>
+                        {sides.map((lado) => (
+                          <option key={lado.participantId} value={lado.participantId}>
+                            Es {lado.displayName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <p className="mt-1 text-xs text-slate-400">
+                      {jugador.equipo.map((p) => (p.mote ? `${p.mote} (${p.especie})` : p.especie)).join(" · ")}
+                    </p>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="btn-primary btn-sm"
+                  disabled={leyendo || !quienEs.some(Boolean)}
+                  onClick={anadirDeLaRepeticion}
+                >
+                  {leyendo ? "Añadiendo…" : "Añadir los equipos"}
+                </button>
               </div>
-            ))}
+            ) : null}
+            </div>
+          ) : modo === "pegar" ? (
+            <div>
+            {sides.length > 1 ? (
+              <select
+                className="input mb-2"
+                value={owner}
+                onChange={(evento) => setOwner(evento.target.value)}
+                aria-label="De quién es el equipo"
+              >
+                {sides.map((side) => (
+                  <option key={side.participantId} value={side.participantId}>
+                    El equipo de {side.displayName}
+                  </option>
+                ))}
+              </select>
+            ) : null}
+            <p className="text-xs text-slate-500">
+              En Showdown, en el Teambuilder, «Import/Export» y copia el texto. Se añaden a{" "}
+              <span className="text-slate-300">
+                {sides.find((l) => l.participantId === owner)?.displayName}
+              </span>{" "}
+              con sus motes.
+            </p>
+            <textarea
+              className="input mt-2 min-h-32 font-mono text-xs"
+              value={pegado}
+              onChange={(evento) => setPegado(evento.target.value)}
+              placeholder={"Brasas (Charizard) @ Leftovers\nAbility: Blaze\n- Flamethrower\n\nGarchomp @ Choice Scarf\n- Earthquake"}
+            />
             <button
               type="button"
-              className="btn-primary btn-sm"
-              disabled={leyendo || !quienEs.some(Boolean)}
-              onClick={anadirDeLaRepeticion}
+              className="btn-ghost btn-sm mt-2"
+              disabled={leyendo || !pegado.trim()}
+              onClick={anadirPegados}
             >
-              {leyendo ? "Añadiendo…" : "Añadir los equipos"}
+              {leyendo ? "Añadiendo…" : "Añadir los del texto"}
             </button>
-          </div>
-        ) : null}
-      </details>
-
-      <form
-        onSubmit={enviar}
-        className="mt-4 space-y-3 border-t border-white/10 pt-4"
-      >
-        <input type="hidden" name="matchId" value={matchId} />
-        {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
-        {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
-        {royaleId ? (
-          <input type="hidden" name="royaleId" value={royaleId} />
-        ) : null}
-        {levelCapId ? (
-          <input type="hidden" name="levelCapId" value={levelCapId} />
-        ) : null}
-        {finalFourId ? (
-          <input type="hidden" name="finalFourId" value={finalFourId} />
-        ) : null}
-        <SpeciesPicker key={limpiezas} />
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div>
-            <label className="label">Entrenador</label>
-            <select
-              name="participantId"
-              className="input"
-              value={owner}
-              onChange={(event) => setOwner(event.target.value)}
-            >
-              {sides.map((side) => (
-                <option key={side.participantId} value={side.participantId}>
-                  {side.displayName}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="label">Mote</label>
-            <input
-              key={limpiezas}
-              name="nickname"
-              className="input"
-              placeholder="Chispas"
-            />
-          </div>
+            </div>
+          ) : (
+          <form
+            onSubmit={enviar}
+            className="space-y-3"
+          >
+            <input type="hidden" name="matchId" value={matchId} />
+            {esReto ? <input type="hidden" name="esReto" value="1" /> : null}
+            {/* Con esto el servidor sabe que el equipo es el de un gimnasio */}
+            {royaleId ? (
+              <input type="hidden" name="royaleId" value={royaleId} />
+            ) : null}
+            {levelCapId ? (
+              <input type="hidden" name="levelCapId" value={levelCapId} />
+            ) : null}
+            {finalFourId ? (
+              <input type="hidden" name="finalFourId" value={finalFourId} />
+            ) : null}
+            <SpeciesPicker key={limpiezas} />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="label">Entrenador</label>
+                <select
+                  name="participantId"
+                  className="input"
+                  value={owner}
+                  onChange={(event) => setOwner(event.target.value)}
+                >
+                  {sides.map((side) => (
+                    <option key={side.participantId} value={side.participantId}>
+                      {side.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="label">Mote</label>
+                <input
+                  key={limpiezas}
+                  name="nickname"
+                  className="input"
+                  placeholder="Chispas"
+                />
+              </div>
+            </div>
+            {/* Sin bloquearse mientras guarda: se pueden encadenar varios */}
+            <button type="submit" className="btn-primary">
+              Añadir al equipo
+            </button>
+          </form>
+          )}
         </div>
         <FormMessage state={state} />
-        {/* Sin bloquearse mientras guarda: se pueden encadenar varios */}
-        <button type="submit" className="btn-primary">
-          Añadir al equipo
-        </button>
-      </form>
-
-      {/* El equipo entero de golpe, copiado del «Export» del Teambuilder */}
-      <details className="group mt-3 rounded-xl border border-white/10 px-3 py-2">
-        <summary className="cursor-pointer list-none text-sm text-slate-300">
-          <span className="mr-1.5 inline-block transition group-open:rotate-90">▸</span>
-          Pegar el equipo de Showdown
-        </summary>
-        <p className="mt-2 text-xs text-slate-500">
-          En Showdown, en el Teambuilder, «Import/Export» y copia el texto. Se añaden a{" "}
-          <span className="text-slate-300">
-            {sides.find((l) => l.participantId === owner)?.displayName}
-          </span>{" "}
-          (el entrenador de arriba), con sus motes.
-        </p>
-        <textarea
-          className="input mt-2 min-h-32 font-mono text-xs"
-          value={pegado}
-          onChange={(evento) => setPegado(evento.target.value)}
-          placeholder={"Brasas (Charizard) @ Leftovers\nAbility: Blaze\n- Flamethrower\n\nGarchomp @ Choice Scarf\n- Earthquake"}
-        />
-        <button
-          type="button"
-          className="btn-ghost btn-sm mt-2"
-          disabled={leyendo || !pegado.trim()}
-          onClick={anadirPegados}
-        >
-          {leyendo ? "Añadiendo…" : "Añadir los del texto"}
-        </button>
-      </details>
+      </div>
     </Hoja>
   );
 }

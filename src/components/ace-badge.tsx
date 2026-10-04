@@ -97,7 +97,7 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
     <Hoja onCerrar={onClose} ancho="max-w-lg" fondo="bg-black/70" className="p-5">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+          <p className="antetitulo">
             Pokémon as
           </p>
           <p className="text-sm text-slate-400">{ace.playerName}</p>

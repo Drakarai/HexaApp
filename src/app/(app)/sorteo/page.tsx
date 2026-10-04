@@ -60,7 +60,7 @@ export default async function SorteoPage() {
     <>
       <PageHeader
         title="Sorteo de préstamos"
-        subtitle="Un bote de pokémon que se reparte al azar entre los que entren. Cada uno echa los suyos y la aplicación hace el reparto: seis por persona como mucho, y lo que sobre se queda en el bote."
+        subtitle="Un bote de pokémon que se reparte al azar entre los que entran: seis por persona como mucho."
       />
 
       {sorteos.length === 0 ? (

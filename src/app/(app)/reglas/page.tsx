@@ -77,7 +77,7 @@ export default async function RulesPage() {
         <div className="space-y-8">
           {categories.map((category) => (
             <section key={category}>
-              <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
+              <h2 className="antetitulo mb-3">
                 {category}
               </h2>
               <div className="space-y-4">

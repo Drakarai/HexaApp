@@ -33,6 +33,8 @@ const RUIDO = [
   /Failed to fetch|Load failed|NetworkError|network error|Network request failed/i,
   /NEXT_REDIRECT|NEXT_NOT_FOUND|NEXT_HTTP_ERROR|DYNAMIC_SERVER_USAGE/,
   /AbortError|The operation was aborted/i,
+  // Quien pedía la pantalla se fue antes de que llegara (cambió de pantalla deprisa)
+  /destination stream closed early/i,
 ];
 
 export function esRuido(mensaje: string, detalle?: string | null) {

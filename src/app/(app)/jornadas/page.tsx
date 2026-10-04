@@ -161,7 +161,7 @@ export default async function MatchdaysPage() {
     <>
       <PageHeader
         title="Jornadas"
-        subtitle="Emparejamientos de cada jornada. Al marcar un ganador se le suma automáticamente el punto de la victoria."
+        subtitle="Los combates de cada jornada. Al marcar al ganador, su punto se suma solo."
       />
 
       {marcador?.bolaDePartido.length ? (
@@ -414,7 +414,9 @@ export default async function MatchdaysPage() {
                   ) : matchday.matches.length === 0 ? (
                     <p className="muted">Sin emparejamientos todavía.</p>
                   ) : (
-                    <ul className="space-y-2">
+                    // En pantalla ancha, de dos en dos: a una columna el combate
+                    // ocupaba la mitad y el resto era aire
+                    <ul className="grid gap-2 xl:grid-cols-2 xl:items-start">
                       {matchday.matches.map((match) => (
                         <li
                           key={match.id}

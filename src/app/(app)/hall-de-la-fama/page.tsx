@@ -252,7 +252,7 @@ export default async function HallOfFamePage() {
           <p className="text-5xl" aria-hidden>
             <Icono emoji="🏆" />
           </p>
-          <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
+          <p className="antetitulo mt-2">
             Locke terminado
           </p>
           <p className="mt-3 text-3xl font-black text-white">

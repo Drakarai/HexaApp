@@ -347,7 +347,7 @@ function RutasMortiferas({
 }) {
   return (
     <section className="mb-6 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3">
-      <h2 className="text-xs font-bold uppercase tracking-widest text-slate-500">
+      <h2 className="rotulo">
         Dónde cae más gente
       </h2>
       <ul className="mt-2 flex flex-wrap gap-2">

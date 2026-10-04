@@ -394,7 +394,7 @@ export function CoberturaDeTipos({
 
           {/* Y al revés: a qué le pega fuerte el equipo */}
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="rotulo mb-1">
               A qué le pegas fuerte
             </p>
             <p className="mb-3 text-xs text-slate-500">
@@ -668,7 +668,7 @@ function Selector({
       <div className="mt-1 space-y-4">
         {grupos.map((grupo) => (
           <section key={grupo.titulo}>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            <p className="rotulo mb-1.5">
               {grupo.titulo}
             </p>
             <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
@@ -691,7 +691,7 @@ function Selector({
         {busqueda ? (
           dePokedex.length ? (
             <section>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <p className="rotulo mb-1.5">
                 De la Pokédex
               </p>
               <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">

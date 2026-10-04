@@ -48,7 +48,7 @@ export default async function GuiaPage({
     <>
       <PageHeader
         title="Guía de uso"
-        subtitle="El manual de la aplicación, con fotos de cada pantalla. Si algo no sabes dónde está o cómo se apunta, mira aquí antes de preguntar."
+        subtitle="El manual de la aplicación, con fotos de cada pantalla. Si no sabes dónde está algo, mira aquí."
       />
 
       {/* Las pestañas solo tienen sentido si hay dos guías que enseñar */}

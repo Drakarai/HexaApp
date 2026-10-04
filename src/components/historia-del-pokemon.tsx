@@ -52,7 +52,7 @@ export function HistoriaDelPokemon({ de, nombre }: { de: DeQuienEsLaHistoria; no
 
   return (
     <section className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <p className="rotulo mb-2">
         Su historia
       </p>
 

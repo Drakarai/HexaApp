@@ -187,7 +187,7 @@ export default async function BolsasPage() {
                 dentro={
                   objeto.isGroup ? (
                     <div className="rounded-xl border border-white/10 bg-ink-900/50 p-3">
-                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-brand-300/80">
+                      <p className="antetitulo mb-2">
                         Se elige entre
                       </p>
                       {objeto.options.length ? (

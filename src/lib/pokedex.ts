@@ -85,3 +85,17 @@ export function spriteCandidates(
   if (kind === "mini") return [basic, home, artwork];
   return kind === "box" ? [home, artwork, basic] : [artwork, home, basic];
 }
+
+/** El último pokémon que tiene sprite animado de Blanco y Negro: Genesect */
+export const ULTIMO_ANIMADO_DE_QUINTA = 649;
+
+/**
+ * El sprite **animado de Blanco y Negro**, para la ficha grande. Solo existe
+ * hasta Genesect (#649) y sin formas aparte: a partir de la 6ª generación los
+ * juegos pasaron a modelos 3D y al grupo no le gustan, así que para esos se
+ * queda el sprite de siempre en vez de buscar otro. Null si no tiene.
+ */
+export function spriteAnimadoDeQuinta(pokemonId: number | null | undefined, shiny: boolean) {
+  if (!pokemonId || pokemonId > ULTIMO_ANIMADO_DE_QUINTA) return null;
+  return `${SPRITES}/versions/generation-v/black-white/animated/${shiny ? "shiny/" : ""}${pokemonId}.gif`;
+}

@@ -174,7 +174,7 @@ async function foto(pagina, nombre, ruta, prepara) {
   // El equipo y la caja de Draka, privados, y la ficha de uno
   await foto(pagina, "equipo", "/equipo");
   await foto(pagina, "equipo-ficha", "/equipo", async (p) => {
-    await p.locator('button[title*="Sentret"]').first().click();
+    await p.locator('button[aria-label*="Sentret"]').first().click();
     await p.waitForTimeout(900);
   });
 
@@ -246,7 +246,7 @@ async function foto(pagina, nombre, ruta, prepara) {
   await aLocke(pagina, SOUL_LINK);
   await foto(pagina, "soullink", "/equipo");
   await foto(pagina, "soullink-ficha", "/equipo", async (p) => {
-    await p.locator('button[title*="Caterpie"]').first().click();
+    await p.locator('button[aria-label*="Caterpie"]').first().click();
     await p.waitForTimeout(900);
   });
   await foto(pagina, "soullink-portada", "/");

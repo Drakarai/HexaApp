@@ -363,7 +363,7 @@ function ListaDelGrupo({
   return (
     <Hoja onCerrar={onClose} ancho="max-w-md" fondo="bg-black/80" className="p-4 sm:p-5">
       <div className="mb-1 flex items-start justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+        <p className="antetitulo">
           {grupo.name}
         </p>
         <button

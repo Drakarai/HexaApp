@@ -143,7 +143,7 @@ export default async function RoulettePage({
     <>
       <PageHeader
         title="Ruleta"
-        subtitle="Sorteos personalizables: retos, castigos, emparejamientos, lo que quieras. Los pesos hacen que unas opciones salgan más que otras."
+        subtitle="Sorteos a medida: retos, castigos, lo que quieras. Con pesos, unas opciones salen más que otras."
       />
 
       {roulettes.length ? (

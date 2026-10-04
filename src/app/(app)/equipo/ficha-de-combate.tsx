@@ -78,7 +78,7 @@ export function FichaDeCombate({
   return (
     <section className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <div className="mb-2 flex items-center gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Para combatir</p>
+        <p className="rotulo">Para combatir</p>
         {editable ? (
           <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => setEditando(true)}>
             {vacia ? "Apuntar" : "Editar"}
@@ -249,7 +249,7 @@ function Editor({
 
   return (
     <section className="mt-4 space-y-3 rounded-xl border border-brand-400/30 bg-white/[0.02] p-3">
-      <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Para combatir</p>
+      <p className="rotulo">Para combatir</p>
 
       {!listas ? (
         <div className="space-y-2" aria-label="Cargando movimientos">

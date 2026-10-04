@@ -362,7 +362,7 @@ function DeathDetail({
             />
 
             <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-3">
-              <summary className="cursor-pointer list-none text-xs font-semibold uppercase tracking-wide text-slate-400">
+              <summary className="rotulo cursor-pointer list-none">
                 <span className="mr-2 inline-block transition group-open:rotate-90">
                   ▸
                 </span>

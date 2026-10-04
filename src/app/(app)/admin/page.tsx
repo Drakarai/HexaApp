@@ -101,7 +101,7 @@ export default async function AdminPage() {
     <>
       <PageHeader
         title="Administración"
-        subtitle="Usuarios de la aplicación. Cada jugador necesita una cuenta antes de poder apuntarse a una competición."
+        subtitle="Las cuentas de la aplicación y lo que es de todos: mapas, level caps y copias."
       />
 
       <SolicitudesPendientes solicitudes={solicitudes} />

@@ -244,7 +244,7 @@ export default async function FinalFourPage() {
               <p className="text-5xl" aria-hidden>
                 <Icono emoji="🏆" />
               </p>
-              <p className="mt-2 text-xs font-bold uppercase tracking-widest text-brand-400">
+              <p className="antetitulo mt-2">
                 {porMayoria ? `Ganó la ${nombre}` : `Campeón del ${competition.name}`}
               </p>
               <div className="mt-3 flex items-center justify-center gap-3">
@@ -285,7 +285,7 @@ export default async function FinalFourPage() {
           >
             {state.formato.rondas.map((round) => (
               <section key={round}>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
+                <h2 className="antetitulo mb-3">
                   {round}
                 </h2>
                 <div className="space-y-3">
@@ -311,7 +311,7 @@ export default async function FinalFourPage() {
            * aquí se lo lleva luego el hall de la fama de una pieza.
            */}
           <section className="mt-8">
-            <h2 className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-400">
+            <h2 className="antetitulo mb-1">
               Los equipos
             </h2>
             <p className="muted mb-3">

@@ -192,7 +192,7 @@ async function Bienvenida() {
       )}
 
       <section className="mt-8">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-slate-500">
+        <h2 className="rotulo mb-3">
           Mientras tanto
         </h2>
         <div className="grid gap-2 sm:grid-cols-3">

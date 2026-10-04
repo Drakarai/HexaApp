@@ -115,7 +115,7 @@ export default async function NotesPage({
       <>
         <PageHeader
           title="Mis notas"
-          subtitle="Cuaderno privado para planear estrategias. Nadie más puede leer estas notas, ni siquiera los administradores."
+          subtitle="Tu cuaderno para planear. Nadie más lo lee, ni siquiera los administradores."
         />
         <EmptyState
           dibujo="libreta"
@@ -147,7 +147,7 @@ export default async function NotesPage({
     <>
       <PageHeader
         title="Mis notas"
-        subtitle="Cuaderno privado para planear estrategias. Nadie más puede leer estas notas, ni siquiera los administradores."
+        subtitle="Tu cuaderno para planear. Nadie más lo lee, ni siquiera los administradores."
       />
 
       {/* Va antes que las notas y plegada: se abre cuando toca planear, y al

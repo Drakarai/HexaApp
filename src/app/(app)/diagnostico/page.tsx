@@ -9,6 +9,7 @@ import { getErroresAgrupados, type GrupoDeErrores } from "@/lib/errores";
 import { resolverErrorAction, vaciarErroresAction } from "@/app/actions/errores";
 import { ConfirmSubmit } from "@/components/ui";
 import Link from "next/link";
+import { PestanasEnlace } from "@/components/pestanas-enlace";
 import { ZONAS, type Zona } from "@/lib/registro";
 import { verComoAction } from "@/app/actions/ver-como";
 
@@ -59,35 +60,92 @@ function leerConexion() {
   }
 }
 
+/** Las pestañas de Diagnóstico: el registro de cambios primero, que es lo que más se mira */
+const PESTANAS = [
+  { valor: "cambios", rotulo: "Cambios" },
+  { valor: "errores", rotulo: "Errores" },
+  { valor: "base", rotulo: "Base de datos" },
+  { valor: "ver-como", rotulo: "Ver como" },
+] as const;
+type QueVer = (typeof PESTANAS)[number]["valor"];
+
 export default async function DiagnosticoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ locke?: string; zona?: string }>;
+  searchParams: Promise<{ locke?: string; zona?: string; ver?: string }>;
 }) {
   await requireCreadorPage();
   const filtro = await searchParams;
+  const ver: QueVer = PESTANAS.some((p) => p.valor === filtro.ver) ? (filtro.ver as QueVer) : "cambios";
   const zona = filtro.zona && filtro.zona in ZONAS ? (filtro.zona as Zona) : null;
 
-  const [ida, conexion, ocupacion, copiasPesadas, errores, cambios, lockesDelRegistro] = await Promise.all([
+  // Solo lo de la pestaña que se mira: medir la base de datos son una docena de consultas
+  const [errores, cambios, lockesDelRegistro] = await Promise.all([
+    getErroresAgrupados(),
+    ver === "cambios"
+      ? prisma.cambioDelLocke.findMany({
+          where: {
+            ...(filtro.locke ? { competitionId: filtro.locke === "app" ? null : filtro.locke } : {}),
+            ...(zona ? { zona } : {}),
+          },
+          orderBy: { createdAt: "desc" },
+          take: 200,
+        })
+      : [],
+    // Los lockes que salen en el registro, con el último nombre que tenían
+    ver === "cambios"
+      ? prisma.cambioDelLocke.findMany({
+          distinct: ["competitionId"],
+          orderBy: { createdAt: "desc" },
+          select: { competitionId: true, locke: true },
+        })
+      : [],
+  ]);
+  const vecesQueHaFallado = errores.reduce((suma, g) => suma + g.veces, 0);
+
+  return (
+    <>
+      <PageHeader
+        title="Diagnóstico"
+        subtitle="Lo que se cambia en cada locke, lo que falla y cómo va la base de datos."
+      />
+
+      <PestanasEnlace
+        className="mb-4"
+        etiqueta="Partes de Diagnóstico"
+        activa={ver}
+        opciones={PESTANAS.map((p) => ({
+          ...p,
+          href: p.valor === "cambios" ? "/diagnostico" : `/diagnostico?ver=${p.valor}`,
+          cuenta: p.valor === "errores" ? vecesQueHaFallado : undefined,
+        }))}
+      />
+
+      {ver === "cambios" ? (
+        <Cambios
+          cambios={cambios}
+          lockes={lockesDelRegistro}
+          lockeElegido={filtro.locke ?? null}
+          zonaElegida={zona}
+        />
+      ) : ver === "errores" ? (
+        <Errores grupos={errores} />
+      ) : ver === "ver-como" ? (
+        <VerComo />
+      ) : (
+        <BaseDeDatos />
+      )}
+    </>
+  );
+}
+
+/** Lo de la base de datos: lo que tarda, lo que ocupa y dónde está cada cosa */
+async function BaseDeDatos() {
+  const [ida, conexion, ocupacion, copiasPesadas] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
     medirOcupacion(),
     copiasSinAligerar(),
-    getErroresAgrupados(),
-    prisma.cambioDelLocke.findMany({
-      where: {
-        ...(filtro.locke ? { competitionId: filtro.locke === "app" ? null : filtro.locke } : {}),
-        ...(zona ? { zona } : {}),
-      },
-      orderBy: { createdAt: "desc" },
-      take: 200,
-    }),
-    // Los lockes que salen en el registro, con el último nombre que tenían
-    prisma.cambioDelLocke.findMany({
-      distinct: ["competitionId"],
-      orderBy: { createdAt: "desc" },
-      select: { competitionId: true, locke: true },
-    }),
   ]);
 
   /**
@@ -122,22 +180,6 @@ export default async function DiagnosticoPage({
 
   return (
     <>
-      <PageHeader
-        title="Diagnóstico"
-        subtitle="Para saber si la lentitud viene de la distancia a la base de datos, y lo que le falla a la gente."
-      />
-
-      <VerComo />
-
-      <Errores grupos={errores} />
-
-      <Cambios
-        cambios={cambios}
-        lockes={lockesDelRegistro}
-        lockeElegido={filtro.locke ?? null}
-        zonaElegida={zona}
-      />
-
       <section className="card mb-4">
         <h2 className="section-title mb-1">Ida y vuelta a la base de datos</h2>
         <p className="muted mb-4">
@@ -571,7 +613,7 @@ function Cambios({
         <div className="space-y-4">
           {[...dias].map(([dia, filas]) => (
             <div key={dia}>
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{dia}</p>
+              <p className="rotulo mb-1.5">{dia}</p>
               <ul className="divide-y divide-white/5 rounded-xl border border-white/10 bg-white/[0.02]">
                 {filas.map((c) => (
                   <li key={c.id} className="flex gap-3 px-3 py-2 text-sm">

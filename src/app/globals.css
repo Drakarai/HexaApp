@@ -150,6 +150,26 @@ body {
   @apply px-2.5 py-1.5 text-xs;
 }
 
+/* Rótulo de un apartado dentro de una tarjeta o una ficha («Para combatir»,
+   «Su historia», «Dónde cae más gente»). Antes cada pantalla llevaba el suyo
+   —semibold o bold, gris claro u oscuro, más o menos espaciado— y en una misma
+   ficha se veían dos distintos. Tiene la cara de `label`, que es la de los
+   campos: así un apartado y un campo de formulario se leen igual. */
+@utility rotulo {
+  @apply text-xs font-semibold uppercase tracking-wider text-slate-400;
+
+  :where(html[data-estilo="nuevo"]) & {
+    font-family: var(--font-display);
+    letter-spacing: 0.09em;
+  }
+}
+
+/* El antetítulo de color de una ficha o una tarjeta («Equipos del combate»,
+   «Toca jornada»): igual en todas */
+@utility antetitulo {
+  @apply text-xs font-bold uppercase tracking-widest text-brand-400;
+}
+
 @utility chip {
   @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300;
 

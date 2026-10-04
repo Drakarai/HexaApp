@@ -65,7 +65,7 @@ export default async function PlantillasPage({
     <>
       <PageHeader
         title="Level caps de los juegos"
-        subtitle="Los gimnasios, pruebas y hitos que trae cada juego, para no escribirlos a mano en cada locke. Son globales, como los mapas."
+        subtitle="Los gimnasios y pruebas de cada juego, para no escribirlos a mano en cada locke."
         actions={
           <Link href="/admin" className="btn-ghost btn-sm">
             ← Administración

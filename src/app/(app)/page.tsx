@@ -594,7 +594,7 @@ export default async function DashboardPage() {
               {/* Lo tuyo, arriba y en grande: es lo que se viene a mirar */}
               {rivalDeJornada && myParticipant ? (
                 <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
-                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-brand-300">
+                  <p className="antetitulo mb-2">
                     Tu combate
                   </p>
                   <div className="flex items-center justify-between gap-2">

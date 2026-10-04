@@ -36,7 +36,7 @@ export async function aLocke(p, nombre) {
 /** Abre la ficha de un pokémon del tablero de alguien y pulsa un botón */
 async function enLaFicha(p, dueno, pokemon, boton) {
   const tablero = p.locator("section.card", { has: p.locator("h2", { hasText: dueno }) }).first();
-  await tablero.locator(`button[title*="${pokemon}"]`).first().click();
+  await tablero.locator(`button[aria-label*="${pokemon}"]`).first().click();
   await p.waitForTimeout(500);
   await p.locator("div.fixed").getByRole("button", { name: boton }).first().click();
   await p.waitForTimeout(3000);
@@ -123,7 +123,7 @@ export async function montarSoulLink(p) {
   await enLaFicha(p, "Héctor", "Olas", /Croconaw/);
   await enLaFicha(p, "Héctor", "Weedle", /A la caja/);
   const draka = p.locator("section.card", { has: p.locator("h2", { hasText: "Draka" }) }).first();
-  await draka.locator('button[title*="Pidgey"]').click();
+  await draka.locator('button[aria-label*="Pidgey"]').click();
   await p.waitForTimeout(500);
   await p.fill("#causa-ficha", "Crítico de un Bellsprout");
   await p.locator("div.fixed").getByRole("button", { name: /Dar por muerto/ }).click();

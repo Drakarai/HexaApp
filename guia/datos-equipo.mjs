@@ -41,7 +41,7 @@ export async function montarEquipo(p) {
   // --- La ficha completa de Sentret, pegando su set
   await p.goto(BASE + "/equipo", { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(1200);
-  await p.locator('button[title*="Sentret"]').first().click();
+  await p.locator('button[aria-label*="Sentret"]').first().click();
   const ficha = p.getByRole("dialog");
   await ficha.getByRole("button", { name: /^(Apuntar|Editar)$/ }).click();
   await ficha.locator("select").first().waitFor();

@@ -303,7 +303,7 @@ export default async function CompetitionsPage() {
     <>
       <PageHeader
         title="Competiciones"
-        subtitle="Cada edición es independiente: al crear una nueva, la anterior puede archivarse y se queda con todos sus datos como recuerdo."
+        subtitle="Cada edición va por su lado: al crear una nueva, la anterior se archiva con todo lo que tenía."
       />
 
       {active ? (
@@ -333,7 +333,7 @@ export default async function CompetitionsPage() {
             <p className="mb-4 text-sm text-slate-400">{active.description}</p>
           ) : null}
 
-          <h3 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
+          <h3 className="antetitulo mb-3">
             Jugadores ({participants.length}/{active.maxPlayers})
           </h3>
 
@@ -492,7 +492,7 @@ export default async function CompetitionsPage() {
 
           {canManageActive || espectadores.length ? (
             <div className="mt-5 border-t border-white/10 pt-4">
-              <h3 className="mb-1 text-xs font-bold uppercase tracking-widest text-brand-400">
+              <h3 className="antetitulo mb-1">
                 Espectadores ({espectadores.length})
               </h3>
               <p className="muted mb-3">
@@ -647,7 +647,7 @@ export default async function CompetitionsPage() {
       {/* Sin ninguna edición el rótulo se quedaba solo, sin nada debajo */}
       {mios.length ? (
         <section className="mb-6">
-          <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-brand-400">
+          <h2 className="antetitulo mb-3">
             Histórico
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">{mios.map(tarjeta)}</div>
@@ -661,7 +661,7 @@ export default async function CompetitionsPage() {
        */}
       {deOtros.length ? (
         <details className="group mb-6" open={Boolean(active && deOtros.some((c) => c.id === active.id))}>
-          <summary className="mb-3 flex cursor-pointer list-none items-center gap-2 text-xs font-bold uppercase tracking-widest text-slate-400 marker:hidden">
+          <summary className="rotulo mb-3 flex cursor-pointer list-none items-center gap-2 marker:hidden">
             <span className="inline-block transition group-open:rotate-90">▸</span>
             Lockes de los demás ({deOtros.length}
             {enMarchaDeOtros ? ` · ${enMarchaDeOtros} en marcha` : ""})

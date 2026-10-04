@@ -156,7 +156,7 @@ function Reproductor({
     <Hoja onCerrar={onClose} ancho="max-w-3xl" fondo="bg-black/80" className="p-4 sm:p-5">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-widest text-brand-400">
+          <p className="antetitulo">
             {label}
           </p>
           <p className="truncate text-sm text-slate-300">

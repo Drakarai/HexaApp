@@ -46,7 +46,7 @@ export default async function MapasPage({
     <>
       <PageHeader
         title="Mapas de las regiones"
-        subtitle="De aquí sale el Mapa de capturas de cada jugador. Son globales: el de Johto vale igual para Oro que para HeartGold, y se puede preparar cualquiera desde cualquier locke."
+        subtitle="De aquí sale el Mapa de capturas de todos. Son globales: el de Johto vale para Oro y para HeartGold."
         actions={
           <Link href="/admin" className="btn-ghost btn-sm">
             ← Administración

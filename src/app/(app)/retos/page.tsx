@@ -110,7 +110,7 @@ export default async function RetosPage() {
     <>
       <PageHeader
         title="Retos"
-        subtitle="Piques sueltos entre dos jugadores, con su premio y su castigo. Cuentan para el historial de victorias, pero no dan puntos."
+        subtitle="Piques sueltos entre dos, con premio y castigo. Cuentan para el historial, pero no dan puntos."
       />
 
       {retos.length === 0 ? (

@@ -37,7 +37,7 @@ export function BracketCard({
       )}
     >
       <div className="mb-2 flex items-baseline justify-between gap-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+        <p className="rotulo">
           {llave.title}
         </p>
         <p className="shrink-0 text-[11px] text-slate-500">
