@@ -44,6 +44,8 @@ export function CabeceraDeFicha({
   children?: React.ReactNode;
 }) {
   const color = COLOR_DE_TIPO[tipos[0]?.slug ?? ""] ?? "#6366f1";
+  const segundo = tipos[1] ? COLOR_DE_TIPO[tipos[1].slug] : undefined;
+  const fuerte = apagada ? "1f" : "38";
   const conMote = especie && especie !== nombre;
 
   return (
@@ -70,8 +72,12 @@ export function CabeceraDeFicha({
       <div
         className="flex items-center gap-4 rounded-2xl border border-white/5 p-2.5"
         style={{
-          // Teñida del color de su tipo, como en la Pokédex; muy rebajado para no comerse nada
-          background: `linear-gradient(135deg, ${color}${apagada ? "1f" : "38"}, ${color}0d 55%, transparent)`,
+          // Teñida del color de su tipo, como en la Pokédex; muy rebajado para no comerse nada.
+          // Con dos tipos, uno a cada lado y fundidos en el medio: un Gyarados
+          // no es solo Agua
+          background: segundo
+            ? `linear-gradient(90deg, ${color}${fuerte}, ${color}14 40%, ${segundo}14 60%, ${segundo}${fuerte})`
+            : `linear-gradient(135deg, ${color}${fuerte}, ${color}0d 55%, transparent)`,
         }}
       >
         <div
