@@ -1245,6 +1245,7 @@ function Ficha({
             <>
             <dl className="mt-1 space-y-1.5 text-sm">
               {pokemon.sitio ? <Fila etiqueta="Capturado en" valor={pokemon.sitio} /> : null}
+              {pokemon.apunte ? <Fila etiqueta="Apunte" valor={pokemon.apunte} /> : null}
               <Fila
                 etiqueta="Ahora"
                 valor={pokemon.muerta ? "En el cementerio" : enEquipo ? "En el equipo" : "En la caja"}

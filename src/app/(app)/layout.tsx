@@ -37,7 +37,7 @@ import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
  */
 const S = {
   resumen: { href: "/", label: "Resumen", icon: "🏠" },
-  caja: { href: "/muertes", label: "Caja", icon: "💀" },
+  cementerio: { href: "/muertes", label: "Cementerio", icon: "💀" },
   // 📊 y no 🏆 desde que la clasificación lleva su gráfico: el trofeo se lo
   // queda la Final Four, que es la que reparte de verdad
   puntos: { href: "/puntos", label: "Puntos", icon: "📊" },
@@ -86,7 +86,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "La edición",
     icon: "📚",
-    children: [S.puntos, S.caja, S.actividad, S.levelCaps, S.reglas, S.palmares],
+    children: [S.puntos, S.cementerio, S.actividad, S.levelCaps, S.reglas, S.palmares],
   },
   {
     label: "Lo mío",

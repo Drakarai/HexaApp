@@ -127,6 +127,8 @@ export async function apuntarEnCajaAction(
       species,
       pokemonId,
       nickname: String(formData.get("nickname") ?? "").trim() || null,
+      // El mismo apunte que el del Mapa: «2ª captura», «huevo de regalo»…
+      notes: String(formData.get("notes") ?? "").trim().slice(0, 120) || null,
       zoneId,
       sitio,
       image: sprites?.boxImage ?? null,

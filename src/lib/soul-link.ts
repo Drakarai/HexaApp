@@ -37,6 +37,8 @@ export type PokemonDelTablero = {
   debilidades: { generacion: number; lista: Debilidad[] };
   /** Dónde se capturó: la zona del mapa o lo escrito a mano */
   sitio: string | null;
+  /** Lo que se apuntó al capturarlo: «2ª captura», «huevo de regalo»… */
+  apunte: string | null;
   lugar: string;
   hueco: number;
   creado: number;
@@ -146,6 +148,7 @@ export async function getEquiposDelLocke(
         pokemonId: true,
         zoneId: true,
         sitio: true,
+        notes: true,
         lugar: true,
         hueco: true,
         vinculo: true,
@@ -197,6 +200,7 @@ export async function getEquiposDelLocke(
       tipos: tiposParaVer(quien?.pokemonId, generacion),
       debilidades: { generacion, lista: debilidadesDe(quien?.pokemonId, generacion) },
       sitio: c.zone?.name ?? c.sitio,
+      apunte: c.notes,
       lugar: c.lugar,
       hueco: c.hueco,
       creado: c.createdAt.getTime(),

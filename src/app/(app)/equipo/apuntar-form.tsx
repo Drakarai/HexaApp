@@ -119,6 +119,16 @@ export function ApuntarEnCaja({
           />
         </div>
 
+        <div>
+          <label className="label">Apunte (opcional)</label>
+          <input
+            name="notes"
+            className="input"
+            maxLength={120}
+            placeholder="2ª captura, huevo de regalo, intercambio…"
+          />
+        </div>
+
         {esSoulLink && deOtros.length ? (
           <div>
             <label className="label">Vincular con</label>

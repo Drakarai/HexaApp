@@ -45,6 +45,7 @@ const CAPTURA = {
   nickname: true,
   pokemonId: true,
   sitio: true,
+  notes: true,
   historia: true,
   shiny: true,
   createdAt: true,
@@ -173,7 +174,12 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       tipo: "captura",
       texto: sitio ? `Capturado en ${sitio}` : "Capturado",
       detalle:
-        [nacioShiny ? "shiny" : null, evoluciones.length ? `era un ${evoluciones[0].de}` : null]
+        [
+          nacioShiny ? "shiny" : null,
+          evoluciones.length ? `era un ${evoluciones[0].de}` : null,
+          // Lo apuntado al capturarlo: «huevo de regalo» es parte de su historia
+          laCaptura.notes,
+        ]
           .filter(Boolean)
           .join(" · ")
           .replace(/^./, (l) => l.toUpperCase()) || null,
