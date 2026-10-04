@@ -1,6 +1,7 @@
 "use client";
 
 import { SpritePokemon } from "@/components/sprite-pokemon";
+import { spriteQuietoDeQuinta } from "@/lib/sprites-de-quinta";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
@@ -35,6 +36,7 @@ export function AnimacionDeEvolucion({
   resultado,
   gritoAntes,
   gritoDespues,
+  shiny = false,
   onCerrar,
   onDeshacer,
 }: {
@@ -48,6 +50,8 @@ export function AnimacionDeEvolucion({
   /** Los números de PokéAPI de antes y de después, para sus gritos */
   gritoAntes?: number | null;
   gritoDespues?: number | null;
+  /** Evoluciona en shiny si lo era */
+  shiny?: boolean;
   onCerrar: () => void;
   onDeshacer: () => void;
 }) {
@@ -119,15 +123,17 @@ export function AnimacionDeEvolucion({
       });
       luego(t + 800, () => setDestello(false));
     };
-    if (despues) {
+    // El que se va a ver: el quieto de Blanco y Negro si se sabe cuál es
+    const aCargar = gritoDespues ? spriteQuietoDeQuinta(gritoDespues, shiny) : despues;
+    if (aCargar) {
       const imagen = new Image();
       imagen.onload = arrancar;
       imagen.onerror = arrancar;
-      imagen.src = despues;
+      imagen.src = aCargar;
     } else {
       arrancar();
     }
-  }, [resultado, despues, gritoDespues]);
+  }, [resultado, despues, gritoDespues, shiny]);
 
   function darleALaB() {
     temporizadores.current.forEach((t) => window.clearTimeout(t));
@@ -138,7 +144,9 @@ export function AnimacionDeEvolucion({
     onDeshacer();
   }
 
-  const mostrada = siluetaNueva && despues ? despues : antes;
+  const esNueva = siluetaNueva && (despues || gritoDespues);
+  const mostrada = esNueva ? despues : antes;
+  const numero = esNueva ? gritoDespues : gritoAntes;
   const alternando = fase === "cambio";
   const terminada = fase === "final" || fase === "cancelada" || fase === "no-evoluciona";
 
@@ -169,12 +177,17 @@ export function AnimacionDeEvolucion({
       />
 
       <div className="relative flex h-44 w-44 items-center justify-center">
-        {mostrada ? (
-          // Como en la ficha: al estilo de Blanco y Negro, que es de donde se abre
+        {mostrada || numero ? (
+          // Como en la ficha, al estilo de Blanco y Negro, los dos con el mismo
+          // (el número va aparte: la imagen guardada no siempre dice cuál es).
+          // Quieto mientras se alterna, como en los juegos; al salir, ya se mueve
           <SpritePokemon
             ficha
-            key={fase === "final" ? "final" : "evolucionando"}
+            quieto={!terminada}
+            key={`${terminada ? "final" : "evolucionando"}-${numero}`}
             src={mostrada}
+            pokemonId={numero}
+            shiny={shiny}
             alt=""
             draggable={false}
             className={cx(

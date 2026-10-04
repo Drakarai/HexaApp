@@ -109,6 +109,7 @@ export function SpritePokemon({
   alt,
   className,
   ficha = false,
+  quieto = false,
   pokemonId,
   shiny,
   ...resto
@@ -116,6 +117,8 @@ export function SpritePokemon({
   src: string | null | undefined;
   alt: string;
   ficha?: boolean;
+  /** En la ficha, el quieto aunque haya animado (mientras evoluciona) */
+  quieto?: boolean;
   /** Si se sabe por otro lado (una captura), manda sobre lo que diga la imagen */
   pokemonId?: number | null;
   shiny?: boolean;
@@ -126,7 +129,7 @@ export function SpritePokemon({
   const variocolor = shiny ?? deLaImagen?.shiny ?? false;
 
   const candidatas = [
-    ...(id && ficha ? spritesDeQuinta(id, variocolor) : []),
+    ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
     ...(id && !ficha && estilo === "quinta" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
     ...(src ? [src] : []),
   ];

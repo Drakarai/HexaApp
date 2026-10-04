@@ -1047,6 +1047,7 @@ function Ficha({
     resultado: ResultadoDeEvolucion;
     gritoAntes: number | null;
     gritoDespues: number | null;
+    shiny: boolean;
   } | null>(null);
   const [mote, setMote] = useState(pokemon.nickname ?? "");
   // La ráfaga de destellos: un número que cambia cada vez, para que se repita
@@ -1120,6 +1121,7 @@ function Ficha({
       resultado: "esperando",
       gritoAntes: pokemon.pokemonId,
       gritoDespues: opcion.pokemonId,
+      shiny: pokemon.shiny,
     });
     setAEvolucionar(null);
     empezar(async () => {
