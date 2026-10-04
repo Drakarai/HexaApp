@@ -176,6 +176,9 @@ async function foto(pagina, nombre, ruta, prepara) {
   await foto(pagina, "equipo-ficha", "/equipo", async (p) => {
     await p.locator('button[aria-label*="Sentret"]').first().click();
     await p.waitForTimeout(900);
+    // La pestaña de Combate: la naturaleza, el objeto y los movimientos
+    await p.getByRole("dialog").getByRole("tab", { name: /Combate/ }).click();
+    await p.waitForTimeout(900);
   });
 
   await foto(pagina, "muertes", "/muertes");
@@ -288,13 +291,11 @@ async function foto(pagina, nombre, ruta, prepara) {
     await jornada.getByRole("button", { name: /Apuntar equipos/ }).nth(2).click();
     await p.waitForTimeout(900);
     const hoja = p.getByRole("dialog");
-    await hoja.locator("summary", { hasText: "Sacar los equipos de la repetición" }).click();
+    await hoja.getByRole("tab", { name: "Repetición" }).click();
     await hoja.locator('input[placeholder^="https://replay"]').fill("https://replay.pokemonshowdown.com/gen2ou-1");
     await hoja.getByRole("button", { name: "Leer" }).click();
     await p.waitForTimeout(2000);
-    await hoja.locator("summary", { hasText: "Sacar los equipos de la repetición" }).evaluate((el) =>
-      el.scrollIntoView({ block: "start" }),
-    );
+    await hoja.getByRole("tab", { name: "Repetición" }).evaluate((el) => el.scrollIntoView({ block: "start" }));
     await p.waitForTimeout(500);
   });
   await p_cerrar(pagina);

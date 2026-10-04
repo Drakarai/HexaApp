@@ -3992,4 +3992,4 @@ del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
      con la ficha de cada pokémon, el planificador y los equipos de la repetición.
 112. **Repaso estético**: la ficha del pokémon por pestañas, teñida y con sprite
      animado; editor de equipos y Diagnóstico por pestañas; lo del ordenador; y
-     rótulos y subtítulos iguales en toda la app.
+     rótulos y subtítulos iguales en toda la app. Las guías, con sus fotos al día.
