@@ -119,6 +119,7 @@ export function SpritePokemon({
   className,
   ficha = false,
   quieto = false,
+  sinIconos = false,
   pokemonId,
   shiny,
   ...resto
@@ -128,6 +129,11 @@ export function SpritePokemon({
   ficha?: boolean;
   /** En la ficha, el quieto aunque haya animado (mientras evoluciona) */
   quieto?: boolean;
+  /**
+   * Nunca el icono de caja aunque se haya elegido: en el cementerio queda más
+   * bonito el sprite de Blanco y Negro, que es un recuerdo y no un PC
+   */
+  sinIconos?: boolean;
   /** Si se sabe por otro lado (una captura), manda sobre lo que diga la imagen */
   pokemonId?: number | null;
   shiny?: boolean;
@@ -139,7 +145,7 @@ export function SpritePokemon({
 
   const candidatas = [
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
-    ...(id && !ficha && estilo === "iconos" ? [iconoDeCaja(id)].filter((c) => c !== null) : []),
+    ...(id && !ficha && !sinIconos && estilo === "iconos" ? [iconoDeCaja(id)].filter((c) => c !== null) : []),
     // También detrás del icono, para los que no lo tienen (Hisui y Paldea)
     ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
     ...(src ? [src] : []),

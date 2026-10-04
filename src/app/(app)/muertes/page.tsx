@@ -240,7 +240,7 @@ export default async function DeathsPage({
     <>
       <PageHeader
         title="Cementerio"
-        subtitle="La caja de los caídos. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
+        subtitle="Los caídos de cada uno. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
       />
 
       {/* Escrita a mano, una baja no sabe de vínculos: la pareja no cae sola */}
@@ -312,7 +312,7 @@ export default async function DeathsPage({
           title={
             selected
               ? `${selected.displayName} no ha perdido a nadie`
-              : "La caja está vacía"
+              : "El cementerio está vacío"
           }
           hint="De momento todo bien."
         />

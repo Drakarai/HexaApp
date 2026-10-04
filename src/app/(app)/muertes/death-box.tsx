@@ -68,7 +68,7 @@ export type BoxDeath = {
   };
 };
 
-/** Cuadrícula estilo caja del PC: al pinchar una casilla se abre su ficha. */
+/** Cuadrícula de casillas, como el PC: al pinchar una se abre su ficha. */
 export function DeathBox({
   deaths,
   grouped,
@@ -154,6 +154,7 @@ export function DeathBox({
                   >
                     {death.boxImage ? (
                       <SpritePokemon
+                        sinIconos
                         src={death.boxImage}
                         alt={death.species}
                         loading="lazy"
@@ -319,11 +320,11 @@ function DeathDetail({
                   label="Imagen de la ficha"
                   defaultValue={death.detailImage}
                   maxSize={IMAGE_SIZES.detail}
-                  hint="La imagen grande de esta ventana. Puede ser distinta del sprite de la caja."
+                  hint="La imagen grande de esta ventana. Puede ser distinta de la de su casilla."
                 />
                 <ImageInput
                   name="boxImage"
-                  label="Sprite de la caja"
+                  label="Sprite del cementerio"
                   defaultValue={death.boxImage}
                   maxSize={IMAGE_SIZES.box}
                 />

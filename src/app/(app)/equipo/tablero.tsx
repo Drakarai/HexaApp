@@ -1230,7 +1230,7 @@ function Ficha({
               onAviso={onAviso}
             />
           ) : null}
-          {pestana === "combate" ? <Debilidades debilidades={pokemon.debilidades} /> : null}
+          {pestana === "combate" ? <Debilidades pokemonId={pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
 
           {pestana === "historia" ? (
             <HistoriaDelPokemon

@@ -30,8 +30,11 @@ export type PokemonDelTablero = {
   /** Variocolor: capturado así o vuelto shiny con un premio */
   shiny: boolean;
   tipos: { slug: string; nombre: string }[];
-  /** Lo que le hace cada tipo, sin los neutros: ver `debilidadesDe` */
-  debilidades: { slug: string; nombre: string; x: number }[];
+  /**
+   * Lo que le hace cada tipo, sin los neutros (ver `debilidadesDe`), con la
+   * tabla de la generación del locke; las otras las calcula la ficha si se piden
+   */
+  debilidades: { generacion: number; lista: Debilidad[] };
   /** Dónde se capturó: la zona del mapa o lo escrito a mano */
   sitio: string | null;
   lugar: string;
@@ -44,6 +47,8 @@ export type PokemonDelTablero = {
   /** La ficha completa, ya con nombres y tipos para enseñarla */
   combate: FichaDeCombate;
 };
+
+export type Debilidad = { slug: string; nombre: string; x: number };
 
 export type FichaDeCombate = {
   naturaleza: { slug: string; nombre: string; sube: string | null; baja: string | null } | null;
@@ -190,7 +195,7 @@ export async function getEquiposDelLocke(
       imagen: imagenes(c.id),
       shiny: c.shiny,
       tipos: tiposParaVer(quien?.pokemonId, generacion),
-      debilidades: debilidadesDe(quien?.pokemonId, generacion),
+      debilidades: { generacion, lista: debilidadesDe(quien?.pokemonId, generacion) },
       sitio: c.zone?.name ?? c.sitio,
       lugar: c.lugar,
       hueco: c.hueco,

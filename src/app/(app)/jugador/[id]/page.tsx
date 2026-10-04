@@ -299,8 +299,8 @@ export default async function PlayerPage({
               >
                 <div className="flex h-14 items-center justify-center">
                   {sprites(baja.id) ? (
-                    /* eslint-disable-next-line @next/next/no-img-element */
                     <SpritePokemon
+                      sinIconos
                       src={sprites(baja.id)!}
                       alt={baja.nickname ?? baja.species}
                       loading="lazy"
