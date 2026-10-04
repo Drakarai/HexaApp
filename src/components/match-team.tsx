@@ -6,7 +6,8 @@ import {
   removeMatchPokemonAction,
 } from "@/app/actions/match-teams";
 import type { FormState } from "@/app/actions/auth";
-import { leerShowdownAction } from "@/app/actions/showdown";
+import { leerRepeticionAction, leerShowdownAction } from "@/app/actions/showdown";
+import type { JugadorDeLaRepeticion, PokemonDeShowdown } from "@/lib/showdown";
 import { Avatar, ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { spriteCandidates } from "@/lib/pokedex";
@@ -44,6 +45,7 @@ export function MatchTeams({
   rotulo,
   maximo = 6,
   aLaVez = 1,
+  repeticion,
 }: {
   matchId: string;
   /**
@@ -66,6 +68,8 @@ export function MatchTeams({
   maximo?: number;
   /** Cuántos salen a la vez: en dobles se marcan los que abren */
   aLaVez?: number;
+  /** El enlace de la repetición del combate, si ya se apuntó: de ahí salen los equipos */
+  repeticion?: string | null;
 }) {
   const [editing, setEditing] = useState(false);
   const hasTeams = sides.some((side) => side.team.length > 0);
@@ -145,6 +149,7 @@ export function MatchTeams({
           maximo={maximo}
           aLaVez={aLaVez}
           sides={sides}
+          repeticion={repeticion}
           onClose={() => setEditing(false)}
         />
       ) : null}
@@ -312,6 +317,7 @@ function TeamEditor({
   maximo,
   aLaVez,
   sides,
+  repeticion,
   onClose,
 }: {
   matchId: string;
@@ -323,6 +329,7 @@ function TeamEditor({
   maximo: number;
   aLaVez: number;
   sides: TeamSide[];
+  repeticion?: string | null;
   onClose: () => void;
 }) {
   /**
@@ -405,9 +412,52 @@ function TeamEditor({
    * mismo tope del formato y mismas imágenes). Uno detrás de otro y no a la
    * vez, porque cada uno va en el hueco siguiente al anterior.
    */
+  /**
+   * Añade una lista de pokémon al equipo de alguien, uno detrás de otro con la
+   * acción de siempre. Se salta los que ya están (misma especie y mote), para
+   * poder volver a leer una repetición sin duplicar a nadie.
+   */
+  async function anadirLista(dueno: string, lista: PokemonDeShowdown[], avisos: string[]) {
+    const lado = equipos.find((l) => l.participantId === dueno);
+    const igual = (a: string | null, b: string | null) =>
+      (a ?? "").trim().toLowerCase() === (b ?? "").trim().toLowerCase();
+    const nuevos = lista.filter(
+      (p) => !lado?.team.some((t) => igual(t.species, p.especie) && igual(t.nickname, p.mote)),
+    );
+    const caben = Math.max(0, maximo - (lado?.team.length ?? 0));
+    if (nuevos.length > caben) {
+      avisos.push(
+        caben
+          ? `A ${lado?.displayName} solo le cabían ${caben}.`
+          : `${lado?.displayName ?? "Ese equipo"} ya tenía ${maximo}.`,
+      );
+    }
+    let metidos = 0;
+    for (const pokemon of nuevos.slice(0, caben)) {
+      const datos = deEsteCombate();
+      datos.set("participantId", dueno);
+      datos.set("species", pokemon.especie);
+      if (pokemon.pokemonId) datos.set("pokemonId", String(pokemon.pokemonId));
+      if (pokemon.shiny) datos.set("shiny", "on");
+      if (pokemon.mote) datos.set("nickname", pokemon.mote);
+      anadirALaVista({
+        id: `pendiente-${Date.now()}-${dueno}-${metidos}`,
+        species: pokemon.especie,
+        nickname: pokemon.mote,
+        boxImage: pokemon.pokemonId ? spriteCandidates(pokemon.pokemonId, pokemon.shiny, "mini")[0] : null,
+        participantId: dueno,
+      });
+      const respuesta = await addMatchPokemonAction(null, datos);
+      if (respuesta?.error) {
+        avisos.push(`${pokemon.mote ?? pokemon.especie}: ${respuesta.error}`);
+        break;
+      }
+      metidos += 1;
+    }
+    return metidos;
+  }
+
   function anadirPegados() {
-    const lado = equipos.find((l) => l.participantId === owner);
-    const caben = maximo - (lado?.team.length ?? 0);
     setLeyendo(true);
     startTransition(async () => {
       try {
@@ -416,42 +466,64 @@ function TeamEditor({
           setState({ error: leido.error ?? "Eso no parece un equipo de Showdown." });
           return;
         }
-        if (caben <= 0) {
-          setState({ error: `${lado?.displayName ?? "Ese equipo"} ya tiene ${maximo}.` });
-          return;
-        }
         const avisos: string[] = leido.equipo.flatMap((p) => p.dudas);
-        const aMeter = leido.equipo.slice(0, caben);
-        if (leido.equipo.length > caben) {
-          avisos.push(`Solo cabían ${caben}: se han quedado fuera ${leido.equipo.length - caben}.`);
-        }
-        let metidos = 0;
-        for (const pokemon of aMeter) {
-          const datos = deEsteCombate();
-          datos.set("participantId", owner);
-          datos.set("species", pokemon.especie);
-          if (pokemon.pokemonId) datos.set("pokemonId", String(pokemon.pokemonId));
-          if (pokemon.shiny) datos.set("shiny", "on");
-          if (pokemon.mote) datos.set("nickname", pokemon.mote);
-          anadirALaVista({
-            id: `pendiente-${Date.now()}-${metidos}`,
-            species: pokemon.especie,
-            nickname: pokemon.mote,
-            boxImage: pokemon.pokemonId ? spriteCandidates(pokemon.pokemonId, pokemon.shiny, "mini")[0] : null,
-            participantId: owner,
-          });
-          const respuesta = await addMatchPokemonAction(null, datos);
-          if (respuesta?.error) {
-            avisos.push(`${pokemon.mote ?? pokemon.especie}: ${respuesta.error}`);
-            break;
-          }
-          metidos += 1;
-        }
+        const metidos = await anadirLista(owner, leido.equipo, avisos);
         setPegado("");
         setState(
           avisos.length
             ? { error: `Añadidos ${metidos}. ${avisos.join(" ")}` }
             : { success: `Añadidos ${metidos} de Showdown.` },
+        );
+      } catch {
+        setState({ error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." });
+      } finally {
+        setLeyendo(false);
+      }
+    });
+  }
+
+  // De la repetición: los equipos de todos los del combate, y de quién es cada uno
+  const [enlace, setEnlace] = useState(repeticion ?? "");
+  const [deLaRepeticion, setDeLaRepeticion] = useState<JugadorDeLaRepeticion[] | null>(null);
+  const [quienEs, setQuienEs] = useState<string[]>([]);
+
+  function leerLaRepeticion() {
+    setLeyendo(true);
+    startTransition(async () => {
+      try {
+        const leida = await leerRepeticionAction(enlace);
+        if (leida.error || !leida.jugadores) {
+          setState({ error: leida.error ?? "No he podido leer esa repetición." });
+          return;
+        }
+        setState(null);
+        setDeLaRepeticion(leida.jugadores);
+        setQuienEs(adivinarQuienEs(leida.jugadores, sides));
+      } catch {
+        setState({ error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." });
+      } finally {
+        setLeyendo(false);
+      }
+    });
+  }
+
+  function anadirDeLaRepeticion() {
+    if (!deLaRepeticion) return;
+    setLeyendo(true);
+    startTransition(async () => {
+      try {
+        const avisos: string[] = [];
+        let metidos = 0;
+        for (const [i, jugador] of deLaRepeticion.entries()) {
+          if (!quienEs[i]) continue;
+          avisos.push(...jugador.equipo.flatMap((p) => p.dudas));
+          metidos += await anadirLista(quienEs[i], jugador.equipo, avisos);
+        }
+        setDeLaRepeticion(null);
+        setState(
+          avisos.length
+            ? { error: `Añadidos ${metidos}. ${avisos.join(" ")}` }
+            : { success: metidos ? `Añadidos ${metidos} de la repetición.` : "Ya estaban todos." },
         );
       } catch {
         setState({ error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." });
@@ -543,6 +615,80 @@ function TeamEditor({
         ))}
       </div>
 
+      {/* Lo cómodo: los equipos de todos, sacados del enlace de la repetición */}
+      <details className="group mt-4 rounded-xl border border-white/10 px-3 py-2" open={Boolean(repeticion)}>
+        <summary className="cursor-pointer list-none text-sm text-slate-300">
+          <span className="mr-1.5 inline-block transition group-open:rotate-90">▸</span>
+          Sacar los equipos de la repetición
+        </summary>
+        <p className="mt-2 text-xs text-slate-500">
+          Con el enlace de la repetición de Showdown salen la especie y el mote de los pokémon de
+          cada uno. Los motes, de los que llegaron a salir al campo.
+        </p>
+        <div className="mt-2 flex gap-2">
+          <input
+            className="input min-w-0 flex-1 text-sm"
+            value={enlace}
+            onChange={(evento) => setEnlace(evento.target.value)}
+            placeholder="https://replay.pokemonshowdown.com/…"
+            inputMode="url"
+            autoComplete="off"
+          />
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0"
+            disabled={leyendo || !enlace.trim()}
+            onClick={leerLaRepeticion}
+          >
+            {leyendo && !deLaRepeticion ? "Leyendo…" : "Leer"}
+          </button>
+        </div>
+        {deLaRepeticion ? (
+          <div className="mt-3 space-y-2">
+            {deLaRepeticion.map((jugador, i) => (
+              <div key={jugador.lado} className="rounded-lg border border-white/10 bg-white/[0.02] p-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-semibold text-white">{jugador.nombre}</span>
+                  <span className="text-xs text-slate-500">
+                    {jugador.equipo.length} pokémon{jugador.completo ? "" : ", solo los que salieron"}
+                  </span>
+                  <select
+                    className="input ml-auto w-auto py-1 text-sm"
+                    value={quienEs[i] ?? ""}
+                    onChange={(evento) =>
+                      setQuienEs((antes) => {
+                        const nuevo = [...antes];
+                        nuevo[i] = evento.target.value;
+                        return nuevo;
+                      })
+                    }
+                    aria-label={`Quién es ${jugador.nombre}`}
+                  >
+                    <option value="">No añadir</option>
+                    {sides.map((lado) => (
+                      <option key={lado.participantId} value={lado.participantId}>
+                        Es {lado.displayName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <p className="mt-1 text-xs text-slate-400">
+                  {jugador.equipo.map((p) => (p.mote ? `${p.mote} (${p.especie})` : p.especie)).join(" · ")}
+                </p>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="btn-primary btn-sm"
+              disabled={leyendo || !quienEs.some(Boolean)}
+              onClick={anadirDeLaRepeticion}
+            >
+              {leyendo ? "Añadiendo…" : "Añadir los equipos"}
+            </button>
+          </div>
+        ) : null}
+      </details>
+
       <form
         onSubmit={enviar}
         className="mt-4 space-y-3 border-t border-white/10 pt-4"
@@ -623,4 +769,32 @@ function TeamEditor({
       </details>
     </Hoja>
   );
+}
+
+/**
+ * Quién es quién en la repetición: el nombre de Showdown casi nunca es el de
+ * aquí, así que se prueba por parecido («Draka Sama» es Draka) y, si quedan
+ * dos sin saber, por orden. Es solo lo que sale marcado: se cambia a mano.
+ */
+function adivinarQuienEs(jugadores: JugadorDeLaRepeticion[], sides: TeamSide[]) {
+  const plano = (texto: string) =>
+    texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const elegidos: string[] = jugadores.map(() => "");
+  const libres = new Set(sides.map((lado) => lado.participantId));
+  jugadores.forEach((jugador, i) => {
+    const suyo = plano(jugador.nombre);
+    const parecido = sides.find((lado) => {
+      const aqui = plano(lado.displayName);
+      return libres.has(lado.participantId) && aqui && suyo && (suyo.includes(aqui) || aqui.includes(suyo));
+    });
+    if (parecido) {
+      elegidos[i] = parecido.participantId;
+      libres.delete(parecido.participantId);
+    }
+  });
+  // Por orden, solo si cuadra uno a uno: el primero de la repetición, el primero de aquí
+  const sinSaber = jugadores.map((_, i) => i).filter((i) => !elegidos[i]);
+  const quedan = sides.filter((lado) => libres.has(lado.participantId));
+  if (sinSaber.length === quedan.length) sinSaber.forEach((i, k) => (elegidos[i] = quedan[k].participantId));
+  return elegidos;
 }

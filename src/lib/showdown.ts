@@ -144,3 +144,125 @@ export function leerShowdown(texto: string): PokemonDeShowdown[] {
   }
   return equipo;
 }
+
+/**
+ * Lo que se saca de una **repetición** de Showdown: los equipos de los dos (o
+ * más) que jugaron, sin que nadie tenga que exportar nada. De una repetición
+ * no se puede sacar el «Export» de los demás, pero el registro del combate
+ * dice lo suficiente para apuntar el equipo de una jornada:
+ *
+ *     |player|p1|Pablo|...
+ *     |poke|p1|Garchomp, F|          ← la vista previa: los seis de cada uno
+ *     |switch|p1a: Chompy|Garchomp, F|100/100   ← el mote, al salir
+ *
+ * Con vista previa de equipos salen los seis; sin ella (algunos formatos) solo
+ * los que llegaron a salir, y se avisa. Los motes salen cuando el pokémon sale
+ * al campo: el que no salió se queda sin mote. Ni objetos ni naturalezas, que
+ * eso la repetición no lo cuenta entero.
+ */
+export type JugadorDeLaRepeticion = {
+  /** "p1", "p2"… */
+  lado: string;
+  /** Su nombre en Showdown */
+  nombre: string;
+  equipo: PokemonDeShowdown[];
+  /** Si se vieron los seis en la vista previa, o solo los que salieron */
+  completo: boolean;
+};
+
+type Visto = { especie: string; mote: string | null; shiny: boolean };
+
+/** Las transformaciones de combate no cambian quién es en el equipo */
+const EN_COMBATE = /-(Mega(-[XY])?|Gmax|Primal|Eternamax|Tera|Stellar)$/i;
+
+/** "Urshifu-*" en la vista previa es «alguna forma de Urshifu» */
+function mismaEspecie(previa: string, vista: string) {
+  if (previa.endsWith("-*")) return plano(vista).startsWith(plano(previa.slice(0, -2)));
+  return plano(previa) === plano(vista) || plano(previa) === plano(vista.replace(EN_COMBATE, ""));
+}
+
+export function leerRepeticion(log: string): JugadorDeLaRepeticion[] {
+  const nombres = new Map<string, string>();
+  const vistos = new Map<string, Visto[]>();
+  const conPrevia = new Set<string>();
+  const de = (lado: string) => {
+    if (!vistos.has(lado)) vistos.set(lado, []);
+    return vistos.get(lado)!;
+  };
+
+  for (const linea of log.split("\n")) {
+    const partes = linea.split("|");
+    const tipo = partes[1];
+    if (tipo === "player" && partes[3]) {
+      nombres.set(partes[2], partes[3]);
+    } else if (tipo === "poke") {
+      const lado = partes[2];
+      conPrevia.add(lado);
+      const detalles = (partes[3] ?? "").split(",").map((d) => d.trim());
+      de(lado).push({ especie: detalles[0], mote: null, shiny: detalles.includes("shiny") });
+    } else if (tipo === "switch" || tipo === "drag" || tipo === "replace") {
+      // "p1a: Chompy" → lado p1 y mote Chompy
+      const quien = /^(p\d)[a-z]?: (.*)$/.exec(partes[2] ?? "");
+      if (!quien) continue;
+      const [, lado, mote] = quien;
+      const detalles = (partes[3] ?? "").split(",").map((d) => d.trim());
+      const especie = detalles[0];
+      const shiny = detalles.includes("shiny");
+      const lista = de(lado);
+      const yaVisto =
+        lista.find((p) => p.mote === mote) ??
+        lista.find((p) => p.mote === null && mismaEspecie(p.especie, especie));
+      if (yaVisto) {
+        yaVisto.mote = mote;
+        yaVisto.shiny ||= shiny;
+        // La forma de verdad ("Urshifu-*" → "Urshifu-Rapid-Strike"), pero no la megaevolución
+        if (!EN_COMBATE.test(especie)) yaVisto.especie = especie;
+      } else if (!conPrevia.has(lado) || !lista.some((p) => mismaEspecie(p.especie, especie))) {
+        lista.push({ especie: especie.replace(EN_COMBATE, ""), mote, shiny });
+      }
+    }
+  }
+
+  return [...vistos.keys()].sort().map((lado) => ({
+    lado,
+    nombre: nombres.get(lado) ?? lado,
+    completo: conPrevia.has(lado),
+    equipo: de(lado).map((visto) => {
+      const especieShowdown = visto.especie.replace(/-\*$/, "");
+      const pokemonId = numeroDe(especieShowdown);
+      // Showdown pone de mote la especie si no tiene: entonces no es mote
+      const base = especieShowdown.split("-")[0];
+      const esMote =
+        visto.mote !== null && plano(visto.mote) !== plano(especieShowdown) && plano(visto.mote) !== plano(base);
+      return {
+        pokemonId,
+        especie: nombreDeLaEspecie(pokemonId, especieShowdown),
+        mote: esMote ? visto.mote : null,
+        shiny: visto.shiny,
+        objeto: null,
+        naturaleza: null,
+        movimientos: [],
+        dudas: pokemonId ? [] : [`No conozco a «${especieShowdown}».`],
+      };
+    }),
+  }));
+}
+
+/**
+ * De un enlace de repetición a la dirección de sus datos: el mismo
+ * identificador con `.json` detrás. Vale con o sin `https://`, con la
+ * contraseña de las privadas ("…-abc123pw") y con lo que se pegue detrás.
+ * Solo de replay.pokemonshowdown.com: no se va a pedir nada a otro sitio.
+ */
+export function datosDeLaRepeticion(enlace: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(enlace.trim()) ? enlace.trim() : `https://${enlace.trim()}`);
+  } catch {
+    return null;
+  }
+  if (url.hostname !== "replay.pokemonshowdown.com") return null;
+  const id = url.pathname.replace(/^\/+/, "").replace(/\.(json|log|html)$/i, "").replace(/\/+$/, "");
+  if (!/^[a-z0-9]+-[a-z0-9-]+$/i.test(id)) return null;
+  return `https://replay.pokemonshowdown.com/${id}.json`;
+}

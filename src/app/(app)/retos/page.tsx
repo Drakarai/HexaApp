@@ -258,6 +258,7 @@ export default async function RetosPage() {
                   matchId={reto.id}
                   esReto
                   canManage={canManage}
+                  repeticion={reto.replayUrl}
                   maximo={formatoDeCombate(reto.formato).equipo}
                   aLaVez={formatoDeCombate(reto.formato).aLaVez}
                   sides={[

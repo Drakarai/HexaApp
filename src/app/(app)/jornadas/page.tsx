@@ -545,6 +545,7 @@ export default async function MatchdaysPage() {
                           <MatchTeams
                             matchId={match.id}
                             canManage={canManage}
+                            repeticion={match.replayUrl}
                             maximo={formatoDeCombate(match.formato ?? matchday.formato).equipo}
                             aLaVez={formatoDeCombate(match.formato ?? matchday.formato).aLaVez}
                             sides={[
