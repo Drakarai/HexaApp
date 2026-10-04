@@ -11,6 +11,7 @@ import type { MiembroDelEquipo } from "@/app/actions/tipos";
 import { getMyParticipant } from "@/lib/competition";
 import { generacionDeTipos, nombreDelJuego } from "@/lib/juegos";
 import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
+import { queEs } from "@/lib/evoluciones";
 import { NewNoteForm, NoteCard } from "./note-forms";
 import { getAcceso } from "@/lib/acceso";
 import { Icono } from "@/components/icono";
@@ -20,13 +21,13 @@ export const metadata = { title: "Mis notas" };
 export default async function NotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sobre?: string }>;
+  searchParams: Promise<{ sobre?: string; planificar?: string }>;
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const { sobre } = await searchParams;
+  const { sobre, planificar } = await searchParams;
   // Solo se leen notas cuyo autor es el usuario actual: privacidad total.
   const mias = (subjectId: string | null) =>
     prisma.note.findMany({
@@ -42,7 +43,7 @@ export default async function NotesPage({
    * se sabe si ese `sobre` es de verdad uno de ellos (si no, se enseñan las
    * generales). Antes eran tres idas y vueltas en fila.
    */
-  const [participants, yo, acceso, equipo, notasSobre, notasGenerales, counts] = await Promise.all([
+  const [participants, yo, acceso, equipo, notasSobre, notasGenerales, counts, vivos] = await Promise.all([
     getParticipants(competition.id),
     getMyParticipant(competition.id, user.id),
     getAcceso(competition.id),
@@ -60,7 +61,25 @@ export default async function NotesPage({
       where: { competitionId: competition.id, authorId: user.id },
       _count: { _all: true },
     }),
+    // Lo vivo de tu Equipo y PC, para montar el equipo de la calculadora con ello
+    prisma.capture.findMany({
+      where: {
+        participant: { competitionId: competition.id, userId: user.id },
+        failed: false,
+        deathId: null,
+      },
+      orderBy: [{ lugar: "desc" }, { hueco: "asc" }],
+      select: { id: true, species: true, nickname: true, pokemonId: true, lugar: true, shiny: true },
+    }),
   ]);
+
+  // De la caja a la calculadora: con su número de pokédex para saber sus tipos
+  const deMiCaja = vivos.flatMap((c) => {
+    const quien = queEs(c.pokemonId, c.species);
+    return quien
+      ? [{ id: quien.pokemonId, nombre: c.nickname ?? c.species, enEquipo: c.lugar === "equipo", shiny: c.shiny, captura: c.id }]
+      : [];
+  });
 
   /**
    * Un espectador mira y no escribe: el servidor ya le rechaza la nota, pero
@@ -110,14 +129,14 @@ export default async function NotesPage({
       {/* Va antes que las notas y plegada: se abre cuando toca planear, y al
           cerrarla el cuaderno vuelve a estar arriba del todo */}
       {yo ? (
-        <details className="card group mb-5">
+        <details id="cobertura" className="card group mb-5" open={planificar !== undefined}>
           <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
             <span className="mr-2 inline-block transition group-open:rotate-90">
               ▸
             </span>
-            <Icono emoji="🛡️" /> Cobertura de tipos
+            <Icono emoji="🛡️" /> Planificar equipo
             <span className="ml-2 font-normal text-slate-500">
-              — monta un equipo de 6 y mira qué le hace daño
+              — elige 6 de tu caja y mira qué le hace daño y a qué le pega
             </span>
           </summary>
           <div className="mt-4">
@@ -127,6 +146,7 @@ export default async function NotesPage({
               }
               juego={nombreDelJuego(competition.gameId, competition.game, competition.juegoNoOficial)}
               inicial={miEquipo}
+              deMiCaja={deMiCaja}
               tablaInicial={equipo?.tabla === "ahora" ? "ahora" : "juego"}
             />
           </div>

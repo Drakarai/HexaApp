@@ -6,7 +6,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { ordenDelHall } from "@/lib/hall";
 import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
-import { multiplicador, tiposDePokemon, tiposDeGeneracion } from "@/lib/tipos";
+import { coberturaOfensiva, multiplicador, tiposDePokemon, tiposDeGeneracion, TIPOS } from "@/lib/tipos";
 import { fila } from "./ayudas";
 
 const ficha = (participantId: string, seed = 1) => ({
@@ -79,5 +79,33 @@ describe("tipos de cada generación", () => {
   });
   test("Fuego contra Bicho/Acero hace x4", () => {
     assert.equal(multiplicador(FUEGO, [BICHO, ACERO], 7), 4);
+  });
+});
+
+describe("coberturaOfensiva", () => {
+  const id = (slug: string) => TIPOS.find((t) => t.slug === slug)!.id;
+  const de = (filas: ReturnType<typeof coberturaOfensiva>, slug: string) =>
+    filas.find((f) => f.tipo.slug === slug)!;
+
+  test("cuenta lo mejor que pega el equipo con sus propios tipos", () => {
+    const filas = coberturaOfensiva(
+      [
+        { nombre: "Brasas", tipos: [id("fire")] },
+        { nombre: "Chorro", tipos: [id("water")] },
+      ],
+      9,
+    );
+    // Al Acero le pega fuerte el fuego; a la Roca, el agua
+    assert.equal(de(filas, "steel").mejor, 2);
+    assert.deepEqual(de(filas, "steel").quienes, ["Brasas"]);
+    assert.deepEqual(de(filas, "rock").quienes, ["Chorro"]);
+    // Al Dragón no le da fuerte ninguno de los dos
+    assert.ok(de(filas, "dragon").mejor < 2);
+    assert.deepEqual(de(filas, "dragon").quienes, []);
+  });
+
+  test("en la 2ª generación no hay Hada que cubrir", () => {
+    const filas = coberturaOfensiva([{ nombre: "X", tipos: [id("fire")] }], 2);
+    assert.equal(filas.some((f) => f.tipo.slug === "fairy"), false);
   });
 });

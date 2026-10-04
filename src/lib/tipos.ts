@@ -105,3 +105,27 @@ export function comoSeLee(multiplicador: number): string {
   if (multiplicador === 1) return "×1";
   return `×${multiplicador}`;
 }
+
+/**
+ * La cobertura **de ataque** de un equipo: para cada tipo rival, lo más fuerte
+ * que le pega alguien del equipo **con sus propios tipos**. No sabe qué
+ * movimientos lleva cada uno —eso no se apunta—, pero los del propio tipo son
+ * los que más pegan (llevan el bonus), así que es la cuenta que se hace de
+ * cabeza al montar un equipo. Contra un tipo solo: lo que se mira es "¿tengo
+ * con qué darle a un Acero?".
+ */
+export function coberturaOfensiva(
+  equipo: { nombre: string; tipos: number[] }[],
+  generacion: number,
+) {
+  return tiposDeGeneracion(generacion).map((defensor) => {
+    let mejor = equipo.length ? 0 : 1;
+    const quienes: string[] = [];
+    for (const miembro of equipo) {
+      const suyo = Math.max(0, ...miembro.tipos.map((t) => factor(t, defensor.id, generacion)));
+      if (suyo > mejor) mejor = suyo;
+      if (suyo > 1) quienes.push(miembro.nombre);
+    }
+    return { tipo: defensor, mejor, quienes };
+  });
+}

@@ -112,6 +112,14 @@ export default async function EquipoYPcPage({
             ? "Lo que lleva cada uno, a la vista de todos. Lo de la misma ruta va vinculado: si cae uno, cae su pareja."
             : "Tu equipo y tu caja. Son solo tuyos, como el mapa: nadie más los ve."
         }
+        actions={
+          // A la calculadora de tipos de las notas, para montar el equipo con lo de aquí
+          yo ? (
+            <Link href="/notas?planificar=1#cobertura" className="btn-ghost btn-sm">
+              <Icono emoji="🛡️" /> Planificar equipo
+            </Link>
+          ) : undefined
+        }
       />
 
       {puedenApuntar.length ? (

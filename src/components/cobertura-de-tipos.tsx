@@ -10,6 +10,7 @@ import {
 } from "@/app/actions/tipos";
 import { searchSpecies, spriteCandidates } from "@/lib/pokedex";
 import {
+  coberturaOfensiva,
   comoSeLee,
   GENERACION_POR_DEFECTO,
   multiplicador,
@@ -46,11 +47,15 @@ const ESPERA_PARA_GUARDAR = 800;
 /** Lo que hay en un sitio del equipo: un pokémon, o nada todavía */
 type Sitio = MiembroDelEquipo | null;
 
+/** Un pokémon vivo de tu Equipo y PC, para elegirlo sin teclear */
+export type DeMiCaja = MiembroDelEquipo & { enEquipo: boolean; shiny: boolean; captura: string };
+
 export function CoberturaDeTipos({
   generacionDelLocke,
   juego,
   inicial,
   tablaInicial,
+  deMiCaja = [],
 }: {
   /** La generación del juego de esta edición */
   generacionDelLocke: number;
@@ -58,6 +63,8 @@ export function CoberturaDeTipos({
   juego: string | null;
   inicial: MiembroDelEquipo[];
   tablaInicial: QueTabla;
+  /** Lo vivo de tu Equipo y PC: se elige tocándolo en vez de buscarlo */
+  deMiCaja?: DeMiCaja[];
 }) {
   const [equipo, setEquipo] = useState<Sitio[]>(() =>
     Array.from({ length: HUECOS }, (_, i) => inicial[i] ?? null),
@@ -134,8 +141,94 @@ export function CoberturaDeTipos({
 
   const peorFila = filas.find((fila) => fila.debiles > 0);
 
+  /** Lo de atacar: a qué le pega fuerte el equipo con sus propios tipos */
+  const ataque = useMemo(() => coberturaOfensiva(suyos, generacion), [suyos, generacion]);
+  const sinCubrir = ataque.filter((fila) => fila.mejor < 2);
+
+  // Si ya está en el plan (mismo pokémon y mismo nombre), tocarlo lo quita
+  const estaEnElPlan = (p: DeMiCaja) =>
+    equipo.some((sitio) => sitio?.id === p.id && sitio.nombre === p.nombre);
+  const lleno = equipo.every(Boolean);
+  function alternar(p: DeMiCaja) {
+    setEquipo((antes) => {
+      if (antes.some((s) => s?.id === p.id && s.nombre === p.nombre)) {
+        return antes.map((s) => (s?.id === p.id && s.nombre === p.nombre ? null : s));
+      }
+      const hueco = antes.findIndex((s) => s === null);
+      if (hueco === -1) return antes;
+      return antes.map((s, i) => (i === hueco ? { id: p.id, nombre: p.nombre } : s));
+    });
+  }
+  const delEquipo = deMiCaja.filter((p) => p.enEquipo);
+
   return (
     <div className="space-y-4">
+      {deMiCaja.length ? (
+        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              De tu Equipo y PC
+            </p>
+            <span className="text-xs text-slate-500">
+              {lleno ? "Equipo lleno: toca uno de arriba para quitarlo." : "Toca para meterlo o sacarlo."}
+            </span>
+            <div className="ml-auto flex gap-1.5">
+              {delEquipo.length ? (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() =>
+                    setEquipo(
+                      Array.from({ length: HUECOS }, (_, i) =>
+                        delEquipo[i] ? { id: delEquipo[i].id, nombre: delEquipo[i].nombre } : null,
+                      ),
+                    )
+                  }
+                >
+                  Mi equipo de ahora
+                </button>
+              ) : null}
+              {puestos.length ? (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  onClick={() => setEquipo(Array.from({ length: HUECOS }, () => null))}
+                >
+                  Vaciar
+                </button>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex gap-1.5 overflow-x-auto pb-1">
+            {deMiCaja.map((p) => {
+              const dentro = estaEnElPlan(p);
+              return (
+                <button
+                  key={p.captura}
+                  type="button"
+                  onClick={() => alternar(p)}
+                  disabled={!dentro && lleno}
+                  aria-pressed={dentro}
+                  title={dentro ? `Sacar a ${p.nombre}` : `Meter a ${p.nombre}`}
+                  className={cx(
+                    "flex w-16 shrink-0 flex-col items-center rounded-lg border p-1 transition disabled:opacity-40",
+                    dentro
+                      ? "border-brand-400/70 bg-brand-600/20"
+                      : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]",
+                  )}
+                >
+                  <Sprite pokemonId={p.id} shiny={p.shiny} />
+                  <span className="mt-0.5 w-full truncate text-center text-[10px] text-slate-300">{p.nombre}</span>
+                  {p.enEquipo ? (
+                    <span className="text-[9px] uppercase tracking-wide text-slate-500">equipo</span>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {equipo.map((sitio, posicion) => (
           <HuecoDelEquipo
@@ -303,6 +396,45 @@ export function CoberturaDeTipos({
               </>
             )}
           </p>
+
+          {/* Y al revés: a qué le pega fuerte el equipo */}
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              A qué le pegas fuerte
+            </p>
+            <p className="mb-3 text-xs text-slate-500">
+              {sinCubrir.length
+                ? `Con los tipos de tu equipo no le das fuerte a ${sinCubrir.length === 1 ? "un tipo" : `${sinCubrir.length} tipos`}: ${sinCubrir.map((f) => f.tipo.nombre).join(", ")}. Haría falta un movimiento de otro tipo, o alguien más.`
+                : "Con los tipos de tu equipo le das fuerte a todos los tipos. Así da gusto."}
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {ataque.map((fila) => (
+                <span
+                  key={fila.tipo.id}
+                  title={
+                    fila.quienes.length
+                      ? `Le pegan fuerte: ${fila.quienes.join(", ")}`
+                      : "Nadie del equipo le pega fuerte con su tipo"
+                  }
+                  className={cx(
+                    "inline-flex items-center gap-1 rounded-lg border px-1.5 py-1",
+                    fila.mejor >= 2
+                      ? "border-emerald-500/30 bg-emerald-500/[0.07]"
+                      : "border-red-500/30 bg-red-500/[0.07] opacity-80",
+                  )}
+                >
+                  <Chapa tipoId={fila.tipo.id} />
+                  <span className={cx("text-xs tabular-nums", fila.mejor >= 2 ? "text-emerald-300" : "text-red-300")}>
+                    {fila.mejor >= 2 ? `×${fila.mejor}` : "—"}
+                  </span>
+                </span>
+              ))}
+            </div>
+            <p className="mt-2 text-[11px] text-slate-600">
+              Cuenta con los ataques del propio tipo de cada uno, que son los que más pegan; no sabe qué
+              movimientos lleváis. Pasa el ratón por un tipo para ver quién le pega.
+            </p>
+          </div>
         </>
       ) : (
         <div className="px-4 py-5 text-center">
@@ -415,8 +547,8 @@ function Buscador({ onElegir }: { onElegir: (miembro: Sitio) => void }) {
 }
 
 /** El sprite pixelado, que pesa menos de 1 KB y aquí solo hay que reconocerlo */
-function Sprite({ pokemonId }: { pokemonId: number }) {
-  const candidatas = spriteCandidates(pokemonId, false, "mini");
+function Sprite({ pokemonId, shiny = false }: { pokemonId: number; shiny?: boolean }) {
+  const candidatas = spriteCandidates(pokemonId, shiny, "mini");
   /**
    * Se van probando en orden y, si se acaban, no se pinta nada: dejar el icono
    * de imagen rota en cada hueco queda peor que un cuadro vacío, y aquí el
