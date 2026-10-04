@@ -20,6 +20,7 @@ import {
 } from "@/lib/tipos";
 import { cx } from "@/lib/utils";
 import { DibujoVacio } from "@/components/dibujo-vacio";
+import { Hoja } from "@/components/hoja";
 
 /**
  * La calculadora de cobertura: metes tu equipo y te dice, tipo por tipo, cuánto
@@ -48,7 +49,15 @@ const ESPERA_PARA_GUARDAR = 800;
 type Sitio = MiembroDelEquipo | null;
 
 /** Un pokémon vivo de tu Equipo y PC, para elegirlo sin teclear */
-export type DeMiCaja = MiembroDelEquipo & { enEquipo: boolean; shiny: boolean; captura: string };
+export type DeMiCaja = MiembroDelEquipo & {
+  /** Para buscarlo también por especie, que el nombre es el mote */
+  especie: string;
+  enEquipo: boolean;
+  /** La caja del PC en la que está, desde 1; null si va en el equipo */
+  caja: number | null;
+  shiny: boolean;
+  captura: string;
+};
 
 export function CoberturaDeTipos({
   generacionDelLocke,
@@ -145,87 +154,41 @@ export function CoberturaDeTipos({
   const ataque = useMemo(() => coberturaOfensiva(suyos, generacion), [suyos, generacion]);
   const sinCubrir = ataque.filter((fila) => fila.mejor < 2);
 
-  // Si ya está en el plan (mismo pokémon y mismo nombre), tocarlo lo quita
-  const estaEnElPlan = (p: DeMiCaja) =>
-    equipo.some((sitio) => sitio?.id === p.id && sitio.nombre === p.nombre);
-  const lleno = equipo.every(Boolean);
-  function alternar(p: DeMiCaja) {
-    setEquipo((antes) => {
-      if (antes.some((s) => s?.id === p.id && s.nombre === p.nombre)) {
-        return antes.map((s) => (s?.id === p.id && s.nombre === p.nombre ? null : s));
-      }
-      const hueco = antes.findIndex((s) => s === null);
-      if (hueco === -1) return antes;
-      return antes.map((s, i) => (i === hueco ? { id: p.id, nombre: p.nombre } : s));
-    });
-  }
+  /** El hueco para el que se está eligiendo; null con el selector cerrado */
+  const [eligiendo, setEligiendo] = useState<number | null>(null);
+  // El equipo guardado no sabe si es shiny: se mira en la caja
+  const esShiny = (m: MiembroDelEquipo) =>
+    deMiCaja.some((p) => p.shiny && p.id === m.id && p.nombre === m.nombre);
   const delEquipo = deMiCaja.filter((p) => p.enEquipo);
 
   return (
     <div className="space-y-4">
-      {deMiCaja.length ? (
-        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-          <div className="mb-2 flex flex-wrap items-center gap-2">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              De tu Equipo y PC
-            </p>
-            <span className="text-xs text-slate-500">
-              {lleno ? "Equipo lleno: toca uno de arriba para quitarlo." : "Toca para meterlo o sacarlo."}
-            </span>
-            <div className="ml-auto flex gap-1.5">
-              {delEquipo.length ? (
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() =>
-                    setEquipo(
-                      Array.from({ length: HUECOS }, (_, i) =>
-                        delEquipo[i] ? { id: delEquipo[i].id, nombre: delEquipo[i].nombre } : null,
-                      ),
-                    )
-                  }
-                >
-                  Mi equipo de ahora
-                </button>
-              ) : null}
-              {puestos.length ? (
-                <button
-                  type="button"
-                  className="btn-ghost btn-sm"
-                  onClick={() => setEquipo(Array.from({ length: HUECOS }, () => null))}
-                >
-                  Vaciar
-                </button>
-              ) : null}
-            </div>
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1">
-            {deMiCaja.map((p) => {
-              const dentro = estaEnElPlan(p);
-              return (
-                <button
-                  key={p.captura}
-                  type="button"
-                  onClick={() => alternar(p)}
-                  disabled={!dentro && lleno}
-                  aria-pressed={dentro}
-                  title={dentro ? `Sacar a ${p.nombre}` : `Meter a ${p.nombre}`}
-                  className={cx(
-                    "flex w-16 shrink-0 flex-col items-center rounded-lg border p-1 transition disabled:opacity-40",
-                    dentro
-                      ? "border-brand-400/70 bg-brand-600/20"
-                      : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]",
-                  )}
-                >
-                  <Sprite pokemonId={p.id} shiny={p.shiny} />
-                  <span className="mt-0.5 w-full truncate text-center text-[10px] text-slate-300">{p.nombre}</span>
-                  {p.enEquipo ? (
-                    <span className="text-[9px] uppercase tracking-wide text-slate-500">equipo</span>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
+      {delEquipo.length || puestos.length ? (
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
+          {delEquipo.length ? (
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() =>
+                setEquipo(
+                  Array.from({ length: HUECOS }, (_, i) =>
+                    delEquipo[i] ? { id: delEquipo[i].id, nombre: delEquipo[i].nombre } : null,
+                  ),
+                )
+              }
+            >
+              Mi equipo de ahora
+            </button>
+          ) : null}
+          {puestos.length ? (
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              onClick={() => setEquipo(Array.from({ length: HUECOS }, () => null))}
+            >
+              Vaciar
+            </button>
+          ) : null}
         </div>
       ) : null}
 
@@ -234,15 +197,27 @@ export function CoberturaDeTipos({
           <HuecoDelEquipo
             key={posicion}
             miembro={sitio}
+            shiny={sitio ? esShiny(sitio) : false}
             generacion={generacion}
-            onElegir={(miembro) =>
-              setEquipo((antes) =>
-                antes.map((otro, i) => (i === posicion ? miembro : otro)),
-              )
+            onAbrir={() => setEligiendo(posicion)}
+            onQuitar={() =>
+              setEquipo((antes) => antes.map((otro, i) => (i === posicion ? null : otro)))
             }
           />
         ))}
       </div>
+
+      {eligiendo !== null ? (
+        <Selector
+          equipo={equipo}
+          hueco={eligiendo}
+          deMiCaja={deMiCaja}
+          generacion={generacion}
+          esShiny={esShiny}
+          onCambiar={setEquipo}
+          onCerrar={() => setEligiendo(null)}
+        />
+      ) : null}
 
       {hayDiferencia ? (
         <label className="flex cursor-pointer items-start gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] px-3 py-2.5 text-sm">
@@ -451,39 +426,64 @@ export function CoberturaDeTipos({
   );
 }
 
-/** Un hueco del equipo: o el pokémon que hay, o el buscador para ponerlo. */
+/**
+ * Un hueco del equipo: el pokémon que hay o el botón para elegirlo. Tocar al
+ * que hay abre el selector para cambiarlo por otro.
+ */
 function HuecoDelEquipo({
   miembro,
+  shiny,
   generacion,
-  onElegir,
+  onAbrir,
+  onQuitar,
 }: {
   miembro: Sitio;
+  shiny: boolean;
   generacion: number;
-  onElegir: (miembro: Sitio) => void;
+  onAbrir: () => void;
+  onQuitar: () => void;
 }) {
-  if (!miembro) return <Buscador onElegir={onElegir} />;
+  if (!miembro) {
+    return (
+      <button
+        type="button"
+        onClick={onAbrir}
+        className="flex min-h-[3.25rem] items-center justify-center gap-1.5 rounded-xl border border-dashed border-white/15 p-1.5 text-sm text-slate-500 transition hover:border-brand-400/50 hover:bg-white/[0.04] hover:text-slate-200"
+      >
+        <span aria-hidden className="text-base leading-none">＋</span>
+        Añadir
+      </button>
+    );
+  }
 
   const tipos = tiposDePokemon(miembro.id, generacion);
   return (
-    <div className="flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.03] p-1.5">
-      <Sprite pokemonId={miembro.id} />
-      {/* Sin truncar: en dos columnas de móvil no cabe "Charizard" de una vez,
-          y un nombre cortado a "Char…" no sirve para reconocer a nadie */}
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium leading-tight text-slate-100">
-          {miembro.nombre}
-        </p>
-        <div className="mt-1 flex flex-wrap gap-1">
-          {tipos.length ? (
-            tipos.map((id) => <Chapa key={id} tipoId={id} />)
-          ) : (
-            <span className="text-xs text-slate-600">sin tipos</span>
-          )}
-        </div>
-      </div>
+    <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1.5">
       <button
         type="button"
-        onClick={() => onElegir(null)}
+        onClick={onAbrir}
+        title={`Cambiar a ${miembro.nombre}`}
+        className="-m-0.5 flex min-w-0 flex-1 items-center gap-1.5 rounded-lg p-0.5 text-left transition hover:bg-white/[0.05]"
+      >
+        <Sprite pokemonId={miembro.id} shiny={shiny} />
+        {/* Sin truncar: en dos columnas de móvil no cabe "Charizard" de una vez,
+            y un nombre cortado a "Char…" no sirve para reconocer a nadie */}
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium leading-tight text-slate-100">
+            {miembro.nombre}
+          </span>
+          <span className="mt-1 flex flex-wrap gap-1">
+            {tipos.length ? (
+              tipos.map((id) => <Chapa key={id} tipoId={id} />)
+            ) : (
+              <span className="text-xs text-slate-600">sin tipos</span>
+            )}
+          </span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={onQuitar}
         className="shrink-0 self-start rounded-md px-1.5 py-0.5 text-xs text-slate-500 transition hover:bg-white/10 hover:text-slate-200"
         aria-label={`Quitar a ${miembro.nombre}`}
       >
@@ -493,61 +493,274 @@ function HuecoDelEquipo({
   );
 }
 
-function Buscador({ onElegir }: { onElegir: (miembro: Sitio) => void }) {
+/**
+ * Sin acentos ni mayúsculas, para buscar por mote. Va aquí y no se importa de
+ * lib/historia porque aquella arrastra la tabla de evoluciones al navegador.
+ */
+const paraBuscar = (texto: string) =>
+  texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+
+const mismo = (a: MiembroDelEquipo, b: MiembroDelEquipo) => a.id === b.id && a.nombre === b.nombre;
+
+/**
+ * Para elegir quién va en el equipo: tu caja entera a la vista, en cuadrícula
+ * como el PC y agrupada por dónde está cada uno, y la Pokédex si se busca uno
+ * que aún no tienes.
+ *
+ * Antes tu caja era una fila que había que recorrer de lado, y con treinta
+ * pokémon no se encontraba a nadie. Aquí se ve todo de golpe y el buscador
+ * filtra por mote o por especie.
+ *
+ * Se meten varios seguidos sin cerrar: cada uno va al hueco marcado arriba y
+ * la marca salta al siguiente libre. Tocar a uno que ya está lo saca, y tocar
+ * un hueco de arriba lo marca para cambiar al que hay.
+ */
+function Selector({
+  equipo,
+  hueco,
+  deMiCaja,
+  generacion,
+  esShiny,
+  onCambiar,
+  onCerrar,
+}: {
+  equipo: Sitio[];
+  hueco: number;
+  deMiCaja: DeMiCaja[];
+  generacion: number;
+  esShiny: (m: MiembroDelEquipo) => boolean;
+  onCambiar: (equipo: Sitio[]) => void;
+  onCerrar: () => void;
+}) {
+  /** Dónde va el próximo que se toque; null con el equipo lleno */
+  const [destino, setDestino] = useState<number | null>(hueco);
   const [texto, setTexto] = useState("");
-  const [abierto, setAbierto] = useState(false);
-  const sugerencias = abierto ? searchSpecies(texto, 6) : [];
+  const buscador = useRef<HTMLInputElement>(null);
+
+  // En el ordenador se escribe directamente; en el móvil el teclado taparía la caja
+  useEffect(() => {
+    if (window.matchMedia("(pointer: fine)").matches) buscador.current?.focus();
+  }, []);
+
+  const dondeEsta = (m: MiembroDelEquipo) => equipo.findIndex((s) => s !== null && mismo(s, m));
+
+  function tocar(m: MiembroDelEquipo) {
+    const donde = dondeEsta(m);
+    if (donde !== -1) {
+      onCambiar(equipo.map((s, i) => (i === donde ? null : s)));
+      setDestino(donde);
+      return;
+    }
+    if (destino === null) return;
+    const nuevo = equipo.map((s, i) => (i === destino ? { id: m.id, nombre: m.nombre } : s));
+    onCambiar(nuevo);
+    // El siguiente libre, empezando por el de después para ir en orden
+    const siguiente = Array.from({ length: HUECOS }, (_, k) => (destino + 1 + k) % HUECOS).find(
+      (i) => nuevo[i] === null,
+    );
+    setDestino(siguiente ?? null);
+  }
+
+  const busqueda = paraBuscar(texto);
+  const grupos: { titulo: string; lista: DeMiCaja[] }[] = [];
+  for (const p of deMiCaja) {
+    if (busqueda && !paraBuscar(p.nombre).includes(busqueda) && !paraBuscar(p.especie).includes(busqueda)) {
+      continue;
+    }
+    const titulo = p.enEquipo ? "Tu equipo" : `Caja ${p.caja}`;
+    const grupo = grupos.find((g) => g.titulo === titulo);
+    if (grupo) grupo.lista.push(p);
+    else grupos.push({ titulo, lista: [p] });
+  }
+  const dePokedex = busqueda ? searchSpecies(texto, 12) : [];
+  const puestos = equipo.filter(Boolean).length;
+  const marcado = destino !== null ? equipo[destino] : null;
 
   return (
-    <div className="relative">
-      <input
-        className="input"
-        placeholder="Añadir pokémon…"
-        value={texto}
-        autoComplete="off"
-        onChange={(evento) => {
-          setTexto(evento.target.value);
-          setAbierto(true);
-        }}
-        onFocus={() => setAbierto(true)}
-        // Da tiempo a que el clic en una sugerencia llegue antes de cerrar
-        onBlur={() => window.setTimeout(() => setAbierto(false), 150)}
-        onKeyDown={(evento) => {
-          if (evento.key === "Enter" && sugerencias.length) {
-            evento.preventDefault();
-            const elegida = sugerencias[0];
-            onElegir({ id: elegida.forms[0].id, nombre: elegida.name });
-          }
-          if (evento.key === "Escape") setAbierto(false);
-        }}
-      />
-      {sugerencias.length ? (
-        <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-white/10 bg-ink-850 py-1 shadow-xl">
-          {sugerencias.map((especie) => (
-            <li key={especie.dex}>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-200 hover:bg-white/10"
-                onMouseDown={(evento) => evento.preventDefault()}
-                onClick={() =>
-                  onElegir({ id: especie.forms[0].id, nombre: especie.name })
-                }
-              >
-                <span className="w-10 shrink-0 text-xs text-slate-500 tabular-nums">
-                  #{especie.dex}
-                </span>
-                <span className="truncate">{especie.name}</span>
-              </button>
-            </li>
+    <Hoja onCerrar={onCerrar} ancho="max-w-2xl" className="p-4 sm:p-5" etiqueta="Elegir el equipo">
+      {/* Arriba y fijo: los seis huecos, para ver el equipo mientras se elige */}
+      <div className="sticky -top-4 z-10 -mx-4 -mt-1 bg-ink-900/95 px-4 pb-3 pt-1 backdrop-blur sm:-top-5 sm:-mx-5 sm:px-5">
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-semibold text-slate-100">Elige el equipo</p>
+          <button type="button" className="btn-primary btn-sm" onClick={onCerrar}>
+            Listo · {puestos}/{HUECOS}
+          </button>
+        </div>
+        <div className="mt-2.5 grid grid-cols-6 gap-1.5">
+          {equipo.map((sitio, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => setDestino(i)}
+              aria-pressed={i === destino}
+              title={sitio ? `Cambiar a ${sitio.nombre}` : `Hueco ${i + 1}`}
+              className={cx(
+                "flex aspect-square max-h-16 items-center justify-center justify-self-center rounded-xl border transition sm:w-16",
+                "w-full",
+                sitio ? "bg-white/[0.04]" : "border-dashed",
+                i === destino
+                  ? "border-brand-400 ring-2 ring-brand-400/40"
+                  : "border-white/15 hover:border-white/30",
+              )}
+            >
+              {sitio ? (
+                <Sprite pokemonId={sitio.id} shiny={esShiny(sitio)} grande />
+              ) : (
+                <span aria-hidden className="text-slate-600">＋</span>
+              )}
+            </button>
           ))}
-        </ul>
+        </div>
+        <p className="mt-2 text-[11px] leading-snug text-slate-500">
+          {destino === null
+            ? "Equipo completo. Toca uno de arriba para cambiarlo, o uno de abajo que ya esté para sacarlo."
+            : marcado
+              ? `Toca otro para ponerlo en lugar de ${marcado.nombre}.`
+              : "Toca para meterlo; tocar a uno que ya está lo saca."}
+        </p>
+        <input
+          ref={buscador}
+          className="input mt-2"
+          type="search"
+          placeholder={deMiCaja.length ? "Busca por mote o especie…" : "Busca un pokémon…"}
+          value={texto}
+          autoComplete="off"
+          enterKeyHint="search"
+          onChange={(evento) => setTexto(evento.target.value)}
+          onKeyDown={(evento) => {
+            // Intro mete el primero que salga, como hacía el buscador de antes
+            if (evento.key !== "Enter") return;
+            evento.preventDefault();
+            const primero = grupos[0]?.lista[0];
+            const especie = dePokedex[0];
+            if (primero) tocar(primero);
+            else if (especie) tocar({ id: especie.forms[0].id, nombre: especie.name });
+            else return;
+            setTexto("");
+          }}
+        />
+      </div>
+
+      <div className="mt-1 space-y-4">
+        {grupos.map((grupo) => (
+          <section key={grupo.titulo}>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              {grupo.titulo}
+            </p>
+            <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+              {grupo.lista.map((p) => (
+                <Casilla
+                  key={p.captura}
+                  miembro={p}
+                  detalle={paraBuscar(p.nombre) !== paraBuscar(p.especie) ? p.especie : null}
+                  shiny={p.shiny}
+                  generacion={generacion}
+                  dentro={dondeEsta(p) !== -1}
+                  lleno={destino === null}
+                  onTocar={() => tocar(p)}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+
+        {busqueda ? (
+          dePokedex.length ? (
+            <section>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                De la Pokédex
+              </p>
+              <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+                {dePokedex.map((especie) => {
+                  const miembro = { id: especie.forms[0].id, nombre: especie.name };
+                  return (
+                    <Casilla
+                      key={especie.dex}
+                      miembro={miembro}
+                      detalle={`#${especie.dex}`}
+                      shiny={false}
+                      generacion={generacion}
+                      dentro={dondeEsta(miembro) !== -1}
+                      lleno={destino === null}
+                      onTocar={() => tocar(miembro)}
+                    />
+                  );
+                })}
+              </div>
+            </section>
+          ) : grupos.length ? null : (
+            <p className="py-6 text-center text-sm text-slate-500">Ni en tu caja ni en la Pokédex.</p>
+          )
+        ) : (
+          <p className="text-center text-xs text-slate-500">
+            {deMiCaja.length
+              ? "¿Uno que aún no tienes? Búscalo arriba y sale de la Pokédex."
+              : "Busca arriba cualquier pokémon de la Pokédex."}
+          </p>
+        )}
+      </div>
+    </Hoja>
+  );
+}
+
+/** Un pokémon para elegir, con sus tipos: es lo que se mira al montar el equipo */
+function Casilla({
+  miembro,
+  detalle,
+  shiny,
+  generacion,
+  dentro,
+  lleno,
+  onTocar,
+}: {
+  miembro: MiembroDelEquipo;
+  detalle: string | null;
+  shiny: boolean;
+  generacion: number;
+  dentro: boolean;
+  lleno: boolean;
+  onTocar: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onTocar}
+      disabled={!dentro && lleno}
+      aria-pressed={dentro}
+      title={dentro ? `Sacar a ${miembro.nombre}` : `Meter a ${miembro.nombre}`}
+      className={cx(
+        "relative flex min-w-0 flex-col items-center rounded-xl border px-1 pb-1.5 pt-1 transition disabled:opacity-35",
+        dentro
+          ? "border-brand-400/70 bg-brand-600/20"
+          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.06]",
+      )}
+    >
+      <Sprite pokemonId={miembro.id} shiny={shiny} grande />
+      <span className="mt-0.5 w-full truncate text-center text-[11px] leading-tight text-slate-100">
+        {miembro.nombre}
+      </span>
+      {detalle ? (
+        <span className="w-full truncate text-center text-[10px] leading-tight text-slate-500">{detalle}</span>
       ) : null}
-    </div>
+      <span className="mt-1 flex gap-0.5">
+        {tiposDePokemon(miembro.id, generacion).map((id) => (
+          <Chapa key={id} tipoId={id} mini />
+        ))}
+      </span>
+      {dentro ? (
+        <span
+          aria-hidden
+          className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-500 text-[10px] font-bold text-white"
+        >
+          ✓
+        </span>
+      ) : null}
+    </button>
   );
 }
 
 /** El sprite pixelado, que pesa menos de 1 KB y aquí solo hay que reconocerlo */
-function Sprite({ pokemonId, shiny = false }: { pokemonId: number; shiny?: boolean }) {
+function Sprite({ pokemonId, shiny = false, grande = false }: { pokemonId: number; shiny?: boolean; grande?: boolean }) {
   const candidatas = spriteCandidates(pokemonId, shiny, "mini");
   /**
    * Se van probando en orden y, si se acaban, no se pinta nada: dejar el icono
@@ -558,7 +771,12 @@ function Sprite({ pokemonId, shiny = false }: { pokemonId: number; shiny?: boole
   const src = candidatas[cual];
 
   return (
-    <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-850">
+    <span
+      className={cx(
+        "flex shrink-0 items-center justify-center overflow-hidden rounded-lg",
+        grande ? "h-11 w-11" : "h-9 w-9 bg-ink-850",
+      )}
+    >
       {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
