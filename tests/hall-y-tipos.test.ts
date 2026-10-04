@@ -6,7 +6,7 @@ import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { ordenDelHall } from "@/lib/hall";
 import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
-import { coberturaOfensiva, multiplicador, tiposDePokemon, tiposDeGeneracion, TIPOS } from "@/lib/tipos";
+import { coberturaOfensiva, debilidadesDe, multiplicador, tiposDePokemon, tiposDeGeneracion, TIPOS } from "@/lib/tipos";
 import { fila } from "./ayudas";
 
 const ficha = (participantId: string, seed = 1) => ({
@@ -108,4 +108,31 @@ describe("coberturaOfensiva", () => {
     const filas = coberturaOfensiva([{ nombre: "X", tipos: [id("fire")] }], 2);
     assert.equal(filas.some((f) => f.tipo.slug === "fairy"), false);
   });
+});
+
+describe("debilidadesDe", () => {
+  const de = (id: number, gen: number) =>
+    Object.fromEntries(debilidadesDe(id, gen).map((d) => [d.slug, d.x]));
+
+  test("Gyarados: x4 a Eléctrico, x2 a Roca, inmune a Tierra y sin los neutros", () => {
+    const g = de(130, 9);
+    assert.equal(g.electric, 4);
+    assert.equal(g.rock, 2);
+    assert.equal(g.ground, 0);
+    assert.equal(g.fire, 0.5);
+    assert.equal(g.normal, undefined);
+  });
+
+  test("de lo que más duele a lo que no hace nada", () => {
+    const xs = debilidadesDe(130, 9).map((d) => d.x);
+    assert.deepEqual(xs, [...xs].sort((a, b) => b - a));
+  });
+
+  test("con la tabla de su generación: Hada solo desde la 6ª", () => {
+    // Dragonite (Dragón/Volador): el Hada le hace x2 en la 6ª y no existe en la 5ª
+    assert.equal(de(149, 6).fairy, 2);
+    assert.equal(de(149, 5).fairy, undefined);
+  });
+
+  test("sin saber qué pokémon es, nada", () => assert.deepEqual(debilidadesDe(null, 9), []));
 });

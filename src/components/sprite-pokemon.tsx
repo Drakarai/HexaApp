@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import {
+  iconoDeCaja,
   pokemonDeLaImagen,
   spriteQuietoDeQuinta,
   spritesDeQuinta,
@@ -31,7 +32,15 @@ export function useEstiloDeSprites() {
 const recortes = new Map<string, string | null>();
 const recortando = new Map<string, Promise<string | null>>();
 
+/**
+ * Los iconos de caja se recortan con un lado mínimo: en los juegos un Pikachu
+ * es la mitad que un Charizard, y recortados al justo salían los dos igual de
+ * grandes (y el pequeño, con los píxeles como puños).
+ */
+const LADO_MINIMO_DE_ICONO = 26;
+
 function recortar(url: string): Promise<string | null> {
+  const minimo = url.includes("/icons/") ? LADO_MINIMO_DE_ICONO : 0;
   if (recortes.has(url)) return Promise.resolve(recortes.get(url) ?? null);
   let pedido = recortando.get(url);
   if (!pedido) {
@@ -61,7 +70,7 @@ function recortar(url: string): Promise<string | null> {
           }
           if (x1 < 0) return resolver(null);
           // Cuadrado, para que object-contain lo deje centrado y sin deformar
-          const lado = Math.max(x1 - x0, y1 - y0) + 1 + 4;
+          const lado = Math.max(x1 - x0 + 1 + 4, y1 - y0 + 1 + 4, minimo);
           const recorte = document.createElement("canvas");
           recorte.width = lado;
           recorte.height = lado;
@@ -96,7 +105,7 @@ function recortar(url: string): Promise<string | null> {
  * - En la **ficha** de un pokémon (`ficha`), siempre al estilo de Blanco y
  *   Negro, animado si lo hay: es donde se mira de cerca.
  * - En el resto (casillas, equipos, listas), el **quieto** de Blanco y Negro,
- *   o el de HOME si se ha elegido así en Mi perfil.
+ *   o lo que se haya elegido en Mi perfil: el icono de caja o el de HOME.
  *
  * Se le pasa la imagen guardada de siempre y de su dirección saca qué pokémon
  * es (ver `pokemonDeLaImagen`), así que vale en cualquier sitio sin tocar lo
@@ -130,14 +139,16 @@ export function SpritePokemon({
 
   const candidatas = [
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
-    ...(id && !ficha && estilo === "quinta" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
+    ...(id && !ficha && estilo === "iconos" ? [iconoDeCaja(id)].filter((c) => c !== null) : []),
+    // También detrás del icono, para los que no lo tienen (Hisui y Paldea)
+    ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
     ...(src ? [src] : []),
   ];
   // Las que no han cargado, por dirección: si cambia de pokémon, las suyas empiezan de cero
   const [fallidas, setFallidas] = useState<string[]>([]);
   const actual = candidatas.find((c) => !fallidas.includes(c));
-  const pixelado = Boolean(actual?.includes("black-white"));
-  // Los quietos de Blanco y Negro, recortados; en la ficha no, que el animado
+  const pixelado = Boolean(actual?.includes("black-white") || actual?.includes("/icons/"));
+  // Los quietos de Blanco y Negro y los iconos, recortados; en la ficha no, que el animado
   // no se puede recortar y el quieto de respaldo tiene que verse igual que él
   const aRecortar = pixelado && !ficha && actual?.endsWith(".png") ? actual : null;
   const [recorte, setRecorte] = useState<{ de: string; url: string | null } | null>(null);

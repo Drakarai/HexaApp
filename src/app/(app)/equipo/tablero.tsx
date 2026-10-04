@@ -22,6 +22,7 @@ import { Pestanas } from "@/components/pestanas";
 import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { FichaDeCombate } from "./ficha-de-combate";
+import { Debilidades } from "./debilidades";
 import { ConFichaAlPasar } from "./ficha-al-pasar";
 import {
   HUECOS_POR_CAJA,
@@ -1229,6 +1230,7 @@ function Ficha({
               onAviso={onAviso}
             />
           ) : null}
+          {pestana === "combate" ? <Debilidades debilidades={pokemon.debilidades} /> : null}
 
           {pestana === "historia" ? (
             <HistoriaDelPokemon

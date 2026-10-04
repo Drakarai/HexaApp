@@ -83,6 +83,29 @@ export function tiposParaVer(
     .map((t) => ({ slug: t.slug, nombre: t.nombre }));
 }
 
+/**
+ * Lo que le entra a un pokémon de cada tipo, **sin los neutros**: de lo que
+ * más le duele a lo que no le hace nada. Con sus tipos y la tabla **de la
+ * generación del locke**: hasta la 5ª el Acero resiste al Fantasma y Clefairy
+ * es Normal. Es lo que se mira antes de sacarlo a combatir.
+ */
+export function debilidadesDe(
+  pokemonId: number | null | undefined,
+  generacion: number,
+): { slug: string; nombre: string; x: number }[] {
+  if (!pokemonId) return [];
+  const suyos = tiposDePokemon(pokemonId, generacion);
+  if (!suyos.length) return [];
+  return tiposDeGeneracion(generacion)
+    .map((atacante) => ({
+      slug: atacante.slug,
+      nombre: atacante.nombre,
+      x: multiplicador(atacante.id, suyos, generacion),
+    }))
+    .filter((d) => d.x !== 1)
+    .sort((a, b) => b.x - a.x);
+}
+
 /** Cuánto le entra a un tipo un ataque de otro: 0, 0.5, 1 o 2. */
 export function factor(
   atacante: number,

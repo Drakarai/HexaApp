@@ -2,7 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { SpritePokemon, useEstiloDeSprites } from "@/components/sprite-pokemon";
-import { spriteQuietoDeQuinta, COOKIE_DE_SPRITES, type EstiloDeSprites } from "@/lib/sprites-de-quinta";
+import {
+  COOKIE_DE_SPRITES,
+  iconoDeCaja,
+  spriteQuietoDeQuinta,
+  type EstiloDeSprites,
+} from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 
 const OPCIONES: { valor: EstiloDeSprites; nombre: string; detalle: string }[] = [
@@ -10,6 +15,11 @@ const OPCIONES: { valor: EstiloDeSprites; nombre: string; detalle: string }[] = 
     valor: "quinta",
     nombre: "Blanco y Negro",
     detalle: "En 2D, como en la DS. Los de después, dibujados al mismo estilo.",
+  },
+  {
+    valor: "iconos",
+    nombre: "Iconos de caja",
+    detalle: "Los muñequitos del PC de Espada y Escudo. Los de Hisui y Paldea, en Blanco y Negro.",
   },
   { valor: "home", nombre: "HOME", detalle: "Los modelos en 3D de ahora." },
 ];
@@ -24,7 +34,7 @@ export function PreferenciaDeSpritesPicker({ muestra }: { muestra: number }) {
   const actual = useEstiloDeSprites();
 
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
+    <div className="grid gap-2 sm:grid-cols-3">
       {OPCIONES.map((opcion) => (
         <button
           key={opcion.valor}
@@ -35,7 +45,7 @@ export function PreferenciaDeSpritesPicker({ muestra }: { muestra: number }) {
             router.refresh();
           }}
           className={cx(
-            "flex items-center gap-3 rounded-xl border p-3 text-left transition",
+            "flex items-center gap-3 rounded-xl border p-3 text-left transition sm:flex-col sm:items-start",
             actual === opcion.valor
               ? "border-brand-400/60 bg-brand-600/15"
               : "border-white/10 bg-white/[0.02] hover:border-white/20",
@@ -46,7 +56,9 @@ export function PreferenciaDeSpritesPicker({ muestra }: { muestra: number }) {
             src={
               opcion.valor === "quinta"
                 ? spriteQuietoDeQuinta(muestra, false)
-                : // A mano y no con lib/pokedex, que arrastraría la Pokédex entera al navegador
+                : opcion.valor === "iconos"
+                  ? (iconoDeCaja(muestra) ?? spriteQuietoDeQuinta(muestra, false))
+                  : // A mano y no con lib/pokedex, que arrastraría la Pokédex entera al navegador
                   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${muestra}.png`
             }
             alt=""

@@ -6,7 +6,7 @@ import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
-import { GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
+import { debilidadesDe, GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
 import { leerFondos, leerNombresDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
 import { leerMovimientos, movimientoParaVer, naturalezaPorSlug, type MovimientoParaVer } from "@/lib/movimientos";
@@ -30,6 +30,8 @@ export type PokemonDelTablero = {
   /** Variocolor: capturado así o vuelto shiny con un premio */
   shiny: boolean;
   tipos: { slug: string; nombre: string }[];
+  /** Lo que le hace cada tipo, sin los neutros: ver `debilidadesDe` */
+  debilidades: { slug: string; nombre: string; x: number }[];
   /** Dónde se capturó: la zona del mapa o lo escrito a mano */
   sitio: string | null;
   lugar: string;
@@ -188,6 +190,7 @@ export async function getEquiposDelLocke(
       imagen: imagenes(c.id),
       shiny: c.shiny,
       tipos: tiposParaVer(quien?.pokemonId, generacion),
+      debilidades: debilidadesDe(quien?.pokemonId, generacion),
       sitio: c.zone?.name ?? c.sitio,
       lugar: c.lugar,
       hueco: c.hueco,

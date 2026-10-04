@@ -37,8 +37,21 @@ export function pokemonDeLaImagen(src: string | null | undefined) {
 }
 
 /** El estilo de sprites que elige cada uno en Mi perfil; sin elegir, Blanco y Negro */
+/**
+ * Los iconos de caja de la 8ª generación (Espada y Escudo): los muñequitos del
+ * PC, con más detalle que los de la 7ª. Llegan hasta el #898 y sus formas; los
+ * de Hisui y Paldea no existen en PokéAPI, y de esos ni se piden. No los hay
+ * variocolor, como en los juegos: la casilla ya lleva su destello.
+ */
+const ICONOS = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
+
+export function iconoDeCaja(pokemonId: number) {
+  if (pokemonId > 898 && pokemonId < 10000) return null;
+  return `${ICONOS}/${pokemonId}.png`;
+}
+
 export const COOKIE_DE_SPRITES = "hexaapp-sprites";
-export type EstiloDeSprites = "quinta" | "home";
+export type EstiloDeSprites = "quinta" | "iconos" | "home";
 export function leerEstiloDeSprites(valor: string | null | undefined): EstiloDeSprites {
-  return valor === "home" ? "home" : "quinta";
+  return valor === "home" || valor === "iconos" ? valor : "quinta";
 }
