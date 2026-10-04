@@ -1,3 +1,4 @@
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import type { ActivityEntry } from "@/lib/activity";
 import { Avatar, EmptyState } from "@/components/ui";
 import { formatDateTime, relativeTime } from "@/lib/utils";
@@ -37,7 +38,7 @@ export function ActivityFeed({
             <div className="flex items-start gap-2.5">
               {entry.image ? (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img
+                <SpritePokemon
                   src={entry.image}
                   alt=""
                   loading="lazy"

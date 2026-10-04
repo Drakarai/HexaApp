@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useActionState, useEffect, useState } from "react";
 import {
   castMvpVoteAction,
@@ -80,7 +81,7 @@ export function MvpBadge({ mvp }: { mvp: MvpView }) {
         <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-ink-850/80">
           {mvp.winner?.boxImage ? (
             /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+            <SpritePokemon
               src={mvp.winner.boxImage}
               alt=""
               loading="lazy"
@@ -180,7 +181,8 @@ function Ficha({ mvp, winner }: { mvp: MvpView; winner: MvpCandidateView }) {
       >
         {winner.detailImage ?? winner.boxImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <SpritePokemon
+                ficha
             src={winner.detailImage ?? winner.boxImage ?? ""}
             alt={winner.species}
             className="h-full w-full object-contain p-2"
@@ -425,7 +427,7 @@ function FilaPokemon({
       <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white/[0.04]">
         {candidate.boxImage ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <SpritePokemon
             src={candidate.boxImage}
             alt=""
             loading="lazy"

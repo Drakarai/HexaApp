@@ -1,3 +1,4 @@
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
@@ -177,9 +178,10 @@ export default async function EquipoYPcPage({
                       {vinculo.miembros.map((m) => (
                         <span key={m.id} className="flex min-w-0 items-center gap-1.5">
                           {m.imagen ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
+                            <SpritePokemon
                               src={m.imagen}
+                              pokemonId={m.pokemonId}
+                              shiny={m.shiny}
                               alt={m.species}
                               className={
                                 m.muerta ? "h-8 w-8 object-contain opacity-50 grayscale" : "h-8 w-8 object-contain"

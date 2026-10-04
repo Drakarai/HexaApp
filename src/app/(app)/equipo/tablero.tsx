@@ -16,11 +16,11 @@ import {
 } from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
-import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
+import { sonarBip, sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 import { Pestanas } from "@/components/pestanas";
-import { COLOR_DE_TIPO } from "@/lib/colores-de-tipo";
-import { spritesDeQuinta } from "@/lib/pokedex";
+import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { FichaDeCombate } from "./ficha-de-combate";
 import { ConFichaAlPasar } from "./ficha-al-pasar";
 import {
@@ -183,6 +183,15 @@ function Tablero({
   const cajas = caja.length / HUECOS_POR_CAJA;
   const [pagina, setPagina] = useState(0);
   const paginaVisible = Math.min(pagina, cajas - 1);
+  // Bip al pasar de caja; solo la cambia quien juega, así que basta con mirar
+  // si `pagina` es otra (comparando, y no saltándose el primer efecto, que en
+  // desarrollo React lo ejecuta dos veces)
+  const paginaAnterior = useRef(pagina);
+  useEffect(() => {
+    if (paginaAnterior.current === pagina) return;
+    paginaAnterior.current = pagina;
+    sonarBip("caja");
+  }, [pagina]);
   const [pendiente, empezar] = useTransition();
 
   /**
@@ -702,34 +711,19 @@ function FlechaDeCaja({
   );
 }
 
-/**
- * En la ficha grande, el sprite al estilo de Blanco y Negro: animado si lo hay,
- * quieto si no (ver `spritesDeQuinta`), y si tampoco carga, el de siempre. En
- * la caja no: treinta moviéndose a la vez serían una feria.
- */
+/** En la ficha grande, el sprite al estilo de Blanco y Negro, animado si lo hay (ver `SpritePokemon`) */
 function SpriteAnimado({ pokemon, className }: { pokemon: PokemonDelTablero; className?: string }) {
-  const candidatas = spritesDeQuinta(pokemon.pokemonId, pokemon.shiny);
-  const [cual, setCual] = useState(0);
-  const src = candidatas[cual];
-  if (!src) return <Sprite pokemon={pokemon} className={className} />;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      key={src}
-      src={src}
-      alt={pokemon.species}
-      draggable={false}
-      onError={() => setCual((antes) => antes + 1)}
-      className={cx("pointer-events-none object-contain [image-rendering:pixelated]", className)}
-    />
-  );
+  return <Sprite pokemon={pokemon} className={className} ficha />;
 }
 
-function Sprite({ pokemon, className }: { pokemon: PokemonDelTablero; className?: string }) {
-  return pokemon.imagen ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+/** En la caja y el equipo: el quieto de Blanco y Negro, o el de HOME si se ha elegido (ver `SpritePokemon`) */
+function Sprite({ pokemon, className, ficha = false }: { pokemon: PokemonDelTablero; className?: string; ficha?: boolean }) {
+  return pokemon.imagen || pokemon.pokemonId ? (
+    <SpritePokemon
       src={pokemon.imagen}
+      pokemonId={pokemon.pokemonId}
+      shiny={pokemon.shiny}
+      ficha={ficha}
       alt={pokemon.species}
       draggable={false}
       className={cx("pointer-events-none object-contain", className)}
@@ -1168,7 +1162,6 @@ function Ficha({
   const enEquipo = pokemon.lugar === "equipo";
   /** Resumen, Combate o Historia: la ficha entera seguida no cabía en un móvil */
   const [pestana, setPestana] = useState<"resumen" | "combate" | "historia">("resumen");
-  const color = COLOR_DE_TIPO[pokemon.tipos[0]?.slug ?? ""] ?? "#6366f1";
 
   // Al abrir la ficha, su grito; el de un caído, grave, como al debilitarse
   useEffect(() => {
@@ -1178,31 +1171,16 @@ function Ficha({
   return (
     <>
       <Hoja onCerrar={onCerrar} className="p-5 pt-3" etiqueta={pokemon.nickname ?? pokemon.species}>
-        {/* Fija arriba mientras se baja por la ficha: siempre se sabe de quién es */}
-        <div className="sticky -top-3 z-10 -mx-5 bg-ink-900/95 px-5 pb-3 pt-1 backdrop-blur sm:-top-5">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <Avatar name={dueno.displayName} color={dueno.color} image={dueno.avatarImage} size={28} />
-              <p className="text-sm text-slate-400">{dueno.displayName}</p>
-            </div>
-            <button type="button" onClick={onCerrar} className="btn-ghost btn-sm" aria-label="Cerrar">
-              ✕
-            </button>
-          </div>
-
-          <div
-            className="flex items-center gap-4 rounded-2xl border border-white/5 p-2.5"
-            style={{
-              // Teñida del color de su tipo, como en la Pokédex; muy rebajado para no comerse nada
-              background: `linear-gradient(135deg, ${color}38, ${color}0d 55%, transparent)`,
-            }}
-          >
-            <div
-              className={cx(
-                "relative flex h-24 w-24 shrink-0 items-center justify-center rounded-xl border bg-ink-900/60",
-                pokemon.shiny ? "border-amber-300/30" : "border-white/5",
-              )}
-            >
+        <CabeceraDeFicha
+          dueno={{ nombre: dueno.displayName, color: dueno.color, imagen: dueno.avatarImage }}
+          onCerrar={onCerrar}
+          nombre={pokemon.nickname ?? pokemon.species}
+          especie={pokemon.species}
+          shiny={pokemon.shiny}
+          tipos={pokemon.tipos}
+          apagada={pokemon.muerta}
+          sprite={
+            <>
               <SpriteAnimado
                 // Otro sprite al evolucionar o volverse shiny: que vuelva a probar el animado
                 key={`${pokemon.pokemonId}-${pokemon.shiny}`}
@@ -1220,28 +1198,9 @@ function Ficha({
                     />
                   ))
                 : null}
-            </div>
-            <div className="min-w-0">
-              <h3 className="truncate text-xl font-bold text-white">
-                {pokemon.nickname ?? pokemon.species}
-              </h3>
-              {/* Sin mote, el nombre de arriba ya es la especie */}
-              {pokemon.nickname || pokemon.shiny ? (
-                <p className="muted flex items-center gap-1.5">
-                  {pokemon.nickname ? pokemon.species : null}
-                  {pokemon.shiny ? (
-                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
-                      <Icono emoji="✨" tamano={12} sinColor /> Shiny
-                    </span>
-                  ) : null}
-                </p>
-              ) : null}
-              <div className="mt-1.5">
-                <Tipos tipos={pokemon.tipos} alto={20} />
-              </div>
-            </div>
-          </div>
-
+            </>
+          }
+        >
           <Pestanas
             className="mt-3"
             ancha
@@ -1254,7 +1213,7 @@ function Ficha({
               { valor: "historia", rotulo: "Historia" },
             ]}
           />
-        </div>
+        </CabeceraDeFicha>
 
         {/* Con un alto mínimo: si no, la ficha subía y bajaba al cambiar de pestaña */}
         <div className="min-h-[50dvh] sm:min-h-[22rem]">

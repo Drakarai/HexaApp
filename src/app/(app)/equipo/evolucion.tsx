@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
@@ -169,8 +170,9 @@ export function AnimacionDeEvolucion({
 
       <div className="relative flex h-44 w-44 items-center justify-center">
         {mostrada ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          // Como en la ficha: al estilo de Blanco y Negro, que es de donde se abre
+          <SpritePokemon
+            ficha
             key={fase === "final" ? "final" : "evolucionando"}
             src={mostrada}
             alt=""

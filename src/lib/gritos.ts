@@ -67,7 +67,7 @@ function elContexto() {
  * sonar algo dentro del toque: un silencio de una muestra.
  */
 export function desbloquear() {
-  if (preferencia() === "no") return;
+  if (preferencia() === "no" && !bipsPuestos()) return;
   const ctx = elContexto();
   if (!ctx || (desbloqueado && ctx.state === "running")) return;
   desbloqueado = true;
@@ -135,3 +135,85 @@ export function sonarGrito(
 
 /** El tono del grito de un pokémon que cae */
 export const TONO_DE_CAIDO = 0.72;
+
+/**
+ * Los «bips» del menú, como en los juegos: al abrir una ficha, al cambiar de
+ * caja y al confirmar. Se generan aquí con un oscilador de onda cuadrada (la
+ * de la Game Boy y la DS) en vez de bajarse ningún archivo, y van **muy
+ * bajitos**: acompañan, no se oyen por encima de nada.
+ *
+ * Se quitan aparte de los gritos, en Mi perfil: hay quien quiere los gritos y
+ * no los bips, o al revés.
+ */
+export type Bip = "abrir" | "caja" | "confirmar";
+
+const LLAVE_BIPS = "hexaapp-bips";
+
+export function leerBips(): boolean {
+  try {
+    return window.localStorage.getItem(LLAVE_BIPS) !== "no";
+  } catch {
+    return true;
+  }
+}
+
+export function guardarBips(puestos: boolean) {
+  try {
+    if (puestos) window.localStorage.removeItem(LLAVE_BIPS);
+    else window.localStorage.setItem(LLAVE_BIPS, "no");
+  } catch {
+    // Vale para esta visita y ya
+  }
+  bipsEnMemoria = puestos;
+}
+
+let bipsEnMemoria: boolean | null = null;
+
+function bipsPuestos() {
+  bipsEnMemoria ??= leerBips();
+  return bipsEnMemoria;
+}
+
+/** Las notas de cada bip: frecuencia y duración en segundos */
+const NOTAS: Record<Bip, [number, number][]> = {
+  // Un toque agudo y corto, el de abrir el menú
+  abrir: [[1318, 0.045]],
+  // Dos que bajan, como al pasar de caja en el PC
+  caja: [
+    [1046, 0.035],
+    [784, 0.045],
+  ],
+  // Dos que suben: lo de «hecho»
+  confirmar: [
+    [988, 0.05],
+    [1318, 0.07],
+  ],
+};
+
+/** Volumen de todos: la onda cuadrada suena fuerte aunque se le dé poco */
+const VOLUMEN_DE_BIP = 0.035;
+
+export function sonarBip(cual: Bip) {
+  if (typeof window === "undefined" || !bipsPuestos()) return;
+  // Sin un toque antes el navegador no deja sonar nada: mejor callado que a destiempo
+  if (!desbloqueado) return;
+  const ctx = elContexto();
+  if (!ctx) return;
+  if (ctx.state === "suspended") void ctx.resume();
+  let cuando = ctx.currentTime + 0.005;
+  for (const [frecuencia, duracion] of NOTAS[cual]) {
+    const oscilador = ctx.createOscillator();
+    oscilador.type = "square";
+    oscilador.frequency.value = frecuencia;
+    const ganancia = ctx.createGain();
+    // Entra y sale en unos milisegundos: cortada a pelo, la onda chasquea
+    ganancia.gain.setValueAtTime(0, cuando);
+    ganancia.gain.linearRampToValueAtTime(VOLUMEN_DE_BIP, cuando + 0.004);
+    ganancia.gain.setValueAtTime(VOLUMEN_DE_BIP, cuando + duracion - 0.01);
+    ganancia.gain.linearRampToValueAtTime(0, cuando + duracion);
+    oscilador.connect(ganancia).connect(ctx.destination);
+    oscilador.start(cuando);
+    oscilador.stop(cuando + duracion + 0.01);
+    cuando += duracion;
+  }
+}

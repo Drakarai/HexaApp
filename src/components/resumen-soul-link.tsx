@@ -1,3 +1,4 @@
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { Icono } from "@/components/icono";
@@ -68,8 +69,7 @@ export function ResumenSoulLink({
                     title={pokemon ? `${pokemon.nickname ?? pokemon.species} (${pokemon.species})` : "Hueco libre"}
                   >
                     {pokemon?.imagen ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={pokemon.imagen} alt={pokemon.species} className="h-full w-full object-contain p-0.5" />
+                      <SpritePokemon src={pokemon.imagen} alt={pokemon.species} className="h-full w-full object-contain p-0.5" />
                     ) : null}
                   </span>
                 ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useActionState, useEffect, useState } from "react";
 import { clearAceAction, updateAceAction } from "@/app/actions/aces";
 import type { FormState } from "@/app/actions/auth";
@@ -58,7 +59,7 @@ export function AceBadge({
       >
         {ace.image ? (
           /* eslint-disable-next-line @next/next/no-img-element */
-          <img
+          <SpritePokemon
             src={ace.image}
             alt=""
             loading="lazy"
@@ -120,7 +121,8 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
           >
             {ace.detailImage ?? ace.image ? (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+              <SpritePokemon
+                ficha
                 src={ace.detailImage ?? ace.image ?? ""}
                 alt={ace.species}
                 className="h-full w-full object-contain p-2"

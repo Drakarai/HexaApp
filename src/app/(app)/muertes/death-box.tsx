@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useActionState, useEffect, useState } from "react";
 import {
   deleteDeathAction,
@@ -19,11 +20,12 @@ import { SpeciesPicker } from "@/components/species-picker";
 import { SitioPicker } from "@/components/sitio-picker";
 import { IMAGE_SIZES } from "@/lib/image";
 import type { ZonaParaElegir } from "@/lib/mapas";
-import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
 import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
+import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
+import { Pestanas } from "@/components/pestanas";
 
 export type AceSummary = {
   species: string | null;
@@ -37,7 +39,9 @@ export type AceSummary = {
 export type BoxDeath = {
   id: string;
   species: string;
+  /** El número de PokéAPI, forma incluida si la imagen la dice: para su grito y su sprite */
   pokemonId: number | null;
+  tipos: { slug: string; nombre: string }[];
   nickname: string | null;
   cause: string | null;
   level: number | null;
@@ -149,8 +153,7 @@ export function DeathBox({
                     style={{ boxShadow: `inset 0 0 0 1px ${death.participant.color}33` }}
                   >
                     {death.boxImage ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <SpritePokemon
                         src={death.boxImage}
                         alt={death.species}
                         loading="lazy"
@@ -209,6 +212,7 @@ function DeathDetail({
   onClose: () => void;
 }) {
   const [editing, setEditing] = useState(false);
+  const [pestana, setPestana] = useState<"resumen" | "historia">("resumen");
   const [manualImages, setManualImages] = useState(false);
   const [state, formAction] = useActionState<FormState, FormData>(
     updateDeathAction,
@@ -225,66 +229,66 @@ function DeathDetail({
   }, [death.id, death.pokemonId]);
 
   return (
-    <Hoja onCerrar={onClose} ancho="max-w-lg" className="p-5" etiqueta={death.nickname ?? death.species}>
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <Avatar
-            name={death.participant.displayName}
-            color={death.participant.color}
-            image={death.participant.avatarImage}
-            size={30}
-            participantId={death.participant.id}
-          />
-          <div>
-            <p className="text-sm text-slate-400">
-              {death.participant.displayName}
-            </p>
-            <p className="text-xs text-slate-500">{death.diedAtLabel}</p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="btn-ghost btn-sm"
-          aria-label="Cerrar"
-        >
-          ✕
-        </button>
-      </div>
+    <Hoja onCerrar={onClose} className="p-5 pt-3" etiqueta={death.nickname ?? death.species}>
+      <CabeceraDeFicha
+        dueno={{
+          nombre: death.participant.displayName,
+          color: death.participant.color,
+          imagen: death.participant.avatarImage,
+          participantId: death.participant.id,
+          debajo: death.diedAtLabel,
+        }}
+        onCerrar={onClose}
+        nombre={death.nickname ?? death.species}
+        especie={death.species}
+        detalle={death.level ? `Nv. ${death.level}` : null}
+        tipos={death.tipos}
+        apagada
+        sprite={
+          death.detailImage ?? death.boxImage ? (
+            <SpritePokemon
+              ficha
+              key={death.id}
+              src={death.detailImage ?? death.boxImage}
+              pokemonId={death.pokemonId}
+              alt={death.species}
+              className="h-20 w-20 object-contain grayscale-[35%]"
+            />
+          ) : (
+            <span className="text-slate-600">
+              <PokeballGlyph />
+            </span>
+          )
+        }
+      >
+        <Pestanas
+          className="mt-3"
+          ancha
+          etiqueta="Partes de la ficha"
+          valor={pestana}
+          onCambiar={setPestana}
+          opciones={[
+            { valor: "resumen", rotulo: "Resumen" },
+            { valor: "historia", rotulo: "Historia" },
+          ]}
+        />
+      </CabeceraDeFicha>
 
-      <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-xl border border-white/5 bg-ink-850">
-        {death.detailImage ?? death.boxImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={death.detailImage ?? death.boxImage ?? ""}
-            alt={death.species}
-            className="h-full w-full object-contain p-2"
-          />
-        ) : (
-          <span className="text-slate-600">
-            <PokeballGlyph />
-          </span>
-        )}
-      </div>
-
-      <div className="mt-4">
-        <h3 className="text-xl font-bold text-white">
-          {death.nickname ?? death.species}
-        </h3>
-        <p className="muted">
-          {death.species}
-          {death.level ? ` · Nv. ${death.level}` : ""}
-        </p>
-        <dl className="mt-3 space-y-1.5 text-sm">
-          {death.cause ? (
-            <Row label="Causa" value={death.cause} />
-          ) : null}
+      {/* Con un alto mínimo, como la del Equipo: si no, sube y baja al cambiar de pestaña */}
+      <div className="min-h-[40dvh] sm:min-h-[16rem]">
+      {pestana === "historia" ? (
+        <HistoriaDelPokemon de={{ tipo: "baja", id: death.id }} nombre={death.nickname ?? death.species} />
+      ) : (
+        <>
+      {death.cause || death.sitio || death.notes ? (
+        <dl className="mt-1 space-y-1.5 text-sm">
+          {death.cause ? <Row label="Causa" value={death.cause} /> : null}
           {death.sitio ? <Row label="Dónde" value={death.sitio} /> : null}
           {death.notes ? <Row label="Notas" value={death.notes} /> : null}
         </dl>
-      </div>
-
-      <HistoriaDelPokemon de={{ tipo: "baja", id: death.id }} nombre={death.nickname ?? death.species} />
+      ) : (
+        <p className="muted mt-1 text-sm">Sin causa ni sitio apuntados.</p>
+      )}
 
       {death.editable ? (
         editing ? (
@@ -432,17 +436,19 @@ function DeathDetail({
           </div>
         )
       ) : null}
+        </>
+      )}
+      </div>
     </Hoja>
   );
 }
 
 function Row({ label, value }: { label: string; value: string }) {
+  // Como las filas de la ficha del Equipo y PC: es la misma ficha
   return (
-    <div className={cx("flex gap-2")}>
-      <dt className="w-16 shrink-0 text-xs uppercase tracking-wide text-slate-500">
-        {label}
-      </dt>
-      <dd className="text-slate-300">{value}</dd>
+    <div className="flex gap-3">
+      <dt className="w-28 shrink-0 text-slate-500">{label}</dt>
+      <dd className="min-w-0 text-slate-200">{value}</dd>
     </div>
   );
 }

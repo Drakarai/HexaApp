@@ -85,21 +85,3 @@ export function spriteCandidates(
   if (kind === "mini") return [basic, home, artwork];
   return kind === "box" ? [home, artwork, basic] : [artwork, home, basic];
 }
-
-/**
- * Los sprites **al estilo de Blanco y Negro** para la ficha grande, en el
- * orden en que se prueban: el animado y, si no hay, el quieto.
- *
- * Hasta Genesect (#649) son los de los juegos; del 650 en adelante, los que
- * hizo la comunidad de Smogon con el mismo estilo, que PokéAPI sirve en la
- * misma carpeta. Quietos los hay de todos; animados, solo de algunos (y de
- * algunas formas, como Rotom Lavado). Así ninguno sale con el modelo 3D de los
- * juegos de ahora, que al grupo no le gusta: si no hay ninguno de estos, quien
- * los pinta se queda con el sprite de siempre.
- */
-export function spritesDeQuinta(pokemonId: number | null | undefined, shiny: boolean) {
-  if (!pokemonId) return [];
-  const carpeta = `${SPRITES}/versions/generation-v/black-white`;
-  const variocolor = shiny ? "shiny/" : "";
-  return [`${carpeta}/animated/${variocolor}${pokemonId}.gif`, `${carpeta}/${variocolor}${pokemonId}.png`];
-}

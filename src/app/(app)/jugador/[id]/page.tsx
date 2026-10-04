@@ -1,3 +1,4 @@
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
@@ -299,7 +300,7 @@ export default async function PlayerPage({
                 <div className="flex h-14 items-center justify-center">
                   {sprites(baja.id) ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
+                    <SpritePokemon
                       src={sprites(baja.id)!}
                       alt={baja.nickname ?? baja.species}
                       loading="lazy"

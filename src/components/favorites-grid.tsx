@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { startTransition, useState } from "react";
 import {
   addFavoriteAction,
@@ -86,7 +87,7 @@ export function FavoritesGrid({
               <div className="flex h-16 items-center justify-center sm:h-20">
                 {favorito.image ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <SpritePokemon
                     src={favorito.image}
                     alt={favorito.nickname ?? favorito.species}
                     loading="lazy"

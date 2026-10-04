@@ -54,7 +54,11 @@ async function imagenesDesdeNode(contexto) {
       const respuesta = await fetch(ruta.request().url());
       await ruta.fulfill({
         status: respuesta.status,
-        headers: { "content-type": respuesta.headers.get("content-type") ?? "image/png" },
+        // Con CORS, como los sirve GitHub: la app los recorta en un lienzo
+        headers: {
+          "content-type": respuesta.headers.get("content-type") ?? "image/png",
+          "access-control-allow-origin": "*",
+        },
         body: Buffer.from(await respuesta.arrayBuffer()),
       });
     } catch {

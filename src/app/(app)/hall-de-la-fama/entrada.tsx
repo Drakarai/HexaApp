@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
@@ -120,8 +121,8 @@ export function EntradaAlHall({
             <div key={actual.id} className="flex flex-col items-center">
               <div className="flex h-52 w-52 items-center justify-center animate-[hall-entra_700ms_cubic-bezier(0.2,0.8,0.3,1)_both] sm:h-64 sm:w-64">
                 {actual.detailImage ?? actual.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <SpritePokemon
+                ficha
                     src={actual.detailImage ?? actual.image ?? ""}
                     alt=""
                     draggable={false}
@@ -175,8 +176,7 @@ export function EntradaAlHall({
                     style={{ animationDelay: `${300 + i * 120}ms` }}
                   >
                     {p.image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={p.image} alt="" className="h-16 w-16 object-contain" />
+                      <SpritePokemon src={p.image} alt="" className="h-16 w-16 object-contain" />
                     ) : (
                       <span className="flex h-16 w-16 items-center justify-center text-slate-500">★</span>
                     )}
@@ -204,8 +204,7 @@ export function EntradaAlHall({
             >
               {i < paso || alFinal ? (
                 p.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.image} alt={p.nickname ?? p.species} className="h-full w-full object-contain p-0.5" />
+                  <SpritePokemon src={p.image} alt={p.nickname ?? p.species} className="h-full w-full object-contain p-0.5" />
                 ) : (
                   <span className="text-xs text-slate-500">★</span>
                 )

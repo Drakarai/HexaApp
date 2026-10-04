@@ -1,7 +1,7 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useActionState, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import {
   addHallPokemonAction,
   removeHallPokemonAction,
@@ -14,12 +14,16 @@ import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 import { sonarGrito } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
+import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
+import { Pestanas } from "@/components/pestanas";
+import { Hoja } from "@/components/hoja";
 
 export type HallPokemon = {
   id: string;
   species: string;
   /** El número de PokéAPI, para su grito y su número en la entrada al hall */
   pokemonId: number | null;
+  tipos: { slug: string; nombre: string }[];
   nickname: string | null;
   image: string | null;
   /** La ilustración grande. Los equipos de antes no la tienen. */
@@ -37,14 +41,14 @@ export function TeamSlots({
   editable,
   teamSize = 6,
   destacado = false,
-  duenoName,
+  dueno,
 }: {
   team: HallPokemon[];
   editable: boolean;
   teamSize?: number;
   /** El equipo del campeón */
   destacado?: boolean;
-  duenoName: string;
+  dueno: DuenoDelEquipo;
 }) {
   const [abiertoId, setAbiertoId] = useState<string | null>(null);
   const abierto = team.find((pokemon) => pokemon.id === abiertoId) ?? null;
@@ -78,8 +82,7 @@ export function TeamSlots({
                 )}
               >
                 {pokemon.image ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <SpritePokemon
                     src={pokemon.image}
                     alt={pokemon.species}
                     loading="lazy"
@@ -137,7 +140,7 @@ export function TeamSlots({
       {abierto ? (
         <FichaEnGrande
           pokemon={abierto}
-          duenoName={duenoName}
+          dueno={dueno}
           destacado={destacado}
           onClose={() => setAbiertoId(null)}
         />
@@ -146,93 +149,90 @@ export function TeamSlots({
   );
 }
 
+type DuenoDelEquipo = { nombre: string; color: string; imagen: string | null; participantId: string };
+
 /**
- * El pokémon en grande. Con su ilustración si la tiene; los equipos apuntados
- * antes de que se guardara se apañan con el sprite de la casilla.
+ * La ficha de un pokémon del hall: la misma cabecera que en el Equipo y PC y
+ * el cementerio, con su historia en una pestaña aparte.
  */
 function FichaEnGrande({
   pokemon,
-  duenoName,
+  dueno,
   destacado,
   onClose,
 }: {
   pokemon: HallPokemon;
-  duenoName: string;
+  dueno: DuenoDelEquipo;
   destacado: boolean;
   onClose: () => void;
 }) {
+  const [pestana, setPestana] = useState<"resumen" | "historia">("resumen");
   useEffect(() => {
     sonarGrito(pokemon.pokemonId);
   }, [pokemon.pokemonId]);
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [onClose]);
-
   const imagen = pokemon.detailImage ?? pokemon.image;
+  const nombre = pokemon.nickname ?? pokemon.species;
 
-  // Portal, como el resto de diálogos: las tarjetas llevan backdrop-blur y eso
-  // rompe el posicionamiento fijo de lo que tienen dentro.
-  return createPortal(
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/75 p-4 backdrop-blur-sm"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
-    >
-      <div
-        className={cx(
-          "my-auto w-full max-w-sm rounded-2xl border bg-ink-900 p-5 text-center shadow-2xl",
-          destacado ? "border-amber-400/30" : "border-white/10",
-        )}
-      >
-        <div className="flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-ink-850">
-          {imagen ? (
-            /* eslint-disable-next-line @next/next/no-img-element */
-            <img
+  return (
+    <Hoja onCerrar={onClose} className="p-5 pt-3" etiqueta={nombre}>
+      <CabeceraDeFicha
+        dueno={dueno}
+        onCerrar={onClose}
+        nombre={nombre}
+        especie={pokemon.species}
+        detalle={
+          destacado ? (
+            <span className="inline-flex items-center gap-1 text-amber-200">
+              <Icono emoji="🏆" tamano={13} /> Del equipo campeón
+            </span>
+          ) : null
+        }
+        tipos={pokemon.tipos}
+        sprite={
+          imagen ? (
+            <SpritePokemon
+              ficha
+              key={pokemon.id}
               src={imagen}
+              pokemonId={pokemon.pokemonId}
               alt={pokemon.species}
-              className="h-full w-full object-contain p-2"
+              className="h-20 w-20 object-contain"
             />
           ) : (
-            <span className="text-5xl opacity-20" aria-hidden>
+            <span className="text-3xl opacity-20" aria-hidden>
               ★
             </span>
-          )}
-        </div>
+          )
+        }
+      >
+        <Pestanas
+          className="mt-3"
+          ancha
+          etiqueta="Partes de la ficha"
+          valor={pestana}
+          onCambiar={setPestana}
+          opciones={[
+            { valor: "resumen", rotulo: "Resumen" },
+            { valor: "historia", rotulo: "Historia" },
+          ]}
+        />
+      </CabeceraDeFicha>
 
-        <p className="mt-4 text-2xl font-black text-white">
-          {pokemon.nickname ?? pokemon.species}
-        </p>
-        {pokemon.nickname ? (
-          <p className="text-sm text-slate-400">{pokemon.species}</p>
-        ) : null}
-        <p className="mt-2 text-xs text-slate-500">
-          {destacado ? <><Icono emoji="🏆" /> Del equipo campeón · </> : null}
-          {duenoName}
-        </p>
-
-        <div className="text-left">
-          <HistoriaDelPokemon
-            de={{ tipo: "hall", id: pokemon.id }}
-            nombre={pokemon.nickname ?? pokemon.species}
-          />
-        </div>
-
-        <button type="button" className="btn-ghost mt-5" onClick={onClose}>
-          Cerrar
-        </button>
+      <div className="min-h-[40dvh] sm:min-h-[16rem]">
+        {pestana === "historia" ? (
+          <HistoriaDelPokemon de={{ tipo: "hall", id: pokemon.id }} nombre={nombre} />
+        ) : (
+          // Del hall no se guarda más que quién es: lo demás está en su historia
+          <p className="muted mt-2 text-sm">
+            {destacado
+              ? `Ganó el locke en el equipo de ${dueno.nombre}.`
+              : `Llegó hasta el final en el equipo de ${dueno.nombre}.`}{" "}
+            Lo que hizo por el camino, en Historia.
+          </p>
+        )}
       </div>
-    </div>,
-    document.body,
+    </Hoja>
   );
 }
 

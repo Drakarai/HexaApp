@@ -28,6 +28,9 @@ import { CompartirResumen } from "./compartir";
 import { Icono } from "@/components/icono";
 import { ordenDelHall } from "@/lib/hall";
 import { findSpecies } from "@/lib/pokedex";
+import { generacionDeTipos } from "@/lib/juegos";
+import { GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
+import { pokemonDeLaImagen } from "@/lib/sprites-de-quinta";
 import { BotonDeEntrada, EntradasPendientes, type EquipoDelHall } from "./entrada";
 
 export const metadata = { title: "Hall de la fama" };
@@ -189,13 +192,19 @@ export default async function HallOfFamePage() {
     ),
   );
 
+  // La forma exacta la dice la imagen, si es del almacén; si no, la especie
+  const pokemonDeLaEntrada = (id: string, especie: string) =>
+    pokemonDeLaImagen(sprites(id))?.pokemonId ?? findSpecies(especie)?.dex ?? null;
+  const generacion = generacionDeTipos(competition) ?? GENERACION_POR_DEFECTO;
+
   const teamOf = (participantId: string) =>
     entries
       .filter((entry) => entry.participantId === participantId)
       .map((entry) => ({
         id: entry.id,
         species: entry.species,
-        pokemonId: findSpecies(entry.species)?.dex ?? null,
+        pokemonId: pokemonDeLaEntrada(entry.id, entry.species),
+        tipos: tiposParaVer(pokemonDeLaEntrada(entry.id, entry.species), generacion),
         nickname: entry.nickname,
         image: sprites(entry.id),
         detailImage: fichas(entry.id),
@@ -359,7 +368,12 @@ export default async function HallOfFamePage() {
                   editable={editable}
                   teamSize={TEAM_SIZE}
                   destacado={esCampeon}
-                  duenoName={row.displayName}
+                  dueno={{
+                    nombre: row.displayName,
+                    color: row.color,
+                    imagen: row.avatarImage,
+                    participantId: row.participantId,
+                  }}
                 />
               )}
 

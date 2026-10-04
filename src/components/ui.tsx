@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { useFormStatus } from "react-dom";
+import { sonarBip } from "@/lib/gritos";
 import { cx, initials, readableTextColor } from "@/lib/utils";
 import { DibujoVacio, type Dibujo } from "@/components/dibujo-vacio";
 
@@ -14,11 +16,23 @@ export function SubmitButton({
   pendingLabel?: string;
 }) {
   const { pending } = useFormStatus();
+  useBipAlEnviar(pending);
   return (
     <button {...rest} type="submit" className={className} disabled={pending}>
       {pending ? (pendingLabel ?? "Guardando…") : children}
     </button>
   );
+}
+
+/**
+ * El bip de confirmar, cuando el formulario **sale de verdad**: al empezar a
+ * enviarse y no al pulsar, que si falta un campo obligatorio no se ha
+ * confirmado nada (ni si se dice que no a la pregunta de borrar).
+ */
+function useBipAlEnviar(enviando: boolean) {
+  useEffect(() => {
+    if (enviando) sonarBip("confirmar");
+  }, [enviando]);
 }
 
 export function FormMessage({
@@ -54,6 +68,7 @@ export function ConfirmSubmit({
   title?: string;
 }) {
   const { pending } = useFormStatus();
+  useBipAlEnviar(pending);
 
   /**
    * Un botón que solo es un símbolo —la ✕ de borrar, sin ir más lejos— no dice

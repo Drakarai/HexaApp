@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { startTransition, useOptimistic, useState } from "react";
 import {
   addMatchPokemonAction,
@@ -236,7 +237,7 @@ function TeamBox({
               <div className="flex h-16 items-center justify-center">
                 {pokemon.boxImage ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <SpritePokemon
                     src={pokemon.boxImage}
                     alt={pokemon.nickname ?? pokemon.species}
                     loading="lazy"
@@ -293,7 +294,7 @@ export function Sprite({
     >
       {pokemon.boxImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
-        <img
+        <SpritePokemon
           src={pokemon.boxImage}
           alt={pokemon.nickname ?? pokemon.species}
           loading="lazy"

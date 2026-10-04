@@ -24,7 +24,8 @@ import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
 import { findSpecies } from "@/lib/pokedex";
-import { PreferenciaDeGritosPicker } from "./gritos";
+import { PreferenciaDeBips, PreferenciaDeGritosPicker } from "./gritos";
+import { PreferenciaDeSpritesPicker } from "./sprites";
 import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mi perfil" };
@@ -211,10 +212,22 @@ export default async function ProfilePage() {
       </section>
 
       <section className="card">
-        <h2 className="section-title mb-1">Gritos</h2>
+        <h2 className="section-title mb-1">Sprites</h2>
+        <p className="muted mb-4">
+          Cómo se ven los pokémon en cajas, equipos y listas. En la ficha de
+          cada uno salen siempre los de Blanco y Negro, que se mueven. Solo
+          cambia en este dispositivo.
+        </p>
+        <PreferenciaDeSpritesPicker
+          muestra={(myParticipant?.aceSpecies && findSpecies(myParticipant.aceSpecies)?.dex) || 25}
+        />
+      </section>
+
+      <section className="card">
+        <h2 className="section-title mb-1">Sonido</h2>
         <p className="muted mb-4">
           Los pokémon gritan al abrir su ficha, al evolucionar y al caer. Solo
-          cambia en este dispositivo, y con el móvil en silencio no suenan.
+          cambia en este dispositivo, y con el móvil en silencio no suena nada.
         </p>
         <PreferenciaDeGritosPicker
           muestra={
@@ -222,6 +235,7 @@ export default async function ProfilePage() {
             (myParticipant?.aceSpecies && findSpecies(myParticipant.aceSpecies)?.dex) || 25
           }
         />
+        <PreferenciaDeBips />
       </section>
 
       <section className="card">

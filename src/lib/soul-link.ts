@@ -6,7 +6,7 @@ import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
-import { GENERACION_POR_DEFECTO, tipoPorId, tiposDePokemon } from "@/lib/tipos";
+import { GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
 import { leerFondos, leerNombresDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
 import { leerMovimientos, movimientoParaVer, naturalezaPorSlug, type MovimientoParaVer } from "@/lib/movimientos";
@@ -187,12 +187,7 @@ export async function getEquiposDelLocke(
       pokemonId: quien?.pokemonId ?? null,
       imagen: imagenes(c.id),
       shiny: c.shiny,
-      tipos: quien
-        ? tiposDePokemon(quien.pokemonId, generacion)
-            .map((id) => tipoPorId(id))
-            .filter((t) => t !== undefined)
-            .map((t) => ({ slug: t.slug, nombre: t.nombre }))
-        : [],
+      tipos: tiposParaVer(quien?.pokemonId, generacion),
       sitio: c.zone?.name ?? c.sitio,
       lugar: c.lugar,
       hueco: c.hueco,

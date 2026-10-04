@@ -16,6 +16,7 @@ import type { CapturaApuntada, MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx, formatDateTime } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
+import { SpritePokemon } from "@/components/sprite-pokemon";
 
 /**
  * El mapa de capturas de una persona.
@@ -319,8 +320,7 @@ function FilaDeZona({
                 ✕
               </span>
             ) : captura.image ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <SpritePokemon
                 key={captura.id}
                 src={captura.image}
                 alt={captura.species}
@@ -579,8 +579,7 @@ function Capturado({
             ✕
           </span>
         ) : captura.image ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SpritePokemon
             src={captura.image}
             alt={captura.species}
             className="h-9 w-9 object-contain"

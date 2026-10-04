@@ -15,7 +15,9 @@ import { cx, formatDate, toDateInputValue } from "@/lib/utils";
 import { firmasDeDosImagenes } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { getZonasMasMortiferas, getZonasParaElegir } from "@/lib/mapas";
-import { regionesDelJuego } from "@/lib/juegos";
+import { generacionDeTipos, regionesDelJuego } from "@/lib/juegos";
+import { GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
+import { pokemonDeLaImagen } from "@/lib/sprites-de-quinta";
 import { colorDeZona } from "@/lib/zonas";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
@@ -207,11 +209,17 @@ export default async function DeathsPage({
     };
   };
 
+  // La forma exacta solo la sabe la imagen, si es del almacén (Vulpix de
+  // Alola no es Hielo por la especie); si no, la especie a secas
+  const pokemonDeLaBaja = (id: string, especie: string) =>
+    pokemonDeLaImagen(cajas(id))?.pokemonId ?? findSpecies(especie)?.dex ?? null;
+  const generacion = generacionDeTipos(competition) ?? GENERACION_POR_DEFECTO;
+
   const boxDeaths: BoxDeath[] = deaths.map((death) => ({
     id: death.id,
     species: death.species,
-    // Para su grito: la especie basta, la forma exacta no la guarda la baja
-    pokemonId: findSpecies(death.species)?.dex ?? null,
+    pokemonId: pokemonDeLaBaja(death.id, death.species),
+    tipos: tiposParaVer(pokemonDeLaBaja(death.id, death.species), generacion),
     nickname: death.nickname,
     cause: death.cause,
     level: death.level,

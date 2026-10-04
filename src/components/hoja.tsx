@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
+import { sonarBip } from "@/lib/gritos";
 
 /**
  * Una ficha que **en el móvil sube desde abajo** y en el ordenador sale
@@ -77,6 +78,8 @@ export function Hoja({
       if (evento.key === "Escape") cerrarRef.current();
     };
     document.addEventListener("keydown", alPulsar);
+    // El bip de abrir el menú en los juegos; aquí, para cualquier ficha
+    sonarBip("abrir");
     abiertas += 1;
     document.body.style.overflow = "hidden";
     return () => {

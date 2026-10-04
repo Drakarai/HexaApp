@@ -1,5 +1,6 @@
 "use client";
 
+import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { fichaRapidaAction } from "@/app/actions/ficha-rapida";
@@ -145,8 +146,7 @@ function Mini({ pokemon, caido = false }: { pokemon: PokemonDeLaFicha; caido?: b
     <div className="flex w-11 flex-col items-center" title={`${pokemon.nombre} · ${pokemon.especie}`}>
       <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-ink-850">
         {pokemon.imagen ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <SpritePokemon
             src={pokemon.imagen}
             alt=""
             className={caido ? "h-10 w-10 object-contain opacity-60 grayscale" : "h-10 w-10 object-contain"}

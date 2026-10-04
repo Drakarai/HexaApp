@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
+import { ProveedorDeSprites } from "@/components/sprite-pokemon";
+import { COOKIE_DE_SPRITES, leerEstiloDeSprites } from "@/lib/sprites-de-quinta";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
@@ -382,7 +385,11 @@ export default async function AppLayout({
     />
   );
 
+  // El estilo de sprites de cada uno (Mi perfil), para que llegue ya pintado
+  const estiloDeSprites = leerEstiloDeSprites((await cookies()).get(COOKIE_DE_SPRITES)?.value);
+
   return (
+    <ProveedorDeSprites estilo={estiloDeSprites}>
     <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col gap-6 px-4 pb-4 pt-[max(1rem,env(safe-area-inset-top))] lg:flex-row lg:gap-8 lg:px-6 lg:py-8">
       {/* Cabecera compacta en móvil */}
       <header className="flex items-center justify-between gap-3 lg:hidden">
@@ -508,5 +515,6 @@ export default async function AppLayout({
         avisos={avisos}
       />
     </div>
+    </ProveedorDeSprites>
   );
 }

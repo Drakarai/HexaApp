@@ -71,6 +71,18 @@ export function tiposDePokemon(
   return D.porPokemon[String(pokemonId)] ?? [];
 }
 
+/** Lo mismo, ya listo para pintar sus chapas: slug para la imagen y nombre */
+export function tiposParaVer(
+  pokemonId: number | null | undefined,
+  generacion: number,
+): { slug: string; nombre: string }[] {
+  if (!pokemonId) return [];
+  return tiposDePokemon(pokemonId, generacion)
+    .map((id) => tipoPorId(id))
+    .filter((t) => t !== undefined)
+    .map((t) => ({ slug: t.slug, nombre: t.nombre }));
+}
+
 /** Cuánto le entra a un tipo un ataque de otro: 0, 0.5, 1 o 2. */
 export function factor(
   atacante: number,
