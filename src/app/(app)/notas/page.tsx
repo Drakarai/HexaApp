@@ -13,6 +13,8 @@ import { generacionDeTipos, nombreDelJuego } from "@/lib/juegos";
 import { GENERACION_POR_DEFECTO } from "@/lib/tipos";
 import { queEs } from "@/lib/evoluciones";
 import { HUECOS_POR_CAJA } from "@/lib/equipo-y-caja";
+import { leerNombresDeCaja, nombreDeCaja } from "@/lib/fondos-de-caja";
+import { ataquesDeLosMovimientos, leerMovimientos } from "@/lib/movimientos";
 import { NewNoteForm, NoteCard } from "./note-forms";
 import { getAcceso } from "@/lib/acceso";
 import { Icono } from "@/components/icono";
@@ -70,10 +72,20 @@ export default async function NotesPage({
         deathId: null,
       },
       orderBy: [{ lugar: "desc" }, { hueco: "asc" }],
-      select: { id: true, species: true, nickname: true, pokemonId: true, lugar: true, hueco: true, shiny: true },
+      select: {
+        id: true,
+        species: true,
+        nickname: true,
+        pokemonId: true,
+        lugar: true,
+        hueco: true,
+        shiny: true,
+        movimientos: true,
+      },
     }),
   ]);
 
+  const nombresDeCaja = leerNombresDeCaja(yo?.nombresDeCaja);
   // De la caja a la calculadora: con su número de pokédex para saber sus tipos
   const deMiCaja = vivos.flatMap((c) => {
     const quien = queEs(c.pokemonId, c.species);
@@ -84,9 +96,10 @@ export default async function NotesPage({
             nombre: c.nickname ?? c.species,
             especie: c.species,
             enEquipo: c.lugar === "equipo",
-            caja: c.lugar === "equipo" ? null : Math.floor(c.hueco / HUECOS_POR_CAJA) + 1,
+            caja: c.lugar === "equipo" ? null : nombreDeCaja(nombresDeCaja, Math.floor(c.hueco / HUECOS_POR_CAJA)),
             shiny: c.shiny,
             captura: c.id,
+            ataques: ataquesDeLosMovimientos(leerMovimientos(c.movimientos)),
           },
         ]
       : [];

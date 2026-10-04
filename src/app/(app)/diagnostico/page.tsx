@@ -8,6 +8,9 @@ import { cx, formatDateTime } from "@/lib/utils";
 import { getErroresAgrupados, type GrupoDeErrores } from "@/lib/errores";
 import { resolverErrorAction, vaciarErroresAction } from "@/app/actions/errores";
 import { ConfirmSubmit } from "@/components/ui";
+import Link from "next/link";
+import { ZONAS, type Zona } from "@/lib/registro";
+import { verComoAction } from "@/app/actions/ver-como";
 
 export const metadata = { title: "Diagnóstico" };
 export const dynamic = "force-dynamic";
@@ -56,15 +59,35 @@ function leerConexion() {
   }
 }
 
-export default async function DiagnosticoPage() {
+export default async function DiagnosticoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ locke?: string; zona?: string }>;
+}) {
   await requireCreadorPage();
+  const filtro = await searchParams;
+  const zona = filtro.zona && filtro.zona in ZONAS ? (filtro.zona as Zona) : null;
 
-  const [ida, conexion, ocupacion, copiasPesadas, errores] = await Promise.all([
+  const [ida, conexion, ocupacion, copiasPesadas, errores, cambios, lockesDelRegistro] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
     medirOcupacion(),
     copiasSinAligerar(),
     getErroresAgrupados(),
+    prisma.cambioDelLocke.findMany({
+      where: {
+        ...(filtro.locke ? { competitionId: filtro.locke === "app" ? null : filtro.locke } : {}),
+        ...(zona ? { zona } : {}),
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+    }),
+    // Los lockes que salen en el registro, con el último nombre que tenían
+    prisma.cambioDelLocke.findMany({
+      distinct: ["competitionId"],
+      orderBy: { createdAt: "desc" },
+      select: { competitionId: true, locke: true },
+    }),
   ]);
 
   /**
@@ -104,7 +127,16 @@ export default async function DiagnosticoPage() {
         subtitle="Para saber si la lentitud viene de la distancia a la base de datos, y lo que le falla a la gente."
       />
 
+      <VerComo />
+
       <Errores grupos={errores} />
+
+      <Cambios
+        cambios={cambios}
+        lockes={lockesDelRegistro}
+        lockeElegido={filtro.locke ?? null}
+        zonaElegida={zona}
+      />
 
       <section className="card mb-4">
         <h2 className="section-title mb-1">Ida y vuelta a la base de datos</h2>
@@ -450,6 +482,162 @@ function Errores({ grupos }: { grupos: GrupoDeErrores[] }) {
           Ni un fallo apuntado. Así da gusto.
         </p>
       )}
+    </section>
+  );
+}
+
+type FilaDeCambio = {
+  id: string;
+  createdAt: Date;
+  competitionId: string | null;
+  locke: string | null;
+  quien: string | null;
+  zona: string;
+  texto: string;
+};
+
+/**
+ * El registro de cambios: quién tocó qué en cada locke. Es lo que contesta a
+ * «yo no cambié ese resultado». Se filtra por locke y por zona con enlaces,
+ * para que funcione sin esperar a que cargue nada.
+ */
+function Cambios({
+  cambios,
+  lockes,
+  lockeElegido,
+  zonaElegida,
+}: {
+  cambios: FilaDeCambio[];
+  lockes: { competitionId: string | null; locke: string | null }[];
+  lockeElegido: string | null;
+  zonaElegida: Zona | null;
+}) {
+  const enlace = (locke: string | null, zona: Zona | null) => {
+    const params = new URLSearchParams();
+    if (locke) params.set("locke", locke);
+    if (zona) params.set("zona", zona);
+    const query = params.toString();
+    return `/diagnostico${query ? `?${query}` : ""}#cambios`;
+  };
+  const chip = (activo: boolean) =>
+    cx("chip text-xs transition", activo ? "border-brand-400/60 bg-brand-600/20 text-white" : "hover:bg-white/10");
+
+  // Por días, como un diario: lo de hoy arriba
+  const dias = new Map<string, FilaDeCambio[]>();
+  for (const cambio of cambios) {
+    const dia = cambio.createdAt.toLocaleDateString("es-ES", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Madrid",
+    });
+    dias.set(dia, [...(dias.get(dia) ?? []), cambio]);
+  }
+
+  return (
+    <section id="cambios" className="card mb-4 scroll-mt-20">
+      <h2 className="section-title mb-1">Registro de cambios</h2>
+      <p className="muted mb-3">
+        Lo que hace quien administra cada locke —resultados, jornadas, puntos, reglas, bolsas,
+        gimnasios, jugadores— con quién lo hizo y cuándo. Se guarda medio año.
+      </p>
+
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        <Link href={enlace(null, zonaElegida)} className={chip(!lockeElegido)}>
+          Todos los lockes
+        </Link>
+        {lockes.map((l) => (
+          <Link
+            key={l.competitionId ?? "app"}
+            href={enlace(l.competitionId ?? "app", zonaElegida)}
+            className={chip(lockeElegido === (l.competitionId ?? "app"))}
+          >
+            {l.competitionId ? (l.locke ?? "Locke borrado") : "De toda la app"}
+          </Link>
+        ))}
+      </div>
+      <div className="mb-4 flex flex-wrap gap-1.5">
+        <Link href={enlace(lockeElegido, null)} className={chip(!zonaElegida)}>
+          Todo
+        </Link>
+        {(Object.keys(ZONAS) as Zona[]).map((z) => (
+          <Link key={z} href={enlace(lockeElegido, z)} className={chip(zonaElegida === z)}>
+            {ZONAS[z]}
+          </Link>
+        ))}
+      </div>
+
+      {cambios.length ? (
+        <div className="space-y-4">
+          {[...dias].map(([dia, filas]) => (
+            <div key={dia}>
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{dia}</p>
+              <ul className="divide-y divide-white/5 rounded-xl border border-white/10 bg-white/[0.02]">
+                {filas.map((c) => (
+                  <li key={c.id} className="flex gap-3 px-3 py-2 text-sm">
+                    <span className="w-11 shrink-0 pt-0.5 text-xs tabular-nums text-slate-500">
+                      {c.createdAt.toLocaleTimeString("es-ES", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Europe/Madrid",
+                      })}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="text-slate-100">
+                        <span className="font-semibold">{c.quien ?? "Alguien"}</span> · {c.texto}
+                      </span>
+                      <span className="block text-xs text-slate-500">
+                        {ZONAS[c.zona as Zona] ?? c.zona}
+                        {!lockeElegido && c.locke ? ` · ${c.locke}` : ""}
+                      </span>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-white/10 bg-white/[0.02] p-3 text-sm text-slate-400">
+          {lockeElegido || zonaElegida ? "Nada con ese filtro." : "Todavía no se ha apuntado ningún cambio."}
+        </p>
+      )}
+    </section>
+  );
+}
+
+/**
+ * Ponerse en la piel de otro papel para ver la app como la ve la gente: sin
+ * los botones de administrar, sin Diagnóstico ni Administración. Ver `VER_COMO`.
+ */
+function VerComo() {
+  return (
+    <section className="card mb-4">
+      <h2 className="section-title mb-1">Ver la app como…</h2>
+      <p className="muted mb-3">
+        Para comprobar qué ve cada uno sin pedirle una captura. Mientras dura no eres Creador
+        ni administras ningún locke, también al guardar: no se puede tocar nada sin querer.
+        Arriba de cada pantalla sale el botón para volver, y se quita solo a las seis horas.
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <form action={verComoAction}>
+          <input type="hidden" name="modo" value="jugador" />
+          <button type="submit" className="btn-ghost">
+            Como jugador
+          </button>
+        </form>
+        <form action={verComoAction}>
+          <input type="hidden" name="modo" value="espectador" />
+          <button type="submit" className="btn-ghost">
+            Como espectador
+          </button>
+        </form>
+      </div>
+      <p className="mt-2 text-xs text-slate-500">
+        De jugador, en los lockes que juegas ves lo tuyo como cualquiera; en los demás, como un
+        espectador. Es por papel y no por persona: la caja y las notas de cada uno siguen siendo
+        suyas.
+      </p>
     </section>
   );
 }

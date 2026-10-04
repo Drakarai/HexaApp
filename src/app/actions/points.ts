@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
@@ -42,6 +43,11 @@ export async function adjustPointsAction(
       createdById: manager.id,
     },
   });
+  await registrar(
+    competitionId,
+    "puntos",
+    `${Math.trunc(delta) > 0 ? "+" : ""}${Math.trunc(delta)} a ${participant.displayName}: ${reason}`,
+  );
 
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
@@ -74,6 +80,11 @@ export async function quickAdjustPointsAction(formData: FormData) {
       createdById: manager.id,
     },
   });
+  await registrar(
+    competitionId,
+    "puntos",
+    `${Math.trunc(delta) > 0 ? "+" : ""}${Math.trunc(delta)} a ${participant.displayName} (ajuste rápido)`,
+  );
 
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
@@ -115,6 +126,11 @@ export async function adjustAllPointsAction(
       createdById: manager.id,
     })),
   });
+  await registrar(
+    competitionId,
+    "puntos",
+    `${Math.trunc(delta) > 0 ? "+" : ""}${Math.trunc(delta)} a todos (${participants.length}): ${reason}`,
+  );
 
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
@@ -131,6 +147,12 @@ export async function deletePointEntryAction(formData: FormData) {
   await requireCompetitionManager(entry.competitionId);
 
   await prisma.pointEntry.delete({ where: { id } });
+  const nombre = await nombresDeJugadores(entry.participantId);
+  await registrar(
+    entry.competitionId,
+    "puntos",
+    `Borra la entrada de puntos de ${nombre(entry.participantId)} (${entry.delta > 0 ? "+" : ""}${entry.delta}: ${entry.reason})`,
+  );
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
   revalidatePath("/");

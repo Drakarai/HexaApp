@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { esCreador, getCurrentUser, requireCreador } from "@/lib/auth";
 import type { FormState } from "@/app/actions/auth";
@@ -100,6 +101,7 @@ export async function concederTituloAction(
     },
   });
 
+  await registrar(null, "jugadores", `Concede el título «${titulo.name}» a ${usuario.displayName}`);
   refrescar();
   return { success: `"${titulo.name}" para ${usuario.displayName}.` };
 }
@@ -107,7 +109,13 @@ export async function concederTituloAction(
 export async function revocarTituloAction(formData: FormData) {
   await requireCreador();
   const id = String(formData.get("awardId") ?? "");
-  if (id) await prisma.titleAward.delete({ where: { id } });
+  if (id) {
+    const quitado = await prisma.titleAward.delete({
+      where: { id },
+      select: { title: { select: { name: true } }, user: { select: { displayName: true } } },
+    });
+    await registrar(null, "jugadores", `Quita el título «${quitado.title.name}» a ${quitado.user.displayName}`);
+  }
   refrescar();
 }
 

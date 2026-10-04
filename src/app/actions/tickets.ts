@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
@@ -57,6 +58,11 @@ export async function grantTicketsAction(
       createdById: manager.id,
     },
   });
+  await registrar(
+    competitionId,
+    "bolsa",
+    `${Math.trunc(amount) > 0 ? "Da" : "Quita"} ${Math.abs(Math.trunc(amount))} ticket(s) de ${roulette.name} a ${participant.displayName}${reason ? `: ${reason}` : ""}`,
+  );
 
   revalidatePath("/ruleta");
   revalidatePath("/");
@@ -97,6 +103,11 @@ export async function quickGrantTicketAction(formData: FormData) {
       createdById: manager.id,
     },
   });
+  await registrar(
+    competitionId,
+    "bolsa",
+    `${Math.trunc(delta) > 0 ? "Da" : "Quita"} ${Math.abs(Math.trunc(delta))} ticket de ${roulette.name} a ${participant.displayName}`,
+  );
 
   revalidatePath("/ruleta");
   revalidatePath("/");

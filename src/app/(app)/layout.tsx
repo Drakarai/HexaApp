@@ -8,6 +8,7 @@ import {
   listCompetitions,
 } from "@/lib/competition";
 import { logoutAction } from "@/app/actions/auth";
+import { dejarDeVerComoAction } from "@/app/actions/ver-como";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
 import { Nav, type NavEntry, type NavGroup, type NavItem } from "@/components/nav";
 import { MobileTabBar } from "@/components/mobile-nav";
@@ -453,6 +454,21 @@ export default async function AppLayout({
       <main className="min-w-0 flex-1 pb-32 lg:pb-16">
         {/* Los gritos clásicos van con los juegos que los tenían: hasta la 5ª */}
         <GritosDelLocke clasicos={(generacionDelJuego(active?.gameId) ?? 99) <= 5} />
+        {user.verComo ? (
+          <form
+            action={dejarDeVerComoAction}
+            className="sticky top-2 z-40 mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-amber-300/40 bg-amber-300/10 px-4 py-3 text-sm text-amber-100 backdrop-blur"
+          >
+            <Icono emoji="👁️" className="shrink-0" />
+            <p className="min-w-0 flex-1">
+              <strong>Estás viendo la app como {user.verComo}.</strong> Lo que ves y lo que puedes
+              tocar es lo de ese papel, también en el servidor.
+            </p>
+            <button type="submit" className="btn-ghost btn-sm border-amber-300/40">
+              Volver a Creador
+            </button>
+          </form>
+        ) : null}
         {archivadaParaMi ? (
           <div className="mb-5 flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-300">
             <Icono emoji="🗄️" className="mt-0.5 shrink-0 text-slate-400" />

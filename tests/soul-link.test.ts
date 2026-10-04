@@ -20,7 +20,15 @@ import {
 import { evolucionesDe } from "@/lib/evoluciones";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { categoriaDeUnaEdicion } from "@/lib/palmares";
-import { MAXIMO_DE_CAJAS, elegirFondo, fondoDeCaja, leerFondos } from "@/lib/fondos-de-caja";
+import {
+  MAXIMO_DE_CAJAS,
+  elegirFondo,
+  fondoDeCaja,
+  leerFondos,
+  leerNombresDeCaja,
+  nombrarCaja,
+  nombreDeCaja,
+} from "@/lib/fondos-de-caja";
 
 let reloj = 0;
 const poke = (id: string, lugar: string, hueco: number) => ({ id, lugar, hueco, creado: reloj++ });
@@ -303,5 +311,26 @@ describe("Fondos de las cajas", () => {
     assert.throws(() => elegirFondo(null, -1, "2"));
     assert.throws(() => elegirFondo(null, 1.5, "2"));
     assert.throws(() => elegirFondo(null, MAXIMO_DE_CAJAS, "2"));
+  });
+});
+
+describe("Nombres de las cajas", () => {
+  test("sin nombre es «Caja N»; con él, el suyo", () => {
+    const nombres = nombrarCaja([], 2, "  Banquillo ");
+    assert.deepEqual(nombres, [null, null, "Banquillo"]);
+    assert.equal(nombreDeCaja(nombres, 2), "Banquillo");
+    assert.equal(nombreDeCaja(nombres, 0), "Caja 1");
+  });
+
+  test("vacío o «Caja N» le devuelve el de siempre, y no deja colas vacías", () => {
+    assert.deepEqual(nombrarCaja([null, "Reservas"], 1, ""), []);
+    assert.deepEqual(nombrarCaja(["Equipo B", "Reservas"], 1, "caja 2"), ["Equipo B"]);
+  });
+
+  test("se corta a 16 letras y lo raro guardado no rompe nada", () => {
+    assert.equal(nombrarCaja([], 0, "Para evolucionar algún día")[0], "Para evolucionar");
+    assert.deepEqual(leerNombresDeCaja("no es una lista"), []);
+    assert.deepEqual(leerNombresDeCaja([3, " ", "Sí"]), [null, null, "Sí"]);
+    assert.throws(() => nombrarCaja([], MAXIMO_DE_CAJAS, "Nada"));
   });
 });

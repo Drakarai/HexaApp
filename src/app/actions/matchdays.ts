@@ -10,6 +10,7 @@ import { ajustarDesempate } from "@/lib/series";
 import { borrarJornadaALaPapelera, restaurarJornada } from "@/lib/papelera";
 import { esRoyale, formatoDeCombate } from "@/lib/formatos-de-combate";
 import { enlaceSeguro } from "@/lib/utils";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 
 /**
  * Lo que se lleva de diferencia quien gana porque el otro no se presentó. No
@@ -70,6 +71,7 @@ export async function createMatchdayAction(
       position,
     },
   });
+  await registrar(competitionId, "jornadas", `Crea la ${label}`);
 
   /**
    * Los emparejamientos se proponen solos si se pide (`lib/emparejamientos.ts`).
@@ -177,6 +179,7 @@ export async function deleteMatchdayAction(formData: FormData) {
 
   // A la papelera, no a la basura: se puede devolver unos días (ver lib/papelera)
   await borrarJornadaALaPapelera(id, manager.displayName);
+  await registrar(matchday.competitionId, "jornadas", `Borra la ${matchday.label} (a la papelera)`);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
@@ -201,6 +204,7 @@ export async function restaurarJornadaAction(
 
   const resultado = await restaurarJornada(id);
   if (resultado.error) return { error: resultado.error };
+  await registrar(borrada.competitionId, "jornadas", `Recupera de la papelera la ${resultado.label}`);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
@@ -216,7 +220,8 @@ export async function vaciarDeLaPapeleraAction(formData: FormData) {
   });
   if (!borrada) return;
   await requireCompetitionManager(borrada.competitionId);
-  await prisma.jornadaBorrada.delete({ where: { id } });
+  const deVerdad = await prisma.jornadaBorrada.delete({ where: { id }, select: { label: true } });
+  await registrar(borrada.competitionId, "jornadas", `Vacía de la papelera la ${deVerdad.label}: ya no se puede recuperar`);
   revalidatePath("/jornadas");
 }
 
@@ -275,6 +280,13 @@ export async function addMatchAction(
       excepcion: fuera.length > 0,
     },
   });
+
+  const [a, b] = [losDos.find((j) => j.id === participantAId), losDos.find((j) => j.id === participantBId)];
+  await registrar(
+    matchday.competitionId,
+    "jornadas",
+    `Añade el combate ${a?.displayName} vs ${b?.displayName} a la ${matchday.label}${fuera.length ? " (con permiso)" : ""}`,
+  );
 
   revalidatePath("/jornadas");
   if (!fuera.length) return { success: "Emparejamiento añadido." };
@@ -353,6 +365,24 @@ export async function setMatchResultAction(formData: FormData) {
     } else {
       await prisma.pointEntry.create({ data: payload });
     }
+  }
+
+  {
+    const nuevaDiferencia = diff !== null && Number.isFinite(diff) ? Math.abs(Math.trunc(diff)) : null;
+    const nombre = await nombresDeJugadores(match.participantAId, match.participantBId);
+    const combate = `${nombre(match.participantAId)} vs ${nombre(match.participantBId)}`;
+    const cambiaElResultado = match.winnerId !== winnerId || match.pokemonDiff !== nuevaDiferencia;
+    await registrar(
+      match.matchday.competitionId,
+      "resultados",
+      !cambiaElResultado
+        ? `${match.matchday.label}, ${combate}: cambia las notas, la fecha o la repetición`
+        : !winnerId
+          ? `${match.matchday.label}, ${combate}: quita el resultado (ganaba ${nombre(match.winnerId)})`
+          : `${match.matchday.label}, ${combate}: gana ${nombre(winnerId)}${nuevaDiferencia !== null ? ` por ${nuevaDiferencia}` : ""}${
+              match.winnerId && match.winnerId !== winnerId ? ` (antes ganaba ${nombre(match.winnerId)})` : ""
+            }`,
+    );
   }
 
   /**
@@ -440,6 +470,12 @@ export async function darPorRetiradaAction(formData: FormData) {
     await prisma.pointEntry.create({ data: datos });
   }
 
+  await registrar(
+    match.matchday.competitionId,
+    "resultados",
+    `${match.matchday.label}: da el combate por retirada de ${perdedor?.displayName ?? "?"}, gana ${ganador?.displayName ?? "?"}`,
+  );
+
   // Puede haber completado la jornada y desbloquear otras retiradas
   await resolverRetiradas(match.matchday.competitionId, manager.id);
   await ajustarDesempate(match.matchdayId);
@@ -488,6 +524,18 @@ export async function permitirCombateAction(formData: FormData) {
   if (permitir && match.porRetirada) {
     await prisma.pointEntry.deleteMany({ where: { sourceMatchId: matchId } });
   }
+  {
+    const nombre = await nombresDeJugadores(match.participantAId, match.participantBId);
+    await registrar(
+      match.matchday.competitionId,
+      "resultados",
+      `${match.matchday.label}, ${nombre(match.participantAId)} vs ${nombre(match.participantBId)}: ${
+        permitir
+          ? `da permiso para jugarlo aunque haya alguien fuera${match.porRetirada ? " (deshace la retirada)" : ""}`
+          : "quita el permiso para jugarlo"
+      }`,
+    );
+  }
 
   // Quitar el permiso lo devuelve a la cola de las retiradas, y puede tocarle
   // ya si su jornada está terminada
@@ -511,6 +559,16 @@ export async function deleteMatchAction(formData: FormData) {
 
   await prisma.pointEntry.deleteMany({ where: { sourceMatchId: matchId } });
   await prisma.match.delete({ where: { id: matchId } });
+  {
+    const nombre = await nombresDeJugadores(match.participantAId, match.participantBId, match.winnerId);
+    await registrar(
+      match.matchday.competitionId,
+      "jornadas",
+      `Quita el combate ${nombre(match.participantAId)} vs ${nombre(match.participantBId)} de la ${match.matchday.label}${
+        match.winnerId ? ` (lo había ganado ${nombre(match.winnerId)})` : ""
+      }`,
+    );
+  }
 
   // Borrar el combate que faltaba también deja la jornada terminada
   await resolverRetiradas(match.matchday.competitionId, null);

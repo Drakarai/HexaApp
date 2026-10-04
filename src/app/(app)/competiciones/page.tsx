@@ -136,7 +136,10 @@ export default async function CompetitionsPage() {
    */
   const mando = admin
     ? null
-    : new Set(misFichas.filter((ficha) => ficha.isAdmin).map((ficha) => ficha.competitionId));
+    : new Set(
+        // Viendo como otro papel no se manda en ninguno (ver VER_COMO)
+        misFichas.filter((ficha) => ficha.isAdmin && !user.verComo).map((ficha) => ficha.competitionId),
+      );
   const mandoEn = (competitionId: string) =>
     admin || Boolean(mando?.has(competitionId));
 

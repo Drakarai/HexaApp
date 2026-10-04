@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getCurrentUser, requireCreador } from "@/lib/auth";
 import {
@@ -217,6 +218,7 @@ export async function darObjetoAction(
     create: { participantId, itemId, quantity: cantidad, note },
     update: { quantity: { increment: cantidad }, ...(note ? { note } : {}) },
   });
+  await registrar(deQuien.competitionId, "bolsa", `Da ${cantidad} × ${objeto.name} a ${jugador.displayName}`);
 
   refrescar();
   return {
@@ -238,6 +240,17 @@ export async function quitarObjetoAction(formData: FormData) {
   // Igual que al darlo: manda quien administra ese locke
   await requireCompetitionManager(entrada.participant.competitionId);
 
+  {
+    const [objeto, nombre] = await Promise.all([
+      prisma.item.findUnique({ where: { id: entrada.itemId }, select: { name: true } }),
+      nombresDeJugadores(entrada.participantId),
+    ]);
+    await registrar(
+      entrada.participant.competitionId,
+      "bolsa",
+      `Quita ${todo ? `todos los ${objeto?.name ?? "objetos"} (${entrada.quantity})` : `1 × ${objeto?.name ?? "objeto"}`} a ${nombre(entrada.participantId)}`,
+    );
+  }
   if (todo || entrada.quantity <= 1) {
     await prisma.bagEntry.delete({ where: { id: entryId } });
   } else {

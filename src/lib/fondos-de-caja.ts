@@ -84,3 +84,41 @@ export function elegirFondo(
   while (fondos.length && fondos[fondos.length - 1] === null) fondos.pop();
   return fondos.length ? fondos.map((f) => f ?? "").join(",") : null;
 }
+
+/**
+ * Los nombres de las cajas, como en los juegos: «Banquillo», «Para evolucionar»…
+ * Se guardan en `Participant.nombresDeCaja`, una posición por caja y null donde
+ * no se ha puesto, para que la caja siga llamándose «Caja N».
+ *
+ * Hasta 16 letras: en los juegos son 8, pero aquí se escribe en español y
+ * «Para evolucionar» no cabría.
+ */
+export const LARGO_DEL_NOMBRE_DE_CAJA = 16;
+
+export function leerNombresDeCaja(guardado: unknown): (string | null)[] {
+  if (!Array.isArray(guardado)) return [];
+  return guardado
+    .slice(0, MAXIMO_DE_CAJAS)
+    .map((nombre) => (typeof nombre === "string" && nombre.trim() ? nombre.trim() : null));
+}
+
+/** El nombre de una caja (contando desde 0): el puesto o «Caja N» */
+export function nombreDeCaja(nombres: (string | null)[], caja: number) {
+  return nombres[caja] ?? `Caja ${caja + 1}`;
+}
+
+/**
+ * Lo que hay que guardar al ponerle nombre a una caja. Vacío, o justo
+ * «Caja N», le devuelve el de siempre; lo vacío del final se recorta.
+ */
+export function nombrarCaja(guardado: unknown, caja: number, nombre: string): (string | null)[] {
+  if (!Number.isInteger(caja) || caja < 0 || caja >= MAXIMO_DE_CAJAS) {
+    throw new Error("Esa caja no existe.");
+  }
+  const limpio = nombre.replace(/\s+/g, " ").trim().slice(0, LARGO_DEL_NOMBRE_DE_CAJA).trim();
+  const nombres = leerNombresDeCaja(guardado);
+  while (nombres.length <= caja) nombres.push(null);
+  nombres[caja] = !limpio || limpio.toLowerCase() === `caja ${caja + 1}` ? null : limpio;
+  while (nombres.length && nombres[nombres.length - 1] === null) nombres.pop();
+  return nombres;
+}

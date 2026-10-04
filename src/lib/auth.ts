@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { readSession } from "@/lib/session";
@@ -20,7 +20,29 @@ export type CurrentUser = {
   theme: string;
   /** Permiso de organizador: puede montar sus propios lockes */
   puedeCrearLockes: boolean;
+  /**
+   * Si el Creador está **viendo la app como otro papel** (ver `VER_COMO`):
+   * entonces `role` es el de un jugador cualquiera y aquí queda cuál eligió.
+   */
+  verComo?: VerComo;
 };
+
+/**
+ * «Ver como»: el Creador se pone en la piel de un jugador o de un espectador
+ * para comprobar qué ve la gente. **No es una máscara de la pantalla**: mientras
+ * dura, el servidor le trata como ese papel también en las acciones, así que
+ * nada de lo que haga sale con permisos de Creador. Sigue pudiendo abrir
+ * cualquier locke (ver `filtroDeLockesVisibles`), porque si no, no podría
+ * mirar el de otro, pero dentro de él solo hace lo que haría ese papel.
+ *
+ * Es por papel y no por persona a propósito: «ver como Pablo» enseñaría su caja
+ * y sus notas, que son privadas.
+ */
+export const VER_COMO = "hexaapp-ver-como";
+export type VerComo = "jugador" | "espectador";
+export function esVerComo(valor: unknown): valor is VerComo {
+  return valor === "jugador" || valor === "espectador";
+}
 
 /**
  * Usuario de la petición actual, o null si no hay sesión válida.
@@ -51,7 +73,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!user) return null;
 
   const { firma, ...resto } = user;
-  return { ...resto, avatarImage: urlDeImagen("avatar", user.id, firma) };
+  const deVerdad = { ...resto, avatarImage: urlDeImagen("avatar", user.id, firma) };
+  // Solo el Creador puede ponerse otro papel: a cualquier otro la cookie no le hace nada
+  const verComo = (await cookies()).get(VER_COMO)?.value;
+  if (esCreador(deVerdad) && esVerComo(verComo)) {
+    return { ...deVerdad, role: ROLES.PLAYER, puedeCrearLockes: false, verComo };
+  }
+  return deVerdad;
 });
 
 /**

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { imagenEditada } from "@/lib/image";
@@ -183,8 +184,13 @@ export async function deleteDeathAction(formData: FormData) {
   const id = String(formData.get("deathId") ?? "");
   const death = await prisma.death.findUnique({ where: { id } });
   if (!death) return;
-  await assertCanActForParticipant(death.participantId);
+  const { participant } = await assertCanActForParticipant(death.participantId);
 
   await prisma.death.delete({ where: { id } });
+  await registrar(
+    participant.competitionId,
+    "cementerio",
+    `Borra la baja de ${death.nickname ?? death.species} de ${participant.displayName} (vuelve a estar vivo)`,
+  );
   refrescarBajas();
 }

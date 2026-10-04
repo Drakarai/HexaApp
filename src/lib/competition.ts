@@ -255,12 +255,22 @@ export function soloActivos<T extends { retiredAt: Date | null }>(
 /**
  * Participante del usuario actual dentro de una competición (null si sólo mira).
  */
-export const getMyParticipant = cache(
-  async (competitionId: string, userId: string) =>
-    prisma.participant.findUnique({
-      where: { competitionId_userId: { competitionId, userId } },
-    }),
-);
+export const getMyParticipant = cache(async (competitionId: string, userId: string) => {
+  const ficha = await prisma.participant.findUnique({
+    where: { competitionId_userId: { competitionId, userId } },
+  });
+  /**
+   * Con «Ver como» (ver `VER_COMO`): de espectador no juega, y de jugador
+   * juega pero sin mandar. Así lo de administrar de cada locke se cae solo,
+   * en las pantallas y en las acciones, sin repasarlas una a una.
+   */
+  if (ficha) {
+    const user = await getCurrentUser();
+    if (user?.id === userId && user.verComo === "espectador") return null;
+    if (user?.id === userId && user.verComo === "jugador") return { ...ficha, isAdmin: false };
+  }
+  return ficha;
+});
 
 /**
  * Puede gestionar quien sea Creador o administrador de esa competición.
@@ -329,6 +339,9 @@ export async function getTicketBalances(competitionId: string) {
 export async function assertCanActForParticipant(participantId: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Tienes que iniciar sesión.");
+  if (user.verComo === "espectador") {
+    throw new Error("Estás viendo la app como espectador: solo se mira. Vuelve a Creador para tocar.");
+  }
 
   const participant = await prisma.participant.findUnique({
     where: { id: participantId },

@@ -6,6 +6,7 @@ import {
   removeMatchPokemonAction,
 } from "@/app/actions/match-teams";
 import type { FormState } from "@/app/actions/auth";
+import { leerShowdownAction } from "@/app/actions/showdown";
 import { Avatar, ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
 import { spriteCandidates } from "@/lib/pokedex";
@@ -384,6 +385,82 @@ function TeamEditor({
     setLimpiezas((veces) => veces + 1);
   }
 
+  const [pegado, setPegado] = useState("");
+  const [leyendo, setLeyendo] = useState(false);
+
+  /** Los campos ocultos del formulario, que dicen de qué combate es el equipo */
+  function deEsteCombate() {
+    const datos = new FormData();
+    datos.set("matchId", matchId);
+    if (esReto) datos.set("esReto", "1");
+    if (royaleId) datos.set("royaleId", royaleId);
+    if (levelCapId) datos.set("levelCapId", levelCapId);
+    if (finalFourId) datos.set("finalFourId", finalFourId);
+    return datos;
+  }
+
+  /**
+   * Pegar el equipo exportado de Showdown: se lee en el servidor y se añaden
+   * uno a uno con la misma acción que el botón de siempre (mismos permisos,
+   * mismo tope del formato y mismas imágenes). Uno detrás de otro y no a la
+   * vez, porque cada uno va en el hueco siguiente al anterior.
+   */
+  function anadirPegados() {
+    const lado = equipos.find((l) => l.participantId === owner);
+    const caben = maximo - (lado?.team.length ?? 0);
+    setLeyendo(true);
+    startTransition(async () => {
+      try {
+        const leido = await leerShowdownAction(pegado);
+        if (leido.error || !leido.equipo) {
+          setState({ error: leido.error ?? "Eso no parece un equipo de Showdown." });
+          return;
+        }
+        if (caben <= 0) {
+          setState({ error: `${lado?.displayName ?? "Ese equipo"} ya tiene ${maximo}.` });
+          return;
+        }
+        const avisos: string[] = leido.equipo.flatMap((p) => p.dudas);
+        const aMeter = leido.equipo.slice(0, caben);
+        if (leido.equipo.length > caben) {
+          avisos.push(`Solo cabían ${caben}: se han quedado fuera ${leido.equipo.length - caben}.`);
+        }
+        let metidos = 0;
+        for (const pokemon of aMeter) {
+          const datos = deEsteCombate();
+          datos.set("participantId", owner);
+          datos.set("species", pokemon.especie);
+          if (pokemon.pokemonId) datos.set("pokemonId", String(pokemon.pokemonId));
+          if (pokemon.shiny) datos.set("shiny", "on");
+          if (pokemon.mote) datos.set("nickname", pokemon.mote);
+          anadirALaVista({
+            id: `pendiente-${Date.now()}-${metidos}`,
+            species: pokemon.especie,
+            nickname: pokemon.mote,
+            boxImage: pokemon.pokemonId ? spriteCandidates(pokemon.pokemonId, pokemon.shiny, "mini")[0] : null,
+            participantId: owner,
+          });
+          const respuesta = await addMatchPokemonAction(null, datos);
+          if (respuesta?.error) {
+            avisos.push(`${pokemon.mote ?? pokemon.especie}: ${respuesta.error}`);
+            break;
+          }
+          metidos += 1;
+        }
+        setPegado("");
+        setState(
+          avisos.length
+            ? { error: `Añadidos ${metidos}. ${avisos.join(" ")}` }
+            : { success: `Añadidos ${metidos} de Showdown.` },
+        );
+      } catch {
+        setState({ error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." });
+      } finally {
+        setLeyendo(false);
+      }
+    });
+  }
+
   // Portal, como el resto de diálogos: las tarjetas llevan backdrop-blur y eso
   // rompe el posicionamiento fijo de lo que tienen dentro.
   return (
@@ -515,6 +592,35 @@ function TeamEditor({
           Añadir al equipo
         </button>
       </form>
+
+      {/* El equipo entero de golpe, copiado del «Export» del Teambuilder */}
+      <details className="group mt-3 rounded-xl border border-white/10 px-3 py-2">
+        <summary className="cursor-pointer list-none text-sm text-slate-300">
+          <span className="mr-1.5 inline-block transition group-open:rotate-90">▸</span>
+          Pegar el equipo de Showdown
+        </summary>
+        <p className="mt-2 text-xs text-slate-500">
+          En Showdown, en el Teambuilder, «Import/Export» y copia el texto. Se añaden a{" "}
+          <span className="text-slate-300">
+            {sides.find((l) => l.participantId === owner)?.displayName}
+          </span>{" "}
+          (el entrenador de arriba), con sus motes.
+        </p>
+        <textarea
+          className="input mt-2 min-h-32 font-mono text-xs"
+          value={pegado}
+          onChange={(evento) => setPegado(evento.target.value)}
+          placeholder={"Brasas (Charizard) @ Leftovers\nAbility: Blaze\n- Flamethrower\n\nGarchomp @ Choice Scarf\n- Earthquake"}
+        />
+        <button
+          type="button"
+          className="btn-ghost btn-sm mt-2"
+          disabled={leyendo || !pegado.trim()}
+          onClick={anadirPegados}
+        >
+          {leyendo ? "Añadiendo…" : "Añadir los del texto"}
+        </button>
+      </details>
     </Hoja>
   );
 }

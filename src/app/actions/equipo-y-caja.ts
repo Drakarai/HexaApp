@@ -16,7 +16,9 @@ import {
   type Lugar,
 } from "@/lib/equipo-y-caja";
 import { capturasParaVincular, vincularCapturaNueva } from "@/lib/soul-link";
-import { elegirFondo, esFondo } from "@/lib/fondos-de-caja";
+import { elegirFondo, esFondo, nombrarCaja } from "@/lib/fondos-de-caja";
+import { MOVIMIENTOS_POR_POKEMON, movimientoPorSlug, naturalezaPorSlug } from "@/lib/movimientos";
+import { objetoPorSlug } from "@/lib/objetos";
 import {
   apuntarCambio,
   assertPuedeTocarLaCaja,
@@ -427,6 +429,43 @@ export async function cambiarMoteAction(entrada: {
 }
 
 /**
+ * La ficha completa: naturaleza, objeto y movimientos. Como el mote, no pasa
+ * por deshacer: se cambia otra vez y ya. Lo que no existe se rechaza entero en
+ * vez de guardarse a medias, para que no desaparezca un movimiento sin avisar.
+ */
+export async function cambiarFichaDeCombateAction(entrada: {
+  captureId: string;
+  naturaleza: string | null;
+  objeto: string | null;
+  movimientos: string[];
+}): Promise<Resultado> {
+  return conError(async () => {
+    const captura = await capturaQuePuedoTocar(entrada.captureId);
+    if (entrada.naturaleza && !naturalezaPorSlug(entrada.naturaleza)) {
+      return { error: "Esa naturaleza no existe." };
+    }
+    if (entrada.objeto && !objetoPorSlug(entrada.objeto)) return { error: "Ese objeto no existe." };
+    const lista = Array.isArray(entrada.movimientos) ? entrada.movimientos : [];
+    const movimientos = [...new Set(lista.filter(Boolean))];
+    if (movimientos.length > MOVIMIENTOS_POR_POKEMON) {
+      return { error: `Un pokémon lleva ${MOVIMIENTOS_POR_POKEMON} movimientos como mucho.` };
+    }
+    const raro = movimientos.find((m) => !movimientoPorSlug(m));
+    if (raro) return { error: `No conozco el movimiento «${raro}».` };
+    await prisma.capture.update({
+      where: { id: captura.id },
+      data: {
+        naturaleza: entrada.naturaleza || null,
+        objeto: entrada.objeto || null,
+        movimientos,
+      },
+    });
+    refrescar();
+    return { aviso: "Ficha guardada." };
+  });
+}
+
+/**
  * Quitar una captura apuntada por error. No se deshace (se pregunta antes) y
  * no toca el cementerio: si ya había caído, su baja se queda.
  */
@@ -461,6 +500,29 @@ export async function cambiarFondoDeCajaAction(entrada: {
     await prisma.participant.update({
       where: { id: participant.id },
       data: { fondosDeCaja: elegirFondo(actual?.fondosDeCaja, entrada.caja, entrada.fondo) },
+    });
+    refrescar();
+  });
+}
+
+/**
+ * Le pone nombre a una caja, o se lo quita si llega vacío. Como el fondo: lo
+ * cambia quien puede tocar esa caja y no pasa por deshacer.
+ */
+export async function nombrarCajaAction(entrada: {
+  participantId: string;
+  caja: number;
+  nombre: string;
+}): Promise<Resultado> {
+  return conError(async () => {
+    const { participant } = await assertPuedeTocarLaCaja(entrada.participantId);
+    const actual = await prisma.participant.findUnique({
+      where: { id: participant.id },
+      select: { nombresDeCaja: true },
+    });
+    await prisma.participant.update({
+      where: { id: participant.id },
+      data: { nombresDeCaja: nombrarCaja(actual?.nombresDeCaja, entrada.caja, String(entrada.nombre ?? "")) },
     });
     refrescar();
   });

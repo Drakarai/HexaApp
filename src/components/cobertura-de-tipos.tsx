@@ -19,6 +19,7 @@ import {
   tipoPorId,
 } from "@/lib/tipos";
 import { cx } from "@/lib/utils";
+import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { DibujoVacio } from "@/components/dibujo-vacio";
 import { Hoja } from "@/components/hoja";
 
@@ -53,10 +54,12 @@ export type DeMiCaja = MiembroDelEquipo & {
   /** Para buscarlo también por especie, que el nombre es el mote */
   especie: string;
   enEquipo: boolean;
-  /** La caja del PC en la que está, desde 1; null si va en el equipo */
-  caja: number | null;
+  /** El nombre de la caja del PC en la que está; null si va en el equipo */
+  caja: string | null;
   shiny: boolean;
   captura: string;
+  /** Los movimientos que hacen daño de su ficha completa; vacío si no los tiene */
+  ataques: TipoDeMovimiento[];
 };
 
 export function CoberturaDeTipos({
@@ -151,7 +154,24 @@ export function CoberturaDeTipos({
   const peorFila = filas.find((fila) => fila.debiles > 0);
 
   /** Lo de atacar: a qué le pega fuerte el equipo con sus propios tipos */
-  const ataque = useMemo(() => coberturaOfensiva(suyos, generacion), [suyos, generacion]);
+  /**
+   * Con qué pega cada uno: sus movimientos de daño si los tiene apuntados en la
+   * ficha completa, y si no, los de su propio tipo, que es lo más probable.
+   */
+  const conQuePegan = useMemo(() => {
+    const existen = new Set(tiposDeGeneracion(generacion).map((t) => t.id));
+    return suyos.map((miembro) => {
+      const deLaCaja = deMiCaja.find((p) => p.ataques.length && p.id === miembro.id && p.nombre === miembro.nombre);
+      const deSusMovimientos = deLaCaja
+        ? [...new Set(deLaCaja.ataques.map((a) => tipoDelMovimiento(a, generacion)))].filter((t) => existen.has(t))
+        : [];
+      return deLaCaja
+        ? { nombre: miembro.nombre, tipos: deSusMovimientos, conMovimientos: true }
+        : { nombre: miembro.nombre, tipos: miembro.tipos, conMovimientos: false };
+    });
+  }, [suyos, generacion, deMiCaja]);
+  const ataque = useMemo(() => coberturaOfensiva(conQuePegan, generacion), [conQuePegan, generacion]);
+  const conMovimientos = conQuePegan.filter((m) => m.conMovimientos).length;
   const sinCubrir = ataque.filter((fila) => fila.mejor < 2);
 
   /** El hueco para el que se está eligiendo; null con el selector cerrado */
@@ -379,8 +399,8 @@ export function CoberturaDeTipos({
             </p>
             <p className="mb-3 text-xs text-slate-500">
               {sinCubrir.length
-                ? `Con los tipos de tu equipo no le das fuerte a ${sinCubrir.length === 1 ? "un tipo" : `${sinCubrir.length} tipos`}: ${sinCubrir.map((f) => f.tipo.nombre).join(", ")}. Haría falta un movimiento de otro tipo, o alguien más.`
-                : "Con los tipos de tu equipo le das fuerte a todos los tipos. Así da gusto."}
+                ? `${conMovimientos ? "Con lo que lleva tu equipo" : "Con los tipos de tu equipo"} no le das fuerte a ${sinCubrir.length === 1 ? "un tipo" : `${sinCubrir.length} tipos`}: ${sinCubrir.map((f) => f.tipo.nombre).join(", ")}. Haría falta un movimiento de otro tipo, o alguien más.`
+                : `${conMovimientos ? "Con lo que lleva tu equipo" : "Con los tipos de tu equipo"} le das fuerte a todos los tipos. Así da gusto.`}
             </p>
             <div className="flex flex-wrap gap-1.5">
               {ataque.map((fila) => (
@@ -406,8 +426,12 @@ export function CoberturaDeTipos({
               ))}
             </div>
             <p className="mt-2 text-[11px] text-slate-600">
-              Cuenta con los ataques del propio tipo de cada uno, que son los que más pegan; no sabe qué
-              movimientos lleváis. Pasa el ratón por un tipo para ver quién le pega.
+              {conMovimientos === conQuePegan.length
+                ? "Cuenta con los movimientos de daño de la ficha de cada uno."
+                : conMovimientos
+                  ? `Cuenta con los movimientos de la ficha de ${conMovimientos === 1 ? "quien los tiene apuntados" : "los que los tienen apuntados"}, y con los de su propio tipo de los demás.`
+                  : "Cuenta con los ataques del propio tipo de cada uno, que son los que más pegan. Si apuntas los movimientos en la ficha de Equipo y PC, cuenta con esos."}{" "}
+              Pasa el ratón por un tipo para ver quién le pega.
             </p>
           </div>
         </>
@@ -567,7 +591,7 @@ function Selector({
     if (busqueda && !paraBuscar(p.nombre).includes(busqueda) && !paraBuscar(p.especie).includes(busqueda)) {
       continue;
     }
-    const titulo = p.enEquipo ? "Tu equipo" : `Caja ${p.caja}`;
+    const titulo = p.enEquipo ? "Tu equipo" : (p.caja ?? "Caja");
     const grupo = grupos.find((g) => g.titulo === titulo);
     if (grupo) grupo.lista.push(p);
     else grupos.push({ titulo, lista: [p] });

@@ -8,7 +8,9 @@ import { generacionDeTipos } from "@/lib/juegos";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { GENERACION_POR_DEFECTO, tipoPorId, tiposDePokemon } from "@/lib/tipos";
 import { colocar, vinculoAlCapturar, vinculosDe } from "@/lib/equipo-y-caja";
-import { leerFondos, type FondoDeCaja } from "@/lib/fondos-de-caja";
+import { leerFondos, leerNombresDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
+import { leerMovimientos, movimientoParaVer, naturalezaPorSlug, type MovimientoParaVer } from "@/lib/movimientos";
+import { objetoPorSlug, spriteDeObjeto } from "@/lib/objetos";
 
 /**
  * El equipo y la caja de todos los de un locke, para la pantalla de Equipo y
@@ -37,6 +39,14 @@ export type PokemonDelTablero = {
   muerta: boolean;
   causa: string | null;
   evoluciones: OpcionDeEvolucion[];
+  /** La ficha completa, ya con nombres y tipos para enseñarla */
+  combate: FichaDeCombate;
+};
+
+export type FichaDeCombate = {
+  naturaleza: { slug: string; nombre: string; sube: string | null; baja: string | null } | null;
+  objeto: { slug: string; nombre: string; imagen: string } | null;
+  movimientos: MovimientoParaVer[];
 };
 
 export type TableroDeJugador = {
@@ -54,6 +64,8 @@ export type TableroDeJugador = {
   deshacer: string | null;
   /** El fondo elegido para cada caja; vacío donde va el de fábrica */
   fondos: (FondoDeCaja | null)[];
+  /** El nombre puesto a cada caja; null donde se llama «Caja N» */
+  nombres: (string | null)[];
 };
 
 export type EquiposDelLocke = {
@@ -113,6 +125,7 @@ export async function getEquiposDelLocke(
         color: true,
         retiredAt: true,
         fondosDeCaja: true,
+        nombresDeCaja: true,
       },
     }),
     prisma.capture.findMany({
@@ -131,6 +144,9 @@ export async function getEquiposDelLocke(
         vinculo: true,
         deathId: true,
         shiny: true,
+        naturaleza: true,
+        objeto: true,
+        movimientos: true,
         createdAt: true,
         zone: { select: { name: true } },
         muerte: { select: { cause: true } },
@@ -185,6 +201,7 @@ export async function getEquiposDelLocke(
       muerta: Boolean(c.deathId),
       causa: c.muerte?.cause ?? null,
       evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species),
+      combate: fichaDeCombate(c, generacion),
     };
   });
 
@@ -205,6 +222,7 @@ export async function getEquiposDelLocke(
       caidos: suyos.filter((p) => p.muerta),
       deshacer: editable ? (ultimo.get(j.id) ?? null) : null,
       fondos: leerFondos(j.fondosDeCaja),
+      nombres: leerNombresDeCaja(j.nombresDeCaja),
     };
   });
 
@@ -351,4 +369,20 @@ export async function capturasParaVincular(competitionId: string, sin?: string) 
     muerta: Boolean(c.deathId),
     creado: c.createdAt.getTime(),
   }));
+}
+
+/** La ficha completa de una captura, lista para pintar */
+export function fichaDeCombate(
+  c: { naturaleza: string | null; objeto: string | null; movimientos: unknown },
+  generacion: number,
+): FichaDeCombate {
+  const naturaleza = naturalezaPorSlug(c.naturaleza);
+  const objeto = c.objeto ? objetoPorSlug(c.objeto) : undefined;
+  return {
+    naturaleza: naturaleza
+      ? { slug: naturaleza.s, nombre: naturaleza.n, sube: naturaleza.sube, baja: naturaleza.baja }
+      : null,
+    objeto: objeto ? { slug: objeto.slug, nombre: objeto.nombre, imagen: spriteDeObjeto(objeto.slug) } : null,
+    movimientos: leerMovimientos(c.movimientos).flatMap((m) => movimientoParaVer(m, generacion) ?? []),
+  };
 }

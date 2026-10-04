@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getStandings, requireCompetitionManager } from "@/lib/competition";
 import {
@@ -77,6 +78,7 @@ export async function generateBracketAction(
     },
   });
 
+  await registrar(competitionId, "final", `Genera el cuadro de la ${formato.nombre}`);
   revalidatePath("/", "layout");
   return { success: `Cuadro generado. ¡Que empiece la ${formato.nombre}!` };
 }
@@ -129,6 +131,16 @@ export async function setFinalMatchResultAction(formData: FormData) {
   const afectadas = llavesPosteriores(formato, key.split("#")[0]).flatMap(
     combatesDeLaLlave,
   );
+  {
+    const nombre = await nombresDeJugadores(winnerId);
+    await registrar(
+      competitionId,
+      "final",
+      winnerId
+        ? `Final, combate ${key}: gana ${nombre(winnerId)}${afectadas.length ? " (se vacían las rondas de después)" : ""}`
+        : `Final, combate ${key}: quita el resultado`,
+    );
+  }
   if (afectadas.length) {
     await prisma.finalMatch.updateMany({
       where: { finalFourId: finalFour.id, key: { in: afectadas } },
@@ -151,7 +163,8 @@ export async function resetBracketAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");
   await requireCompetitionManager(competitionId);
 
-  await prisma.finalFour.deleteMany({ where: { competitionId } });
+  const borrados = await prisma.finalFour.deleteMany({ where: { competitionId } });
+  if (borrados.count) await registrar(competitionId, "final", "Borra el cuadro de la final con sus resultados");
 
   revalidatePath("/final-four");
   revalidatePath("/hall-de-la-fama");

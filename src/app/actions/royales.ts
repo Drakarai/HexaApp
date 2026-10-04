@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import {
   assertCanActForParticipant,
@@ -92,6 +93,7 @@ export async function borrarRoyaleAction(formData: FormData) {
   // Los puntos que diera se van con él: cuelgan del royale, no de la jornada
   await prisma.pointEntry.deleteMany({ where: { sourceRoyaleId: id } });
   await prisma.royale.delete({ where: { id } });
+  await registrar(royale.matchday.competitionId, "jornadas", `Borra el Battle Royale de la ${royale.matchday.label}`);
   refrescar();
 }
 
@@ -167,6 +169,17 @@ export async function guardarPuestosAction(
         sourceRoyaleId: id,
       },
     });
+  }
+
+  {
+    const nombre = await nombresDeJugadores(...limpio);
+    await registrar(
+      royale.matchday.competitionId,
+      "resultados",
+      limpio.length
+        ? `${royale.matchday.label}, Battle Royale: ${limpio.map((quien, i) => `${i + 1}º ${nombre(quien)}`).join(", ")}`
+        : `${royale.matchday.label}, Battle Royale: borra el orden de llegada`,
+    );
   }
 
   // Puede que con esto la jornada quede completa y toque resolver retiradas

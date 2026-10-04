@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { leerJuego, leerTipos, repartirVersiones, versionesDeLaEdicion } from "@/lib/juegos";
 import {
@@ -386,6 +387,7 @@ export async function updateCompetitionAction(
     },
   });
 
+  await registrar(competitionId, "locke", "Cambia los datos del locke (nombre, juego, plazas, estilo…)");
   revalidatePath("/", "layout");
   return { success: "Competición actualizada." };
 }
@@ -412,6 +414,7 @@ export async function setCompetitionStatusAction(formData: FormData) {
       endedAt: status === COMPETITION_STATUS.ARCHIVED ? new Date() : null,
     },
   });
+  await registrar(competitionId, "locke", status === COMPETITION_STATUS.ARCHIVED ? "Archiva el locke" : "Reabre el locke");
 
   revalidatePath("/", "layout");
 }
@@ -428,10 +431,13 @@ export async function cambiarArranqueAction(formData: FormData) {
 
   // Solo si cambia de verdad: un doble clic en «Empezar» no puede mover la
   // fecha de un locke que ya estaba en marcha
-  await prisma.competition.updateMany({
+  const cambiados = await prisma.competition.updateMany({
     where: { id: competitionId, sinEmpezar: !sinEmpezar },
     data: sinEmpezar ? { sinEmpezar: true } : { sinEmpezar: false, startedAt: new Date() },
   });
+  if (cambiados.count) {
+    await registrar(competitionId, "locke", sinEmpezar ? "Marca el locke como sin empezar" : "Empieza el locke");
+  }
 
   revalidatePath("/", "layout");
 }
@@ -440,7 +446,8 @@ export async function cambiarArranqueAction(formData: FormData) {
 export async function deleteCompetitionAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");
   await requireCompetitionManager(competitionId);
-  await prisma.competition.delete({ where: { id: competitionId } });
+  const borrado = await prisma.competition.delete({ where: { id: competitionId }, select: { name: true } });
+  await registrar(competitionId, "locke", `Borra el locke «${borrado.name}» con todo lo que tenía`, borrado.name);
   revalidatePath("/", "layout");
   redirect("/competiciones");
 }
@@ -505,6 +512,7 @@ export async function addParticipantAction(
     },
   });
 
+  await registrar(competitionId, "jugadores", `Apunta a ${user.displayName} al locke${formData.get("isAdmin") === "on" ? " como administrador" : ""}`);
   revalidatePath("/", "layout");
   return { success: `${user.displayName} añadido a la competición.` };
 }
@@ -528,6 +536,17 @@ export async function updateParticipantAction(formData: FormData) {
       isAdmin: formData.get("isAdmin") === "on",
     },
   });
+  {
+    const nombre = String(formData.get("displayName") ?? "").trim() || participant.displayName;
+    const admin = formData.get("isAdmin") === "on";
+    const cambios = [
+      nombre !== participant.displayName ? `nombre «${participant.displayName}» → «${nombre}»` : null,
+      admin !== participant.isAdmin ? (admin ? "ahora administra" : "deja de administrar") : null,
+    ].filter(Boolean);
+    if (cambios.length) {
+      await registrar(participant.competitionId, "jugadores", `Edita a ${nombre}: ${cambios.join(", ")}`);
+    }
+  }
 
   revalidatePath("/", "layout");
 }
@@ -561,6 +580,7 @@ export async function retirarParticipanteAction(formData: FormData) {
       where: { id: participantId },
       data: { retiredAt: null, motivoDeSalida: null },
     });
+    await registrar(participant.competitionId, "jugadores", `Readmite a ${participant.displayName} en el locke`);
     revalidatePath("/", "layout");
     return;
   }
@@ -570,6 +590,7 @@ export async function retirarParticipanteAction(formData: FormData) {
     // Queda escrito por qué está fuera: lo dejó, no perdió el locke
     data: { retiredAt: new Date(), motivoDeSalida: MOTIVOS_DE_SALIDA.RETIRADA },
   });
+  await registrar(participant.competitionId, "jugadores", `Retira a ${participant.displayName} del locke`);
 
   /**
    * Las jornadas que ya estén enteras jugadas se resuelven en el momento; las
@@ -610,6 +631,7 @@ export async function repartirVersionesAction(formData: FormData) {
       prisma.participant.update({ where: { id }, data: { gameVersion } }),
     ),
   );
+  await registrar(competitionId, "jugadores", "Reparte al azar las versiones del juego");
   revalidatePath("/", "layout");
 }
 
@@ -622,6 +644,11 @@ export async function removeParticipantAction(formData: FormData) {
   await requireCompetitionManager(participant.competitionId);
 
   await prisma.participant.delete({ where: { id: participantId } });
+  await registrar(
+    participant.competitionId,
+    "jugadores",
+    `Saca a ${participant.displayName} del locke (se borra su cementerio, sus combates y sus puntos)`,
+  );
   // Sus combates se van con él; los puntos que dieron a sus rivales, no solos
   await borrarPuntosHuerfanos(participant.competitionId);
   revalidatePath("/", "layout");
@@ -677,6 +704,7 @@ export async function darEspectadorAction(
     create: { userId, competitionId },
   });
 
+  await registrar(competitionId, "jugadores", `Deja mirar el locke a ${user.displayName}`);
   revalidatePath("/", "layout");
   return { success: `${user.displayName} ya puede mirar este locke.` };
 }
@@ -687,6 +715,10 @@ export async function quitarEspectadorAction(formData: FormData) {
   const userId = String(formData.get("userId") ?? "");
   await requireCompetitionManager(competitionId);
 
-  await prisma.spectator.deleteMany({ where: { competitionId, userId } });
+  const quitados = await prisma.spectator.deleteMany({ where: { competitionId, userId } });
+  if (quitados.count) {
+    const quien = await prisma.user.findUnique({ where: { id: userId }, select: { displayName: true } });
+    await registrar(competitionId, "jugadores", `Ya no deja mirar el locke a ${quien?.displayName ?? "alguien"}`);
+  }
   revalidatePath("/", "layout");
 }

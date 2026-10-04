@@ -333,6 +333,15 @@ model Capture {
    * evolucionar sigue siéndolo.
    */
   shiny         Boolean  @default(false)
+  /**
+   * La **ficha completa**, toda opcional: naturaleza, objeto que lleva y sus
+   * cuatro movimientos. Se guardan los identificadores de PokéAPI ("adamant",
+   * "leftovers", ["thunderbolt", …]), que son los de Showdown; ver
+   * lib/movimientos.ts. Sin nivel, a propósito.
+   */
+  naturaleza    String?
+  objeto        String?
+  movimientos   Json     @default("[]")
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
@@ -655,6 +664,9 @@ model Participant {
   // El fondo de cada caja de su Equipo y PC, separados por comas (ver
   // lib/fondos-de-caja.ts). Vacío: el de fábrica de cada caja.
   fondosDeCaja   String?
+  // El nombre de cada caja, si se le ha puesto: una lista con una posición
+  // por caja y null donde se queda con «Caja N» (ver lib/fondos-de-caja.ts)
+  nombresDeCaja  Json     @default("[]")
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1907,4 +1919,30 @@ model JornadaBorrada {
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
 
   @@index([competitionId, borradaAt])
+}
+
+/**
+ * El **registro de cambios** de cada locke: quién cambió un resultado, borró
+ * una jornada, tocó los puntos, una regla o la bolsa de alguien, y cuándo. Lo
+ * apunta `registrar()` (lib/registro.ts) desde las acciones de quien
+ * administra y se ve en Diagnóstico.
+ *
+ * Sin relación con `Competition` ni con `User` a propósito: el registro tiene
+ * que aguantar que se borre el locke o la cuenta, que es justo cuando hace
+ * falta saber quién fue. Por eso lleva copiados los nombres.
+ */
+model CambioDelLocke {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  competitionId String?
+  // El nombre del locke cuando se hizo el cambio
+  locke         String?
+  userId        String?
+  quien         String?
+  // De qué va, para filtrar: "jornadas", "puntos", "reglas", "bolsa"…
+  zona          String
+  texto         String
+
+  @@index([createdAt])
+  @@index([competitionId, createdAt])
 }

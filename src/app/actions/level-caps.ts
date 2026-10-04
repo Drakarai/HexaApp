@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { urlDeYouTube, videoDeYouTube } from "@/lib/youtube";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
+import { getMyParticipant } from "@/lib/competition";
 import { requireUser, esCreador } from "@/lib/auth";
 import { edicionCerradaPara, requireCompetitionManager } from "@/lib/competition";
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
@@ -81,6 +83,7 @@ export async function createLevelCapAction(
     },
   });
 
+  await registrar(competitionId, "gimnasios", `Añade el level cap «${label}» (nivel ${Math.trunc(cap)})`);
   revalidatePath("/level-caps");
   return { success: "Level cap añadido." };
 }
@@ -106,6 +109,14 @@ export async function updateLevelCapAction(formData: FormData) {
       image: null,
     },
   });
+  {
+    const nuevoCap = Number.isFinite(cap) && cap > 0 ? Math.trunc(cap) : levelCap.cap;
+    await registrar(
+      levelCap.competitionId,
+      "gimnasios",
+      `Edita el level cap «${levelCap.label}»${nuevoCap !== levelCap.cap ? `: nivel ${levelCap.cap} → ${nuevoCap}` : ""}`,
+    );
+  }
 
   revalidatePath("/level-caps");
 }
@@ -117,6 +128,7 @@ export async function deleteLevelCapAction(formData: FormData) {
   await requireCompetitionManager(levelCap.competitionId);
 
   await prisma.levelCap.delete({ where: { id } });
+  await registrar(levelCap.competitionId, "gimnasios", `Borra el level cap «${levelCap.label}»`);
   revalidatePath("/level-caps");
 }
 
@@ -134,6 +146,11 @@ export async function toggleJornadaDespuesAction(formData: FormData) {
     where: { id },
     data: { jornadaDespues: !levelCap.jornadaDespues },
   });
+  await registrar(
+    levelCap.competitionId,
+    "gimnasios",
+    `${levelCap.jornadaDespues ? "Quita" : "Pone"} el checkpoint de jornada en «${levelCap.label}»`,
+  );
   revalidatePath("/level-caps");
   revalidatePath("/");
 }
@@ -150,14 +167,8 @@ async function puedoTocarLoDe(participantId: string) {
   if (!participant) return null;
 
   if (participant.userId !== me.id && !esCreador(me)) {
-    const myParticipant = await prisma.participant.findUnique({
-      where: {
-        competitionId_userId: {
-          competitionId: participant.competitionId,
-          userId: me.id,
-        },
-      },
-    });
+    // Por getMyParticipant, que es quien sabe de «Ver como»
+    const myParticipant = await getMyParticipant(participant.competitionId, me.id);
     if (!myParticipant?.isAdmin) return null;
   }
   // Lo suyo, pero no en una edición archivada, salvo que la administre
@@ -184,6 +195,14 @@ export async function toggleGymClearAction(formData: FormData) {
     await prisma.gymClear.delete({ where: { id: existing.id } });
   } else {
     await prisma.gymClear.create({ data: { participantId, levelCapId } });
+  }
+  {
+    const gimnasio = await prisma.levelCap.findUnique({ where: { id: levelCapId }, select: { label: true } });
+    await registrar(
+      participant.competitionId,
+      "gimnasios",
+      `${existing ? "Desmarca" : "Marca"} «${gimnasio?.label ?? "un gimnasio"}» como superado por ${participant.displayName}`,
+    );
   }
 
   revalidatePath("/level-caps");

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -40,8 +41,9 @@ export async function apuntarWipeoAction(
   formData: FormData,
 ): Promise<FormState> {
   const participantId = String(formData.get("participantId") ?? "");
+  let deQuien;
   try {
-    await assertCanActForParticipant(participantId);
+    deQuien = await assertCanActForParticipant(participantId);
   } catch (error) {
     return { error: (error as Error).message };
   }
@@ -61,6 +63,11 @@ export async function apuntarWipeoAction(
     },
   });
 
+  await registrar(
+    deQuien.participant.competitionId,
+    "jugadores",
+    `Apunta un wipeo a ${deQuien.participant.displayName}${String(formData.get("contra") ?? "").trim() ? ` contra ${String(formData.get("contra")).trim()}` : ""}`,
+  );
   refrescarWipeos();
   return { success: "Wipeo apuntado. A seguir." };
 }
@@ -74,8 +81,9 @@ export async function quitarWipeoAction(formData: FormData) {
   });
   if (!wipeo) return;
 
-  await assertCanActForParticipant(wipeo.participantId);
+  const { participant } = await assertCanActForParticipant(wipeo.participantId);
   await prisma.wipeo.delete({ where: { id } });
+  await registrar(participant.competitionId, "jugadores", `Quita un wipeo de ${participant.displayName}`);
   refrescarWipeos();
 }
 
@@ -102,6 +110,8 @@ export async function perderElLockeAction(formData: FormData) {
       where: { id: participantId },
       data: { retiredAt: null, motivoDeSalida: null },
     });
+    const nombre = await nombresDeJugadores(participantId);
+    await registrar(participant.competitionId, "jugadores", `Devuelve al locke a ${nombre(participantId)} (lo había perdido)`);
     revalidatePath("/", "layout");
     return;
   }
@@ -112,6 +122,10 @@ export async function perderElLockeAction(formData: FormData) {
     where: { id: participantId },
     data: { retiredAt: new Date(), motivoDeSalida: MOTIVOS_DE_SALIDA.WIPEO },
   });
+  {
+    const nombre = await nombresDeJugadores(participantId);
+    await registrar(participant.competitionId, "jugadores", `Da el locke por perdido a ${nombre(participantId)}`);
+  }
 
   /**
    * Los combates que le queden se dan por ganados igual que con una retirada:

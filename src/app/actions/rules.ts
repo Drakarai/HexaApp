@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
@@ -37,6 +38,7 @@ export async function createRuleAction(
     },
   });
 
+  await registrar(competitionId, "reglas", `Añade la sección de reglas «${title}»`);
   revalidatePath("/reglas");
   return { success: "Sección añadida." };
 }
@@ -76,6 +78,13 @@ export async function updateRuleAction(formData: FormData) {
         : {}),
     },
   });
+  if (cambiaLoQueDice) {
+    await registrar(
+      rule.competitionId,
+      "reglas",
+      `Cambia la sección «${title}»${title !== rule.title ? ` (antes «${rule.title}»)` : ""}${avisar ? "" : ", sin avisar"}`,
+    );
+  }
 
   revalidatePath("/reglas");
 }
@@ -87,6 +96,7 @@ export async function deleteRuleAction(formData: FormData) {
   await requireCompetitionManager(rule.competitionId);
 
   await prisma.ruleSection.delete({ where: { id } });
+  await registrar(rule.competitionId, "reglas", `Borra la sección de reglas «${rule.title}»`);
   revalidatePath("/reglas");
 }
 

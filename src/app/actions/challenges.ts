@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { requireCompetitionManager } from "@/lib/competition";
@@ -89,6 +90,19 @@ export async function setChallengeResultAction(formData: FormData) {
   // Los objetos del premio caen solos en la bolsa del que ha ganado, y se
   // corrigen si el ganador cambia: ver lib/premios.ts
   await sincronizarPremios(id);
+  {
+    const nombre = await nombresDeJugadores(reto.participantAId, reto.participantBId);
+    const reto2 = `Reto ${nombre(reto.participantAId)} vs ${nombre(reto.participantBId)}`;
+    await registrar(
+      reto.competitionId,
+      "resultados",
+      reto.winnerId === winnerId
+        ? `${reto2}: cambia los detalles (premio, castigo, notas…)`
+        : winnerId
+          ? `${reto2}: gana ${nombre(winnerId)}${reto.winnerId ? ` (antes ganaba ${nombre(reto.winnerId)})` : ""}`
+          : `${reto2}: quita el resultado (ganaba ${nombre(reto.winnerId)})`,
+    );
+  }
 
   revalidatePath("/retos");
   revalidatePath("/puntos");
@@ -192,6 +206,10 @@ export async function deleteChallengeAction(formData: FormData) {
   }
 
   await prisma.challengeMatch.delete({ where: { id } });
+  {
+    const nombre = await nombresDeJugadores(reto.participantAId, reto.participantBId);
+    await registrar(reto.competitionId, "resultados", `Borra el reto ${nombre(reto.participantAId)} vs ${nombre(reto.participantBId)}`);
+  }
 
   revalidatePath("/retos");
   revalidatePath("/bolsa");

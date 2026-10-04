@@ -37,8 +37,9 @@ export function filtroDeLockesVisibles(
   user: CurrentUser | null,
 ): Prisma.CompetitionWhereInput {
   if (!user) return { id: { in: [] } };
-  // Un administrador global los ve todos: no hace falta filtrar nada
-  if (esCreador(user)) return {};
+  // Un administrador global los ve todos: no hace falta filtrar nada. Tampoco
+  // mientras ve la app como otro papel, que si no no podría mirar los de nadie
+  if (esCreador(user) || user.verComo) return {};
   return {
     OR: [
       { participants: { some: { userId: user.id } } },
@@ -56,6 +57,7 @@ export const getAcceso = cache(async (competitionId: string): Promise<Acceso> =>
   const user = await getCurrentUser();
   if (!user) return "NADA";
   if (esCreador(user)) return "ADMIN";
+  if (user.verComo === "espectador") return "ESPECTADOR";
 
   const [participante, espectador] = await Promise.all([
     prisma.participant.count({
@@ -65,7 +67,8 @@ export const getAcceso = cache(async (competitionId: string): Promise<Acceso> =>
   ]);
 
   if (participante) return "JUGADOR";
-  if (espectador) return "ESPECTADOR";
+  // Viendo como jugador un locke que no juega: lo mira, como un espectador
+  if (espectador || user.verComo) return "ESPECTADOR";
   return "NADA";
 });
 

@@ -7,11 +7,18 @@ import { Icono } from "@/components/icono";
 import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { Hoja } from "@/components/hoja";
 import { FORMA_DE_LA_CAJA, FondoDeCajaImagen } from "@/components/fondo-de-caja";
-import { FONDOS_DE_CAJA, fondoDeCaja, type FondoDeCaja } from "@/lib/fondos-de-caja";
+import {
+  FONDOS_DE_CAJA,
+  fondoDeCaja,
+  LARGO_DEL_NOMBRE_DE_CAJA,
+  nombreDeCaja,
+  type FondoDeCaja,
+} from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
 import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
+import { FichaDeCombate } from "./ficha-de-combate";
 import {
   HUECOS_POR_CAJA,
   colocar,
@@ -25,6 +32,7 @@ import type { OpcionDeEvolucion } from "@/lib/evoluciones";
 import {
   borrarDeLaCajaAction,
   cambiarFondoDeCajaAction,
+  nombrarCajaAction,
   cambiarMoteAction,
   cambiarShinyAction,
   darPorMuertoAction,
@@ -182,6 +190,33 @@ function Tablero({
   // De qué caja se está eligiendo el fondo: en lo ancho se ven dos
   const [eligiendoFondo, setEligiendoFondo] = useState<number | null>(null);
   const fondoDe = (caja: number) => fondosElegidos[caja] ?? fondoDeCaja(tablero.fondos, caja);
+  /** Igual con los nombres: el puesto se ve al momento */
+  const [nombresElegidos, setNombresElegidos] = useState<Record<number, string>>({});
+  useEffect(() => setNombresElegidos({}), [tablero]);
+  const [nombrando, setNombrando] = useState<number | null>(null);
+  const nombreDe = (caja: number) =>
+    nombresElegidos[caja] !== undefined
+      ? nombresElegidos[caja] || `Caja ${caja + 1}`
+      : nombreDeCaja(tablero.nombres, caja);
+
+  function nombrar(caja: number, nombre: string) {
+    setNombrando(null);
+    if (nombre.trim() === nombreDe(caja)) return;
+    setNombresElegidos((antes) => ({ ...antes, [caja]: nombre.trim() }));
+    empezar(async () => {
+      const respuesta = await sinConexion(() =>
+        nombrarCajaAction({ participantId: tablero.participantId, caja, nombre }),
+      );
+      if (respuesta.error) {
+        setNombresElegidos((antes) => {
+          const sin = { ...antes };
+          delete sin[caja];
+          return sin;
+        });
+        onAviso({ tipo: "error", texto: respuesta.error });
+      }
+    });
+  }
   // La que se ve al lado en una pantalla ancha: la siguiente, y de la última, la primera
   const segunda = (paginaVisible + 1) % cajas;
 
@@ -266,9 +301,40 @@ function Tablero({
     return (
       <div key={n} style={{ order: orden }} className={cx("flex min-w-0 flex-1 flex-col", className)}>
         <div className="mb-1.5 flex items-center gap-2 px-1">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            Caja {n + 1} <span className="text-slate-600">de {cajas}</span>
-          </p>
+          {nombrando === n ? (
+            <input
+              autoFocus
+              className="input h-7 min-w-0 flex-1 px-2 py-0 text-xs"
+              defaultValue={nombreDe(n)}
+              maxLength={LARGO_DEL_NOMBRE_DE_CAJA}
+              aria-label={`Nombre de la caja ${n + 1}`}
+              placeholder={`Caja ${n + 1}`}
+              onFocus={(evento) => evento.currentTarget.select()}
+              onBlur={(evento) => nombrar(n, evento.currentTarget.value)}
+              onKeyDown={(evento) => {
+                if (evento.key === "Enter") evento.currentTarget.blur();
+                if (evento.key === "Escape") setNombrando(null);
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              disabled={!tablero.editable}
+              onClick={() => setNombrando(n)}
+              title={tablero.editable ? "Ponerle nombre a esta caja" : undefined}
+              className="group/nombre flex min-w-0 items-baseline gap-1.5 rounded text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 enabled:hover:text-slate-300"
+            >
+              <span className="truncate">{nombreDe(n)}</span>
+              <span className="shrink-0 font-normal normal-case tracking-normal text-slate-600">
+                {n + 1} de {cajas}
+              </span>
+              {tablero.editable ? (
+                <span aria-hidden className="shrink-0 text-slate-600 opacity-60 group-hover/nombre:opacity-100">
+                  ✎
+                </span>
+              ) : null}
+            </button>
+          )}
           {tablero.editable ? (
             <button
               type="button"
@@ -1142,6 +1208,15 @@ function Ficha({
           {pokemon.muerta && pokemon.causa ? <Fila etiqueta="Causa" valor={pokemon.causa} /> : null}
         </dl>
 
+        <FichaDeCombate
+          key={JSON.stringify(pokemon.combate)}
+          captureId={pokemon.id}
+          especie={pokemon.species}
+          ficha={pokemon.combate}
+          editable={editable}
+          onAviso={onAviso}
+        />
+
         <HistoriaDelPokemon
           // Se vuelve a pedir si evoluciona o se vuelve shiny con la ficha abierta
           key={`${pokemon.species}-${pokemon.shiny}`}
@@ -1290,14 +1365,14 @@ function Ficha({
                         { captureId: pokemon.id, lugar: "caja", hueco: "", caja: String(caja) },
                         `${pokemon.nickname ?? pokemon.species} → caja ${caja + 1}`,
                       ),
-                    { ok: `A la caja ${caja + 1}.` },
+                    { ok: `A ${nombreDeCaja(dueno.nombres, caja)}.` },
                   );
                 }}
               >
                 <option value="">Mover a la caja…</option>
                 {Array.from({ length: cajasDelDueno }, (_, caja) => (
                   <option key={caja} value={caja} disabled={caja === cajaActual}>
-                    Caja {caja + 1}
+                    {nombreDeCaja(dueno.nombres, caja)}
                     {caja === cajaActual ? " (está aquí)" : ""}
                   </option>
                 ))}
