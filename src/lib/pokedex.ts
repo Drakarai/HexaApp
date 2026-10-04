@@ -86,16 +86,20 @@ export function spriteCandidates(
   return kind === "box" ? [home, artwork, basic] : [artwork, home, basic];
 }
 
-/** El último pokémon que tiene sprite animado de Blanco y Negro: Genesect */
-export const ULTIMO_ANIMADO_DE_QUINTA = 649;
-
 /**
- * El sprite **animado de Blanco y Negro**, para la ficha grande. Solo existe
- * hasta Genesect (#649) y sin formas aparte: a partir de la 6ª generación los
- * juegos pasaron a modelos 3D y al grupo no le gustan, así que para esos se
- * queda el sprite de siempre en vez de buscar otro. Null si no tiene.
+ * Los sprites **al estilo de Blanco y Negro** para la ficha grande, en el
+ * orden en que se prueban: el animado y, si no hay, el quieto.
+ *
+ * Hasta Genesect (#649) son los de los juegos; del 650 en adelante, los que
+ * hizo la comunidad de Smogon con el mismo estilo, que PokéAPI sirve en la
+ * misma carpeta. Quietos los hay de todos; animados, solo de algunos (y de
+ * algunas formas, como Rotom Lavado). Así ninguno sale con el modelo 3D de los
+ * juegos de ahora, que al grupo no le gusta: si no hay ninguno de estos, quien
+ * los pinta se queda con el sprite de siempre.
  */
-export function spriteAnimadoDeQuinta(pokemonId: number | null | undefined, shiny: boolean) {
-  if (!pokemonId || pokemonId > ULTIMO_ANIMADO_DE_QUINTA) return null;
-  return `${SPRITES}/versions/generation-v/black-white/animated/${shiny ? "shiny/" : ""}${pokemonId}.gif`;
+export function spritesDeQuinta(pokemonId: number | null | undefined, shiny: boolean) {
+  if (!pokemonId) return [];
+  const carpeta = `${SPRITES}/versions/generation-v/black-white`;
+  const variocolor = shiny ? "shiny/" : "";
+  return [`${carpeta}/animated/${variocolor}${pokemonId}.gif`, `${carpeta}/${variocolor}${pokemonId}.png`];
 }

@@ -20,7 +20,7 @@ import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 import { Pestanas } from "@/components/pestanas";
 import { COLOR_DE_TIPO } from "@/lib/colores-de-tipo";
-import { spriteAnimadoDeQuinta } from "@/lib/pokedex";
+import { spritesDeQuinta } from "@/lib/pokedex";
 import { FichaDeCombate } from "./ficha-de-combate";
 import { ConFichaAlPasar } from "./ficha-al-pasar";
 import {
@@ -703,21 +703,23 @@ function FlechaDeCaja({
 }
 
 /**
- * En la ficha grande, el sprite animado de Blanco y Negro si lo tiene (hasta
- * el #649); si no, o si no carga, el de siempre. En la caja no: treinta
- * moviéndose a la vez serían una feria.
+ * En la ficha grande, el sprite al estilo de Blanco y Negro: animado si lo hay,
+ * quieto si no (ver `spritesDeQuinta`), y si tampoco carga, el de siempre. En
+ * la caja no: treinta moviéndose a la vez serían una feria.
  */
 function SpriteAnimado({ pokemon, className }: { pokemon: PokemonDelTablero; className?: string }) {
-  const [fallo, setFallo] = useState(false);
-  const animado = fallo ? null : spriteAnimadoDeQuinta(pokemon.pokemonId, pokemon.shiny);
-  if (!animado) return <Sprite pokemon={pokemon} className={className} />;
+  const candidatas = spritesDeQuinta(pokemon.pokemonId, pokemon.shiny);
+  const [cual, setCual] = useState(0);
+  const src = candidatas[cual];
+  if (!src) return <Sprite pokemon={pokemon} className={className} />;
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={animado}
+      key={src}
+      src={src}
       alt={pokemon.species}
       draggable={false}
-      onError={() => setFallo(true)}
+      onError={() => setCual((antes) => antes + 1)}
       className={cx("pointer-events-none object-contain [image-rendering:pixelated]", className)}
     />
   );
