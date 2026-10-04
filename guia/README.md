@@ -30,7 +30,9 @@ createdb hexaapp_guia    # o CREATE DATABASE desde psql
 export DATABASE_URL=postgresql://…/hexaapp_guia DIRECT_URL=postgresql://…/hexaapp_guia
 npx prisma db push --skip-generate
 npm run db:seed          # los datos de ejemplo del Hexalocke 2
-npm run build && npm run start
+npm run build
+# Con la repetición de Showdown falsa, para la foto de los equipos de la jornada
+NODE_OPTIONS="--require ./guia/showdown-falso.cjs" npm run start
 
 node guia/datos.mjs      # 1. prepara la partida de ejemplo
 pg_dump -Fc "$DATABASE_URL" -f guia-datos.dump   # por si hay que repetir
@@ -54,7 +56,9 @@ salen las flechas de la clasificación), y al final **dos lockes de antes** (uno
 de seis con alguien sin cuenta y un dualocke, para las pestañas del palmarés;
 están en `datos-palmares.mjs`, que también se puede lanzar suelto) y, desde
 `datos-soullink.mjs`, el equipo de Draka en Equipo y PC y un **Soul Link de
-Johto** con Héctor (vínculos, dos evoluciones y una baja en pareja). Como el Soul
+Johto** con Héctor (vínculos, dos evoluciones y una baja en pareja); y, desde
+`datos-equipo.mjs`, una caja con nombre («Reservas»), la ficha completa de
+Sentret pegada de Showdown y el equipo de ahora en el planificador. Como el Soul
 Link queda como el locke más nuevo, `capturas.mjs` elige a mano el locke de
 cada foto (`aLocke`). Repetirlo
 lo duplicaría todo. Si algo
@@ -65,11 +69,21 @@ bien la primera vez**: enseñan la regla cambiada tal y como la ve Héctor antes
 mirarla, y al sacarlas queda vista. Para repetirlas, restaura la copia que
 hiciste después de `datos.mjs` (`pg_restore --clean --if-exists -d …`).
 
+`showdown-falso.cjs` contesta en lugar de replay.pokemonshowdown.com: la foto
+de «Sacar los equipos de la repetición» no depende de salir a internet. Y los
+sprites pequeños y los dibujos de objetos, que la app carga de GitHub en el
+navegador, `capturas.mjs` los pide con Node: detrás de un proxy con su propio
+certificado, el Chromium de las fotos no se fiaba y salían en blanco.
+
 Los tres usan Playwright con el Chromium del sistema. Si el tuyo está en otro
 sitio, `PLAYWRIGHT_CHROMIUM=/ruta/al/chromium node guia/…`. Lo mismo con
 `GUIA_URL` si la aplicación no está en `localhost:3000`.
 
 ## Cómo se cambia el texto
+
+**Las guías cuentan la aplicación tal y como es**, sin marcar nada como
+nuevo: ni página de novedades ni etiquetas. Lo que cambia se reescribe en su
+página, o se añade una si de verdad hace falta.
 
 Cada guía es una hoja por `<section class="pagina">`, con el tamaño de un A4
 y **lo que sobra se recorta**. Por eso `pdf.mjs` avisa al final de las páginas
@@ -87,7 +101,6 @@ Las clases que se usan:
 | `.aviso` / `.aviso.ojo` | el recuadro de nota y el de ojo con esto |
 | `.tarjetas` / `.rejilla` | tarjetas en fila, o de dos en dos |
 | `.chuleta` | la lista de iconos con su significado |
-| `.indice .nuevo` | una entrada del índice con la marca de "Nuevo" |
 
 **Los iconos** se escriben `<i data-i="Crown" class="oro"></i>`: el nombre es
 el del icono en [lucide](https://lucide.dev/icons), el mismo que usa la app, y

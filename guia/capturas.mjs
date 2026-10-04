@@ -42,11 +42,33 @@ mkdirSync(destino, { recursive: true });
 
 const navegador = await chromium.launch({ executablePath: chromiumDelSistema() });
 
+/**
+ * Los sprites pequeños y los dibujos de los objetos se cargan de GitHub en el
+ * navegador. Aquí los pide Node y se los pasa: en las máquinas que salen a
+ * internet por un proxy con su propio certificado, el Chromium de las fotos no
+ * se fía de él y salían en blanco, y Node sí tiene ese certificado configurado.
+ */
+async function imagenesDesdeNode(contexto) {
+  await contexto.route(/^https:\/\/raw\.githubusercontent\.com\//, async (ruta) => {
+    try {
+      const respuesta = await fetch(ruta.request().url());
+      await ruta.fulfill({
+        status: respuesta.status,
+        headers: { "content-type": respuesta.headers.get("content-type") ?? "image/png" },
+        body: Buffer.from(await respuesta.arrayBuffer()),
+      });
+    } catch {
+      await ruta.abort();
+    }
+  });
+}
+
 async function abrirMovil() {
   const contexto = await navegador.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,
   });
+  await imagenesDesdeNode(contexto);
   const pagina = await contexto.newPage();
   pagina.on("dialog", (aviso) => aviso.accept());
   return { contexto, pagina };
@@ -88,6 +110,12 @@ async function arriba(p, elemento, margen = 80) {
     window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - m);
   }, margen);
   await p.waitForTimeout(500);
+}
+
+/** Cierra la ficha que haya abierta, para que no salga en la foto siguiente */
+async function p_cerrar(p) {
+  await p.keyboard.press("Escape");
+  await p.waitForTimeout(400);
 }
 
 async function foto(pagina, nombre, ruta, prepara) {
@@ -186,9 +214,17 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await foto(pagina, "bolsa", "/bolsa");
   await foto(pagina, "notas", "/notas");
-  await foto(pagina, "tipos", "/notas", async (p) => {
-    await p.locator("summary", { hasText: "Cobertura de tipos" }).first().click();
-    await p.waitForTimeout(900);
+  // El planificador: se llega desde Equipo y PC, que lo abre ya desplegado
+  await foto(pagina, "tipos", "/notas?planificar=1", async (p) => {
+    await arriba(p, p.locator("#cobertura summary").first(), 70);
+  });
+  await foto(pagina, "plan-elegir", "/notas?planificar=1", async (p) => {
+    await p.locator("#cobertura").getByRole("button", { name: "Añadir" }).first().click();
+    await p.waitForTimeout(1200);
+  });
+  await p_cerrar(pagina);
+  await foto(pagina, "plan-ataque", "/notas?planificar=1", async (p) => {
+    await arriba(p, p.locator("#cobertura p", { hasText: "A qué le pegas fuerte" }).first(), 90);
   });
   await foto(pagina, "actividad", "/actividad");
   await foto(pagina, "perfil", "/perfil");
@@ -245,6 +281,23 @@ async function foto(pagina, nombre, ruta, prepara) {
       await arriba(p, p.locator('select[name="winnerId"]').first(), 220);
     }
   });
+  // Los equipos de un combate sacados de su repetición. Showdown lo contesta
+  // guia/showdown-falso.cjs, que hay que cargar al arrancar (ver el README)
+  await foto(pagina, "repeticion", "/jornadas", async (p) => {
+    const jornada = p.locator("section.card", { hasText: "Jornada 3" }).first();
+    await jornada.getByRole("button", { name: /Apuntar equipos/ }).nth(2).click();
+    await p.waitForTimeout(900);
+    const hoja = p.getByRole("dialog");
+    await hoja.locator("summary", { hasText: "Sacar los equipos de la repetición" }).click();
+    await hoja.locator('input[placeholder^="https://replay"]').fill("https://replay.pokemonshowdown.com/gen2ou-1");
+    await hoja.getByRole("button", { name: "Leer" }).click();
+    await p.waitForTimeout(2000);
+    await hoja.locator("summary", { hasText: "Sacar los equipos de la repetición" }).evaluate((el) =>
+      el.scrollIntoView({ block: "start" }),
+    );
+    await p.waitForTimeout(500);
+  });
+  await p_cerrar(pagina);
   await foto(pagina, "jugadores", "/competiciones");
   // El aspecto se elige en el perfil, más abajo de lo que cabe en la pantalla
   await foto(pagina, "aspecto", "/perfil", async (p) => {
@@ -320,6 +373,7 @@ async function foto(pagina, nombre, ruta, prepara) {
     viewport: { width: 980, height: 1000 },
     deviceScaleFactor: 2,
   });
+  await imagenesDesdeNode(contexto);
   const pagina = await contexto.newPage();
   pagina.on("dialog", (aviso) => aviso.accept());
   await entrar(pagina, "draka");

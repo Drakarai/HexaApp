@@ -19,6 +19,7 @@ import { fileURLToPath } from "node:url";
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
 import { apuntarLockesDeAntes } from "./datos-palmares.mjs";
 import { montarSoulLink } from "./datos-soullink.mjs";
+import { montarEquipo } from "./datos-equipo.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -387,6 +388,7 @@ await apuntarLockesDeAntes(p);
 
 // --- El equipo de Draka en Equipo y PC y un Soul Link con Héctor
 await montarSoulLink(p);
+await montarEquipo(p);
 
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");
