@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
-import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { alMejorDeDeLaJornada, perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 /**
  * El desempate de una jornada que es una serie al mejor de tres (el dualocke).
@@ -21,6 +21,7 @@ export async function ajustarDesempate(matchdayId: string) {
     where: { id: matchdayId },
     select: {
       id: true,
+      alMejorDe: true,
       competition: { select: { maxPlayers: true } },
       matches: {
         orderBy: { position: "asc" },
@@ -36,8 +37,9 @@ export async function ajustarDesempate(matchdayId: string) {
   });
   if (!jornada) return;
 
-  const alMejorDe = perfilDeLocke(jornada.competition.maxPlayers).serieAlMejorDe;
-  if (!alMejorDe) return;
+  // La de esta jornada: en un dualocke se elige entre un combate y al mejor de tres
+  const alMejorDe = alMejorDeDeLaJornada(jornada.alMejorDe, perfilDeLocke(jornada.competition.maxPlayers));
+  if (alMejorDe <= 1) return;
 
   const { borrar, crear } = queHacerConElDesempate(jornada.matches, alMejorDe);
 

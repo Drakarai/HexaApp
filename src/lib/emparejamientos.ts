@@ -69,6 +69,8 @@ export function emparejamientosDeJornada(
   perfil: PerfilDeLocke,
   jugadores: string[],
   numero: number,
+  /** La serie de esta jornada, si se eligió (ver `alMejorDeDeLaJornada`) */
+  alMejorDe: number = perfil.serieAlMejorDe ?? 1,
 ): Ronda {
   const rondas = rondasDeLiguilla(jugadores);
   if (!rondas.length) return { pares: [], descansa: null };
@@ -82,9 +84,7 @@ export function emparejamientosDeJornada(
      * mitad de las veces no se juega.
      */
     const pares = rondas.flatMap((ronda) => ronda.pares);
-    const veces = perfil.serieAlMejorDe
-      ? Math.ceil(perfil.serieAlMejorDe / 2)
-      : 1;
+    const veces = Math.ceil(alMejorDe / 2);
     return {
       pares: Array.from({ length: veces }, () => pares).flat(),
       descansa: null,

@@ -5,7 +5,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { ordenDelHall } from "@/lib/hall";
-import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { alMejorDeDeLaJornada, jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { coberturaOfensiva, debilidadesDe, multiplicador, tiposDePokemon, tiposDeGeneracion, TIPOS } from "@/lib/tipos";
 import { fila } from "./ayudas";
 
@@ -57,6 +57,21 @@ describe("perfiles de locke", () => {
   test("tres o más se gana por puntos", () => assert.equal(perfilDeLocke(6).victoria, "puntos"));
   test("la mayoría: 4 de 6, 4 de 7, 3 de 5", () => {
     assert.deepEqual([6, 7, 5].map(jornadasParaGanar), [4, 4, 3]);
+  });
+});
+
+describe("la serie de cada jornada", () => {
+  test("en el dualocke, la elegida; sin elegir, al mejor de tres como siempre", () => {
+    const dual = perfilDeLocke(2);
+    assert.equal(alMejorDeDeLaJornada(1, dual), 1);
+    assert.equal(alMejorDeDeLaJornada(3, dual), 3);
+    assert.equal(alMejorDeDeLaJornada(null, dual), 3);
+    // Algo raro en la base de datos no la rompe: la de siempre
+    assert.equal(alMejorDeDeLaJornada(7, dual), 3);
+  });
+  test("con más gente no hay series: un combate", () => {
+    assert.equal(alMejorDeDeLaJornada(3, perfilDeLocke(6)), 1);
+    assert.equal(alMejorDeDeLaJornada(null, perfilDeLocke(3)), 1);
   });
 });
 

@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
-import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { alMejorDeDeLaJornada, perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { ajustarDesempate } from "@/lib/series";
 import { borrarJornadaALaPapelera, restaurarJornada } from "@/lib/papelera";
 import { esRoyale, formatoDeCombate } from "@/lib/formatos-de-combate";
@@ -51,6 +51,15 @@ export async function createMatchdayAction(
   }
 
   const pointsForWin = Number(formData.get("pointsForWin") ?? 1);
+  // En un dualocke, un combate o al mejor de tres; en los demás no hay series
+  const delLocke = await prisma.competition.findUnique({
+    where: { id: competitionId },
+    select: { maxPlayers: true },
+  });
+  const perfil = perfilDeLocke(delLocke?.maxPlayers ?? enPie.length);
+  const alMejorDe = perfil.serieAlMejorDe
+    ? alMejorDeDeLaJornada(Number(formData.get("alMejorDe") ?? 0), perfil)
+    : null;
   // El formato se valida contra la lista: si llega uno raro, singles
   const formato = formatoDeCombate(String(formData.get("formato") ?? "")).id;
   const last = await prisma.matchday.findFirst({
@@ -68,6 +77,7 @@ export async function createMatchdayAction(
       pointsForWin: Number.isFinite(pointsForWin) ? Math.trunc(pointsForWin) : 1,
       formato,
       condiciones: String(formData.get("condiciones") ?? "").trim() || null,
+      alMejorDe,
       position,
     },
   });
@@ -109,7 +119,7 @@ export async function createMatchdayAction(
   }
 
   if (formData.get("emparejar") === "on") {
-    const resultado = await emparejarJornada(competitionId, matchday.id, position);
+    const resultado = await emparejarJornada(competitionId, matchday.id, position, alMejorDe);
     propuestos = resultado.propuestos;
     descansa = resultado.descansa;
   }
@@ -134,6 +144,7 @@ async function emparejarJornada(
   competitionId: string,
   matchdayId: string,
   position: number,
+  alMejorDe: number | null,
 ) {
   const competition = await prisma.competition.findUnique({
     where: { id: competitionId },
@@ -152,6 +163,7 @@ async function emparejarJornada(
     perfil,
     jugadores.map((jugador) => jugador.id),
     position,
+    alMejorDeDeLaJornada(alMejorDe, perfil),
   );
   if (!ronda.pares.length) return { propuestos: 0, descansa: null };
 
@@ -546,6 +558,88 @@ export async function permitirCombateAction(formData: FormData) {
   revalidatePath("/puntos");
   revalidatePath("/jugador", "layout");
   revalidatePath("/");
+}
+
+/**
+ * Cambiar una jornada de dualocke entre **un combate** y **al mejor de tres**.
+ * Solo mientras no se haya escrito nada en ella —ni un resultado, ni un
+ * equipo, ni una nota—: a mitad de serie cambiar las reglas dejaría combates
+ * jugados sin sentido o sin contar. Ajusta los combates de la pareja: uno
+ * solo, o los dos con los que nace una serie (el tercero llega si hace falta).
+ */
+export async function cambiarSerieDeJornadaAction(formData: FormData): Promise<FormState> {
+  const matchdayId = String(formData.get("matchdayId") ?? "");
+  const jornada = await prisma.matchday.findUnique({
+    where: { id: matchdayId },
+    select: {
+      id: true,
+      label: true,
+      competitionId: true,
+      alMejorDe: true,
+      competition: { select: { maxPlayers: true } },
+      matches: {
+        orderBy: { position: "asc" },
+        select: {
+          id: true,
+          participantAId: true,
+          participantBId: true,
+          winnerId: true,
+          pokemonDiff: true,
+          replayUrl: true,
+          notes: true,
+          playedAt: true,
+          porRetirada: true,
+          _count: { select: { team: true } },
+        },
+      },
+    },
+  });
+  if (!jornada) return { error: "Esa jornada ya no existe." };
+  try {
+    await requireCompetitionManager(jornada.competitionId);
+  } catch (error) {
+    return { error: (error as Error).message };
+  }
+  const perfil = perfilDeLocke(jornada.competition.maxPlayers);
+  if (!perfil.serieAlMejorDe) return { error: "Solo las jornadas de un dualocke pueden ser al mejor de tres." };
+
+  const pedido = alMejorDeDeLaJornada(Number(formData.get("alMejorDe") ?? 0), perfil);
+  const ahora = alMejorDeDeLaJornada(jornada.alMejorDe, perfil);
+  if (pedido === ahora) return { success: "Ya estaba así." };
+
+  const escrita = jornada.matches.some(
+    (m) =>
+      m.winnerId || m.pokemonDiff !== null || m.replayUrl || m.notes || m.playedAt || m.porRetirada || m._count.team,
+  );
+  if (escrita) {
+    return { error: "Ya hay algo apuntado en esta jornada: el formato ya no se puede cambiar." };
+  }
+
+  const primero = jornada.matches[0];
+  if (primero) {
+    if (pedido === 1) {
+      // Un combate: sobra el resto de la serie, que está sin jugar
+      await prisma.match.deleteMany({ where: { id: { in: jornada.matches.slice(1).map((m) => m.id) } } });
+    } else if (jornada.matches.length < Math.ceil(pedido / 2)) {
+      await prisma.match.createMany({
+        data: Array.from({ length: Math.ceil(pedido / 2) - jornada.matches.length }, (_, i) => ({
+          matchdayId: jornada.id,
+          participantAId: primero.participantAId,
+          participantBId: primero.participantBId,
+          position: jornada.matches.length + i,
+        })),
+      });
+    }
+  }
+  await prisma.matchday.update({ where: { id: jornada.id }, data: { alMejorDe: pedido } });
+  await registrar(
+    jornada.competitionId,
+    "jornadas",
+    `Pasa la ${jornada.label} a ${pedido === 1 ? "un combate" : `al mejor de ${pedido}`}`,
+  );
+  revalidatePath("/jornadas");
+  revalidatePath("/puntos");
+  return { success: pedido === 1 ? "Ahora es un solo combate." : `Ahora es al mejor de ${pedido}.` };
 }
 
 export async function deleteMatchAction(formData: FormData) {

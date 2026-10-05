@@ -1111,6 +1111,14 @@ model Matchday {
    * hay lista que las cubra.
    */
   condiciones   String?
+  /**
+   * En un dualocke, si la jornada es **un combate** (1) o **una serie al mejor
+   * de tres** (3), como las llaves de la final: el mismo equipo para toda la
+   * serie. Se cambia mientras no se haya escrito nada en la jornada. Vacío es
+   * «lo de siempre de su locke» (ver `alMejorDeDeLaJornada`): así las jornadas
+   * de antes siguen siendo al mejor de tres sin tocarlas.
+   */
+  alMejorDe     Int?
 
   /**
    * Por qué el MVP es el MVP. Lo escribe un administrador; el pokémon en sí no

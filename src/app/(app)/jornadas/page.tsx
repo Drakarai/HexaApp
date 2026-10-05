@@ -15,8 +15,8 @@ import { firmasDeEquiposDeJornadas } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
-import { perfilDeLocke } from "@/lib/perfiles-de-locke";
-import { getMarcador } from "@/lib/marcador";
+import { alMejorDeDeLaJornada, perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { getMarcador, ganadorDeLaJornada } from "@/lib/marcador";
 import { BolaDePartido } from "@/components/marcador-dual";
 import {
   Avatar,
@@ -30,7 +30,7 @@ import {
   deleteMatchdayAction,
   permitirCombateAction,
 } from "@/app/actions/matchdays";
-import { NewMatchdayForm, AddMatchForm, MatchResultForm } from "./matchday-forms";
+import { NewMatchdayForm, AddMatchForm, MatchResultForm, ElegirSerie } from "./matchday-forms";
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
@@ -134,6 +134,9 @@ export default async function MatchdaysPage() {
     ...participants.filter((p) => p.retiredAt).map(comoOpcion),
   ];
 
+  // El dualocke: cada jornada es un combate o una serie al mejor de tres
+  const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
+
   /** Quiénes están fuera, para saber en qué combates cabe la excepción */
   const estaFuera = new Set(
     participants.filter((p) => p.retiredAt).map((p) => p.id),
@@ -185,6 +188,28 @@ export default async function MatchdaysPage() {
             const temática = formato.id !== "singles";
 
             /**
+             * Una serie al mejor de tres, como las llaves de la final: un
+             * equipo por jugador para toda la serie y los combates debajo.
+             * Solo si todos los combates son de la misma pareja; si alguien ha
+             * montado otra cosa a mano, se pintan como siempre.
+             */
+            const alMejorDe = alMejorDeDeLaJornada(matchday.alMejorDe, perfil);
+            const primero = matchday.matches[0];
+            const esSerie =
+              alMejorDe > 1 &&
+              !formato.multiple &&
+              Boolean(primero) &&
+              matchday.matches.every(
+                (m) =>
+                  (m.participantAId === primero.participantAId && m.participantBId === primero.participantBId) ||
+                  (m.participantAId === primero.participantBId && m.participantBId === primero.participantAId),
+              );
+            // Con algo apuntado, la jornada ya no cambia de formato
+            const escrita = matchday.matches.some(
+              (m) => m.winnerId || m.pokemonDiff !== null || m.replayUrl || m.notes || m.playedAt || m.porRetirada || m.team.length,
+            );
+
+            /**
              * Terminada. En una jornada de royales no hay combates que contar:
              * lo que la cierra es que todos tengan sus puestos repartidos.
              */
@@ -203,7 +228,12 @@ export default async function MatchdaysPage() {
                     .filter((fila) => fila.puesto === 1)
                     .map((fila) => fila.participant),
                 )
-              : matchday.matches
+              : esSerie
+                ? // De una serie, quien se la lleva, no quién ganó cada combate
+                  [ganadorDeLaJornada(matchday.matches).ganadorId]
+                    .filter((id) => id)
+                    .map((id) => (id === primero!.participantAId ? primero!.participantA : primero!.participantB))
+                : matchday.matches
                   .filter((match) => match.winnerId)
                   .map((match) =>
                     match.winnerId === match.participantAId
@@ -267,6 +297,16 @@ export default async function MatchdaysPage() {
                         <p className="mt-1 text-xs text-amber-200/80">
                           <Icono emoji="📋" /> {matchday.condiciones}
                         </p>
+                      ) : null}
+                      {/* En un dualocke: un combate o al mejor de tres, mientras no haya nada apuntado */}
+                      {perfil.serieAlMejorDe && !formato.multiple ? (
+                        <div className="mt-1.5">
+                          {canManage && !soloLectura(competition, canManage) ? (
+                            <ElegirSerie matchdayId={matchday.id} alMejorDe={alMejorDe} bloqueada={Boolean(escrita)} />
+                          ) : (
+                            <span className="chip">{alMejorDe === 1 ? "Un combate" : `Al mejor de ${alMejorDe}`}</span>
+                          )}
+                        </div>
                       ) : null}
                     </div>
                     {mvpState ? (
@@ -413,6 +453,16 @@ export default async function MatchdaysPage() {
                     ) : null
                   ) : matchday.matches.length === 0 ? (
                     <p className="muted">Sin emparejamientos todavía.</p>
+                  ) : esSerie ? (
+                    <SerieDeJornada
+                      combates={matchday.matches}
+                      alMejorDe={alMejorDe}
+                      canManage={canManage}
+                      sprites={sprites}
+                      avatar={(id) => avatarByParticipant.get(id) ?? null}
+                      esperando={esperando}
+                      formato={matchday.formato}
+                    />
                   ) : (
                     // En pantalla ancha, de dos en dos: a una columna el combate
                     // ocupaba la mitad y el resto era aire
@@ -590,7 +640,8 @@ export default async function MatchdaysPage() {
                     </ul>
                   )}
 
-                  {canManage && !formato.multiple && participantOptions.length >= 2 ? (
+                  {/* En una serie los combates los pone ella (el tercero, si hace falta) */}
+                  {canManage && !formato.multiple && !esSerie && participantOptions.length >= 2 ? (
                     <div className="mt-4 border-t border-white/10 pt-4">
                       <AddMatchForm
                         matchdayId={matchday.id}
@@ -608,7 +659,7 @@ export default async function MatchdaysPage() {
 
       {canManage ? (
         <div className="mt-6">
-          <NewMatchdayForm competitionId={competition.id} />
+          <NewMatchdayForm competitionId={competition.id} conSerie={Boolean(perfil.serieAlMejorDe)} />
         </div>
       ) : null}
 
@@ -627,6 +678,187 @@ export default async function MatchdaysPage() {
         />
       ) : null}
     </>
+  );
+}
+
+type CombateDeLaSerie = {
+  id: string;
+  participantAId: string;
+  participantBId: string;
+  participantA: { id: string; displayName: string; color: string };
+  participantB: { id: string; displayName: string; color: string };
+  winnerId: string | null;
+  pokemonDiff: number | null;
+  replayUrl: string | null;
+  playedAt: Date | null;
+  notes: string | null;
+  porRetirada: boolean;
+  formato: string | null;
+  team: { id: string; participantId: string; species: string; nickname: string | null }[];
+};
+
+/**
+ * Una jornada de dualocke al mejor de tres, como una llave de la final: los
+ * dos con cómo va la serie, **un equipo por jugador para toda la serie** y sus
+ * combates debajo. El equipo cuelga del primer combate; los demás solo llevan
+ * su resultado. (Las series de antes de esto tenían un equipo por combate: si
+ * un combate posterior trae el suyo, se enseña con él.)
+ */
+function SerieDeJornada({
+  combates,
+  alMejorDe,
+  canManage,
+  sprites,
+  avatar,
+  esperando,
+  formato,
+}: {
+  combates: CombateDeLaSerie[];
+  alMejorDe: number;
+  canManage: boolean;
+  sprites: (id: string) => string | null;
+  avatar: (participantId: string) => string | null;
+  esperando: Set<string>;
+  formato: string;
+}) {
+  const primero = combates[0];
+  const { ganadorId, porJugador } = ganadorDeLaJornada(combates);
+  const lados = [primero.participantA, primero.participantB];
+  const deFormato = formatoDeCombate(primero.formato ?? formato);
+  // Para sacar el equipo de una repetición vale la de cualquier combate de la serie
+  const repeticion = combates.find((c) => c.replayUrl)?.replayUrl ?? null;
+
+  return (
+    <div
+      className={cx(
+        "rounded-xl border p-3",
+        ganadorId ? "border-emerald-500/25 bg-emerald-500/[0.04]" : "border-white/10 bg-white/[0.03]",
+      )}
+    >
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <p className="rotulo">La serie</p>
+        <p className="shrink-0 text-[11px] text-slate-500">Al mejor de {alMejorDe} · mismo equipo</p>
+      </div>
+      <div className="space-y-1.5">
+        {lados.map((lado) => {
+          const gano = ganadorId === lado.id;
+          return (
+            <div
+              key={lado.id}
+              className={cx(
+                "flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm",
+                gano
+                  ? "bg-emerald-500/15 font-semibold text-emerald-100 ring-1 ring-emerald-500/30"
+                  : ganadorId
+                    ? "text-slate-500 opacity-70"
+                    : "text-slate-200",
+              )}
+            >
+              <Avatar
+                name={lado.displayName}
+                color={lado.color}
+                image={avatar(lado.id)}
+                size={22}
+                participantId={lado.id}
+              />
+              <span className="min-w-0 flex-1 truncate">{lado.displayName}</span>
+              {gano ? <span aria-hidden><Icono emoji="👑" /></span> : null}
+              <span className={cx("w-5 shrink-0 text-center text-base font-black", gano ? "text-emerald-200" : "text-slate-400")}>
+                {porJugador[lado.id] ?? 0}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <MatchTeams
+        matchId={primero.id}
+        canManage={canManage}
+        repeticion={repeticion}
+        maximo={deFormato.equipo}
+        aLaVez={deFormato.aLaVez}
+        sides={[
+          teamSide(primero.participantA, primero.team, sprites, avatar(primero.participantAId)),
+          teamSide(primero.participantB, primero.team, sprites, avatar(primero.participantBId)),
+        ]}
+      />
+
+      <ol className="mt-3 space-y-1.5 border-t border-white/10 pt-3">
+        {combates.map((combate, indice) => {
+          const ganador =
+            combate.winnerId === combate.participantAId
+              ? combate.participantA
+              : combate.winnerId === combate.participantBId
+                ? combate.participantB
+                : null;
+          return (
+            <li key={combate.id} className={cx("rounded-lg px-2 py-1.5", ganador ? "bg-white/[0.04]" : "bg-white/[0.02]")}>
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+                <span className="w-4 shrink-0 font-bold text-slate-600">{indice + 1}</span>
+                <span className="min-w-24 flex-1 truncate text-slate-300">
+                  {ganador ? (
+                    <>
+                      <span aria-hidden><Icono emoji="👑" /></span> {ganador.displayName}
+                    </>
+                  ) : esperando.has(combate.id) ? (
+                    <span className="italic text-amber-200/80">Por retirada, al acabar la jornada</span>
+                  ) : (
+                    <span className="italic text-slate-500">Sin jugar</span>
+                  )}
+                </span>
+                {combate.porRetirada ? (
+                  <span className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/15 px-1.5 py-0.5 font-semibold text-amber-200">
+                    <Icono emoji="🏳️" /> Por retirada
+                  </span>
+                ) : null}
+                {combate.pokemonDiff !== null ? <span className="shrink-0 text-slate-500">dif. {combate.pokemonDiff}</span> : null}
+                {combate.playedAt ? <span className="shrink-0 text-slate-500">{formatDate(combate.playedAt)}</span> : null}
+                <ReplayLink url={combate.replayUrl} />
+                {canManage && indice > 0 ? (
+                  <form action={deleteMatchAction}>
+                    <input type="hidden" name="matchId" value={combate.id} />
+                    <ConfirmSubmit message={`¿Quitar el ${indice + 1}º combate de la serie?`}>✕</ConfirmSubmit>
+                  </form>
+                ) : null}
+              </div>
+              {combate.notes ? <p className="mt-0.5 pl-6 text-[11px] text-slate-500">{combate.notes}</p> : null}
+              {/* Una serie de antes, con su equipo en este combate */}
+              {indice > 0 && combate.team.length ? (
+                <MatchTeams
+                  matchId={combate.id}
+                  canManage={false}
+                  repeticion={combate.replayUrl}
+                  maximo={deFormato.equipo}
+                  aLaVez={deFormato.aLaVez}
+                  sides={[
+                    teamSide(combate.participantA, combate.team, sprites, avatar(combate.participantAId)),
+                    teamSide(combate.participantB, combate.team, sprites, avatar(combate.participantBId)),
+                  ]}
+                />
+              ) : null}
+              {canManage ? (
+                <MatchResultForm
+                  match={{
+                    id: combate.id,
+                    winnerId: combate.winnerId,
+                    pokemonDiff: combate.pokemonDiff,
+                    replayUrl: combate.replayUrl,
+                    notes: combate.notes,
+                    a: { id: combate.participantAId, name: combate.participantA.displayName },
+                    b: { id: combate.participantBId, name: combate.participantB.displayName },
+                  }}
+                />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+      {!ganadorId && combates.length < alMejorDe ? (
+        <p className="mt-2 text-[11px] text-slate-500">
+          Si queda 1-1, el tercero se añade solo.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

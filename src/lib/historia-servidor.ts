@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { puedeVerLocke } from "@/lib/acceso";
 import { getMvpStates } from "@/lib/mvp";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
+import { alMejorDeDeLaJornada, perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { ganadorDeLaJornada } from "@/lib/marcador";
 import {
   cifrasDeLaHistoria,
   esElMismo,
@@ -35,7 +37,7 @@ const DEL_JUGADOR = {
     id: true,
     userId: true,
     competitionId: true,
-    competition: { select: { estilo: true } },
+    competition: { select: { estilo: true, maxPlayers: true } },
   },
 } as const;
 
@@ -106,7 +108,16 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       include: {
         match: {
           include: {
-            matchday: { select: { id: true, label: true, playedAt: true } },
+            matchday: {
+              select: {
+                id: true,
+                label: true,
+                playedAt: true,
+                alMejorDe: true,
+                // Para saber quién se llevó la serie, si la jornada es al mejor de tres
+                matches: { select: { winnerId: true } },
+              },
+            },
             participantA: { select: { displayName: true } },
             participantB: { select: { displayName: true } },
           },
@@ -227,17 +238,28 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
     gano === null ? "Por jugar" : gano ? "Victoria" : "Derrota";
 
   const fechaDe = new Map<string, string | null>();
+  const perfil = perfilDeLocke(dueno.competition.maxPlayers);
+  // De una serie va una línea, aunque las de antes tuvieran el equipo en cada combate
+  const seriesVistas = new Set<string>();
   for (const mp of suyos) {
     if (mp.match) {
       const m = mp.match;
       const rival = m.participantAId === participantId ? m.participantB : m.participantA;
-      const gano = resultado(m.winnerId);
+      const alMejorDe = alMejorDeDeLaJornada(m.matchday.alMejorDe, perfil);
+      if (alMejorDe > 1 && seriesVistas.has(m.matchday.id)) continue;
+      if (alMejorDe > 1) seriesVistas.add(m.matchday.id);
+      // En una serie cuenta quién se la llevó, no el combate en el que se apuntó el equipo
+      const serie = alMejorDe > 1 ? ganadorDeLaJornada(m.matchday.matches) : null;
+      const gano = resultado(serie ? serie.ganadorId : m.winnerId);
       const fecha = (m.playedAt ?? m.matchday.playedAt)?.toISOString() ?? null;
       fechaDe.set(mp.id, fecha);
+      const mias = serie?.porJugador[participantId] ?? 0;
+      const suyas = serie ? Object.entries(serie.porJugador).find(([id]) => id !== participantId)?.[1] ?? 0 : 0;
       sucesos.push({
         tipo: "jornada",
         texto: `${m.matchday.label} contra ${rival.displayName}`,
-        detalle: rotuloDe(gano),
+        // De una serie, también cómo quedó: «Victoria 2-1»
+        detalle: serie && gano !== null ? `${rotuloDe(gano)} ${mias}-${suyas}` : rotuloDe(gano),
         fecha,
         gano,
       });

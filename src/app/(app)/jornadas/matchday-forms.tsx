@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addMatchAction,
+  cambiarSerieDeJornadaAction,
   createMatchdayAction,
   darPorRetiradaAction,
   setMatchResultAction,
@@ -16,7 +17,20 @@ import { Icono } from "@/components/icono";
 
 type Option = { id: string; displayName: string };
 
-export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
+/** Las dos maneras de jugar una jornada de dualocke */
+const SERIES = [
+  { valor: 3, nombre: "Al mejor de 3", detalle: "Con el mismo equipo, como la final" },
+  { valor: 1, nombre: "Un combate", detalle: "A una sola partida" },
+] as const;
+
+export function NewMatchdayForm({
+  competitionId,
+  conSerie = false,
+}: {
+  competitionId: string;
+  /** En un dualocke: elegir entre un combate y al mejor de tres */
+  conSerie?: boolean;
+}) {
   const [state, formAction] = useActionState<FormState, FormData>(
     createMatchdayAction,
     null,
@@ -75,6 +89,32 @@ export function NewMatchdayForm({ competitionId }: { competitionId: string }) {
             />
           </div>
         </div>
+
+        {conSerie && !royale ? (
+          <fieldset>
+            <legend className="label">Cómo se juega</legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {SERIES.map((serie) => (
+                <label
+                  key={serie.valor}
+                  className="flex cursor-pointer items-start gap-2 rounded-xl border border-white/10 bg-white/[0.02] p-3 text-sm has-[:checked]:border-brand-400/60 has-[:checked]:bg-brand-600/15"
+                >
+                  <input
+                    type="radio"
+                    name="alMejorDe"
+                    value={serie.valor}
+                    defaultChecked={serie.valor === 3}
+                    className="mt-0.5 accent-indigo-500"
+                  />
+                  <span>
+                    <span className="block font-semibold text-white">{serie.nombre}</span>
+                    <span className="block text-xs text-slate-400">{serie.detalle}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
 
         {royale ? (
           <p className="rounded-lg border border-red-500/25 bg-red-500/[0.06] px-3 py-2 text-xs text-red-200/90">
@@ -321,6 +361,62 @@ function FormularioDeRetirada({
           Cancelar
         </button>
       </div>
+    </form>
+  );
+}
+
+/**
+ * Cambiar una jornada de dualocke entre un combate y al mejor de tres. Solo
+ * mientras no haya nada apuntado en ella: lo comprueba también el servidor.
+ */
+export function ElegirSerie({
+  matchdayId,
+  alMejorDe,
+  bloqueada,
+}: {
+  matchdayId: string;
+  alMejorDe: number;
+  /** Ya hay algo apuntado: se enseña, pero no se cambia */
+  bloqueada: boolean;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    async (_prev: FormState, formData: FormData) => cambiarSerieDeJornadaAction(formData),
+    null,
+  );
+
+  if (bloqueada) {
+    return (
+      <span
+        className="chip"
+        title="Ya hay algo apuntado en la jornada: el formato ya no se cambia"
+      >
+        {alMejorDe === 1 ? "Un combate" : `Al mejor de ${alMejorDe}`}
+      </span>
+    );
+  }
+
+  return (
+    <form action={formAction} className="flex flex-wrap items-center gap-2">
+      <input type="hidden" name="matchdayId" value={matchdayId} />
+      <div role="group" aria-label="Cómo se juega la jornada" className="flex gap-1 rounded-lg border border-white/10 bg-white/[0.03] p-0.5">
+        {SERIES.map((serie) => (
+          <button
+            key={serie.valor}
+            type="submit"
+            name="alMejorDe"
+            value={serie.valor}
+            aria-pressed={alMejorDe === serie.valor}
+            className={
+              alMejorDe === serie.valor
+                ? "rounded-md bg-brand-600/25 px-2 py-0.5 text-xs font-medium text-white ring-1 ring-brand-500/40"
+                : "rounded-md px-2 py-0.5 text-xs text-slate-400 hover:text-slate-200"
+            }
+          >
+            {serie.nombre}
+          </button>
+        ))}
+      </div>
+      {state?.error ? <span className="text-xs text-red-300">{state.error}</span> : null}
     </form>
   );
 }

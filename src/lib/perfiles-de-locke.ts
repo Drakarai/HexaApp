@@ -185,3 +185,18 @@ export function perfilDeLocke(
 export function jornadasParaGanar(cuantasJornadas: number) {
   return Math.floor(cuantasJornadas / 2) + 1;
 }
+
+/**
+ * De cuántos es la serie de una jornada: **1** (un combate) o **3** (al mejor
+ * de tres con el mismo equipo, como las llaves de la final). Solo el dualocke
+ * tiene series —con más gente la jornada son varias parejas— y cada jornada
+ * elige la suya (`Matchday.alMejorDe`). Sin elegir, la de su locke: así las
+ * jornadas de antes de que se pudiera elegir siguen siendo al mejor de tres.
+ */
+export function alMejorDeDeLaJornada(
+  guardado: number | null | undefined,
+  perfil: Pick<PerfilDeLocke, "serieAlMejorDe">,
+): number {
+  if (!perfil.serieAlMejorDe) return 1;
+  return guardado === 1 || guardado === 3 ? guardado : perfil.serieAlMejorDe;
+}
