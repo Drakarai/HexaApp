@@ -32,6 +32,7 @@ import {
   Ghost,
   Gift,
   Handshake,
+  HeartPulse,
   Hourglass,
   House,
   ImagePlus,
@@ -150,6 +151,8 @@ const LINEA: Record<string, Linea> = {
   "🏳️": { icono: Flag },
   "🏁": { icono: Flag },
   "🤝": { icono: Handshake },
+  // Revivir: un pokémon que vuelve del cementerio
+  "💊": { icono: HeartPulse },
   "🤼": { icono: Users },
   "🎨": { icono: Palette },
   "🗳️": { icono: ClipboardList },

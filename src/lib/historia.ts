@@ -21,14 +21,17 @@ export type SucesoGuardado =
   // Vuelto shiny después de capturarlo (un premio)
   | { tipo: "shiny"; fecha: string }
   // Cambiado a un entrenador del juego: se fue `de` y llegó `a`, en su hueco
-  | { tipo: "intercambio"; de: string; a: string; fecha: string };
+  | { tipo: "intercambio"; de: string; a: string; fecha: string }
+  // Revivido (un premio): de qué baja, que se queda en el cementerio y ya no la apunta
+  | { tipo: "revive"; deathId: string; fecha: string };
 
 export function leerHistoria(valor: unknown): SucesoGuardado[] {
   if (!Array.isArray(valor)) return [];
   return valor.filter((s): s is SucesoGuardado => {
     if (!s || typeof s !== "object" || typeof (s as { fecha?: unknown }).fecha !== "string") return false;
-    const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown };
+    const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown; deathId?: unknown };
     if (suceso.tipo === "shiny") return true;
+    if (suceso.tipo === "revive") return typeof suceso.deathId === "string";
     return (
       (suceso.tipo === "evoluciona" || suceso.tipo === "intercambio") &&
       typeof suceso.de === "string" &&
@@ -80,7 +83,8 @@ export type TipoDeSuceso =
   | "mvp"
   | "final"
   | "hall"
-  | "caida";
+  | "caida"
+  | "revive";
 
 export type Suceso = {
   tipo: TipoDeSuceso;
@@ -109,6 +113,7 @@ const ORDEN: Record<TipoDeSuceso, number> = {
   final: 5,
   hall: 6,
   caida: 7,
+  revive: 8,
 };
 
 export function ordenarSucesos(sucesos: Suceso[]) {

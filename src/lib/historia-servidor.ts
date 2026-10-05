@@ -150,21 +150,44 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       capturas.find((c) => entrada && !c.deathId && esElMismo(c, entrada)) ??
       capturas.find((c) => entrada && esElMismo(c, entrada)) ??
       null);
-  const quien = laCaptura ?? baja ?? entrada!;
-  const laBaja =
-    baja ??
-    (laCaptura?.deathId
-      ? await prisma.death.findUnique({
-          where: { id: laCaptura.deathId },
-          include: { zone: { select: { name: true } } },
+  /**
+   * Una baja revivida ya no tiene su captura enlazada (el pokémon volvió a la
+   * caja): se la busca por su historia, que dice qué baja se le revivió.
+   */
+  const laCapturaDeVerdad =
+    laCaptura ??
+    (veLaCaja && baja?.revividoEl
+      ? await prisma.capture.findFirst({
+          where: {
+            participantId: baja.participantId,
+            failed: false,
+            historia: { array_contains: [{ tipo: "revive", deathId: baja.id }] },
+          },
+          select: CAPTURA,
         })
       : null);
+  const quien = laCapturaDeVerdad ?? baja ?? entrada!;
+
+  // Sus bajas: la de ahora, si está caído, y las que se le revivieron (puede caer dos veces)
+  const revividas = laCapturaDeVerdad
+    ? leerHistoria(laCapturaDeVerdad.historia).flatMap((s) => (s.tipo === "revive" ? [s.deathId] : []))
+    : [];
+  const idsDeBajas = [...new Set([baja?.id, laCapturaDeVerdad?.deathId, ...revividas].filter((id): id is string => Boolean(id)))];
+  const susBajas = idsDeBajas.length
+    ? await prisma.death.findMany({
+        where: { id: { in: idsDeBajas } },
+        include: { zone: { select: { name: true } } },
+      })
+    : [];
+  // La que manda para «hasta cuándo»: la que no se ha revivido, si la hay
+  const laBaja = susBajas.find((b) => !b.revividoEl) ?? null;
 
   const suyos = equipos.filter((mp) => esElMismo(mp, quien));
   const sucesos: Suceso[] = [];
 
   // Lo de la caja, solo si se puede ver
-  if (laCaptura) {
+  if (laCapturaDeVerdad) {
+    const laCaptura = laCapturaDeVerdad;
     const guardados = leerHistoria(laCaptura.historia);
     // Lo que fue al principio: lo que se capturó, antes de evolucionar o de cambiarlo
     const cambios = guardados.flatMap((s) => (s.tipo === "evoluciona" || s.tipo === "intercambio" ? [s] : []));
@@ -186,7 +209,8 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
           .replace(/^./, (l) => l.toUpperCase()) || null,
       fecha: laCaptura.createdAt.toISOString(),
     });
-    for (const suceso of guardados) {
+    // Revivir sale con su baja, más abajo: la fecha buena está en ella
+    for (const suceso of guardados.filter((s) => s.tipo !== "revive")) {
       sucesos.push(
         suceso.tipo === "evoluciona"
           ? { tipo: "evoluciona", texto: `Evolucionó en ${suceso.a}`, fecha: suceso.fecha }
@@ -273,23 +297,27 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
     sucesos.push({ tipo: "hall", texto: "Entró en el Hall de la Fama", fecha: enElHall.createdAt.toISOString() });
   }
 
-  if (laBaja) {
-    const sitio = laBaja.zone?.name ?? laBaja.location;
+  // Cada caída y, si se revivió, su vuelta: las dos son públicas (salen en el cementerio)
+  for (const unaBaja of susBajas) {
+    const sitio = unaBaja.zone?.name ?? unaBaja.location;
     sucesos.push({
       tipo: "caida",
       texto: sitio ? `Cayó en ${sitio}` : "Cayó",
-      detalle: [laBaja.cause, laBaja.level ? `Nv. ${laBaja.level}` : null].filter(Boolean).join(" · ") || null,
-      fecha: laBaja.diedAt.toISOString(),
+      detalle: [unaBaja.cause, unaBaja.level ? `Nv. ${unaBaja.level}` : null].filter(Boolean).join(" · ") || null,
+      fecha: unaBaja.diedAt.toISOString(),
     });
+    if (unaBaja.revividoEl) {
+      sucesos.push({ tipo: "revive", texto: "Revivió", fecha: unaBaja.revividoEl.toISOString() });
+    }
   }
 
   const ordenados = ordenarSucesos(sucesos);
-  const desde = laCaptura ? laCaptura.createdAt.toISOString() : null;
+  const desde = laCapturaDeVerdad ? laCapturaDeVerdad.createdAt.toISOString() : null;
   const hasta = laBaja?.diedAt.toISOString() ?? enElHall?.createdAt.toISOString() ?? new Date().toISOString();
   return {
     sucesos: ordenados,
     cifras: cifrasDeLaHistoria(ordenados, desde, hasta),
-    conLaCaja: Boolean(laCaptura),
+    conLaCaja: Boolean(laCapturaDeVerdad),
     cajaAjena: !veLaCaja,
   };
 }

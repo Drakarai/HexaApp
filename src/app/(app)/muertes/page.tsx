@@ -231,6 +231,7 @@ export default async function DeathsPage({
     boxImage: cajas(death.id),
     detailImage: fichas(death.id),
     diedAtLabel: formatDate(death.diedAt),
+    revividoLabel: death.revividoEl ? formatDate(death.revividoEl) : null,
     diedAtInput: toDateInputValue(death.diedAt),
     editable: esMio(death.participantId),
     participant: fichaDeJugador(death.participantId),

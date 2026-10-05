@@ -47,6 +47,8 @@ export type PokemonDelTablero = {
   creado: number;
   vinculo: string | null;
   muerta: boolean;
+  /** Su baja del cementerio, si está caído: para revivirlo */
+  bajaId: string | null;
   causa: string | null;
   evoluciones: OpcionDeEvolucion[];
   /** La ficha completa, ya con nombres y tipos para enseñarla */
@@ -213,6 +215,7 @@ export async function getEquiposDelLocke(
       creado: c.createdAt.getTime(),
       vinculo: c.vinculo,
       muerta: Boolean(c.deathId),
+      bajaId: c.deathId,
       causa: c.muerte?.cause ?? null,
       evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species),
       combate: fichaDeCombate(c, generacion),

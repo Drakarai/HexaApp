@@ -1,7 +1,7 @@
 "use client";
 
 import { SpritePokemon } from "@/components/sprite-pokemon";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import {
   deleteDeathAction,
   updateDeathAction,
@@ -21,6 +21,8 @@ import { SitioPicker } from "@/components/sitio-picker";
 import { IMAGE_SIZES } from "@/lib/image";
 import type { ZonaParaElegir } from "@/lib/mapas";
 import { Icono } from "@/components/icono";
+import { cx } from "@/lib/utils";
+import { revivirAction } from "@/app/actions/equipo-y-caja";
 import { Hoja } from "@/components/hoja";
 import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
@@ -55,6 +57,8 @@ export type BoxDeath = {
   /** La ilustración grande se carga aparte, al abrir la ficha */
   detailImage: string | null;
   diedAtLabel: string;
+  /** Si se revivió (un premio), cuándo. La baja se queda y sigue contando */
+  revividoLabel: string | null;
   diedAtInput: string;
   editable: boolean;
   participant: {
@@ -158,7 +162,10 @@ export function DeathBox({
                         src={death.boxImage}
                         alt={death.species}
                         loading="lazy"
-                        className="h-full w-full object-contain p-1 grayscale-[35%] transition group-hover:grayscale-0"
+                        className={cx(
+                          "h-full w-full object-contain p-1 transition",
+                          !death.revividoLabel && "grayscale-[35%] group-hover:grayscale-0",
+                        )}
                       />
                     ) : (
                       <PokeballGlyph />
@@ -168,6 +175,14 @@ export function DeathBox({
                       style={{ background: death.participant.color }}
                       aria-hidden
                     />
+                    {death.revividoLabel ? (
+                      <span
+                        className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/90 text-white"
+                        title="Revivido"
+                      >
+                        <Icono emoji="💊" tamano={10} sinColor />
+                      </span>
+                    ) : null}
                   </span>
                   <span className="w-full truncate text-center text-xs font-medium text-slate-200">
                     {death.nickname ?? death.species}
@@ -214,6 +229,8 @@ function DeathDetail({
 }) {
   const [editing, setEditing] = useState(false);
   const [pestana, setPestana] = useState<"resumen" | "historia">("resumen");
+  const [reviviendo, empezarARevivir] = useTransition();
+  const [avisoDeRevivir, setAvisoDeRevivir] = useState<FormState>(null);
   const [manualImages, setManualImages] = useState(false);
   const [state, formAction] = useActionState<FormState, FormData>(
     updateDeathAction,
@@ -242,9 +259,17 @@ function DeathDetail({
         onCerrar={onClose}
         nombre={death.nickname ?? death.species}
         especie={death.species}
-        detalle={death.level ? `Nv. ${death.level}` : null}
+        detalle={
+          death.revividoLabel ? (
+            <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[11px] font-semibold text-emerald-200">
+              <Icono emoji="💊" tamano={12} sinColor /> Revivido
+            </span>
+          ) : death.level ? (
+            `Nv. ${death.level}`
+          ) : null
+        }
         tipos={death.tipos}
-        apagada
+        apagada={!death.revividoLabel}
         sprite={
           death.detailImage ?? death.boxImage ? (
             <SpritePokemon
@@ -253,7 +278,7 @@ function DeathDetail({
               src={death.detailImage ?? death.boxImage}
               pokemonId={death.pokemonId}
               alt={death.species}
-              className="h-20 w-20 object-contain grayscale-[35%]"
+              className={cx("h-20 w-20 object-contain", !death.revividoLabel && "grayscale-[35%]")}
             />
           ) : (
             <span className="text-slate-600">
@@ -281,11 +306,12 @@ function DeathDetail({
         <HistoriaDelPokemon de={{ tipo: "baja", id: death.id }} nombre={death.nickname ?? death.species} />
       ) : (
         <>
-      {death.cause || death.sitio || death.notes ? (
+      {death.cause || death.sitio || death.notes || death.revividoLabel ? (
         <dl className="mt-1 space-y-1.5 text-sm">
           {death.cause ? <Row label="Causa" value={death.cause} /> : null}
           {death.sitio ? <Row label="Dónde" value={death.sitio} /> : null}
           {death.notes ? <Row label="Notas" value={death.notes} /> : null}
+          {death.revividoLabel ? <Row label="Revivido" value={death.revividoLabel} /> : null}
         </dl>
       ) : (
         <p className="muted mt-1 text-sm">Sin causa ni sitio apuntados.</p>
@@ -426,6 +452,31 @@ function DeathDetail({
             >
               <Icono emoji="🖼️" /> Editar ficha e imágenes
             </button>
+            {/* Un premio que sale poco: devolverlo al Equipo y PC. La baja se queda */}
+            {!death.revividoLabel ? (
+              <button
+                type="button"
+                className="btn-ghost btn-sm border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/10"
+                disabled={reviviendo}
+                onClick={() => {
+                  const nombre = death.nickname ?? death.species;
+                  if (
+                    !window.confirm(
+                      `¿Revivir a ${nombre}? Vuelve a tu Equipo y PC. Su baja se queda en el cementerio y sigue contando. Se puede deshacer desde Equipo y PC.`,
+                    )
+                  ) {
+                    return;
+                  }
+                  empezarARevivir(async () => {
+                    const respuesta = await revivirAction({ deathId: death.id });
+                    setAvisoDeRevivir(respuesta.error ? { error: respuesta.error } : { success: respuesta.aviso });
+                    if (!respuesta.error) sonarGrito(death.pokemonId);
+                  });
+                }}
+              >
+                <Icono emoji="💊" sinColor /> Revivir
+              </button>
+            ) : null}
             <form action={deleteDeathAction} onSubmit={() => onClose()}>
               <input type="hidden" name="deathId" value={death.id} />
               <ConfirmSubmit
@@ -437,6 +488,9 @@ function DeathDetail({
           </div>
         )
       ) : null}
+      <div className="mt-3">
+        <FormMessage state={avisoDeRevivir} />
+      </div>
         </>
       )}
       </div>

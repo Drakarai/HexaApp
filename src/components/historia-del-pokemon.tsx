@@ -20,6 +20,7 @@ const ICONO: Record<TipoDeSuceso, string> = {
   final: "🏆",
   hall: "🏆",
   caida: "🪦",
+  revive: "💊",
 };
 
 const FECHA = new Intl.DateTimeFormat("es-ES", { day: "numeric", month: "short" });

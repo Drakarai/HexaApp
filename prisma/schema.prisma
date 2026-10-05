@@ -947,6 +947,13 @@ model Death {
   boxImage      String?
   // Imagen grande del panel de detalle. Es independiente de la de la caja.
   detailImage   String?
+  /**
+   * Cuándo se revivió, si se revivió (un premio). La baja **se queda y sigue
+   * contando** —para los desempates, el mapa y las cifras—: el premio es
+   * recuperar al pokémon, no borrar lo que pasó. El pokémon vuelve a la caja y
+   * su captura deja de apuntar aquí; en su historia queda qué baja era.
+   */
+  revividoEl    DateTime?
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

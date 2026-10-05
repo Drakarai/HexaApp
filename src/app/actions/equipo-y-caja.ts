@@ -410,6 +410,102 @@ export async function darPorMuertoAction(entrada: {
 }
 
 // ---------------------------------------------------------------------------
+// Revivir
+// ---------------------------------------------------------------------------
+
+/**
+ * Revivir a un caído, que es un premio que se da de vez en cuando. Vuelve al
+ * Equipo y PC (al equipo si hay hueco, como uno recién capturado) y **su baja
+ * se queda**: sigue en el cementerio, marcada como revivida, y sigue contando
+ * para los desempates, el mapa y las cifras. Lo que se recupera es el pokémon.
+ *
+ * Se revive desde la baja, que es lo que tienen todos: si se apuntó a mano en
+ * el cementerio y no hay captura detrás, se crea una con lo que dice la baja.
+ * Comprueba la caja del dueño de la baja, como todo lo del Equipo y PC.
+ */
+export async function revivirAction(entrada: { deathId: string }): Promise<Resultado> {
+  return conError(async () => {
+    const baja = await prisma.death.findUnique({
+      where: { id: String(entrada.deathId ?? "") },
+      select: {
+        id: true,
+        participantId: true,
+        species: true,
+        nickname: true,
+        boxImage: true,
+        diedAt: true,
+        revividoEl: true,
+        capturas: { select: { id: true, pokemonId: true }, take: 1 },
+      },
+    });
+    if (!baja) return { error: "Esa baja ya no está." };
+    await assertPuedeTocarLaCaja(baja.participantId);
+    if (baja.revividoEl) return { error: "Ya estaba revivido." };
+
+    const vivas = await prisma.capture.findMany({
+      where: { participantId: baja.participantId, failed: false, deathId: null },
+      select: { id: true, lugar: true, hueco: true, createdAt: true },
+    });
+    const donde = sitioParaUnaNueva(vivas.map((c) => ({ ...c, creado: c.createdAt.getTime() })));
+    const ahora = new Date();
+    const revive = { tipo: "revive" as const, deathId: baja.id, fecha: ahora.toISOString() };
+    const nombre = baja.nickname ?? baja.species;
+
+    let antes: Foto[];
+    const suya = baja.capturas[0];
+    if (suya) {
+      antes = await fotos([suya.id]);
+      await prisma.capture.update({
+        where: { id: suya.id },
+        data: {
+          deathId: null,
+          lugar: donde.lugar,
+          hueco: donde.hueco,
+          historia: [...leerHistoria(antes[0]?.historia), revive],
+        },
+      });
+    } else {
+      // Apuntada a mano en el cementerio: se le hace su captura con lo que hay
+      const nueva = await prisma.capture.create({
+        data: {
+          participantId: baja.participantId,
+          species: baja.species,
+          nickname: baja.nickname,
+          // La forma exacta, si la dice su sprite del almacén; si no, por la especie
+          pokemonId:
+            Number(/^ref:pkm-(\d+)-/.exec(baja.boxImage ?? "")?.[1]) ||
+            (queEs(null, baja.species)?.pokemonId ?? null),
+          image: baja.boxImage,
+          lugar: donde.lugar,
+          hueco: donde.hueco,
+          historia: [revive],
+          // De cuándo es no se sabe; lo más cerca, el día que cayó. Si no, su
+          // historia diría «capturado» después de «revivió»
+          createdAt: baja.diedAt,
+        },
+        select: { id: true },
+      });
+      /**
+       * Deshacer devuelve las capturas a su foto de antes, y esta antes no
+       * existía: la foto la deja **caída en esa baja**, que es lo más cerca de
+       * no haberla revivido (sale en «Caídos» y no en la caja).
+       */
+      const [creada] = await fotos([nueva.id]);
+      antes = [{ ...creada, deathId: baja.id, historia: [] }];
+    }
+    await prisma.death.update({ where: { id: baja.id }, data: { revividoEl: ahora } });
+
+    const descripcion = `Revivir a ${nombre}`;
+    await apuntarCambio(baja.participantId, descripcion, antes);
+    refrescar(true);
+    return {
+      aviso: `¡${nombre} ha revivido! Vuelve ${donde.lugar === "equipo" ? "al equipo" : "a la caja"}. Su baja se queda en el cementerio.`,
+      deshacer: descripcion,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Vincular
 // ---------------------------------------------------------------------------
 
@@ -645,8 +741,14 @@ export async function deshacerEnCajaAction(entrada: {
       ).map((d) => d.id),
     );
 
+    // Las bajas que vuelven a tener su pokémon caído dejan de estar revividas
+    const vuelvenACaer = antes
+      .filter((f) => existen.has(f.id) && f.deathId && bajasVivas.has(f.deathId))
+      .map((f) => f.deathId!);
+
     await prisma.$transaction([
       prisma.death.deleteMany({ where: { id: { in: cambio.muertes } } }),
+      prisma.death.updateMany({ where: { id: { in: vuelvenACaer } }, data: { revividoEl: null } }),
       ...antes
         .filter((f) => existen.has(f.id))
         .map((f) =>
@@ -673,7 +775,7 @@ export async function deshacerEnCajaAction(entrada: {
         ),
       prisma.cambioDeCaja.delete({ where: { id: cambio.id } }),
     ]);
-    refrescar(cambio.muertes.length > 0);
+    refrescar(cambio.muertes.length > 0 || vuelvenACaer.length > 0);
     return { aviso: `Deshecho: ${cambio.descripcion.charAt(0).toLowerCase()}${cambio.descripcion.slice(1)}.` };
   });
 }

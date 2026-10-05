@@ -42,6 +42,7 @@ import {
   cambiarMoteAction,
   cambiarShinyAction,
   intercambiarAction,
+  revivirAction,
   darPorMuertoAction,
   desvincularAction,
   deshacerEnCajaAction,
@@ -1078,6 +1079,28 @@ function Ficha({
       }
     });
   }
+  function revivir() {
+    const bajaId = pokemon.bajaId;
+    if (!bajaId) return;
+    const nombre = pokemon.nickname ?? pokemon.species;
+    if (
+      !window.confirm(
+        `¿Revivir a ${nombre}? Vuelve al equipo si hay hueco, y si no a la caja. Su baja se queda en el cementerio y sigue contando. Se puede deshacer.`,
+      )
+    ) {
+      return;
+    }
+    empezar(async () => {
+      const respuesta = await sinConexion(() => revivirAction({ deathId: bajaId }));
+      if (respuesta.error) {
+        onAviso({ tipo: "error", texto: respuesta.error });
+        return;
+      }
+      onAviso({ tipo: "ok", texto: respuesta.aviso ?? "Hecho." });
+      // Con su grito de siempre, no el grave de caído: ha vuelto
+      sonarGrito(pokemon.pokemonId);
+    });
+  }
   function intercambiar(datos: { species: string; pokemonId: number | null; nickname: string; shiny: boolean }) {
     empezar(async () => {
       const respuesta = await sinConexion(() => intercambiarAction({ captureId: pokemon.id, ...datos }));
@@ -1274,6 +1297,18 @@ function Ficha({
               />
               {pokemon.muerta && pokemon.causa ? <Fila etiqueta="Causa" valor={pokemon.causa} /> : null}
             </dl>
+
+            {/* Un premio que sale poco: devolverlo a la caja. Su baja se queda en el cementerio */}
+            {pokemon.muerta && pokemon.bajaId && dueno.editable ? (
+              <button
+                type="button"
+                className="btn-ghost btn-sm mt-3 border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/10"
+                disabled={pendiente}
+                onClick={revivir}
+              >
+                <Icono emoji="💊" sinColor /> Revivir
+              </button>
+            ) : null}
 
             {esSoulLink ? (
               <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
