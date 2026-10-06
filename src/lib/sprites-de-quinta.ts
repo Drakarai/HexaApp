@@ -1,3 +1,5 @@
+import iconos from "./iconos-de-caja.json";
+
 /**
  * Los sprites al estilo de Blanco y Negro, sin cargar la Pokédex: solo arma
  * direcciones, así que lo puede usar cualquier pantalla del navegador.
@@ -36,20 +38,25 @@ export function pokemonDeLaImagen(src: string | null | undefined) {
   return encontrado ? { pokemonId: Number(encontrado[1]), shiny: Boolean(encontrado[2]) } : null;
 }
 
-/** El estilo de sprites que elige cada uno en Mi perfil; sin elegir, Blanco y Negro */
 /**
  * Los iconos de caja de la 8ª generación (Espada y Escudo): los muñequitos del
- * PC, con más detalle que los de la 7ª. Llegan hasta el #898 y sus formas; los
- * de Hisui y Paldea no existen en PokéAPI, y de esos ni se piden. No los hay
- * variocolor, como en los juegos: la casilla ya lleva su destello.
+ * PC, con más detalle que los de la 7ª. PokéAPI los tiene hasta el #898 y casi
+ * todas sus formas; **los que faltan** (Hisui, Paldea, las megas nuevas…) son
+ * los del paquete de Pokémon Essentials, en `public/iconos-de-caja` y ya
+ * recortados (los genera `scripts/iconos-de-caja.py`). Las formas que se ven
+ * igual que otra (los Dominantes, Minior Meteorito…) usan el de esa. No los hay
+ * variocolor, como en Espada y Escudo: la casilla ya lleva su destello.
  */
 const ICONOS = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
+const LOCALES = new Set<number>(iconos.locales);
+const ALIAS: Record<string, number> = iconos.alias;
 
-export function iconoDeCaja(pokemonId: number) {
-  if (pokemonId > 898 && pokemonId < 10000) return null;
-  return `${ICONOS}/${pokemonId}.png`;
+export function iconoDeCaja(pokemonId: number): string {
+  const id = ALIAS[pokemonId] ?? pokemonId;
+  return LOCALES.has(id) ? `/iconos-de-caja/${id}.png` : `${ICONOS}/${id}.png`;
 }
 
+/** El estilo de sprites que elige cada uno en Mi perfil; sin elegir, Blanco y Negro */
 export const COOKIE_DE_SPRITES = "hexaapp-sprites";
 export type EstiloDeSprites = "quinta" | "iconos" | "home";
 export function leerEstiloDeSprites(valor: string | null | undefined): EstiloDeSprites {

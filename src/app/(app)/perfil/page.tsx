@@ -218,8 +218,8 @@ export default async function ProfilePage() {
           cada uno salen siempre los de Blanco y Negro, que se mueven. Solo
           cambia en este dispositivo.
           <span className="mt-1 block text-xs text-slate-500">
-            Los animados de la 6ª generación en adelante son de la comunidad de
-            Pokémon Essentials (Animated Pokemon System).
+            Los animados de la 6ª generación en adelante y los iconos de Hisui y
+            Paldea son de la comunidad de Pokémon Essentials.
           </span>
         </p>
         <PreferenciaDeSpritesPicker

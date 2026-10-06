@@ -19,7 +19,7 @@ const OPCIONES: { valor: EstiloDeSprites; nombre: string; detalle: string }[] = 
   {
     valor: "iconos",
     nombre: "Iconos de caja",
-    detalle: "Los muñequitos del PC de Espada y Escudo. Los de Hisui y Paldea, en Blanco y Negro.",
+    detalle: "Los muñequitos del PC de Espada y Escudo, y los de la comunidad para Hisui y Paldea.",
   },
   { valor: "home", nombre: "HOME", detalle: "Los modelos en 3D de ahora." },
 ];
@@ -57,7 +57,7 @@ export function PreferenciaDeSpritesPicker({ muestra }: { muestra: number }) {
               opcion.valor === "quinta"
                 ? spriteQuietoDeQuinta(muestra, false)
                 : opcion.valor === "iconos"
-                  ? (iconoDeCaja(muestra) ?? spriteQuietoDeQuinta(muestra, false))
+                  ? iconoDeCaja(muestra)
                   : // A mano y no con lib/pokedex, que arrastraría la Pokédex entera al navegador
                   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${muestra}.png`
             }

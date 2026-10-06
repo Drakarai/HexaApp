@@ -232,18 +232,22 @@ export function SpritePokemon({
     // y en las formas, la tira de la comunidad; si no hay, el de PokéAPI o el quieto
     ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
-    ...(id && !ficha && !sinIconos && estilo === "iconos" ? [iconoDeCaja(id)].filter((c) => c !== null) : []),
-    // También detrás del icono, para los que no lo tienen (Hisui y Paldea)
+    ...(id && !ficha && !sinIconos && estilo === "iconos" ? [iconoDeCaja(id)] : []),
+    // También detrás del icono, por si no carga
     ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
     ...(src ? [src] : []),
   ];
   // Las que no han cargado, por dirección: si cambia de pokémon, las suyas empiezan de cero
   const [fallidas, setFallidas] = useState<string[]>([]);
   const actual = candidatas.find((c) => !fallidas.includes(c));
-  const pixelado = Boolean(actual?.includes("black-white") || actual?.includes("/icons/"));
+  const pixelado = Boolean(
+    actual?.includes("black-white") || actual?.includes("/icons/") || actual?.startsWith("/iconos-de-caja/"),
+  );
   // Los quietos de Blanco y Negro y los iconos, recortados; en la ficha no, que el animado
-  // no se puede recortar y el quieto de respaldo tiene que verse igual que él
-  const aRecortar = pixelado && !ficha && actual?.endsWith(".png") ? actual : null;
+  // no se puede recortar y el quieto de respaldo tiene que verse igual que él. Los
+  // iconos del paquete de Essentials ya vienen recortados
+  const aRecortar =
+    pixelado && !ficha && actual?.endsWith(".png") && !actual.startsWith("/iconos-de-caja/") ? actual : null;
   const [recorte, setRecorte] = useState<{ de: string; url: string | null } | null>(null);
   useEffect(() => {
     if (!aRecortar) return;
