@@ -9,6 +9,90 @@ import {
   type EstiloDeSprites,
 } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
+import tiras from "@/lib/sprites-animados.json";
+
+/**
+ * Los animados **en tira** del paquete de la comunidad de Pokémon Essentials
+ * («Animated Pokemon System»): del #650 en adelante y las formas, que en el
+ * estilo de Blanco y Negro de PokéAPI estaban a medias (Paldea, casi sin
+ * ninguno). Van en `public/sprites-animados` y los genera
+ * `scripts/sprites-animados.py`. Del #1 al #649 se usan los oficiales.
+ */
+const CON_TIRA = {
+  normal: new Set<number>(tiras.normal),
+  shiny: new Set<number>(tiras.shiny),
+  // El shiny es el normal con otros colores: se repinta (ver `TiraAnimada`)
+  colores: new Set<number>(tiras.colores),
+};
+
+/** Lo que va detrás de `#` en una tira que hay que repintar de shiny */
+const REPINTAR = "#colores";
+
+function tiraAnimada(pokemonId: number, shiny: boolean): string | null {
+  if (!shiny) return CON_TIRA.normal.has(pokemonId) ? `/sprites-animados/${pokemonId}.png` : null;
+  if (CON_TIRA.shiny.has(pokemonId)) return `/sprites-animados/shiny/${pokemonId}.png`;
+  return CON_TIRA.colores.has(pokemonId) ? `/sprites-animados/${pokemonId}.png${REPINTAR}` : null;
+}
+
+/**
+ * El shiny de una tira que solo cambia de colores: se pinta el normal en un
+ * lienzo, se cambia cada color por el suyo (`shiny/<id>.json`, «rrggbb» →
+ * «rrggbb») y se usa el resultado. Así de nueve de cada diez shiny se guardan
+ * unos cientos de bytes en vez de la imagen entera. Uno por visita.
+ */
+const repintadas = new Map<string, Promise<string | null>>();
+
+function repintar(src: string): Promise<string | null> {
+  let pedido = repintadas.get(src);
+  if (!pedido) {
+    const imagen = src.slice(0, -REPINTAR.length);
+    const id = /\/(\d+)\.png$/.exec(imagen)?.[1];
+    pedido = Promise.all([
+      new Promise<HTMLImageElement>((resolver, fallar) => {
+        const img = new Image();
+        img.onload = () => resolver(img);
+        img.onerror = fallar;
+        img.src = imagen;
+      }),
+      fetch(`/sprites-animados/shiny/${id}.json`).then((r) => (r.ok ? (r.json() as Promise<Record<string, string>>) : null)),
+    ])
+      .then(([img, colores]) => {
+        if (!colores) return null;
+        const lienzo = document.createElement("canvas");
+        lienzo.width = img.naturalWidth;
+        lienzo.height = img.naturalHeight;
+        const ctx = lienzo.getContext("2d");
+        if (!ctx) return null;
+        ctx.drawImage(img, 0, 0);
+        const datos = ctx.getImageData(0, 0, lienzo.width, lienzo.height);
+        const px = datos.data;
+        const cambio = new Map(
+          Object.entries(colores).map(([de, a]) => [parseInt(de, 16), parseInt(a, 16)]),
+        );
+        for (let i = 0; i < px.length; i += 4) {
+          if (!px[i + 3]) continue;
+          const nuevo = cambio.get((px[i] << 16) | (px[i + 1] << 8) | px[i + 2]);
+          if (nuevo === undefined) continue;
+          px[i] = nuevo >> 16;
+          px[i + 1] = (nuevo >> 8) & 255;
+          px[i + 2] = nuevo & 255;
+        }
+        ctx.putImageData(datos, 0, 0);
+        return new Promise<string | null>((resolver) =>
+          lienzo.toBlob((blob) => resolver(blob ? URL.createObjectURL(blob) : null), "image/png"),
+        );
+      })
+      .catch(() => null);
+    repintadas.set(src, pedido);
+  }
+  return pedido;
+}
+
+/** Del #1 al #649, los animados de los juegos; ahí la tira no hace falta */
+const DE_LOS_JUEGOS = 649;
+
+/** Cuántos milisegundos dura cada fotograma: los oficiales van a unos 100 */
+const POR_FOTOGRAMA = 100;
 
 /** El estilo de sprites de quien mira: lo pone el layout, leído de su cookie */
 const Estilo = createContext<EstiloDeSprites>("quinta");
@@ -144,6 +228,9 @@ export function SpritePokemon({
   const variocolor = shiny ?? deLaImagen?.shiny ?? false;
 
   const candidatas = [
+    // En la ficha, animado: el de los juegos hasta el #649 y, de ahí en adelante
+    // y en las formas, la tira de la comunidad; si no hay, el de PokéAPI o el quieto
+    ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
     ...(id && !ficha && !sinIconos && estilo === "iconos" ? [iconoDeCaja(id)].filter((c) => c !== null) : []),
     // También detrás del icono, para los que no lo tienen (Hisui y Paldea)
@@ -170,6 +257,17 @@ export function SpritePokemon({
   }, [aRecortar]);
 
   if (!actual) return null;
+  if (actual.startsWith("/sprites-animados/")) {
+    return (
+      <TiraAnimada
+        key={actual}
+        src={actual}
+        alt={alt}
+        className={className}
+        onError={() => setFallidas((antes) => [...antes, actual])}
+      />
+    );
+  }
   const listo = aRecortar
     ? recorte?.de === aRecortar
       ? recorte
@@ -192,5 +290,87 @@ export function SpritePokemon({
         aRecortar && !listo && "opacity-0",
       )}
     />
+  );
+}
+
+/**
+ * Un sprite animado que viene en tira (todos los fotogramas en fila, cuadrados,
+ * como los guarda Essentials): se pinta de fondo y se corre de un fotograma al
+ * siguiente a saltos, cada 100 ms. Cuántos fotogramas tiene sale de la propia
+ * imagen (ancho entre alto), así que no hay que apuntarlo en ningún sitio.
+ *
+ * Se dibuja a la escala de un sprite de Blanco y Negro: sobre un lienzo de 96,
+ * como los de los juegos, para que un Joltik no salga del tamaño de un
+ * Wailord. Si es más grande que eso, se encoge hasta caber.
+ */
+function TiraAnimada({
+  src,
+  alt,
+  className,
+  onError,
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+  onError: () => void;
+}) {
+  const [medida, setMedida] = useState<{ fotogramas: number; lado: number } | null>(null);
+  const [pintada, setPintada] = useState<string | null>(null);
+  useEffect(() => {
+    let sigue = true;
+    // Un shiny repintado: primero se repinta, y luego es una tira como otra
+    const lista = src.endsWith(REPINTAR) ? repintar(src) : Promise.resolve(src);
+    void lista.then((url) => {
+      if (!sigue) return;
+      if (!url) return onError();
+      const imagen = new Image();
+      imagen.onload = () => {
+        if (!sigue) return;
+        setPintada(url);
+        setMedida({
+          fotogramas: Math.max(1, Math.round(imagen.naturalWidth / imagen.naturalHeight)),
+          lado: imagen.naturalHeight,
+        });
+      };
+      imagen.onerror = onError;
+      imagen.src = url;
+    });
+    return () => {
+      sigue = false;
+    };
+    // Solo al cambiar de imagen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [src]);
+
+  /**
+   * El fotograma que toca, con un temporizador y no con una animación CSS:
+   * con `steps()` el navegador se quedaba a veces entre dos fotogramas y se
+   * veía medio pokémon del siguiente. Con «reducir movimiento», el primero.
+   */
+  const [fotograma, setFotograma] = useState(0);
+  const fotogramas = medida?.fotogramas ?? 1;
+  useEffect(() => {
+    setFotograma(0);
+    if (fotogramas < 2 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const reloj = window.setInterval(() => setFotograma((f) => (f + 1) % fotogramas), POR_FOTOGRAMA);
+    return () => window.clearInterval(reloj);
+  }, [fotogramas, pintada]);
+
+  return (
+    <span role="img" aria-label={alt} className={cx("inline-flex items-center justify-center", className)}>
+      {medida && pintada ? (
+        <span
+          className="block aspect-square [image-rendering:pixelated]"
+          style={{
+            width: `${Math.min(100, (medida.lado / 96) * 100)}%`,
+            backgroundImage: `url(${pintada})`,
+            backgroundSize: `${fotogramas * 100}% 100%`,
+            backgroundRepeat: "no-repeat",
+            // Con fondo de N veces el ancho, el fotograma k está en k/(N-1) del recorrido
+            backgroundPositionX: fotogramas > 1 ? `${(fotograma / (fotogramas - 1)) * 100}%` : "0%",
+          }}
+        />
+      ) : null}
+    </span>
   );
 }

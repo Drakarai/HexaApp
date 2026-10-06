@@ -217,6 +217,10 @@ export default async function ProfilePage() {
           Cómo se ven los pokémon en cajas, equipos y listas. En la ficha de
           cada uno salen siempre los de Blanco y Negro, que se mueven. Solo
           cambia en este dispositivo.
+          <span className="mt-1 block text-xs text-slate-500">
+            Los animados de la 6ª generación en adelante son de la comunidad de
+            Pokémon Essentials (Animated Pokemon System).
+          </span>
         </p>
         <PreferenciaDeSpritesPicker
           muestra={(myParticipant?.aceSpecies && findSpecies(myParticipant.aceSpecies)?.dex) || 25}
