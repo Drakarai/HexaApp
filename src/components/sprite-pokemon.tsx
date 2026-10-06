@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import {
   iconoDeCaja,
   pokemonDeLaImagen,
+  REPINTAR,
   spriteQuietoDeQuinta,
   spritesDeQuinta,
   type EstiloDeSprites,
@@ -25,9 +26,6 @@ const CON_TIRA = {
   colores: new Set<number>(tiras.colores),
 };
 
-/** Lo que va detrás de `#` en una tira que hay que repintar de shiny */
-const REPINTAR = "#colores";
-
 function tiraAnimada(pokemonId: number, shiny: boolean): string | null {
   if (!shiny) return CON_TIRA.normal.has(pokemonId) ? `/sprites-animados/${pokemonId}.png` : null;
   if (CON_TIRA.shiny.has(pokemonId)) return `/sprites-animados/shiny/${pokemonId}.png`;
@@ -35,18 +33,22 @@ function tiraAnimada(pokemonId: number, shiny: boolean): string | null {
 }
 
 /**
- * El shiny de una tira que solo cambia de colores: se pinta el normal en un
- * lienzo, se cambia cada color por el suyo (`shiny/<id>.json`, «rrggbb» →
- * «rrggbb») y se usa el resultado. Así de nueve de cada diez shiny se guardan
- * unos cientos de bytes en vez de la imagen entera. Uno por visita.
+ * El shiny de una tira o de un icono que solo cambia de colores: se pinta el
+ * normal en un lienzo, se cambia cada color por el suyo (`shiny/<id>.json` al
+ * lado de la imagen, «rrggbb» → «rrggbb») y se usa el resultado. Así de nueve
+ * de cada diez tiras shiny se guardan unos cientos de bytes en vez de la imagen
+ * entera. Los iconos traen además algún píxel suelto que no sigue el cambio
+ * (`{ c: colores, p: [[posición, «rrggbbaa»]] }`). Uno por visita.
  */
+type CambioDeColores = Record<string, string> | { c: Record<string, string>; p: [number, string][] };
 const repintadas = new Map<string, Promise<string | null>>();
+const repintadasYa = new Map<string, string | null>();
 
 function repintar(src: string): Promise<string | null> {
   let pedido = repintadas.get(src);
   if (!pedido) {
     const imagen = src.slice(0, -REPINTAR.length);
-    const id = /\/(\d+)\.png$/.exec(imagen)?.[1];
+    const lista = imagen.replace(/\/(\d+)\.png$/, "/shiny/$1.json");
     pedido = Promise.all([
       new Promise<HTMLImageElement>((resolver, fallar) => {
         const img = new Image();
@@ -54,10 +56,12 @@ function repintar(src: string): Promise<string | null> {
         img.onerror = fallar;
         img.src = imagen;
       }),
-      fetch(`/sprites-animados/shiny/${id}.json`).then((r) => (r.ok ? (r.json() as Promise<Record<string, string>>) : null)),
+      fetch(lista).then((r) => (r.ok ? (r.json() as Promise<CambioDeColores>) : null)),
     ])
-      .then(([img, colores]) => {
-        if (!colores) return null;
+      .then(([img, leido]) => {
+        if (!leido) return null;
+        const colores = (typeof leido.c === "object" ? leido.c : leido) as Record<string, string>;
+        const sueltos = "p" in leido && Array.isArray(leido.p) ? leido.p : [];
         const lienzo = document.createElement("canvas");
         lienzo.width = img.naturalWidth;
         lienzo.height = img.naturalHeight;
@@ -77,12 +81,20 @@ function repintar(src: string): Promise<string | null> {
           px[i + 1] = (nuevo >> 8) & 255;
           px[i + 2] = nuevo & 255;
         }
+        for (const [posicion, color] of sueltos) {
+          const valor = parseInt(color, 16);
+          px.set([valor >>> 24, (valor >> 16) & 255, (valor >> 8) & 255, valor & 255], posicion * 4);
+        }
         ctx.putImageData(datos, 0, 0);
         return new Promise<string | null>((resolver) =>
           lienzo.toBlob((blob) => resolver(blob ? URL.createObjectURL(blob) : null), "image/png"),
         );
       })
-      .catch(() => null);
+      .catch(() => null)
+      .then((hecha) => {
+        repintadasYa.set(src, hecha);
+        return hecha;
+      });
     repintadas.set(src, pedido);
   }
   return pedido;
@@ -232,7 +244,9 @@ export function SpritePokemon({
     // y en las formas, la tira de la comunidad; si no hay, el de PokéAPI o el quieto
     ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
-    ...(id && !ficha && !sinIconos && estilo === "iconos" ? [iconoDeCaja(id)] : []),
+    ...(id && !ficha && !sinIconos && (estilo === "iconos" || estilo === "iconos-todos")
+      ? [iconoDeCaja(id, variocolor, estilo === "iconos-todos")]
+      : []),
     // También detrás del icono, por si no carga
     ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
     ...(src ? [src] : []),
@@ -248,17 +262,20 @@ export function SpritePokemon({
   // iconos del paquete de Essentials ya vienen recortados
   const aRecortar =
     pixelado && !ficha && actual?.endsWith(".png") && !actual.startsWith("/iconos-de-caja/") ? actual : null;
+  // Un icono shiny que es el normal repintado: hay que esperar al repintado igual que a un recorte
+  const aRepintar = actual?.endsWith(REPINTAR) ? actual : null;
+  const aPreparar = aRecortar ?? aRepintar;
   const [recorte, setRecorte] = useState<{ de: string; url: string | null } | null>(null);
   useEffect(() => {
-    if (!aRecortar) return;
+    if (!aPreparar) return;
     let sigue = true;
-    void recortar(aRecortar).then((url) => {
-      if (sigue) setRecorte({ de: aRecortar, url });
+    void (aPreparar.endsWith(REPINTAR) ? repintar(aPreparar) : recortar(aPreparar)).then((url) => {
+      if (sigue) setRecorte({ de: aPreparar, url });
     });
     return () => {
       sigue = false;
     };
-  }, [aRecortar]);
+  }, [aPreparar]);
 
   if (!actual) return null;
   if (actual.startsWith("/sprites-animados/")) {
@@ -272,11 +289,12 @@ export function SpritePokemon({
       />
     );
   }
-  const listo = aRecortar
-    ? recorte?.de === aRecortar
+  const hechas = aRepintar ? repintadasYa : recortes;
+  const listo = aPreparar
+    ? recorte?.de === aPreparar
       ? recorte
-      : recortes.has(aRecortar)
-        ? { de: aRecortar, url: recortes.get(aRecortar) ?? null }
+      : hechas.has(aPreparar)
+        ? { de: aPreparar, url: hechas.get(aPreparar) ?? null }
         : null
     : null;
   return (
@@ -290,8 +308,9 @@ export function SpritePokemon({
       className={cx(
         className,
         pixelado && "[image-rendering:pixelated]",
-        // Hasta tener el recorte, invisible: si no, se ve en pequeño y luego crece
-        aRecortar && !listo && "opacity-0",
+        // Hasta tener el recorte, invisible: si no, se ve en pequeño y luego crece (y
+        // el repintado, para que no se vea el normal y cambie de color)
+        aPreparar && !listo && "opacity-0",
       )}
     />
   );

@@ -39,26 +39,46 @@ export function pokemonDeLaImagen(src: string | null | undefined) {
 }
 
 /**
- * Los iconos de caja de la 8ª generación (Espada y Escudo): los muñequitos del
- * PC, con más detalle que los de la 7ª. PokéAPI los tiene hasta el #898 y casi
- * todas sus formas; **los que faltan** (Hisui, Paldea, las megas nuevas…) son
- * los del paquete de Pokémon Essentials, en `public/iconos-de-caja` y ya
- * recortados (los genera `scripts/iconos-de-caja.py`). Las formas que se ven
- * igual que otra (los Dominantes, Minior Meteorito…) usan el de esa. No los hay
- * variocolor, como en Espada y Escudo: la casilla ya lleva su destello.
+ * Los iconos de caja, en dos estilos a elegir en Mi perfil:
+ *
+ * - **Espada y Escudo** (`iconos`): los muñequitos del PC de la 8ª, con más
+ *   detalle. PokéAPI los tiene hasta el #898 y casi todas sus formas; los que
+ *   faltan (Hisui, Paldea, las megas nuevas…) salen del paquete de Pokémon
+ *   Essentials. Sin variocolor, como en Espada y Escudo: la casilla ya lleva su
+ *   destello.
+ * - **Todos iguales** (`iconos-todos`): todos los del paquete de Essentials
+ *   (los de la 7ª al doble, y los nuevos al mismo estilo), también variocolor.
+ *   Los que el paquete no trae (algunas Gigamax, Pikachu con gorra…) se quedan
+ *   con el de Espada y Escudo.
+ *
+ * Los del paquete van en `public/iconos-de-caja`, ya recortados (los genera
+ * `scripts/iconos-de-caja.py`). Las formas que se ven igual que otra (los
+ * Dominantes, Minior Meteorito…) usan el de esa.
  */
 const ICONOS = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
-const LOCALES = new Set<number>(iconos.locales);
+const DEL_PAQUETE = {
+  todos: new Set<number>(iconos.todos),
+  shiny: new Set<number>(iconos.shiny),
+  colores: new Set<number>(iconos.colores),
+  sinEspadaYEscudo: new Set<number>(iconos.sinEspadaYEscudo),
+};
 const ALIAS: Record<string, number> = iconos.alias;
 
-export function iconoDeCaja(pokemonId: number): string {
+/** Lo que va detrás de `#` en una imagen que hay que repintar de shiny (ver `SpritePokemon`) */
+export const REPINTAR = "#colores";
+
+export function iconoDeCaja(pokemonId: number, shiny = false, todosIguales = false): string {
   const id = ALIAS[pokemonId] ?? pokemonId;
-  return LOCALES.has(id) ? `/iconos-de-caja/${id}.png` : `${ICONOS}/${id}.png`;
+  const delPaquete = DEL_PAQUETE.todos.has(id) && (todosIguales || DEL_PAQUETE.sinEspadaYEscudo.has(id));
+  if (!delPaquete) return `${ICONOS}/${id}.png`;
+  if (todosIguales && shiny && DEL_PAQUETE.shiny.has(id)) return `/iconos-de-caja/shiny/${id}.png`;
+  if (todosIguales && shiny && DEL_PAQUETE.colores.has(id)) return `/iconos-de-caja/${id}.png${REPINTAR}`;
+  return `/iconos-de-caja/${id}.png`;
 }
 
 /** El estilo de sprites que elige cada uno en Mi perfil; sin elegir, Blanco y Negro */
 export const COOKIE_DE_SPRITES = "hexaapp-sprites";
-export type EstiloDeSprites = "quinta" | "iconos" | "home";
+export type EstiloDeSprites = "quinta" | "iconos" | "iconos-todos" | "home";
 export function leerEstiloDeSprites(valor: string | null | undefined): EstiloDeSprites {
-  return valor === "home" || valor === "iconos" ? valor : "quinta";
+  return valor === "home" || valor === "iconos" || valor === "iconos-todos" ? valor : "quinta";
 }

@@ -1,17 +1,21 @@
 """
-Genera los iconos de caja que faltan en PokéAPI a partir del paquete de
-Pokémon Essentials (la carpeta `Icons`).
+Genera los iconos de caja del paquete de Pokémon Essentials (las carpetas
+`Icons` e `Icons shiny`), para los dos estilos de iconos de Mi perfil:
+«Espada y Escudo» (los de PokéAPI, con estos solo donde no llegan) y «Todos
+iguales» (todos estos, también variocolor).
 
 Uso:
     pip install pillow pyoxipng
     git clone -q --filter=blob:none --no-checkout --depth 1 https://github.com/PokeAPI/sprites pokeapi
     git -C pokeapi ls-tree --name-only HEAD sprites/pokemon/versions/generation-viii/icons/ | sed 's#.*/##' > iconos-pokeapi.txt
-    python scripts/iconos-de-caja.py "<carpeta Icons>" <pokemon_species.csv> iconos-pokeapi.txt
+    python scripts/iconos-de-caja.py "<carpeta con Icons e Icons shiny>" <pokemon_species.csv> iconos-pokeapi.txt
 
 Por qué así:
-- Solo se generan **los que no tiene PokéAPI** en los de Espada y Escudo (del
-  #899 en adelante y unas cuantas formas): esos tienen más detalle que los de
-  Essentials, que son los de la 7ª al doble de tamaño.
+- Se generan **todos** los que hay en la app, y el manifiesto dice cuáles no
+  tiene PokéAPI en los de Espada y Escudo (`sinEspadaYEscudo`: del #899 en
+  adelante y unas cuantas formas), que son los que rellenan ese estilo. Los de
+  Espada y Escudo tienen más detalle (estos son los de la 7ª al doble), pero
+  no hay variocolor: por eso se puede elegir.
 - **Quietos**: de los dos fotogramas del icono (el que salta) solo el primero;
   en una caja, treinta botando a la vez serían una feria.
 - **Ya recortados** como los recorta `SpritePokemon` (cuadrado, 2 píxeles de
@@ -23,8 +27,10 @@ Por qué así:
   esos se quedan así, con el lado mínimo al doble.
 - Las formas que se ven igual que otra (los Dominantes, los Minior Meteorito,
   Greninja Fuerte Vínculo…) no llevan imagen: usan la de esa (`ALIAS`).
-- Sin variocolor: los de Espada y Escudo no lo tienen y la casilla ya lleva su
-  destello.
+- **Los variocolor** van enteros en `shiny/` o, si ocupa menos, como un JSON
+  de qué color pasa a cuál (y algún píxel suelto) para que el navegador
+  repinte el normal, como los animados. Aquí gana casi siempre la imagen: a
+  32 px un PNG es poquísimo y estos iconos tienen muchos colores casi iguales.
 """
 
 import csv
@@ -115,35 +121,99 @@ def main():
     huecos = en_la_app - con_icono
 
     ficheros = {}
-    for fichero in os.listdir(carpeta):
+    for fichero in os.listdir(os.path.join(carpeta, "Icons")):
         if not fichero.lower().endswith(".png"):
             continue
         nombre = fichero[:-4]
         pokemon_id = formas.get(nombre, nombres.get(nombre.upper()))
-        if pokemon_id in huecos:
+        if pokemon_id in en_la_app:
             ficheros.setdefault(pokemon_id, fichero)
 
-    os.makedirs(SALIDA, exist_ok=True)
+    os.makedirs(os.path.join(SALIDA, "shiny"), exist_ok=True)
     total = 0
+    manifiesto = {"todos": [], "shiny": [], "colores": []}
     for pokemon_id, fichero in sorted(ficheros.items()):
-        tira = Image.open(os.path.join(carpeta, fichero)).convert("RGBA")
-        fotograma = tira.crop((0, 0, tira.height, tira.height))
-        mitad = a_la_mitad(fotograma)
-        icono = recortado(mitad, 1) if mitad else recortado(fotograma, 2)
-        tmp = os.path.join(SALIDA, f"{pokemon_id}.tmp.png")
-        icono.save(tmp)
-        destino = os.path.join(SALIDA, f"{pokemon_id}.png")
-        total += animados.optimizar((tmp, destino))
-        os.remove(tmp)
+        normal = primer_fotograma(os.path.join(carpeta, "Icons", fichero))
+        total += guardar(preparado(normal), os.path.join(SALIDA, f"{pokemon_id}.png"))
+        manifiesto["todos"].append(pokemon_id)
+        ruta_shiny = os.path.join(carpeta, "Icons shiny", fichero)
+        if not os.path.exists(ruta_shiny):
+            continue
+        shiny = primer_fotograma(ruta_shiny)
+        cambio = repintado(preparado(normal), preparado(shiny))
+        imagen = os.path.join(SALIDA, "shiny", f"{pokemon_id}.png")
+        tamano = guardar(preparado(shiny), imagen)
+        texto = json.dumps(cambio, separators=(",", ":")) if cambio is not None else None
+        # Lo que menos ocupe: con muchos colores casi iguales, la lista pesa más que la imagen
+        if texto is not None and len(texto) < tamano:
+            os.remove(imagen)
+            with open(os.path.join(SALIDA, "shiny", f"{pokemon_id}.json"), "w", encoding="utf-8") as f:
+                f.write(texto)
+            total += len(texto)
+            manifiesto["colores"].append(pokemon_id)
+        else:
+            total += tamano
+            manifiesto["shiny"].append(pokemon_id)
 
-    alias = {str(de): a for de, a in ALIAS.items() if de in huecos}
+    manifiesto["alias"] = {str(de): a for de, a in ALIAS.items() if de in en_la_app}
+    manifiesto["sinEspadaYEscudo"] = sorted(huecos)
     sin_nada = sorted(huecos - set(ficheros) - set(ALIAS))
-    json.dump(
-        {"locales": sorted(ficheros), "alias": alias},
-        open(MANIFIESTO, "w", encoding="utf-8"),
-        separators=(",", ":"),
+    json.dump(manifiesto, open(MANIFIESTO, "w", encoding="utf-8"), separators=(",", ":"))
+    print(
+        f"{len(ficheros)} iconos ({len(manifiesto['shiny'])} shiny enteros, {len(manifiesto['colores'])} repintados), "
+        f"{total / 1024:.0f} KB; {len(manifiesto['alias'])} alias; sin icono en Espada y Escudo ni aquí: {sin_nada}; "
+        f"de la app sin icono aquí: {len(en_la_app - set(ficheros) - set(ALIAS))}"
     )
-    print(f"{len(ficheros)} iconos, {total / 1024:.0f} KB; {len(alias)} alias; sin icono: {sin_nada}")
+
+
+# Cuántos píxeles sueltos se apuntan como mucho antes de guardar el shiny entero
+SUELTOS = 32
+
+
+def repintado(normal, shiny):
+    """
+    Cómo pasar del icono normal al shiny: {"c": {"rrggbb": "rrggbb"}, "p": [[i, "rrggbbaa"], …]},
+    o None si no compensa. Casi todos son el mismo dibujo con otros colores salvo
+    algún píxel (un ojo, un brillo): el cambio de cada color es el que más se
+    repite, y lo que no lo sigue va aparte, píxel a píxel (`i`, su posición).
+    """
+    if normal.size != shiny.size:
+        return None
+    pn, ps = list(normal.getdata()), list(shiny.getdata())
+    votos = {}
+    for p, q in zip(pn, ps):
+        if p[3] and q[3]:
+            votos.setdefault(p[:3], {}).setdefault(q[:3], 0)
+            votos[p[:3]][q[:3]] += 1
+    cambio = {p: max(destinos, key=destinos.get) for p, destinos in votos.items()}
+    sueltos = []
+    for i, (p, q) in enumerate(zip(pn, ps)):
+        esperado = (*cambio.get(p[:3], p[:3]), p[3]) if p[3] else (0, 0, 0, 0)
+        real = q if q[3] else (0, 0, 0, 0)
+        if esperado != real:
+            sueltos.append([i, "%02x%02x%02x%02x" % real])
+    if len(sueltos) > SUELTOS:
+        return None
+    hexa = lambda c: "%02x%02x%02x" % c
+    return {"c": {hexa(p): hexa(q) for p, q in cambio.items() if p != q}, "p": sueltos}
+
+
+def primer_fotograma(ruta):
+    tira = Image.open(ruta).convert("RGBA")
+    return tira.crop((0, 0, tira.height, tira.height))
+
+
+def preparado(fotograma):
+    mitad = a_la_mitad(fotograma)
+    return recortado(mitad, 1) if mitad else recortado(fotograma, 2)
+
+
+def guardar(icono, destino):
+    tmp = destino[:-4] + ".tmp.png"
+    icono.save(tmp)
+    tamano = animados.optimizar((tmp, destino))
+    os.remove(tmp)
+    return tamano
 
 
 if __name__ == "__main__":
