@@ -19,7 +19,8 @@ import {
 import { capturasParaVincular, vincularCapturaNueva } from "@/lib/soul-link";
 import { elegirFondo, esFondo, nombrarCaja } from "@/lib/fondos-de-caja";
 import { MOVIMIENTOS_POR_POKEMON, movimientoPorSlug, naturalezaPorSlug } from "@/lib/movimientos";
-import { objetoPorSlug } from "@/lib/objetos";
+import { esObjetoDeAnil, objetoPorSlug } from "@/lib/objetos";
+import { habilidadesDelJuego } from "@/lib/habilidades";
 import {
   apuntarCambio,
   assertPuedeTocarLaCaja,
@@ -315,7 +316,7 @@ export async function intercambiarAction(entrada: {
       fotos([captura.id]),
       prisma.capture.findUniqueOrThrow({
         where: { id: captura.id },
-        select: { nickname: true, naturaleza: true, objeto: true, movimientos: true },
+        select: { nickname: true, naturaleza: true, objeto: true, movimientos: true, habilidad: true, habilidadMega: true },
       }),
       // Una especie inventada (un fangame) no tiene sprite que bajar
       pokemonId ? descargarSprites(pokemonId, shiny) : null,
@@ -335,6 +336,8 @@ export async function intercambiarAction(entrada: {
         naturaleza: null,
         objeto: null,
         movimientos: [],
+        habilidad: null,
+        habilidadMega: null,
         // Sin sprite (sin línea con GitHub, o inventado): ninguno, mejor que el del que se fue
         image: sprites?.boxImage ?? null,
       },
@@ -595,29 +598,44 @@ export async function cambiarMoteAction(entrada: {
 }
 
 /**
- * La ficha completa: naturaleza, objeto y movimientos. Como el mote, no pasa
- * por deshacer: se cambia otra vez y ya. Lo que no existe se rechaza entero en
- * vez de guardarse a medias, para que no desaparezca un movimiento sin avisar.
+ * La ficha completa: naturaleza, objeto, habilidad y movimientos. Como el mote,
+ * no pasa por deshacer: se cambia otra vez y ya. Lo que no existe se rechaza
+ * entero en vez de guardarse a medias, para que no desaparezca un movimiento
+ * sin avisar.
+ *
+ * Llegan **las dos habilidades**, la de siempre y la de su mega: el editor
+ * enseña la de la forma que toca según el objeto (ver lib/megas.ts) y guarda
+ * las dos, para que quitar y poner la piedra no pierda ninguna.
  */
 export async function cambiarFichaDeCombateAction(entrada: {
   captureId: string;
   naturaleza: string | null;
   objeto: string | null;
+  habilidad?: string | null;
+  habilidadMega?: string | null;
   movimientos: string[];
 }): Promise<Resultado> {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
+    // Lo de Añil, solo en sus lockes: fuera de ellos no existe
+    const enAnil = esPokemonAnil(captura.participant.competition);
     if (entrada.naturaleza && !naturalezaPorSlug(entrada.naturaleza)) {
       return { error: "Esa naturaleza no existe." };
     }
-    if (entrada.objeto && !objetoPorSlug(entrada.objeto)) return { error: "Ese objeto no existe." };
+    if (entrada.objeto && (!objetoPorSlug(entrada.objeto) || (!enAnil && esObjetoDeAnil(entrada.objeto)))) {
+      return { error: "Ese objeto no existe." };
+    }
+    const habilidades = { habilidad: entrada.habilidad, habilidadMega: entrada.habilidadMega };
+    for (const slug of Object.values(habilidades)) {
+      if (slug && !habilidadesDelJuego(enAnil).some((h) => h.s === slug)) {
+        return { error: "Esa habilidad no existe." };
+      }
+    }
     const lista = Array.isArray(entrada.movimientos) ? entrada.movimientos : [];
     const movimientos = [...new Set(lista.filter(Boolean))];
     if (movimientos.length > MOVIMIENTOS_POR_POKEMON) {
       return { error: `Un pokémon lleva ${MOVIMIENTOS_POR_POKEMON} movimientos como mucho.` };
     }
-    // Los de Añil, solo en sus lockes: fuera de ellos no existen
-    const enAnil = esPokemonAnil(captura.participant.competition);
     const raro = movimientos.find((m) => !movimientoPorSlug(m) || (!enAnil && esMovimientoDeAnil(m)));
     if (raro) return { error: `No conozco el movimiento «${raro}».` };
     await prisma.capture.update({
@@ -626,6 +644,9 @@ export async function cambiarFichaDeCombateAction(entrada: {
         naturaleza: entrada.naturaleza || null,
         objeto: entrada.objeto || null,
         movimientos,
+        // Quien no las manda (una versión vieja en otra pestaña) no las borra
+        ...(entrada.habilidad === undefined ? {} : { habilidad: entrada.habilidad || null }),
+        ...(entrada.habilidadMega === undefined ? {} : { habilidadMega: entrada.habilidadMega || null }),
       },
     });
     refrescar();
@@ -777,6 +798,8 @@ export async function deshacerEnCajaAction(entrada: {
               ...(f.naturaleza !== undefined ? { naturaleza: f.naturaleza } : {}),
               ...(f.objeto !== undefined ? { objeto: f.objeto } : {}),
               ...(f.movimientos !== undefined ? { movimientos: f.movimientos ?? [] } : {}),
+              ...(f.habilidad !== undefined ? { habilidad: f.habilidad } : {}),
+              ...(f.habilidadMega !== undefined ? { habilidadMega: f.habilidadMega } : {}),
               deathId: f.deathId && bajasVivas.has(f.deathId) ? f.deathId : null,
             },
           }),

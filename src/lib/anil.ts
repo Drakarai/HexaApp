@@ -1,28 +1,38 @@
 import datos from "./anil.json";
+import sprites from "./anil-sprites.json";
 
 /**
  * Lo propio de **Pokémon Añil**, para los lockes que se juegan a él: sus dos
- * pokémon nuevos (Royaleon y Cefireon, que evolucionan de Eevee), los tipos que
- * cambia (Meganium es Planta/Hada, Typhlosion Fuego/Normal…) y sus movimientos
- * nuevos. En cualquier otro juego no existe nada de esto.
+ * pokémon nuevos (Royaleon y Cefireon, que evolucionan de Eevee), sus formas y
+ * megas nuevas (Mega Venusaur Y, Mega Snorlax, los cortes de Furfrou con su
+ * tipo…) con sus megapiedras, los tipos que cambia (Meganium es Planta/Hada),
+ * sus movimientos nuevos y los que cambian, sus objetos y sus habilidades (estas,
+ * en lib/habilidades.ts). En cualquier otro juego no existe nada de esto.
  *
  * Los datos salen de los ficheros del juego (`scripts/anil.py`, a partir del
  * repositorio del servidor de Showdown de Añil) y solo traen lo que cambia
- * respecto a los de siempre. Las megas y formas nuevas de Añil no están: el
- * grupo pidió solo los pokémon nuevos.
+ * respecto a los de siempre; los dibujos, de su carpeta de gráficos
+ * (`scripts/anil-sprites.py`).
  *
  * Sin `server-only`: lo usan el buscador de especies y la ficha en el navegador.
  */
 
 type EspecieDeAnil = { dex: number; name: string; tipos: number[]; de: number };
+type FormaDeAnil = { id: number; de: number; etiqueta: string; tipos: number[]; mega?: string; sprite: string };
 type MovimientoDeAnil = { s: string; n: string; t: number; c: number; p?: number; g: number };
+type ObjetoDeAnil = { slug: string; nombre: string; grupo: string };
 type Datos = {
   especies: EspecieDeAnil[];
+  formas: FormaDeAnil[];
   tipos: Record<string, number[]>;
   movimientos: MovimientoDeAnil[];
   tiposDeMovimientos: Record<string, number>;
+  potencias: Record<string, number>;
+  /** Cada megapiedra de Añil: a qué mega lleva y desde qué forma */
+  megas: Record<string, [number, number][]>;
+  objetos: { nuevos: ObjetoDeAnil[]; fuera: string[] };
 };
-const D = datos as Datos;
+const D = datos as unknown as Datos;
 
 /**
  * La «generación» de los tipos de un locke de Añil. Los tipos van por
@@ -37,7 +47,12 @@ export const GENERACION_ANIL = 100;
 const PRIMER_NUMERO = 20001;
 
 export const ESPECIES_DE_ANIL = D.especies;
+export const FORMAS_DE_ANIL = D.formas;
 export const MOVIMIENTOS_DE_ANIL = D.movimientos;
+export const MEGAS_DE_ANIL = D.megas;
+export const OBJETOS_DE_ANIL = D.objetos.nuevos;
+/** Los objetos de los juegos que en Añil no están (la Venusaurita es allí la X) */
+export const OBJETOS_QUE_NO_ESTAN_EN_ANIL = new Set(D.objetos.fuera);
 
 /** Si un número de pokémon es de los nuevos de Añil: de esos no hay nada en PokéAPI */
 export function esPokemonDeAnil(pokemonId: number | null | undefined) {
@@ -54,9 +69,40 @@ export function tiposEnAnil(pokemonId: number): number[] | null {
   return D.tipos[String(pokemonId)] ?? ESPECIES_DE_ANIL.find((e) => e.dex === pokemonId)?.tipos ?? null;
 }
 
+/** La potencia de un movimiento en Añil, si cambia (Fuerza pega 90) */
+export function potenciaEnAnil(slug: string): number | null {
+  return D.potencias[slug] ?? null;
+}
+
 /** El tipo de un movimiento en Añil, si cambia (Fuerza es Roca; Corte, Acero) */
 export function tipoDeMovimientoEnAnil(slug: string): number | null {
   return D.tiposDeMovimientos[slug] ?? null;
+}
+
+/**
+ * Los dibujos de lo que solo existe en Añil, en `public/anil` (ver
+ * scripts/anil-sprites.py): la tira animada para la ficha, el quieto ya
+ * recortado para las casillas y el icono de caja. El shiny de la tira va
+ * entero o como lista de colores para repintar (`#colores`, como los de
+ * Essentials); Mewtwo Armadura no trae shiny ni icono propio.
+ */
+const SPRITES = {
+  shiny: new Set<number>(sprites.shiny),
+  colores: new Set<number>(sprites.colores),
+  iconosShiny: new Set<number>(sprites.iconosShiny),
+};
+
+export function spritesDeAnil(pokemonId: number, shiny: boolean) {
+  const conShiny = shiny && (SPRITES.shiny.has(pokemonId) || SPRITES.colores.has(pokemonId));
+  return {
+    tira: !conShiny
+      ? `/anil/frente/${pokemonId}.png`
+      : SPRITES.shiny.has(pokemonId)
+        ? `/anil/frente/shiny/${pokemonId}.png`
+        : `/anil/frente/${pokemonId}.png#colores`,
+    quieto: `/anil/quieto/${conShiny ? "shiny/" : ""}${pokemonId}.png`,
+    icono: `/anil/iconos/${shiny && SPRITES.iconosShiny.has(pokemonId) ? "shiny/" : ""}${pokemonId}.png`,
+  };
 }
 
 /**

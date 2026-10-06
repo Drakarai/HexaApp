@@ -725,7 +725,8 @@ function Sprite({ pokemon, className, ficha = false }: { pokemon: PokemonDelTabl
   return pokemon.imagen || pokemon.pokemonId ? (
     <SpritePokemon
       src={pokemon.imagen}
-      pokemonId={pokemon.pokemonId}
+      // Con su megapiedra, la mega (ver lib/megas.ts)
+      pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId}
       shiny={pokemon.shiny}
       ficha={ficha}
       alt={pokemon.species}
@@ -1217,7 +1218,8 @@ function Ficha({
           dueno={{ nombre: dueno.displayName, color: dueno.color, imagen: dueno.avatarImage }}
           onCerrar={onCerrar}
           nombre={pokemon.nickname ?? pokemon.species}
-          especie={pokemon.species}
+          // Con su megapiedra puesta, que se vea que es la mega
+          especie={pokemon.mega ? `${pokemon.species} · ${pokemon.mega.rotulo}` : pokemon.species}
           shiny={pokemon.shiny}
           tipos={pokemon.tipos}
           apagada={pokemon.muerta}
@@ -1225,7 +1227,7 @@ function Ficha({
             <>
               <SpriteAnimado
                 // Otro sprite al evolucionar o volverse shiny: que vuelva a probar el animado
-                key={`${pokemon.pokemonId}-${pokemon.shiny}`}
+                key={`${pokemon.mega?.pokemonId ?? pokemon.pokemonId}-${pokemon.shiny}`}
                 pokemon={pokemon}
                 className={cx("h-20 w-20", pokemon.muerta && "opacity-50 grayscale")}
               />
@@ -1269,7 +1271,7 @@ function Ficha({
               onAviso={onAviso}
             />
           ) : null}
-          {pestana === "combate" ? <Debilidades pokemonId={pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
+          {pestana === "combate" ? <Debilidades pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
 
           {pestana === "historia" ? (
             <HistoriaDelPokemon

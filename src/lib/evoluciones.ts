@@ -1,6 +1,6 @@
 import datos from "./evoluciones.json";
-import { POKEDEX, POKEDEX_DE_ANIL, findSpecies, type PokedexSpecies } from "./pokedex";
-import { ESPECIES_DE_ANIL } from "./anil";
+import { POKEDEX_CON_ANIL, findSpecies, type PokedexSpecies } from "./pokedex";
+import { ESPECIES_DE_ANIL, esPokemonDeAnil } from "./anil";
 
 /**
  * A qué puede evolucionar un pokémon.
@@ -46,10 +46,10 @@ for (const especie of ESPECIES_DE_ANIL) {
   DE_EN_ANIL.set(especie.dex, especie.de);
 }
 
-const POR_DEX = new Map([...POKEDEX, ...POKEDEX_DE_ANIL].map((especie) => [especie.dex, especie]));
-/** De qué especie es cada forma: 10103 → Vulpix */
+const POR_DEX = new Map(POKEDEX_CON_ANIL.map((especie) => [especie.dex, especie]));
+/** De qué especie es cada forma: 10103 → Vulpix (y las de Añil, que saber qué son no estorba) */
 const POR_FORMA = new Map<number, { especie: PokedexSpecies; etiqueta: string }>();
-for (const especie of [...POKEDEX, ...POKEDEX_DE_ANIL]) {
+for (const especie of POKEDEX_CON_ANIL) {
   for (const forma of especie.forms) {
     POR_FORMA.set(forma.id, { especie, etiqueta: forma.label });
   }
@@ -69,7 +69,7 @@ function regionDeLaForma(etiqueta: string): string | null {
  * Pikachu y las de otra historia (Ursaluna Luna Carmesí, Floette Eterna).
  */
 const NO_SE_EVOLUCIONA_A =
-  /mega|gmax|t[oó]tem|battle bond|\bash\b|filo|daruma|hero|eterna|carmes|gorra|starter|rock star|belle|pop star|phd|libre|cosplay/i;
+  /mega|gmax|t[oó]tem|battle bond|\bash\b|filo|daruma|hero|eterna|carmes|gorra|starter|rock star|belle|pop star|phd|libre|cosplay|amarillo/i;
 
 /**
  * Qué pokémon es: por su número si lo tiene, y si no por el nombre (las
@@ -129,6 +129,8 @@ export function evolucionesDe(
     const destino = POR_DEX.get(dex);
     if (!destino) continue;
     for (const forma of destino.forms) {
+      // Las formas de Añil, solo en sus lockes
+      if (!conAnil && esPokemonDeAnil(forma.id)) continue;
       const normal = forma.label === "Normal" || forma.id === destino.dex;
       if (!normal && NO_SE_EVOLUCIONA_A.test(forma.label)) continue;
       opciones.push({

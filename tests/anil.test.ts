@@ -12,6 +12,10 @@ import { evolucionesDe, raizDeLaFamilia } from "@/lib/evoluciones";
 import { findSpecies, searchSpecies } from "@/lib/pokedex";
 import { movimientoParaVer, movimientoPorNombre, movimientosDelJuego } from "@/lib/movimientos";
 import { leerShowdown } from "@/lib/showdown";
+import { megaPorPiedra } from "@/lib/megas";
+import { habilidadesDe, habilidadesDelJuego, habilidadPorNombre, habilidadPorSlug } from "@/lib/habilidades";
+import { objetosDelJuego } from "@/lib/objetos";
+import { rotuloDeMega } from "@/lib/soul-link";
 
 const tipo = (slug: string) => TIPOS.find((t) => t.slug === slug)!.id;
 const fangame = (game: string) => ({ game, gameId: null, juegoNoOficial: true, tipos: null });
@@ -78,5 +82,72 @@ describe("Pokémon Añil", () => {
     const [fuera] = leerShowdown(texto);
     assert.equal(fuera.pokemonId, null);
     assert.equal(fuera.movimientos.length, 1);
+  });
+});
+
+describe("Pokémon Añil: formas, megas, habilidades y objetos", () => {
+  test("sus formas y megas salen en su especie solo en Añil, con sus tipos", () => {
+    const etiquetas = (conAnil: boolean) => findSpecies("Venusaur", conAnil)!.forms.map((f) => f.label);
+    assert.ok(etiquetas(true).includes("Mega Y"));
+    assert.ok(!etiquetas(false).includes("Mega Y"));
+    const corazon = findSpecies("Furfrou", true)!.forms.find((f) => f.label === "Corte Corazón")!;
+    assert.deepEqual(tiposDePokemon(corazon.id, GENERACION_ANIL), [tipo("normal"), tipo("fairy")]);
+  });
+
+  test("la megapiedra: la de los juegos en todos, las de Añil solo en Añil", () => {
+    assert.equal(megaPorPiedra(6, "Charizard", "charizardite-x", false), 10034);
+    assert.equal(megaPorPiedra(3, "Venusaur", "venusaurite", false), 10033);
+    // La de otro no hace nada
+    assert.equal(megaPorPiedra(143, "Snorlax", "charizardite-x", false), null);
+    // La Venusaurita Y es de Añil; allí la de siempre es la X
+    assert.equal(megaPorPiedra(3, "Venusaur", "anil-venusauritey", false), null);
+    const megaY = findSpecies("Venusaur", true)!.forms.find((f) => f.label === "Mega Y")!.id;
+    assert.equal(megaPorPiedra(3, "Venusaur", "anil-venusauritey", true), megaY);
+    assert.equal(megaPorPiedra(3, "Venusaur", "anil-venusauritex", true), 10033);
+    assert.equal(megaPorPiedra(3, "Venusaur", "venusaurite", true), null);
+    // Una piedra para dos formas: cada una a la suya
+    const toxtricity = findSpecies("Toxtricity", true)!.forms;
+    const megaGrave = toxtricity.find((f) => f.label === "Mega (Grave)")!.id;
+    assert.equal(megaPorPiedra(10184, "Toxtricity", "anil-toxtricitite", true), megaGrave);
+    assert.notEqual(megaPorPiedra(849, "Toxtricity", "anil-toxtricitite", true), megaGrave);
+  });
+
+  test("las habilidades de Añil, solo en Añil, con su descripción", () => {
+    assert.equal(habilidadPorNombre("Realeza", false), undefined);
+    assert.equal(habilidadPorNombre("Realeza", true)?.s, "anil-realeza");
+    const royaleon = findSpecies("Royaleon", true)!.dex;
+    assert.ok(habilidadesDe(royaleon, true).includes("anil-realeza"));
+    assert.deepEqual(habilidadesDe(1, false), ["overgrow", "chlorophyll"]);
+    // Entusiasmo hace otra cosa en Añil
+    assert.match(habilidadPorSlug("hustle", true)!.d, /Ataque Especial/);
+    assert.ok(habilidadesDelJuego(false).every((h) => !h.s.startsWith("anil-")));
+  });
+
+  test("los objetos de Añil: los suyos, y sin los que allí no hay", () => {
+    const enAnil = objetosDelJuego(true).map((o) => o.slug);
+    const fuera = objetosDelJuego(false).map((o) => o.slug);
+    assert.ok(enAnil.includes("anil-pelucaregia") && enAnil.includes("anil-venusauritey"));
+    assert.ok(!enAnil.includes("venusaurite"));
+    assert.ok(fuera.includes("venusaurite") && !fuera.some((s) => s.startsWith("anil-")));
+  });
+
+  test("pegar de Showdown lee la habilidad, y lo de Añil solo en Añil", () => {
+    const [comun] = leerShowdown("Venusaur @ Venusaurite\nAbility: Overgrow\n- Giga Drain");
+    assert.equal(comun.habilidad, "overgrow");
+    assert.equal(comun.objeto, "venusaurite");
+    const [enAnil] = leerShowdown("Venusaur @ Venusaurite Y\nAbility: Realeza\n- Giga Drain", true);
+    assert.equal(enAnil.objeto, "anil-venusauritey");
+    assert.equal(enAnil.habilidad, "anil-realeza");
+    const [fuera] = leerShowdown("Venusaur @ Venusaurite Y\nAbility: Realeza\n- Giga Drain");
+    assert.equal(fuera.objeto, null);
+    assert.equal(fuera.habilidad, null);
+  });
+
+  test("las potencias de Añil y cómo se llama una mega", () => {
+    assert.equal(movimientoParaVer("twister", GENERACION_ANIL)?.potencia, 60);
+    assert.equal(movimientoParaVer("twister", 9)?.potencia, 40);
+    assert.equal(rotuloDeMega("Mega-Charizard X", "Charizard"), "Mega X");
+    assert.equal(rotuloDeMega("Mega-Venusaur", "Venusaur"), "Mega");
+    assert.equal(rotuloDeMega("Mega Y", "Venusaur"), "Mega Y");
   });
 });

@@ -1,5 +1,5 @@
 import data from "./pokedex.json";
-import { ESPECIES_DE_ANIL, esPokemonDeAnil } from "./anil";
+import { ESPECIES_DE_ANIL, FORMAS_DE_ANIL, esPokemonDeAnil } from "./anil";
 
 export type PokedexForm = { id: number; label: string };
 export type PokedexSpecies = {
@@ -44,15 +44,31 @@ export const POKEDEX_DE_ANIL: PokedexSpecies[] = ESPECIES_DE_ANIL.map((especie) 
   forms: [{ id: especie.dex, label: "Normal" }],
 }));
 
+/**
+ * La pokédex de un locke de Añil: la de siempre con las formas y megas de Añil
+ * en su especie (Venusaur gana «Mega Y»; Furfrou, sus cortes) y sus pokémon
+ * nuevos al final.
+ */
+const FORMAS_POR_ESPECIE = new Map<number, PokedexForm[]>();
+for (const forma of FORMAS_DE_ANIL) {
+  FORMAS_POR_ESPECIE.set(forma.de, [...(FORMAS_POR_ESPECIE.get(forma.de) ?? []), { id: forma.id, label: forma.etiqueta }]);
+}
+export const POKEDEX_CON_ANIL: PokedexSpecies[] = [
+  ...POKEDEX.map((especie) => {
+    const deAnil = FORMAS_POR_ESPECIE.get(especie.dex);
+    return deAnil ? { ...especie, forms: [...especie.forms, ...deAnil] } : especie;
+  }),
+  ...POKEDEX_DE_ANIL,
+];
+
 const BY_NORMALIZED = new Map(
   POKEDEX.map((species) => [normalize(species.name), species]),
 );
-const DE_ANIL_POR_NOMBRE = new Map(POKEDEX_DE_ANIL.map((species) => [normalize(species.name), species]));
+const CON_ANIL_POR_NOMBRE = new Map(POKEDEX_CON_ANIL.map((species) => [normalize(species.name), species]));
 
-/** Busca por nombre exacto, ignorando acentos y mayúsculas. */
+/** Busca por nombre exacto, ignorando acentos y mayúsculas; con `conAnil`, con lo de Añil */
 export function findSpecies(name: string, conAnil = false): PokedexSpecies | undefined {
-  const clave = normalize(name);
-  return BY_NORMALIZED.get(clave) ?? (conAnil ? DE_ANIL_POR_NOMBRE.get(clave) : undefined);
+  return (conAnil ? CON_ANIL_POR_NOMBRE : BY_NORMALIZED).get(normalize(name));
 }
 
 /** Sugerencias para el buscador: primero las que empiezan por lo escrito. */
@@ -63,7 +79,7 @@ export function searchSpecies(query: string, limit = 8, conAnil = false): Pokede
   const startsWith: PokedexSpecies[] = [];
   const contains: PokedexSpecies[] = [];
 
-  for (const species of conAnil ? [...POKEDEX, ...POKEDEX_DE_ANIL] : POKEDEX) {
+  for (const species of conAnil ? POKEDEX_CON_ANIL : POKEDEX) {
     const name = normalize(species.name);
     if (name.startsWith(needle)) startsWith.push(species);
     else if (name.includes(needle)) contains.push(species);

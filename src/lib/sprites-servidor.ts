@@ -2,6 +2,9 @@ import "server-only";
 import sharp from "sharp";
 import { spriteCandidates } from "@/lib/pokedex";
 import { spriteDeObjeto } from "@/lib/objetos";
+import { esPokemonDeAnil } from "@/lib/anil";
+// Los quietos de lo de Añil, dentro del código: ver scripts/anil-sprites.py
+import quietosDeAnil from "@/lib/anil-quietos.json";
 import { IMAGE_SIZES } from "@/lib/image";
 import {
   claveDeSprite,
@@ -91,6 +94,13 @@ async function spriteDeEspecie(
   const clave = claveDeSprite(pokemonId, shiny, tipo);
   if (await yaGuardada(clave)) return referenciaA(clave);
 
+  // Lo de Añil no está en PokéAPI: su quieto, tal cual (es pixel art, y pasarlo a WebP lo emborronaría)
+  if (esPokemonDeAnil(pokemonId)) {
+    const suyos = (quietosDeAnil as Record<string, { normal: string | null; shiny: string | null }>)[String(pokemonId)];
+    const dibujo = (shiny ? suyos?.shiny : null) ?? suyos?.normal;
+    return dibujo ? guardar(clave, dibujo) : null;
+  }
+
   const original = await bajarPrimeraQueExista(
     spriteCandidates(pokemonId, shiny, tipo),
   );
@@ -117,6 +127,8 @@ async function spriteDeEspecie(
  * pinta directamente desde la fila, sin pasar por `/api/imagen`.
  */
 export async function descargarSpriteDeObjeto(slug: string) {
+  // Los de Añil van en la propia aplicación (`public/anil/objetos`): no hay nada que bajar
+  if (slug.startsWith("anil-")) return spriteDeObjeto(slug);
   const original = await bajarPrimeraQueExista([spriteDeObjeto(slug)]);
   return original ? aWebp(original, IMAGE_SIZES.objeto) : null;
 }

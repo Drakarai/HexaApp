@@ -10,6 +10,7 @@ import {
 } from "@/lib/objetos";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { useEsAnil } from "@/components/juego-del-locke";
 
 type Tipo = "juegos" | "inventado" | "grupo";
 
@@ -99,8 +100,10 @@ function DeLosJuegos({ yaPuestos }: { yaPuestos: string[] }) {
   const [elegido, setElegido] = useState<ObjetoDelJuego | null>(null);
   const [abierto, setAbierto] = useState(false);
   const campo = useId();
+  // En un locke de Añil, los objetos de Añil (sus megapiedras, la Peluca Regia…)
+  const anil = useEsAnil();
 
-  const sugerencias = abierto ? buscarObjetos(texto) : [];
+  const sugerencias = abierto ? buscarObjetos(texto, 8, anil) : [];
   const repetido = elegido ? yaPuestos.includes(elegido.slug) : false;
 
   function elegir(objeto: ObjetoDelJuego) {

@@ -11,7 +11,7 @@ import {
 } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 import tiras from "@/lib/sprites-animados.json";
-import { esPokemonDeAnil } from "@/lib/anil";
+import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil";
 
 /**
  * Los animados **en tira** del paquete de la comunidad de Pokémon Essentials
@@ -106,6 +106,11 @@ const DE_LOS_JUEGOS = 649;
 
 /** Cuántos milisegundos dura cada fotograma: los oficiales van a unos 100 */
 const POR_FOTOGRAMA = 100;
+
+/** El render de HOME de un pokémon, a mano para no traer la pokédex al navegador */
+function deHome(pokemonId: number, shiny: boolean) {
+  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${shiny ? "shiny/" : ""}${pokemonId}.png`;
+}
 
 /** El estilo de sprites de quien mira: lo pone el layout, leído de su cookie */
 const Estilo = createContext<EstiloDeSprites>("quinta");
@@ -240,8 +245,13 @@ export function SpritePokemon({
   const id = pokemonId ?? deLaImagen?.pokemonId ?? null;
   const variocolor = shiny ?? deLaImagen?.shiny ?? false;
 
-  // Los de Añil no están en PokéAPI ni en los paquetes: solo lo que tengan guardado
-  const candidatas = esPokemonDeAnil(id) ? (src ? [src] : []) : [
+  /**
+   * Si la forma que hay que enseñar no es la de la imagen guardada (una mega,
+   * por llevar su megapiedra), con HOME se pide el de esa forma: lo guardado es
+   * el de la normal.
+   */
+  const otraForma = Boolean(id && deLaImagen && deLaImagen.pokemonId !== id);
+  const candidatas = esPokemonDeAnil(id) ? deAnil(id!) : [
     // En la ficha, animado: el de los juegos hasta el #649 y, de ahí en adelante
     // y en las formas, la tira de la comunidad; si no hay, el de PokéAPI o el quieto
     ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
@@ -251,19 +261,40 @@ export function SpritePokemon({
       : []),
     // También detrás del icono, por si no carga
     ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
+    ...(id && !ficha && estilo === "home" && otraForma ? [deHome(id, variocolor)] : []),
     ...(src ? [src] : []),
   ];
+
+  /**
+   * Lo de Añil (Royaleon, sus megas…) no está en PokéAPI ni en los paquetes:
+   * sus dibujos van en `public/anil`, y el quieto sirve para todo lo que no es
+   * la ficha salvo con iconos (ver lib/anil.ts).
+   */
+  function deAnil(n: number) {
+    const suyos = spritesDeAnil(n, variocolor);
+    return [
+      ...(ficha ? (quieto ? [suyos.quieto] : [suyos.tira, suyos.quieto]) : []),
+      ...(!ficha && !sinIconos && (estilo === "iconos" || estilo === "iconos-todos") ? [suyos.icono] : []),
+      ...(!ficha ? [suyos.quieto] : []),
+      ...(src ? [src] : []),
+    ];
+  }
   // Las que no han cargado, por dirección: si cambia de pokémon, las suyas empiezan de cero
   const [fallidas, setFallidas] = useState<string[]>([]);
   const actual = candidatas.find((c) => !fallidas.includes(c));
   const pixelado = Boolean(
-    actual?.includes("black-white") || actual?.includes("/icons/") || actual?.startsWith("/iconos-de-caja/"),
+    actual?.includes("black-white") ||
+      actual?.includes("/icons/") ||
+      actual?.startsWith("/iconos-de-caja/") ||
+      actual?.startsWith("/anil/"),
   );
   // Los quietos de Blanco y Negro y los iconos, recortados; en la ficha no, que el animado
   // no se puede recortar y el quieto de respaldo tiene que verse igual que él. Los
   // iconos del paquete de Essentials ya vienen recortados
   const aRecortar =
-    pixelado && !ficha && actual?.endsWith(".png") && !actual.startsWith("/iconos-de-caja/") ? actual : null;
+    pixelado && !ficha && actual?.endsWith(".png") && !actual.startsWith("/iconos-de-caja/") && !actual.startsWith("/anil/")
+      ? actual
+      : null;
   // Un icono shiny que es el normal repintado: hay que esperar al repintado igual que a un recorte
   const aRepintar = actual?.endsWith(REPINTAR) ? actual : null;
   const aPreparar = aRecortar ?? aRepintar;
@@ -280,7 +311,7 @@ export function SpritePokemon({
   }, [aPreparar]);
 
   if (!actual) {
-    // Los de Añil, hasta tener sus sprites: una silueta con interrogación, no un hueco vacío
+    // Uno de Añil cuyos dibujos no cargan: una silueta con interrogación, no un hueco vacío
     return esPokemonDeAnil(id) ? (
       <span
         role="img"
@@ -293,11 +324,13 @@ export function SpritePokemon({
       </span>
     ) : null;
   }
-  if (actual.startsWith("/sprites-animados/")) {
+  if (actual.startsWith("/sprites-animados/") || actual.startsWith("/anil/frente/")) {
     return (
       <TiraAnimada
         key={actual}
         src={actual}
+        // Las tiras del juego de Añil llevan cada fotograma repetido: van al doble
+        porFotograma={actual.startsWith("/anil/") ? POR_FOTOGRAMA / 2 : POR_FOTOGRAMA}
         alt={alt}
         className={className}
         onError={() => setFallidas((antes) => [...antes, actual])}
@@ -346,11 +379,13 @@ function TiraAnimada({
   alt,
   className,
   onError,
+  porFotograma,
 }: {
   src: string;
   alt: string;
   className?: string;
   onError: () => void;
+  porFotograma: number;
 }) {
   const [medida, setMedida] = useState<{ fotogramas: number; lado: number } | null>(null);
   const [pintada, setPintada] = useState<string | null>(null);
@@ -390,9 +425,9 @@ function TiraAnimada({
   useEffect(() => {
     setFotograma(0);
     if (fotogramas < 2 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const reloj = window.setInterval(() => setFotograma((f) => (f + 1) % fotogramas), POR_FOTOGRAMA);
+    const reloj = window.setInterval(() => setFotograma((f) => (f + 1) % fotogramas), porFotograma);
     return () => window.clearInterval(reloj);
-  }, [fotogramas, pintada]);
+  }, [fotogramas, pintada, porFotograma]);
 
   return (
     <span role="img" aria-label={alt} className={cx("inline-flex items-center justify-center", className)}>

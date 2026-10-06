@@ -60,6 +60,8 @@ export type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }> & {
   naturaleza?: string | null;
   objeto?: string | null;
   movimientos?: Prisma.JsonValue;
+  habilidad?: string | null;
+  habilidadMega?: string | null;
 };
 
 export async function fotos(ids: string[]): Promise<Foto[]> {

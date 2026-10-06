@@ -1,7 +1,7 @@
 import datos from "./movimientos.json";
 import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { tiposDeGeneracion } from "@/lib/tipos";
-import { MOVIMIENTOS_DE_ANIL as DE_ANIL, tipoDeMovimientoEnAnil } from "@/lib/anil";
+import { GENERACION_ANIL, MOVIMIENTOS_DE_ANIL as DE_ANIL, potenciaEnAnil, tipoDeMovimientoEnAnil } from "@/lib/anil";
 
 /**
  * Los movimientos y las naturalezas, para la **ficha completa** de cada
@@ -127,7 +127,8 @@ export function movimientoParaVer(slug: string, generacion: number) {
     nombre: m.n,
     tipo: existe ? { slug: existe.slug, nombre: existe.nombre } : null,
     clase: m.c,
-    potencia: m.p ?? null,
+    // En Añil, con su potencia si la cambia (Ciclón pega 60)
+    potencia: (generacion === GENERACION_ANIL ? potenciaEnAnil(m.s) : null) ?? m.p ?? null,
   };
 }
 export type MovimientoParaVer = NonNullable<ReturnType<typeof movimientoParaVer>>;

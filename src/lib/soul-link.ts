@@ -6,6 +6,8 @@ import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
 import { GENERACION_ANIL } from "@/lib/anil";
+import { habilidadParaVer, type HabilidadParaVer } from "@/lib/habilidades";
+import { megaPorPiedra } from "@/lib/megas";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { leerHistoria } from "@/lib/historia";
 import { debilidadesDe, GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
@@ -28,6 +30,12 @@ export type PokemonDelTablero = {
   species: string;
   nickname: string | null;
   pokemonId: number | null;
+  /**
+   * Si lleva **su megapiedra**: la mega que se enseña (sprite, tipos y
+   * debilidades son los suyos). `pokemonId` sigue siendo el de siempre, que es
+   * el que evoluciona y el que grita. Ver lib/megas.ts.
+   */
+  mega: { pokemonId: number; rotulo: string } | null;
   imagen: string | null;
   /** Variocolor: capturado así o vuelto shiny con un premio */
   shiny: boolean;
@@ -61,6 +69,14 @@ export type Debilidad = { slug: string; nombre: string; x: number };
 export type FichaDeCombate = {
   naturaleza: { slug: string; nombre: string; sube: string | null; baja: string | null } | null;
   objeto: { slug: string; nombre: string; imagen: string } | null;
+  /** La de la forma que se enseña: con la megapiedra puesta, la de la mega */
+  habilidad: HabilidadParaVer | null;
+  /** Si la habilidad es la de la mega */
+  conMega: boolean;
+  /** Las dos guardadas, para editarlas: la de siempre y la de su mega */
+  habilidades: { normal: string | null; mega: string | null };
+  /** Su número de siempre, para saber en el editor si una piedra es la suya */
+  base: number | null;
   movimientos: MovimientoParaVer[];
 };
 
@@ -166,6 +182,8 @@ export async function getEquiposDelLocke(
         naturaleza: true,
         objeto: true,
         movimientos: true,
+        habilidad: true,
+        habilidadMega: true,
         createdAt: true,
         zone: { select: { name: true } },
         muerte: { select: { cause: true } },
@@ -198,16 +216,20 @@ export async function getEquiposDelLocke(
 
   const pokemon: PokemonDelTablero[] = capturas.map((c) => {
     const quien = queEs(c.pokemonId, c.species);
+    // Con su megapiedra se enseña su mega; caído, ya no lleva nada encima que valga
+    const mega = c.deathId ? null : megaPorPiedra(quien?.pokemonId, c.species, c.objeto, enAnil);
+    const mostrado = mega ?? quien?.pokemonId ?? null;
     return {
       id: c.id,
       participantId: c.participantId,
       species: c.species,
       nickname: c.nickname,
       pokemonId: quien?.pokemonId ?? null,
+      mega: mega ? { pokemonId: mega, rotulo: rotuloDeMega(queEs(mega, c.species)?.etiqueta, c.species) } : null,
       imagen: imagenes(c.id),
       shiny: c.shiny,
-      tipos: tiposParaVer(quien?.pokemonId, generacion),
-      debilidades: { generacion, lista: debilidadesDe(quien?.pokemonId, generacion) },
+      tipos: tiposParaVer(mostrado, generacion),
+      debilidades: { generacion, lista: debilidadesDe(mostrado, generacion) },
       sitio: c.zone?.name ?? c.sitio,
       apunte: c.notes,
       // El último intercambio: a cambio de quién llegó, para su ficha
@@ -221,7 +243,7 @@ export async function getEquiposDelLocke(
       bajaId: c.deathId,
       causa: c.muerte?.cause ?? null,
       evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species, enAnil),
-      combate: fichaDeCombate(c, generacion),
+      combate: fichaDeCombate(c, generacion, quien?.pokemonId ?? null, mega !== null),
     };
   });
 
@@ -392,9 +414,24 @@ export async function capturasParaVincular(competitionId: string, sin?: string) 
 }
 
 /** La ficha completa de una captura, lista para pintar */
+/** «Mega-Charizard X» → «Mega X»: la especie ya se dice al lado */
+export function rotuloDeMega(etiqueta: string | undefined, especie: string) {
+  if (!etiqueta) return "Mega";
+  const sinEspecie = etiqueta.replace(new RegExp(especie.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), "");
+  return sinEspecie.replace(/-/g, " ").replace(/\s+/g, " ").trim() || "Mega";
+}
+
 export function fichaDeCombate(
-  c: { naturaleza: string | null; objeto: string | null; movimientos: unknown },
+  c: {
+    naturaleza: string | null;
+    objeto: string | null;
+    movimientos: unknown;
+    habilidad?: string | null;
+    habilidadMega?: string | null;
+  },
   generacion: number,
+  base: number | null = null,
+  conMega = false,
 ): FichaDeCombate {
   const naturaleza = naturalezaPorSlug(c.naturaleza);
   const objeto = c.objeto ? objetoPorSlug(c.objeto) : undefined;
@@ -403,6 +440,11 @@ export function fichaDeCombate(
       ? { slug: naturaleza.s, nombre: naturaleza.n, sube: naturaleza.sube, baja: naturaleza.baja }
       : null,
     objeto: objeto ? { slug: objeto.slug, nombre: objeto.nombre, imagen: spriteDeObjeto(objeto.slug) } : null,
+    // La de la mega empieza vacía: no hereda la de siempre
+    habilidad: habilidadParaVer(conMega ? c.habilidadMega : c.habilidad, generacion === GENERACION_ANIL),
+    conMega,
+    habilidades: { normal: c.habilidad ?? null, mega: c.habilidadMega ?? null },
+    base,
     movimientos: leerMovimientos(c.movimientos).flatMap((m) => movimientoParaVer(m, generacion) ?? []),
   };
 }

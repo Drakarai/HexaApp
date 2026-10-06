@@ -2,7 +2,8 @@ import nombresDeShowdown from "./showdown.json";
 import { queEs } from "@/lib/evoluciones";
 import { findSpecies } from "@/lib/pokedex";
 import { esPokemonDeAnil } from "@/lib/anil";
-import { OBJETOS } from "@/lib/objetos";
+import { objetosDelJuego } from "@/lib/objetos";
+import { habilidadPorNombre } from "@/lib/habilidades";
 import {
   MOVIMIENTOS_POR_POKEMON,
   movimientoPorNombre,
@@ -38,6 +39,8 @@ export type PokemonDeShowdown = {
   shiny: boolean;
   /** Slugs de PokéAPI, como se guardan */
   objeto: string | null;
+  /** La habilidad (la de antes de megaevolucionar, que es la que exporta Showdown) */
+  habilidad: string | null;
   naturaleza: string | null;
   movimientos: string[];
   /** Lo que venía y no se ha entendido, para decirlo */
@@ -46,11 +49,19 @@ export type PokemonDeShowdown = {
 
 const NUMERO: Record<string, number> = nombresDeShowdown;
 
-const OBJETO_POR_NOMBRE = new Map<string, string>();
-for (const objeto of OBJETOS) {
-  OBJETO_POR_NOMBRE.set(plano(objeto.slug), objeto.slug);
-  OBJETO_POR_NOMBRE.set(plano(objeto.nombre), objeto.slug);
+/**
+ * Los objetos por su nombre en inglés (el de Showdown) o en español. Los de Añil
+ * van con «anil-» delante, que en su servidor no llevan: «Venusaurite Y».
+ */
+function objetosPorNombre(conAnil: boolean) {
+  const mapa = new Map<string, string>();
+  for (const objeto of objetosDelJuego(conAnil)) {
+    mapa.set(plano(objeto.slug.replace(/^anil-/, "")), objeto.slug);
+    mapa.set(plano(objeto.nombre), objeto.slug);
+  }
+  return mapa;
 }
+const OBJETO_POR_NOMBRE = { comun: objetosPorNombre(false), anil: objetosPorNombre(true) };
 
 /**
  * El número de un pokémon por su nombre de Showdown. Si la forma no se
@@ -108,11 +119,12 @@ export function leerShowdown(texto: string, conAnil = false): PokemonDeShowdown[
 
     let slugObjeto: string | null = null;
     if (objeto) {
-      slugObjeto = OBJETO_POR_NOMBRE.get(plano(objeto)) ?? null;
+      slugObjeto = OBJETO_POR_NOMBRE[conAnil ? "anil" : "comun"].get(plano(objeto)) ?? null;
       if (!slugObjeto) dudas.push(`No conozco el objeto «${objeto}».`);
     }
 
     let naturaleza: string | null = null;
+    let habilidad: string | null = null;
     let shiny = false;
     const movimientos: string[] = [];
     for (const linea of resto) {
@@ -133,6 +145,11 @@ export function leerShowdown(texto: string, conAnil = false): PokemonDeShowdown[
         continue;
       }
       if (/^Shiny:\s*Yes$/i.test(linea)) shiny = true;
+      const deHabilidad = /^Ability:\s*(.+)$/i.exec(linea);
+      if (deHabilidad) {
+        habilidad = habilidadPorNombre(deHabilidad[1], conAnil)?.s ?? null;
+        if (!habilidad) dudas.push(`No conozco la habilidad «${deHabilidad[1].trim()}».`);
+      }
     }
 
     equipo.push({
@@ -142,6 +159,7 @@ export function leerShowdown(texto: string, conAnil = false): PokemonDeShowdown[
       mote: mote && plano(mote) !== plano(especie) ? mote : null,
       shiny,
       objeto: slugObjeto,
+      habilidad,
       naturaleza,
       movimientos,
       dudas,
@@ -245,6 +263,7 @@ export function leerRepeticion(log: string): JugadorDeLaRepeticion[] {
         mote: esMote ? visto.mote : null,
         shiny: visto.shiny,
         objeto: null,
+        habilidad: null,
         naturaleza: null,
         movimientos: [],
         dudas: pokemonId ? [] : [`No conozco a «${especieShowdown}».`],

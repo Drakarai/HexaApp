@@ -342,6 +342,14 @@ model Capture {
   naturaleza    String?
   objeto        String?
   movimientos   Json     @default("[]")
+  /**
+   * Su **habilidad** (el identificador de PokéAPI, o «anil-…» en Añil; ver
+   * lib/habilidades.ts) y, aparte, la de **su mega**: con la megapiedra puesta
+   * se enseña la mega y la habilidad que se edita es esta, que empieza vacía la
+   * primera vez (ver lib/megas.ts). Quitarle la piedra devuelve la de siempre.
+   */
+  habilidad     String?
+  habilidadMega String?
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

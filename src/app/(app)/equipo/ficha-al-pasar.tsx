@@ -11,7 +11,7 @@ const ANCHO = 260;
 
 /**
  * En el ordenador, al pasar el ratón por un pokémon del Equipo y PC: su
- * naturaleza, objeto y movimientos sin abrir la ficha, que es lo que se mira
+ * naturaleza, habilidad, objeto y movimientos sin abrir la ficha, que es lo que se mira
  * al preparar un combate. Como la ficha rápida de la clasificación.
  *
  * Solo con ratón (con el dedo no hay «pasar por encima») y nunca mientras se
@@ -56,7 +56,7 @@ export function ConFichaAlPasar({
     setDonde(null);
   }
 
-  const { naturaleza, objeto, movimientos } = pokemon.combate;
+  const { naturaleza, objeto, habilidad, movimientos } = pokemon.combate;
   return (
     <div
       ref={ref}
@@ -81,17 +81,20 @@ export function ConFichaAlPasar({
               <p className="truncate text-sm font-semibold text-white">
                 {pokemon.nickname ?? pokemon.species}
                 {pokemon.nickname ? <span className="font-normal text-slate-400"> · {pokemon.species}</span> : null}
+                {pokemon.mega ? <span className="font-normal text-brand-200"> · {pokemon.mega.rotulo}</span> : null}
               </p>
               <div className="mt-1 flex gap-1">
                 {pokemon.tipos.map((tipo) => (
                   <ChapaDeTipo key={tipo.slug} slug={tipo.slug} nombre={tipo.nombre} alto={14} />
                 ))}
               </div>
-              {naturaleza || objeto || movimientos.length ? (
+              {naturaleza || objeto || habilidad || movimientos.length ? (
                 <div className="mt-2 space-y-1.5 border-t border-white/10 pt-2 text-xs">
-                  {naturaleza || objeto ? (
+                  {naturaleza || objeto || habilidad ? (
                     <p className="text-slate-300">
-                      {[naturaleza?.nombre, objeto ? `con ${objeto.nombre}` : null].filter(Boolean).join(" · ")}
+                      {[naturaleza?.nombre, habilidad?.nombre, objeto ? `con ${objeto.nombre}` : null]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   ) : null}
                   {movimientos.length ? (
