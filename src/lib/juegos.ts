@@ -1,3 +1,5 @@
+import { esPokemonAnil, GENERACION_ANIL } from "./anil";
+
 /**
  * Los juegos de la saga principal, de la 1ª a la 7ª generación, con la región
  * en la que se juega cada uno. De la 8ª para arriba no hay nada a propósito:
@@ -311,10 +313,13 @@ export function tiposPorDefecto(gameId: string | null | undefined): EleccionDeTi
  * fichero no carga: lo lee también el navegador).
  */
 export function generacionDeTipos(edicion: {
+  game?: string | null;
   gameId: string | null;
   juegoNoOficial: boolean;
   tipos: string | null;
 }): number | null {
+  // Añil tiene sus propios tipos (los de ahora, con los suyos encima)
+  if (esPokemonAnil(edicion)) return GENERACION_ANIL;
   const generacion = generacionDelJuego(edicion.gameId);
   const eleccion = leerTipos(edicion.tipos) ?? tiposPorDefecto(edicion.gameId);
   if (generacion === null) return eleccion === "antiguos" ? ULTIMA_GENERACION_SIN_HADA : null;

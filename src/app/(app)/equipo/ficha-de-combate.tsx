@@ -7,6 +7,7 @@ import { leerShowdownAction } from "@/app/actions/showdown";
 import { sinConexion } from "@/lib/acciones-sin-conexion";
 import type { FichaDeCombate as Ficha } from "@/lib/soul-link";
 import { cx } from "@/lib/utils";
+import { useEsAnil } from "@/components/juego-del-locke";
 
 type Aviso = { tipo: "ok" | "error"; texto: string };
 
@@ -25,13 +26,14 @@ type Listas = {
  */
 const NO_SE_LLEVAN = new Set(["Objetos clave", "Correo", "MT y MO", "Bolas"]);
 
-async function cargarListas(): Promise<Listas> {
+/** Con `conAnil`, también los movimientos nuevos de Pokémon Añil (ver lib/anil.ts) */
+async function cargarListas(conAnil: boolean): Promise<Listas> {
   const [m, o] = await Promise.all([import("@/lib/movimientos"), import("@/lib/objetos")]);
   return {
-    movimientos: m.MOVIMIENTOS,
+    movimientos: m.movimientosDelJuego(conAnil),
     naturalezas: m.NATURALEZAS,
     objetos: o.OBJETOS.filter((objeto) => !NO_SE_LLEVAN.has(objeto.grupo)),
-    movimientoPorNombre: m.movimientoPorNombre,
+    movimientoPorNombre: (nombre) => m.movimientoPorNombre(nombre, conAnil),
     plano: m.plano,
   };
 }
@@ -159,6 +161,7 @@ function Editor({
   onCerrar: () => void;
 }) {
   const id = useId();
+  const anil = useEsAnil();
   const [listas, setListas] = useState<Listas | null>(null);
   const [naturaleza, setNaturaleza] = useState(ficha.naturaleza?.slug ?? "");
   const [objeto, setObjeto] = useState(ficha.objeto?.nombre ?? "");
@@ -170,7 +173,7 @@ function Editor({
 
   useEffect(() => {
     let vigente = true;
-    cargarListas()
+    cargarListas(anil)
       .then((cargadas) => vigente && setListas(cargadas))
       .catch(() => vigente && onAviso({ tipo: "error", texto: "Sin conexión: la lista de movimientos no carga." }));
     return () => {

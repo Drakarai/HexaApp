@@ -5,6 +5,7 @@ import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { generacionDeTipos } from "@/lib/juegos";
+import { GENERACION_ANIL } from "@/lib/anil";
 import { evolucionesDe, queEs, type OpcionDeEvolucion } from "@/lib/evoluciones";
 import { leerHistoria } from "@/lib/historia";
 import { debilidadesDe, GENERACION_POR_DEFECTO, tiposParaVer } from "@/lib/tipos";
@@ -93,7 +94,7 @@ export type EquiposDelLocke = {
 type QuienMiraLaCaja = { userId: string; gestiona: boolean; soloLectura: boolean };
 
 export async function getEquiposDelLocke(
-  competicion: { id: string; gameId: string | null; juegoNoOficial: boolean; tipos: string | null },
+  competicion: { id: string; game?: string | null; gameId: string | null; juegoNoOficial: boolean; tipos: string | null },
   /**
    * Puede llegar sin resolver: solo hace falta al final, para saber qué
    * tableros puede tocar, así que no tiene por qué retrasar las consultas.
@@ -115,6 +116,8 @@ export async function getEquiposDelLocke(
    * todas (ver lib/evoluciones.ts).
    */
   const generacion = generacionDeTipos(competicion) ?? GENERACION_POR_DEFECTO;
+  // En Añil, Eevee también evoluciona a Royaleon y Cefireon
+  const enAnil = generacion === GENERACION_ANIL;
 
   /**
    * Todo a la vez, también las firmas de las imágenes (las capturas y las
@@ -217,7 +220,7 @@ export async function getEquiposDelLocke(
       muerta: Boolean(c.deathId),
       bajaId: c.deathId,
       causa: c.muerte?.cause ?? null,
-      evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species),
+      evoluciones: c.deathId ? [] : evolucionesDe(quien?.pokemonId, c.species, enAnil),
       combate: fichaDeCombate(c, generacion),
     };
   });

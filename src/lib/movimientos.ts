@@ -1,6 +1,7 @@
 import datos from "./movimientos.json";
 import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { tiposDeGeneracion } from "@/lib/tipos";
+import { MOVIMIENTOS_DE_ANIL as DE_ANIL, tipoDeMovimientoEnAnil } from "@/lib/anil";
 
 /**
  * Los movimientos y las naturalezas, para la **ficha completa** de cada
@@ -29,12 +30,30 @@ export type Movimiento = TipoDeMovimiento & {
 
 export type Naturaleza = { s: string; n: string; sube: string | null; baja: string | null };
 
-export const MOVIMIENTOS: Movimiento[] = datos.movimientos as Movimiento[];
+/**
+ * Los de siempre, con su tipo en Pokémon Añil cuando allí es otro (Fuerza es
+ * Roca): ver `tipoDelMovimiento`.
+ */
+export const MOVIMIENTOS: Movimiento[] = (datos.movimientos as Movimiento[]).map((m) => {
+  const enAnil = tipoDeMovimientoEnAnil(m.s);
+  return enAnil ? { ...m, an: enAnil } : m;
+});
+/**
+ * Los nuevos de Pokémon Añil (Escalofrío, Deslizamiento…), aparte: solo se
+ * ofrecen en sus lockes. Ver lib/anil.ts.
+ */
+export const MOVIMIENTOS_DE_ANIL: Movimiento[] = DE_ANIL;
 export const NATURALEZAS: Naturaleza[] = datos.naturalezas;
 
 export const MOVIMIENTOS_POR_POKEMON = 4;
 
-const POR_SLUG = new Map(MOVIMIENTOS.map((m) => [m.s, m]));
+/** Los que se pueden elegir en un locke: en uno de Añil, también los suyos */
+export function movimientosDelJuego(conAnil: boolean) {
+  return conAnil ? [...MOVIMIENTOS, ...MOVIMIENTOS_DE_ANIL] : MOVIMIENTOS;
+}
+
+// Por identificador, todos: lo guardado de Añil se tiene que poder enseñar
+const POR_SLUG = new Map([...MOVIMIENTOS, ...MOVIMIENTOS_DE_ANIL].map((m) => [m.s, m]));
 const NATURALEZA_POR_SLUG = new Map(NATURALEZAS.map((n) => [n.s, n]));
 
 /** Sin acentos, mayúsculas ni nada que no sea letra o número */
@@ -52,6 +71,8 @@ for (const m of MOVIMIENTOS) {
   // También por su nombre en inglés, que es como sale en Showdown
   if (!POR_NOMBRE.has(plano(m.s))) POR_NOMBRE.set(plano(m.s), m);
 }
+// Los de Añil, por su nombre: con o sin tilde, que en Showdown van sin
+const DE_ANIL_POR_NOMBRE = new Map(MOVIMIENTOS_DE_ANIL.map((m) => [plano(m.n), m]));
 const NATURALEZA_POR_NOMBRE = new Map<string, Naturaleza>();
 for (const n of NATURALEZAS) {
   NATURALEZA_POR_NOMBRE.set(plano(n.n), n);
@@ -62,9 +83,10 @@ export function movimientoPorSlug(slug: string) {
   return POR_SLUG.get(slug);
 }
 
-/** Por su nombre en español o en inglés, como venga */
-export function movimientoPorNombre(nombre: string) {
-  return POR_NOMBRE.get(plano(nombre));
+/** Por su nombre en español o en inglés, como venga; con `conAnil`, también los de Añil */
+export function movimientoPorNombre(nombre: string, conAnil = false) {
+  const clave = plano(nombre);
+  return POR_NOMBRE.get(clave) ?? (conAnil ? DE_ANIL_POR_NOMBRE.get(clave) : undefined);
 }
 
 export function naturalezaPorSlug(slug: string | null | undefined) {
@@ -90,7 +112,7 @@ export function leerMovimientos(valor: unknown): string[] {
 export function ataquesDeLosMovimientos(slugs: string[]): TipoDeMovimiento[] {
   return slugs.flatMap((s) => {
     const m = POR_SLUG.get(s);
-    return m && m.c > 0 ? [m.a ? { t: m.t, a: m.a } : { t: m.t }] : [];
+    return m && m.c > 0 ? [{ t: m.t, ...(m.a ? { a: m.a } : {}), ...(m.an ? { an: m.an } : {}) }] : [];
   });
 }
 

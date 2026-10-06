@@ -9,6 +9,8 @@ import {
 } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { useEsAnil } from "@/components/juego-del-locke";
+import { esPokemonDeAnil } from "@/lib/anil";
 
 /**
  * Busca el pokémon por su nombre en español y manda al servidor **qué** pokémon
@@ -35,15 +37,17 @@ export function SpeciesPicker({
   defaultBoxImage?: string | null;
   defaultDetailImage?: string | null;
 }) {
+  // En un locke de Pokémon Añil también salen sus pokémon nuevos
+  const anil = useEsAnil();
   const [query, setQuery] = useState(defaultSpecies);
   const [selected, setSelected] = useState<PokedexSpecies | null>(() =>
-    defaultSpecies ? (findSpecies(defaultSpecies) ?? null) : null,
+    defaultSpecies ? (findSpecies(defaultSpecies, anil) ?? null) : null,
   );
   const [formId, setFormId] = useState<number | null>(null);
   const [shiny, setShiny] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
-  const suggestions = suggestionsOpen ? searchSpecies(query) : [];
+  const suggestions = suggestionsOpen ? searchSpecies(query, 8, anil) : [];
   // Puede haber dos buscadores en la misma página (el alta y una ficha)
   const fieldId = useId();
 
@@ -75,7 +79,7 @@ export function SpeciesPicker({
             onChange={(event) => {
               setQuery(event.target.value);
               setSuggestionsOpen(true);
-              const match = findSpecies(event.target.value);
+              const match = findSpecies(event.target.value, anil);
               if (match) {
                 setSelected(match);
                 setFormId(match.forms[0].id);
@@ -109,7 +113,7 @@ export function SpeciesPicker({
                     onClick={() => chooseSpecies(species)}
                   >
                     <span className="w-10 shrink-0 text-xs text-slate-500 tabular-nums">
-                      #{species.dex}
+                      {esPokemonDeAnil(species.dex) ? "Añil" : `#${species.dex}`}
                     </span>
                     {species.name}
                     {species.forms.length > 1 ? (

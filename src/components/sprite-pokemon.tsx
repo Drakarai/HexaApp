@@ -11,6 +11,7 @@ import {
 } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 import tiras from "@/lib/sprites-animados.json";
+import { esPokemonDeAnil } from "@/lib/anil";
 
 /**
  * Los animados **en tira** del paquete de la comunidad de Pokémon Essentials
@@ -239,7 +240,8 @@ export function SpritePokemon({
   const id = pokemonId ?? deLaImagen?.pokemonId ?? null;
   const variocolor = shiny ?? deLaImagen?.shiny ?? false;
 
-  const candidatas = [
+  // Los de Añil no están en PokéAPI ni en los paquetes: solo lo que tengan guardado
+  const candidatas = esPokemonDeAnil(id) ? (src ? [src] : []) : [
     // En la ficha, animado: el de los juegos hasta el #649 y, de ahí en adelante
     // y en las formas, la tira de la comunidad; si no hay, el de PokéAPI o el quieto
     ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
@@ -277,7 +279,20 @@ export function SpritePokemon({
     };
   }, [aPreparar]);
 
-  if (!actual) return null;
+  if (!actual) {
+    // Los de Añil, hasta tener sus sprites: una silueta con interrogación, no un hueco vacío
+    return esPokemonDeAnil(id) ? (
+      <span
+        role="img"
+        aria-label={alt}
+        className={cx(className, "inline-flex items-center justify-center font-black text-slate-500")}
+      >
+        <span className="flex aspect-square w-3/5 max-w-16 items-center justify-center rounded-full border-2 border-dashed border-slate-600 text-[clamp(0.75rem,40%,1.75rem)]">
+          ?
+        </span>
+      </span>
+    ) : null;
+  }
   if (actual.startsWith("/sprites-animados/")) {
     return (
       <TiraAnimada

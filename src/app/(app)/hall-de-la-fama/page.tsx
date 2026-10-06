@@ -194,7 +194,7 @@ export default async function HallOfFamePage() {
 
   // La forma exacta la dice la imagen, si es del almacén; si no, la especie
   const pokemonDeLaEntrada = (id: string, especie: string) =>
-    pokemonDeLaImagen(sprites(id))?.pokemonId ?? findSpecies(especie)?.dex ?? null;
+    pokemonDeLaImagen(sprites(id))?.pokemonId ?? findSpecies(especie, true)?.dex ?? null;
   const generacion = generacionDeTipos(competition) ?? GENERACION_POR_DEFECTO;
 
   const teamOf = (participantId: string) =>

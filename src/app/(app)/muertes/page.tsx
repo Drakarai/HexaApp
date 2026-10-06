@@ -212,7 +212,7 @@ export default async function DeathsPage({
   // La forma exacta solo la sabe la imagen, si es del almacén (Vulpix de
   // Alola no es Hielo por la especie); si no, la especie a secas
   const pokemonDeLaBaja = (id: string, especie: string) =>
-    pokemonDeLaImagen(cajas(id))?.pokemonId ?? findSpecies(especie)?.dex ?? null;
+    pokemonDeLaImagen(cajas(id))?.pokemonId ?? findSpecies(especie, true)?.dex ?? null;
   const generacion = generacionDeTipos(competition) ?? GENERACION_POR_DEFECTO;
 
   const boxDeaths: BoxDeath[] = deaths.map((death) => ({

@@ -1,4 +1,5 @@
 import datos from "./tipos.json";
+import { GENERACION_ANIL, tiposEnAnil } from "./anil";
 
 /**
  * Los tipos, la tabla de efectividad y qué es cada pokémon.
@@ -60,6 +61,11 @@ export function tiposDePokemon(
   pokemonId: number,
   generacion: number,
 ): number[] {
+  // En Añil, los suyos si los cambia; si no, los de ahora (ver lib/anil.ts)
+  if (generacion === GENERACION_ANIL) {
+    const enAnil = tiposEnAnil(pokemonId);
+    if (enAnil) return enAnil;
+  }
   const cambios = D.pasado[String(pokemonId)];
   if (cambios) {
     const cual = Object.keys(cambios)

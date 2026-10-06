@@ -1,6 +1,8 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { getActiveCompetition } from "@/lib/competition";
+import { esPokemonAnil } from "@/lib/anil";
 import {
   datosDeLaRepeticion,
   leerRepeticion,
@@ -23,7 +25,9 @@ export async function leerShowdownAction(
   await requireUser();
   const limpio = String(texto ?? "").slice(0, 20_000);
   if (!limpio.trim()) return { error: "Pega primero el equipo." };
-  const equipo = leerShowdown(limpio);
+  // Se pega siempre en el locke que se está mirando: si es de Añil, también lo suyo
+  const competicion = await getActiveCompetition();
+  const equipo = leerShowdown(limpio, Boolean(competicion && esPokemonAnil(competicion)));
   if (!equipo.length) return { error: "Eso no parece un equipo de Showdown." };
   return { equipo };
 }

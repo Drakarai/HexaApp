@@ -1,4 +1,5 @@
 import data from "./pokedex.json";
+import { ESPECIES_DE_ANIL, esPokemonDeAnil } from "./anil";
 
 export type PokedexForm = { id: number; label: string };
 export type PokedexSpecies = {
@@ -32,24 +33,37 @@ function normalize(text: string) {
     .replace(/[^a-z0-9]/g, "");
 }
 
+/**
+ * Los pokémon nuevos de **Pokémon Añil** (Royaleon y Cefireon), aparte: solo
+ * existen en sus lockes, así que los buscadores solo los ofrecen si se les
+ * pide (`conAnil`). Ver lib/anil.ts.
+ */
+export const POKEDEX_DE_ANIL: PokedexSpecies[] = ESPECIES_DE_ANIL.map((especie) => ({
+  dex: especie.dex,
+  name: especie.name,
+  forms: [{ id: especie.dex, label: "Normal" }],
+}));
+
 const BY_NORMALIZED = new Map(
   POKEDEX.map((species) => [normalize(species.name), species]),
 );
+const DE_ANIL_POR_NOMBRE = new Map(POKEDEX_DE_ANIL.map((species) => [normalize(species.name), species]));
 
 /** Busca por nombre exacto, ignorando acentos y mayúsculas. */
-export function findSpecies(name: string): PokedexSpecies | undefined {
-  return BY_NORMALIZED.get(normalize(name));
+export function findSpecies(name: string, conAnil = false): PokedexSpecies | undefined {
+  const clave = normalize(name);
+  return BY_NORMALIZED.get(clave) ?? (conAnil ? DE_ANIL_POR_NOMBRE.get(clave) : undefined);
 }
 
 /** Sugerencias para el buscador: primero las que empiezan por lo escrito. */
-export function searchSpecies(query: string, limit = 8): PokedexSpecies[] {
+export function searchSpecies(query: string, limit = 8, conAnil = false): PokedexSpecies[] {
   const needle = normalize(query);
   if (!needle) return [];
 
   const startsWith: PokedexSpecies[] = [];
   const contains: PokedexSpecies[] = [];
 
-  for (const species of POKEDEX) {
+  for (const species of conAnil ? [...POKEDEX, ...POKEDEX_DE_ANIL] : POKEDEX) {
     const name = normalize(species.name);
     if (name.startsWith(needle)) startsWith.push(species);
     else if (name.includes(needle)) contains.push(species);
@@ -77,6 +91,8 @@ export function spriteCandidates(
   shiny: boolean,
   kind: "box" | "detail" | "mini",
 ) {
+  // De los de Añil no hay nada en PokéAPI: no se pide lo que no existe
+  if (esPokemonDeAnil(pokemonId)) return [];
   const variant = shiny ? "shiny/" : "";
   const home = `${SPRITES}/other/home/${variant}${pokemonId}.png`;
   const artwork = `${SPRITES}/other/official-artwork/${variant}${pokemonId}.png`;

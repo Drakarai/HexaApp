@@ -122,7 +122,7 @@ export async function capturaQuePuedoTocar(captureId: string) {
         select: {
           displayName: true,
           competition: {
-            select: { id: true, estilo: true, gameId: true, juegoNoOficial: true },
+            select: { id: true, estilo: true, game: true, gameId: true, juegoNoOficial: true },
           },
         },
       },

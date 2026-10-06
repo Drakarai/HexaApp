@@ -1,5 +1,6 @@
 import datos from "./evoluciones.json";
-import { POKEDEX, findSpecies, type PokedexSpecies } from "./pokedex";
+import { POKEDEX, POKEDEX_DE_ANIL, findSpecies, type PokedexSpecies } from "./pokedex";
+import { ESPECIES_DE_ANIL } from "./anil";
 
 /**
  * A qué puede evolucionar un pokémon.
@@ -33,10 +34,22 @@ for (const [destino, origen] of Object.entries(D.de)) {
   HACIA.set(origen, [...(HACIA.get(origen) ?? []), Number(destino)]);
 }
 
-const POR_DEX = new Map(POKEDEX.map((especie) => [especie.dex, especie]));
+/**
+ * Las de Pokémon Añil (Eevee → Royaleon, Cefireon) van aparte: solo se ofrecen
+ * en sus lockes (`conAnil`). Saber **qué es** un Royaleon, en cambio, vale
+ * siempre: no estorba y así su historia encuentra a su familia.
+ */
+const HACIA_EN_ANIL = new Map<number, number[]>();
+const DE_EN_ANIL = new Map<number, number>();
+for (const especie of ESPECIES_DE_ANIL) {
+  HACIA_EN_ANIL.set(especie.de, [...(HACIA_EN_ANIL.get(especie.de) ?? []), especie.dex]);
+  DE_EN_ANIL.set(especie.dex, especie.de);
+}
+
+const POR_DEX = new Map([...POKEDEX, ...POKEDEX_DE_ANIL].map((especie) => [especie.dex, especie]));
 /** De qué especie es cada forma: 10103 → Vulpix */
 const POR_FORMA = new Map<number, { especie: PokedexSpecies; etiqueta: string }>();
-for (const especie of POKEDEX) {
+for (const especie of [...POKEDEX, ...POKEDEX_DE_ANIL]) {
   for (const forma of especie.forms) {
     POR_FORMA.set(forma.id, { especie, etiqueta: forma.label });
   }
@@ -67,7 +80,7 @@ export function queEs(pokemonId: number | null | undefined, especie: string) {
     const forma = POR_FORMA.get(pokemonId);
     if (forma) return { especie: forma.especie, pokemonId, etiqueta: forma.etiqueta };
   }
-  const porNombre = findSpecies(especie);
+  const porNombre = findSpecies(especie, true);
   return porNombre
     ? { especie: porNombre, pokemonId: porNombre.forms[0].id, etiqueta: porNombre.forms[0].label }
     : null;
@@ -100,13 +113,19 @@ function etiquetaLimpia(especie: string, etiqueta: string) {
 export function evolucionesDe(
   pokemonId: number | null | undefined,
   especie: string,
+  /** Si el locke es de Pokémon Añil: entonces también sus evoluciones */
+  conAnil = false,
 ): OpcionDeEvolucion[] {
   const actual = queEs(pokemonId, especie);
   if (!actual) return [];
   const miRegion = regionDeLaForma(actual.etiqueta);
 
   const opciones: (OpcionDeEvolucion & { primero: boolean })[] = [];
-  for (const dex of HACIA.get(actual.especie.dex) ?? []) {
+  const hacia = [
+    ...(HACIA.get(actual.especie.dex) ?? []),
+    ...(conAnil ? (HACIA_EN_ANIL.get(actual.especie.dex) ?? []) : []),
+  ];
+  for (const dex of hacia) {
     const destino = POR_DEX.get(dex);
     if (!destino) continue;
     for (const forma of destino.forms) {
@@ -136,8 +155,8 @@ export function raizDeLaFamilia(pokemonId: number | null | undefined, especie: s
   if (!quien) return null;
   let dex = quien.especie.dex;
   // Por si los datos trajeran un ciclo, que no se quede aquí para siempre
-  for (let vueltas = 0; D.de[String(dex)] && vueltas < 5; vueltas++) {
-    dex = D.de[String(dex)];
+  for (let vueltas = 0; (D.de[String(dex)] || DE_EN_ANIL.has(dex)) && vueltas < 5; vueltas++) {
+    dex = D.de[String(dex)] ?? DE_EN_ANIL.get(dex)!;
   }
   return dex;
 }

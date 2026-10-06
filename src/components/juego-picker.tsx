@@ -14,6 +14,7 @@ import {
   type EleccionDeTipos,
 } from "@/lib/juegos";
 import { cx } from "@/lib/utils";
+import { esPokemonAnil } from "@/lib/anil";
 
 /**
  * En qué juego se juega la edición.
@@ -55,7 +56,10 @@ export function JuegoPicker({
   // Lo elegido a mano; sin tocar, lo que toque al juego que esté puesto
   const [tiposElegidos, setTipos] = useState<EleccionDeTipos | null>(leerTipos(defaultTipos));
   const tipos = tiposElegidos ?? tiposPorDefecto(gameId);
-  const eligeTipos = conTipos && puedeElegirTipos(gameId, noOficial);
+  // El nombre del fangame, para reconocer Pokémon Añil mientras se escribe
+  const [nombre, setNombre] = useState(defaultNoOficial ? (defaultGame ?? "") : "");
+  const anil = noOficial && esPokemonAnil({ game: nombre, juegoNoOficial: true });
+  const eligeTipos = conTipos && !anil && puedeElegirTipos(gameId, noOficial);
   const generacion = generacionDelJuego(gameId);
   const campo = useId();
   const region = juegoPorId(gameId)?.region;
@@ -102,9 +106,16 @@ export function JuegoPicker({
             name="game"
             className="input"
             defaultValue={defaultNoOficial ? (defaultGame ?? "") : ""}
+            onChange={(evento) => setNombre(evento.target.value)}
             placeholder="Pokémon Añil"
             required
           />
+          {anil ? (
+            <p className="mt-1 text-xs text-brand-200">
+              Es Pokémon Añil: salen Royaleon y Cefireon, sus movimientos nuevos y sus
+              tipos (Meganium Planta/Hada, Typhlosion Fuego/Normal…).
+            </p>
+          ) : null}
         </div>
       ) : null}
 

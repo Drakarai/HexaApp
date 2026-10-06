@@ -21,6 +21,7 @@ import {
 import { cx } from "@/lib/utils";
 import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { DibujoVacio } from "@/components/dibujo-vacio";
+import { GENERACION_ANIL } from "@/lib/anil";
 import { Hoja } from "@/components/hoja";
 
 /**
@@ -93,10 +94,12 @@ export function CoberturaDeTipos({
    * puede pedir la tabla de hoy: con tipo Hada, con Clefairy siendo Hada y sin
    * el Acero resistiendo Fantasma y Siniestro.
    */
-  const generacion =
-    tabla === "ahora" ? GENERACION_POR_DEFECTO : generacionDelLocke;
   /** Si el locke ya es moderno, el botón no cambiaría nada y no se enseña */
   const hayDiferencia = generacionDelLocke < GENERACION_POR_DEFECTO;
+  // Sin botón no se hace caso de lo guardado: en Añil, «ahora» quitaría sus tipos
+  const generacion =
+    tabla === "ahora" && hayDiferencia ? GENERACION_POR_DEFECTO : generacionDelLocke;
+  const enAnil = generacionDelLocke === GENERACION_ANIL;
 
   useEffect(() => {
     if (primera.current) {
@@ -372,7 +375,12 @@ export function CoberturaDeTipos({
 
           <p className="text-xs text-slate-500">
             Cuánto le entra a cada uno un ataque de ese tipo.{" "}
-            {tabla === "ahora" ? (
+            {enAnil ? (
+              <>
+                Tabla <strong className="text-slate-400">de ahora</strong>, con
+                los tipos de Pokémon Añil.
+              </>
+            ) : tabla === "ahora" ? (
               <>
                 Tabla <strong className="text-slate-400">de ahora</strong>, con
                 tipo Hada.
@@ -596,7 +604,8 @@ function Selector({
     if (grupo) grupo.lista.push(p);
     else grupos.push({ titulo, lista: [p] });
   }
-  const dePokedex = busqueda ? searchSpecies(texto, 12) : [];
+  // En Añil también sus pokémon nuevos
+  const dePokedex = busqueda ? searchSpecies(texto, 12, generacion === GENERACION_ANIL) : [];
   const puestos = equipo.filter(Boolean).length;
   const marcado = destino !== null ? equipo[destino] : null;
 

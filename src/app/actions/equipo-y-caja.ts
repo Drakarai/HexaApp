@@ -6,6 +6,7 @@ import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
 import { descargarSprites, spritesDelFormulario } from "@/lib/sprites-servidor";
 import { evolucionesDe, queEs } from "@/lib/evoluciones";
+import { esMovimientoDeAnil, esPokemonAnil } from "@/lib/anil";
 import { leerHistoria } from "@/lib/historia";
 import { urlsDeImagen } from "@/lib/imagenes";
 import {
@@ -242,7 +243,12 @@ export async function evolucionarAction(entrada: {
     if (captura.deathId) return { error: "Un pokémon caído ya no evoluciona." };
 
     // Solo a lo que de verdad puede evolucionar: el formulario se puede falsear
-    const opciones = evolucionesDe(captura.pokemonId, captura.species);
+    // En Añil, Eevee también puede ser Royaleon o Cefireon
+    const opciones = evolucionesDe(
+      captura.pokemonId,
+      captura.species,
+      esPokemonAnil(captura.participant.competition),
+    );
     const elegida = opciones.find((o) => o.pokemonId === entrada.pokemonId);
     if (!elegida) return { error: "No puede evolucionar a eso." };
 
@@ -610,7 +616,9 @@ export async function cambiarFichaDeCombateAction(entrada: {
     if (movimientos.length > MOVIMIENTOS_POR_POKEMON) {
       return { error: `Un pokémon lleva ${MOVIMIENTOS_POR_POKEMON} movimientos como mucho.` };
     }
-    const raro = movimientos.find((m) => !movimientoPorSlug(m));
+    // Los de Añil, solo en sus lockes: fuera de ellos no existen
+    const enAnil = esPokemonAnil(captura.participant.competition);
+    const raro = movimientos.find((m) => !movimientoPorSlug(m) || (!enAnil && esMovimientoDeAnil(m)));
     if (raro) return { error: `No conozco el movimiento «${raro}».` };
     await prisma.capture.update({
       where: { id: captura.id },

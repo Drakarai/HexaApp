@@ -5,6 +5,7 @@ import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { Pestanas } from "@/components/pestanas";
 import type { Debilidad } from "@/lib/soul-link";
 import { cx } from "@/lib/utils";
+import { GENERACION_ANIL } from "@/lib/anil";
 
 /** De lo que más duele a lo que no hace nada, con cómo se lee cada uno */
 const FILAS: { x: number; rotulo: string; color: string }[] = [
@@ -26,6 +27,11 @@ const TABLAS = [
   { valor: "1", rotulo: "1ª gen.", largo: "la de la 1ª generación", desde: 1, hasta: 1 },
   { valor: "2-5", rotulo: "2ª–5ª", largo: "la de la 2ª a la 5ª", desde: 2, hasta: 5 },
   { valor: "6+", rotulo: "6ª en adelante", largo: "la de la 6ª en adelante", desde: 6, hasta: 99 },
+  /**
+   * La de Añil es la de ahora, pero con **sus** tipos (Meganium Planta/Hada):
+   * solo sale en sus lockes. Las otras, ahí, cuentan con los tipos oficiales.
+   */
+  { valor: "anil", rotulo: "Añil", largo: "la de Añil, con sus tipos", desde: GENERACION_ANIL, hasta: GENERACION_ANIL },
 ] as const;
 type Tabla = (typeof TABLAS)[number]["valor"];
 
@@ -75,7 +81,10 @@ export function Debilidades({
         etiqueta="Tabla de tipos"
         valor={tabla}
         onCambiar={setTabla}
-        opciones={TABLAS.map((t) => ({ valor: t.valor, rotulo: t.rotulo }))}
+        opciones={TABLAS.filter((t) => t.valor !== "anil" || delLocke === "anil").map((t) => ({
+          valor: t.valor,
+          rotulo: t.rotulo,
+        }))}
       />
       {/* Qué tabla es, y si es la que vale en los combates de este locke */}
       <p className="mb-3 mt-1.5 text-xs text-slate-500">

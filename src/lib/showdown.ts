@@ -1,5 +1,7 @@
 import nombresDeShowdown from "./showdown.json";
 import { queEs } from "@/lib/evoluciones";
+import { findSpecies } from "@/lib/pokedex";
+import { esPokemonDeAnil } from "@/lib/anil";
 import { OBJETOS } from "@/lib/objetos";
 import {
   MOVIMIENTOS_POR_POKEMON,
@@ -55,7 +57,10 @@ for (const objeto of OBJETOS) {
  * conoce ("Gastrodon-East", que en PokéAPI no es un pokémon aparte), se queda
  * con la especie.
  */
-function numeroDe(especie: string): number | null {
+function numeroDe(especie: string, conAnil: boolean): number | null {
+  // Royaleon y Cefireon, como los escribe el servidor de Showdown de Añil
+  const deAnil = conAnil ? findSpecies(especie, true) : undefined;
+  if (deAnil && esPokemonDeAnil(deAnil.dex)) return deAnil.dex;
   const exacto = NUMERO[plano(especie)];
   if (exacto) return exacto;
   const partes = especie.split("-");
@@ -84,7 +89,7 @@ function leerPrimeraLinea(linea: string) {
   };
 }
 
-export function leerShowdown(texto: string): PokemonDeShowdown[] {
+export function leerShowdown(texto: string, conAnil = false): PokemonDeShowdown[] {
   const bloques = texto
     .replace(/\r/g, "")
     .split(/\n\s*\n/)
@@ -97,7 +102,7 @@ export function leerShowdown(texto: string): PokemonDeShowdown[] {
     const [primera, ...resto] = lineas[0].startsWith("===") ? lineas.slice(1) : lineas;
     if (!primera) continue;
     const { mote, especie, objeto } = leerPrimeraLinea(primera);
-    const pokemonId = numeroDe(especie);
+    const pokemonId = numeroDe(especie, conAnil);
     const dudas: string[] = [];
     if (!pokemonId) dudas.push(`No conozco a «${especie}».`);
 
@@ -114,7 +119,7 @@ export function leerShowdown(texto: string): PokemonDeShowdown[] {
       if (linea.startsWith("-")) {
         const nombre = linea.replace(/^-\s*/, "");
         // "Hidden Power [Fire]": el tipo entre corchetes no cuenta para el nombre
-        const movimiento = movimientoPorNombre(nombre.replace(/\s*\[.*\]$/, ""));
+        const movimiento = movimientoPorNombre(nombre.replace(/\s*\[.*\]$/, ""), conAnil);
         if (!movimiento) dudas.push(`No conozco el movimiento «${nombre}».`);
         else if (movimientos.length < MOVIMIENTOS_POR_POKEMON && !movimientos.includes(movimiento.s)) {
           movimientos.push(movimiento.s);
@@ -229,7 +234,7 @@ export function leerRepeticion(log: string): JugadorDeLaRepeticion[] {
     completo: conPrevia.has(lado),
     equipo: de(lado).map((visto) => {
       const especieShowdown = visto.especie.replace(/-\*$/, "");
-      const pokemonId = numeroDe(especieShowdown);
+      const pokemonId = numeroDe(especieShowdown, false);
       // Showdown pone de mote la especie si no tiene: entonces no es mote
       const base = especieShowdown.split("-")[0];
       const esMote =
