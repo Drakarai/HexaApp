@@ -1,3 +1,5 @@
+import { esPokemonDeAnil } from "@/lib/anil";
+
 /**
  * Los gritos de los pokémon, en el navegador.
  *
@@ -89,7 +91,8 @@ function direccion(pokemonId: number) {
 
 function cargar(pokemonId: number) {
   const ctx = elContexto();
-  if (!ctx) return Promise.resolve(null);
+  // Lo de Añil (Royaleon, sus formas) no tiene grito en ningún sitio: ni se pide
+  if (!ctx || esPokemonDeAnil(pokemonId)) return Promise.resolve(null);
   const url = direccion(pokemonId);
   let pedido = guardados.get(url);
   if (!pedido) {

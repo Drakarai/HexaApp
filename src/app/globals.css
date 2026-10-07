@@ -710,3 +710,113 @@ html[data-estilo="nuevo"] .etiqueta-formato {
     animation: none;
   }
 }
+
+/* El compañero de la cabecera (ver components/companero.tsx): bota a dos
+   tiempos como los iconos del PC, salta, se encoge y lleva sus bocadillos */
+@keyframes companero-bota {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+@keyframes companero-salta {
+  0%,
+  33%,
+  66%,
+  100% {
+    transform: translateY(0);
+  }
+  16%,
+  50%,
+  83% {
+    transform: translateY(-7px);
+  }
+}
+@keyframes companero-brinco {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
+}
+@keyframes companero-triste {
+  0% {
+    transform: none;
+  }
+  15%,
+  85% {
+    transform: translateY(2px) scaleY(0.88) rotate(-6deg);
+    filter: saturate(0.4) brightness(0.85);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes companero-bocadillo {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scale(0.6);
+  }
+  15%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.companero-cuerpo {
+  animation: companero-bota 1s steps(1, end) infinite;
+  transform-origin: 50% 100%;
+}
+.companero-salta {
+  animation: companero-salta 1.2s ease-in-out 2;
+}
+.companero-brinco {
+  animation: companero-brinco 0.4s ease-out;
+}
+.companero-triste {
+  animation: companero-triste 3.2s ease-in-out forwards;
+}
+.companero-caido .companero-cuerpo {
+  animation: none;
+  filter: grayscale(1) brightness(0.8);
+  opacity: 0.7;
+}
+.companero-bocadillo {
+  position: absolute;
+  top: -6px;
+  left: -8px;
+  display: flex;
+  height: 16px;
+  min-width: 16px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid rgb(0 0 0 / 0.25);
+  background: #f8fafc;
+  padding: 0 3px;
+  color: #334155;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  animation: companero-bocadillo 2.4s ease-out forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .companero-cuerpo,
+  .companero-salta,
+  .companero-brinco,
+  .companero-triste {
+    animation: none;
+  }
+  .companero-bocadillo {
+    animation: none;
+  }
+}

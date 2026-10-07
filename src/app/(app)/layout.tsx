@@ -30,6 +30,8 @@ import { Icono } from "@/components/icono";
 import { COMPETITION_STATUS } from "@/lib/constants";
 import { GritosDelLocke } from "@/components/gritos-del-locke";
 import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
+import { Companero } from "@/components/companero";
+import { COOKIE_DEL_COMPANERO, companeroDe } from "@/lib/companero";
 
 /**
  * Las secciones, escritas una sola vez. La barra lateral y el menú del móvil
@@ -131,7 +133,10 @@ export default async function AppLayout({
    * Four" de cuatro jugadores para arriba y "Jornada Final" de tres para
    * abajo—, y el menú tiene que decir lo mismo que la pantalla.
    */
-  const [yo, formatoFinal, puedeGestionar, avisos] = active
+  const galletas = await cookies();
+  // El compañero (tu as en la cabecera), salvo que lo hayas escondido en este dispositivo
+  const conCompanero = galletas.get(COOKIE_DEL_COMPANERO)?.value !== "no";
+  const [yo, formatoFinal, puedeGestionar, avisos, companeroSiJuegas] = active
     ? await Promise.all([
         getMyParticipant(active.id, user.id),
         getFormatoFinal(active.id),
@@ -141,8 +146,11 @@ export default async function AppLayout({
           competitionId: active.id,
           esAdmin: esCreador(user),
         }),
+        conCompanero ? companeroDe(active.id, user.id, esPokemonAnil(active)) : null,
       ])
-    : [null, null, false, {} as Record<string, boolean>];
+    : [null, null, false, {} as Record<string, boolean>, null];
+  // Con «Ver como» espectador no juegas, y entonces tampoco te acompaña nadie
+  const companero = yo ? companeroSiJuegas : null;
   /** Sin locke, el palmarés solo sale si hay algún locke de antes con esta persona */
   const tienePalmares =
     !active &&
@@ -388,7 +396,7 @@ export default async function AppLayout({
   );
 
   // El estilo de sprites de cada uno (Mi perfil), para que llegue ya pintado
-  const estiloDeSprites = leerEstiloDeSprites((await cookies()).get(COOKIE_DE_SPRITES)?.value);
+  const estiloDeSprites = leerEstiloDeSprites(galletas.get(COOKIE_DE_SPRITES)?.value);
 
   return (
     <ProveedorDeSprites estilo={estiloDeSprites}>
@@ -407,6 +415,7 @@ export default async function AppLayout({
             {switcher}
           </div>
           {botonDeEdiciones}
+          {companero ? <Companero datos={companero} tamano={30} /> : null}
           <Link href="/perfil" aria-label="Mi perfil">
             <Avatar
               name={user.displayName}
@@ -427,9 +436,12 @@ export default async function AppLayout({
               HexaApp
             </span>
           </Link>
+          {/* El compañero, pegado a ti: a la izquierda de tu nombre */}
+          <div className="flex min-w-0 items-center gap-1.5">
+          {companero ? <Companero datos={companero} tamano={28} /> : null}
           <Link
             href="/perfil"
-            className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 text-xs text-slate-300 transition hover:bg-white/10"
+            className="flex min-w-0 items-center gap-2 rounded-full border border-white/10 bg-white/5 py-1 pl-1 pr-3 text-xs text-slate-300 transition hover:bg-white/10"
           >
             <Avatar
               name={user.displayName}
@@ -437,8 +449,9 @@ export default async function AppLayout({
               image={user.avatarImage}
               size={26}
             />
-            <span className="max-w-24 truncate">{user.displayName}</span>
+            <span className={companero ? "max-w-16 truncate" : "max-w-24 truncate"}>{user.displayName}</span>
           </Link>
+          </div>
         </div>
 
         <div className="mt-5 flex items-end gap-2">

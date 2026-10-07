@@ -6,6 +6,7 @@ import {
   soloLectura,
 } from "@/lib/competition";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
 import { AceBadge } from "@/components/ace-badge";
 import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
@@ -26,6 +27,8 @@ import { TitlesSection } from "@/components/titles-section";
 import { findSpecies } from "@/lib/pokedex";
 import { PreferenciaDeBips, PreferenciaDeGritosPicker } from "./gritos";
 import { PreferenciaDeSpritesPicker } from "./sprites";
+import { InterruptorDelCompanero } from "./companero";
+import { COOKIE_DEL_COMPANERO } from "@/lib/companero";
 import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Mi perfil" };
@@ -66,6 +69,7 @@ export default async function ProfilePage() {
         `,
       ])
     : [null, false, [], [], []];
+  const companeroPuesto = (await cookies()).get(COOKIE_DEL_COMPANERO)?.value !== "no";
   // Archivada y sin administrarla: el as y los favoritos de esa edición se ven
   // pero se quedan como estaban
   const cerrada = competition ? soloLectura(competition, gestiona) : false;
@@ -159,6 +163,10 @@ export default async function ProfilePage() {
                 ? `${myParticipant.aceNickname ?? myParticipant.aceSpecies} · pincha para cambiarlo`
                 : "Pincha en el hueco para elegirlo"}
           </p>
+          <InterruptorDelCompanero
+            puesto={companeroPuesto}
+            cookie={COOKIE_DEL_COMPANERO}
+          />
         </section>
       ) : null}
 
