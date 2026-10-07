@@ -11,7 +11,7 @@ import { debilidadesDe, tiposDePokemon, TIPOS } from "@/lib/tipos";
 import { evolucionesDe, raizDeLaFamilia } from "@/lib/evoluciones";
 import { findSpecies, searchSpecies } from "@/lib/pokedex";
 import { movimientoParaVer, movimientoPorNombre, movimientosDelJuego } from "@/lib/movimientos";
-import { leerShowdown } from "@/lib/showdown";
+import { formatoDelLog, leerRepeticion, leerShowdown, logDeLaPagina, paginaDeRepeticionDeAnil } from "@/lib/showdown";
 import { megaPorPiedra } from "@/lib/megas";
 import { habilidadesDe, habilidadesDelJuego, habilidadPorNombre, habilidadPorSlug } from "@/lib/habilidades";
 import { objetosDelJuego } from "@/lib/objetos";
@@ -149,5 +149,46 @@ describe("Pokémon Añil: formas, megas, habilidades y objetos", () => {
     assert.equal(rotuloDeMega("Mega-Charizard X", "Charizard"), "Mega X");
     assert.equal(rotuloDeMega("Mega-Venusaur", "Venusaur"), "Mega");
     assert.equal(rotuloDeMega("Mega Y", "Venusaur"), "Mega Y");
+  });
+});
+
+describe("Pokémon Añil: repeticiones de su servidor", () => {
+  test("se reconocen sus enlaces, con o sin .html, y nada más", () => {
+    const esperada = "https://anil-showdown-replays.pages.dev/replays/2026-10-06_1222_drakarai1-vs-drakarai2_gen9anilcustom-3";
+    assert.equal(paginaDeRepeticionDeAnil(esperada), esperada);
+    assert.equal(paginaDeRepeticionDeAnil(`${esperada}.html`), esperada);
+    assert.equal(paginaDeRepeticionDeAnil(esperada.replace("https://", "")), esperada);
+    assert.equal(paginaDeRepeticionDeAnil("https://anil-showdown-replays.pages.dev/"), null);
+    assert.equal(paginaDeRepeticionDeAnil("https://anil-showdown-replays.pages.dev/otra/cosa"), null);
+    assert.equal(paginaDeRepeticionDeAnil("https://ejemplo.com/replays/abc"), null);
+    assert.equal(paginaDeRepeticionDeAnil("https://replay.pokemonshowdown.com/gen9ou-123"), null);
+  });
+
+  test("de su página sale el combate, con sus pokémon de Añil", () => {
+    // Como la escribe el mod: el registro dentro del script, con las barras escapadas
+    const log = [
+      "|player|p1|Drakarai1|1",
+      "|player|p2|Drakarai2|2",
+      "|tier|[Gen 9] Añil Custom",
+      "|poke|p1|Royaleon, F|",
+      "|poke|p1|Venusaur, M|",
+      "|poke|p2|Cefireon, M|",
+      "|switch|p1a: Reina|Royaleon, F|100\\/100",
+      "|switch|p2a: Cefireon|Cefireon, M|100\\/100",
+      "|detailschange|p1a: Reina|Royaleon, F",
+    ].join("\n");
+    const html = `<!DOCTYPE html>\n<h1>x</h1>\n<script type="text/plain" class="battle-log-data">${log}</script>\n</div>`;
+    const leido = logDeLaPagina(html)!;
+    assert.ok(leido.includes("100/100"));
+    assert.equal(formatoDelLog(leido), "[Gen 9] Añil Custom");
+    const [uno, dos] = leerRepeticion(leido, true);
+    assert.equal(uno.nombre, "Drakarai1");
+    assert.deepEqual(uno.equipo.map((p) => p.especie), ["Royaleon", "Venusaur"]);
+    assert.equal(uno.equipo[0].pokemonId, findSpecies("Royaleon", true)!.dex);
+    assert.equal(uno.equipo[0].mote, "Reina");
+    assert.equal(dos.equipo[0].pokemonId, findSpecies("Cefireon", true)!.dex);
+    // Fuera de Añil no se sabe quién es
+    assert.equal(leerRepeticion(leido)[0].equipo[0].pokemonId, null);
+    assert.equal(logDeLaPagina("<html>nada</html>"), null);
   });
 });

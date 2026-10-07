@@ -15,6 +15,7 @@ import { spriteMini } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 import { Hoja } from "@/components/hoja";
 import { Pestanas } from "@/components/pestanas";
+import { useEsAnil } from "@/components/juego-del-locke";
 
 export type TeamPokemon = {
   id: string;
@@ -489,6 +490,7 @@ function TeamEditor({
 
   // De la repetición: los equipos de todos los del combate, y de quién es cada uno
   const [enlace, setEnlace] = useState(repeticion ?? "");
+  const anil = useEsAnil();
   const [deLaRepeticion, setDeLaRepeticion] = useState<JugadorDeLaRepeticion[] | null>(null);
   const [quienEs, setQuienEs] = useState<string[]>([]);
 
@@ -643,13 +645,14 @@ function TeamEditor({
             <p className="text-xs text-slate-500">
               Con el enlace de la repetición de Showdown salen la especie y el mote de los pokémon de
               cada uno. Los motes, de los que llegaron a salir al campo.
+              {anil ? " Si el combate no está en Showdown, también vale el enlace de la web de repeticiones del servidor de Añil." : ""}
             </p>
             <div className="mt-2 flex gap-2">
               <input
                 className="input min-w-0 flex-1 text-sm"
                 value={enlace}
                 onChange={(evento) => setEnlace(evento.target.value)}
-                placeholder="https://replay.pokemonshowdown.com/…"
+                placeholder={anil ? "replay.pokemonshowdown.com/… o ….pages.dev/replays/…" : "https://replay.pokemonshowdown.com/…"}
                 inputMode="url"
                 autoComplete="off"
               />

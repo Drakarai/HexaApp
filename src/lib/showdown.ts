@@ -204,7 +204,7 @@ function mismaEspecie(previa: string, vista: string) {
   return plano(previa) === plano(vista) || plano(previa) === plano(vista.replace(EN_COMBATE, ""));
 }
 
-export function leerRepeticion(log: string): JugadorDeLaRepeticion[] {
+export function leerRepeticion(log: string, conAnil = false): JugadorDeLaRepeticion[] {
   const nombres = new Map<string, string>();
   const vistos = new Map<string, Visto[]>();
   const conPrevia = new Set<string>();
@@ -252,7 +252,7 @@ export function leerRepeticion(log: string): JugadorDeLaRepeticion[] {
     completo: conPrevia.has(lado),
     equipo: de(lado).map((visto) => {
       const especieShowdown = visto.especie.replace(/-\*$/, "");
-      const pokemonId = numeroDe(especieShowdown, false);
+      const pokemonId = numeroDe(especieShowdown, conAnil);
       // Showdown pone de mote la especie si no tiene: entonces no es mote
       const base = especieShowdown.split("-")[0];
       const esMote =
@@ -289,4 +289,41 @@ export function datosDeLaRepeticion(enlace: string): string | null {
   const id = url.pathname.replace(/^\/+/, "").replace(/\.(json|log|html)$/i, "").replace(/\/+$/, "");
   if (!/^[a-z0-9]+-[a-z0-9-]+$/i.test(id)) return null;
   return `https://replay.pokemonshowdown.com/${id}.json`;
+}
+
+/**
+ * De un enlace de repetición del servidor de Showdown de Añil a su página.
+ * Esas no están en replay.pokemonshowdown.com: el mod las publica como páginas
+ * sueltas en Cloudflare Pages (`https://<proyecto>.pages.dev/replays/<nombre>`,
+ * con o sin `.html`). Se acepta cualquier proyecto de pages.dev porque el
+ * nombre del proyecto puede cambiar si el elegido ya estaba cogido; lo que no
+ * se acepta es otro sitio ni otra carpeta.
+ */
+export function paginaDeRepeticionDeAnil(enlace: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(/^https?:\/\//i.test(enlace.trim()) ? enlace.trim() : `https://${enlace.trim()}`);
+  } catch {
+    return null;
+  }
+  if (!/^[a-z0-9-]+\.pages\.dev$/i.test(url.hostname)) return null;
+  const nombre = /^\/replays\/([A-Za-z0-9_.-]+?)(\.html)?\/?$/.exec(url.pathname)?.[1];
+  if (!nombre) return null;
+  return `https://${url.hostname.toLowerCase()}/replays/${nombre}`;
+}
+
+/**
+ * El registro del combate dentro de una página de repetición (la de «Download
+ * replay» de Showdown, que es la que copia el mod de Añil): va en un
+ * `<script type="text/plain" class="battle-log-data">` con las barras escritas
+ * `\/`, para que nada del registro cierre la etiqueta antes de tiempo.
+ */
+export function logDeLaPagina(html: string): string | null {
+  const dentro = /<script[^>]*class="battle-log-data"[^>]*>([\s\S]*?)<\/script>/i.exec(html)?.[1];
+  return dentro ? dentro.replace(/\\\//g, "/") : null;
+}
+
+/** El formato del combate según el propio registro ("|tier|[Gen 9] Añil Custom") */
+export function formatoDelLog(log: string): string | undefined {
+  return /^\|tier\|(.+)$/m.exec(log)?.[1].trim() || undefined;
 }
