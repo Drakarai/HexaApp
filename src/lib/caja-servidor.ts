@@ -145,7 +145,17 @@ export const nombreDe = (c: { nickname: string | null; species: string }) =>
  * a las compañeras de su vínculo que sigan vivas se les apunta la baja también,
  * con la causa de que cayó la otra. Queda para deshacer.
  */
-export async function darPorMuerto(captura: CapturaTocable, causaEscrita: string) {
+export async function darPorMuerto(
+  captura: CapturaTocable,
+  causaEscrita: string,
+  /**
+   * Dónde cayó: una zona del mapa o lo escrito a mano (ver `SitioPicker`).
+   * Antes se ponía la zona donde se **capturó**, que no tiene nada que ver.
+   * Las que caen por el vínculo de un Soul Link cayeron en el mismo momento:
+   * van con el mismo sitio.
+   */
+  sitio: { zoneId: string | null; location: string | null } = { zoneId: null, location: null },
+) {
   if (captura.deathId) throw new Error("Ya estaba en el cementerio.");
   const { competition } = captura.participant;
   const causa = causaEscrita.trim().slice(0, 200) || null;
@@ -182,8 +192,8 @@ export async function darPorMuerto(captura: CapturaTocable, causaEscrita: string
         cause: esLaMisma
           ? causa
           : `Vínculo: cayó ${nombreDe(captura)} de ${captura.participant.displayName}${causa ? ` (${causa})` : ""}`,
-        zoneId: c.zoneId,
-        location: c.sitio,
+        zoneId: sitio.zoneId,
+        location: sitio.zoneId ? null : sitio.location,
         boxImage: c.image ?? sprites?.boxImage ?? null,
         detailImage: sprites?.detailImage ?? null,
       },

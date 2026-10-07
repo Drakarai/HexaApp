@@ -52,6 +52,8 @@ import {
 } from "@/app/actions/equipo-y-caja";
 import { directaConCola, sinConexion } from "@/lib/acciones-sin-conexion";
 import { elegirAsAction } from "@/app/actions/aces";
+import { SitioPicker } from "@/components/sitio-picker";
+import type { ZonaParaElegir } from "@/lib/mapas";
 
 /**
  * El equipo y la caja de cada uno, a la vista de todos.
@@ -72,11 +74,14 @@ export function EquiposYCajas({
   tableros,
   numeros,
   esSoulLink,
+  zonas = [],
 }: {
   tableros: TableroDeJugador[];
   /** El número de cada vínculo, por su clave */
   numeros: Record<string, number>;
   esSoulLink: boolean;
+  /** Las zonas del mapa, para decir dónde cayó uno al darlo por muerto */
+  zonas?: ZonaParaElegir[];
 }) {
   const [abierto, setAbierto] = useState<string | null>(null);
   const [aviso, setAviso] = useState<Aviso | null>(null);
@@ -120,6 +125,7 @@ export function EquiposYCajas({
           todos={todos}
           numero={pokemonAbierto.vinculo ? numeros[pokemonAbierto.vinculo] : undefined}
           esSoulLink={esSoulLink}
+          zonas={zonas}
           onCerrar={() => setAbierto(null)}
           onAviso={setAviso}
         />
@@ -1025,6 +1031,7 @@ function Ficha({
   todos,
   numero,
   esSoulLink,
+  zonas,
   onCerrar,
   onAviso,
 }: {
@@ -1033,11 +1040,17 @@ function Ficha({
   todos: PokemonDelTablero[];
   numero: number | undefined;
   esSoulLink: boolean;
+  zonas: ZonaParaElegir[];
   onCerrar: () => void;
   onAviso: (aviso: Aviso) => void;
 }) {
   const [pendiente, empezar] = useTransition();
   const [causa, setCausa] = useState("");
+  // Dónde cayó: como en el cementerio, una zona del mapa o escrito a mano
+  const [sitio, setSitio] = useState<{ zoneId: string | null; location: string | null }>({
+    zoneId: null,
+    location: null,
+  });
   // Evolucionar va en dos pasos: primero se elige, luego se confirma
   const [aEvolucionar, setAEvolucionar] = useState<OpcionDeEvolucion | null>(null);
   // Y justo después, su deshacer: a qué evolucionó y cómo se llama el cambio
@@ -1606,6 +1619,14 @@ function Ficha({
                     onChange={(evento) => setCausa(evento.target.value)}
                     placeholder="Qué lo mató (opcional)"
                   />
+                  <div className="mt-2">
+                    <SitioPicker
+                      zonas={zonas}
+                      label="Dónde cayó (opcional)"
+                      placeholder="Gimnasio de Fausto, combate contra el rival…"
+                      onCambiar={setSitio}
+                    />
+                  </div>
                   {companerasVivas.length ? (
                     <p className="mt-1.5 text-xs text-red-200/80">
                       Se lleva con él a{" "}
@@ -1630,10 +1651,21 @@ function Ficha({
                       lanzar(
                         () =>
                           directaConCola(
-                            () => darPorMuertoAction({ captureId: pokemon.id, causa }),
+                            () => darPorMuertoAction({ captureId: pokemon.id, causa, ...sitio }),
                             "caida",
-                            { captureId: pokemon.id, causa },
-                            `${(pokemon.nickname ?? pokemon.species)}${causa ? ` · ${causa}` : ""}`,
+                            {
+                              captureId: pokemon.id,
+                              causa,
+                              zoneId: sitio.zoneId ?? "",
+                              location: sitio.location ?? "",
+                            },
+                            [
+                              pokemon.nickname ?? pokemon.species,
+                              causa,
+                              sitio.zoneId ? zonas.find((z) => z.id === sitio.zoneId)?.label : sitio.location,
+                            ]
+                              .filter(Boolean)
+                              .join(" · "),
                           ),
                         { cerrar: true },
                       );

@@ -196,6 +196,8 @@ async function ejecutar(tipo: string, formData: FormData): Promise<string | null
       const estado = await darPorMuertoAction({
         captureId: String(formData.get("captureId") ?? ""),
         causa: String(formData.get("causa") ?? ""),
+        zoneId: String(formData.get("zoneId") ?? "") || null,
+        location: String(formData.get("location") ?? "") || null,
       });
       return estado.error ?? null;
     }

@@ -78,8 +78,8 @@ export async function createDeathAction(
   }
 
   /**
-   * Si se eligió **de la caja**, la baja sale de esa captura: su especie, su
-   * mote y su ruta, y en un Soul Link se lleva a su pareja. Es la misma caída
+   * Si se eligió **de la caja**, la baja sale de esa captura: su especie y su
+   * mote, el sitio donde cayó, y en un Soul Link se lleva a su pareja. Es la misma caída
    * que la de Equipo y PC (y se deshace desde allí); antes, apuntada aquí, la
    * pareja seguía viva.
    */
@@ -90,7 +90,9 @@ export async function createDeathAction(
       if (captura.participantId !== participantId) {
         return { error: "Ese pokémon no es de la caja de ese jugador." };
       }
-      const aviso = await darPorMuerto(captura, String(formData.get("cause") ?? ""));
+      // Con el «Dónde cayó» del formulario, que antes se perdía por este camino
+      const sitio = await sitioDelFormulario(formData, participantId);
+      const aviso = await darPorMuerto(captura, String(formData.get("cause") ?? ""), sitio);
       refrescarBajas();
       return { success: aviso };
     } catch (error) {

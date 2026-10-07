@@ -143,7 +143,7 @@ export default async function EquipoYPcPage({
       <Pendientes tipo="caida" />
 
       {datos.tableros.length ? (
-        <EquiposYCajas tableros={tableros} numeros={numeros} esSoulLink={perfil.cooperativo} />
+        <EquiposYCajas tableros={tableros} numeros={numeros} esSoulLink={perfil.cooperativo} zonas={zonas} />
       ) : (
         <EmptyState
           dibujo="caja"

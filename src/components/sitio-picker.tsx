@@ -27,12 +27,18 @@ export function SitioPicker({
   defaultLocation = null,
   label = "Dónde",
   placeholder = "Combate contra Draka, intercambio…",
+  onCambiar,
 }: {
   zonas: ZonaParaElegir[];
   defaultZoneId?: string | null;
   defaultLocation?: string | null;
   label?: string;
   placeholder?: string;
+  /**
+   * Para quien no lo manda en un formulario (la ficha del Equipo y PC, que
+   * va por la cola sin conexión): avisa de lo elegido cada vez que cambia.
+   */
+  onCambiar?: (sitio: { zoneId: string | null; location: string | null }) => void;
 }) {
   /**
    * Se arranca en "otro" si ya había un sitio escrito y ninguna zona puesta:
@@ -41,6 +47,12 @@ export function SitioPicker({
   const [elegido, setElegido] = useState<string>(
     defaultZoneId ?? (defaultLocation ? OTRO : ""),
   );
+  const [escrito, setEscrito] = useState(defaultLocation ?? "");
+  const avisar = (zona: string, texto: string) =>
+    onCambiar?.({
+      zoneId: zona && zona !== OTRO ? zona : null,
+      location: !zonas.length || zona === OTRO ? texto.trim() || null : null,
+    });
 
   /**
    * Cómo se reparten las opciones del desplegable.
@@ -79,7 +91,10 @@ export function SitioPicker({
           name="zoneId"
           className="input"
           value={elegido}
-          onChange={(evento) => setElegido(evento.target.value)}
+          onChange={(evento) => {
+            setElegido(evento.target.value);
+            avisar(evento.target.value, escrito);
+          }}
         >
           <option value="">Sin especificar</option>
           {grupos.map((grupo) => (
@@ -111,7 +126,11 @@ export function SitioPicker({
         <input
           name="location"
           className={zonas.length ? "input mt-2" : "input"}
-          defaultValue={defaultLocation ?? ""}
+          value={escrito}
+          onChange={(evento) => {
+            setEscrito(evento.target.value);
+            avisar(elegido, evento.target.value);
+          }}
           maxLength={80}
           placeholder={placeholder}
         />

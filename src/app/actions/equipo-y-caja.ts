@@ -417,10 +417,17 @@ export async function cambiarShinyAction(entrada: {
 export async function darPorMuertoAction(entrada: {
   captureId: string;
   causa: string;
+  zoneId?: string | null;
+  location?: string | null;
 }): Promise<Resultado> {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
-    return { aviso: await darPorMuerto(captura, entrada.causa ?? "") };
+    // La zona, solo si es de las regiones de este juego: el formulario se puede falsear
+    const zona = String(entrada.zoneId ?? "").trim();
+    const zoneId =
+      zona && (await zonaValidaParaCompeticion(zona, captura.participant.competition.gameId)) ? zona : null;
+    const location = String(entrada.location ?? "").trim().slice(0, 80) || null;
+    return { aviso: await darPorMuerto(captura, entrada.causa ?? "", { zoneId, location }) };
   });
 }
 
