@@ -16,6 +16,8 @@ export type ActivityEntry = {
   image?: string | null;
   /** Nombre del jugador, si la entrada va de alguien en concreto */
   who?: string;
+  /** Y quién es, para que su foto lleve a su perfil (no lo hay si no juega: quien gira la ruleta) */
+  whoId?: string;
   whoImage?: string | null;
 };
 
@@ -148,6 +150,7 @@ export async function getActivity(competitionId: string, limit = 60) {
         .join(" · "),
       image: sprites(death.id),
       who: jugador.displayName,
+      whoId: jugador.id,
       whoImage: avatares(jugador.userId),
     });
   }
@@ -165,6 +168,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${jugador.displayName} ${entry.delta > 0 ? "gana" : "pierde"} ${Math.abs(entry.delta)} ${Math.abs(entry.delta) === 1 ? "punto" : "puntos"}`,
       detail: entry.reason,
       who: jugador.displayName,
+      whoId: jugador.id,
       whoImage: avatares(jugador.userId),
     });
   }
@@ -180,6 +184,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${jugador.displayName} ha superado ${aQuienSeSupera(clear.levelCap.label)}`,
       detail: `Level cap ${clear.levelCap.cap}`,
       who: jugador.displayName,
+      whoId: jugador.id,
       whoImage: avatares(jugador.userId),
     });
   }
@@ -210,6 +215,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       title: `${jugador.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
       detail: ticket.reason ?? undefined,
       who: jugador.displayName,
+      whoId: jugador.id,
       whoImage: avatares(jugador.userId),
     });
   }
@@ -237,6 +243,7 @@ export async function getActivity(competitionId: string, limit = 60) {
         .filter(Boolean)
         .join(" · "),
       who: ganador.displayName,
+      whoId: ganador.id,
       whoImage: avatares(ganador.userId),
     });
   }
@@ -256,6 +263,7 @@ export async function getActivity(competitionId: string, limit = 60) {
         (uso.optionId ? opciones(uso.optionId) : null) ??
         (uso.itemId ? objetos(uso.itemId) : null),
       who: jugador.displayName,
+      whoId: jugador.id,
       whoImage: avatares(jugador.userId),
     });
   }

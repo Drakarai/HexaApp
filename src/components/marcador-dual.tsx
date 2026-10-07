@@ -4,6 +4,8 @@ import type { Marcador } from "@/lib/marcador";
 import type { CampeonDeLiga } from "@/lib/liga";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { AceBadge } from "@/components/ace-badge";
+import type { StandingRow } from "@/lib/competition";
 
 /**
  * El marcador de un locke de dos.
@@ -17,9 +19,18 @@ export function MarcadorDual({
   marcador,
   /** En el resumen solo cabe el marcador, sin el desglose jornada a jornada */
   compacto = false,
+  filas = [],
+  editables = [],
 }: {
   marcador: Marcador;
   compacto?: boolean;
+  /**
+   * Las filas de la clasificación, para el **as** de cada uno: en un locke de
+   * dos no hay tabla, y sin esto el as no se veía en ningún sitio a mano.
+   */
+  filas?: StandingRow[];
+  /** De quién puede cambiar el as quien mira: el suyo, o todos si administra */
+  editables?: string[];
 }) {
   const { jugadores, jornadas, hacenFalta, campeonId, bolaDePartido, previstas, empate } =
     marcador;
@@ -64,11 +75,16 @@ export function MarcadorDual({
                     color={jugador.color}
                     image={jugador.avatarImage}
                     size={44}
+                    participantId={jugador.participantId}
                   />
                 </div>
                 <p className="mt-2 truncate text-sm font-medium text-white">
                   {jugador.displayName}
                 </p>
+                <ElAs
+                  fila={filas.find((f) => f.participantId === jugador.participantId)}
+                  editable={editables.includes(jugador.participantId)}
+                />
                 <p className="mt-1 text-4xl font-black text-white">
                   {jugador.ganadas}
                 </p>
@@ -237,5 +253,32 @@ export function CampeonesDeLiga({
         />
       )}
     </section>
+  );
+}
+
+/** El as de cada uno, debajo de su nombre: al pincharlo, su ficha */
+function ElAs({ fila, editable }: { fila: StandingRow | undefined; editable: boolean }) {
+  if (!fila || (!fila.ace.species && !editable)) return null;
+  return (
+    <div className="mt-1.5 flex items-center justify-center gap-1.5">
+      <AceBadge
+        size={30}
+        showEmpty
+        ace={{
+          participantId: fila.participantId,
+          playerName: fila.displayName,
+          color: fila.color,
+          species: fila.ace.species,
+          nickname: fila.ace.nickname,
+          reason: fila.ace.reason,
+          image: fila.ace.image,
+          detailImage: fila.ace.detailImage,
+          editable,
+        }}
+      />
+      <span className="max-w-[7rem] truncate text-xs text-slate-400">
+        {fila.ace.species ? (fila.ace.nickname ?? fila.ace.species) : "Elegir as"}
+      </span>
+    </div>
   );
 }

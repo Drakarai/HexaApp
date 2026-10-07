@@ -191,6 +191,7 @@ export function Sorteo({
                     color={quien.color}
                     image={quien.avatarImage}
                     size={22}
+                    participantId={quien.participantId}
                   />
                   <span className="text-sm font-semibold text-slate-100">
                     {quien.displayName}

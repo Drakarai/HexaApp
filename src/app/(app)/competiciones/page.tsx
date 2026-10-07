@@ -357,6 +357,7 @@ export default async function CompetitionsPage() {
                       color={participant.color}
                       image={avatares(participant.user.id)}
                       size={32}
+                      participantId={participant.id}
                     />
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium text-white">

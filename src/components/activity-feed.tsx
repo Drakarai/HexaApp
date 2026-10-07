@@ -49,6 +49,7 @@ export function ActivityFeed({
                   name={entry.who}
                   color={entry.color}
                   image={entry.whoImage}
+                  participantId={entry.whoId}
                   size={28}
                 />
               ) : null}

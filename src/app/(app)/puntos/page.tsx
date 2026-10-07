@@ -101,7 +101,7 @@ export default async function PointsPage() {
         </section>
       ) : null}
 
-      {marcador ? <MarcadorDual marcador={marcador} /> : null}
+      {marcador ? <MarcadorDual marcador={marcador} filas={standings} editables={editableAces} /> : null}
 
       {/**
        * Con una sola jornada jugada la gráfica son dos columnas —"Inicio" y

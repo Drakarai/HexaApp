@@ -253,6 +253,7 @@ export default async function FinalFourPage() {
                   color={state.champion.color}
                   image={state.champion.avatarImage}
                   size={48}
+                  participantId={state.champion.participantId}
                 />
                 <p className="text-3xl font-black text-white">
                   {state.champion.displayName}
@@ -330,6 +331,7 @@ export default async function FinalFourPage() {
                       color={jugador.color}
                       image={jugador.avatarImage}
                       size={24}
+                      participantId={jugador.participantId}
                     />
                     <span className="min-w-0 truncate text-sm font-semibold text-white">
                       {jugador.displayName}

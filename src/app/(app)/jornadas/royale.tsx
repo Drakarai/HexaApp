@@ -115,6 +115,7 @@ export function Royale({
                 color={jugador.color}
                 image={jugador.avatarImage}
                 size={22}
+                participantId={jugador.participantId}
               />
               <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
                 {jugador.displayName}

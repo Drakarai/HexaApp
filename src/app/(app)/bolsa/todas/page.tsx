@@ -78,6 +78,7 @@ export default async function BolsasPage() {
                   color={participante.color}
                   image={participante.user.avatarImage}
                   size={30}
+                  participantId={participante.id}
                 />
                 <h2 className="font-semibold text-slate-100">
                   {participante.displayName}

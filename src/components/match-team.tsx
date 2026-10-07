@@ -169,6 +169,7 @@ function TeamRow({ side, aLaVez = 1 }: { side: TeamSide; aLaVez?: number }) {
         color={side.color}
         image={side.avatarImage}
         size={18}
+        participantId={side.participantId}
       />
       {side.team.map((pokemon, index) => (
         <Sprite
@@ -210,6 +211,7 @@ function TeamBox({
           color={side.color}
           image={side.avatarImage}
           size={20}
+          participantId={side.participantId}
         />
         <span className="min-w-0 truncate text-xs font-semibold text-slate-300">
           {side.displayName}

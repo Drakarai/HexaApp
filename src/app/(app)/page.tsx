@@ -506,7 +506,12 @@ export default async function DashboardPage() {
           ) : progreso ? (
             <ResumenEnSolitario progreso={progreso} />
           ) : marcador ? (
-            <MarcadorDual marcador={marcador} compacto />
+            <MarcadorDual
+              marcador={marcador}
+              compacto
+              filas={standings}
+              editables={myParticipant && !soloLectura(competition, canManage) ? [myParticipant.id] : []}
+            />
           ) : (
             <>
               <StandingsTable
@@ -604,6 +609,7 @@ export default async function DashboardPage() {
                         color={myParticipant.color}
                         image={fichaDe.get(myParticipant.id)?.avatarImage ?? null}
                         size={36}
+                        participantId={myParticipant.id}
                       />
                       <span className="truncate font-semibold text-white">
                         {myParticipant.displayName}

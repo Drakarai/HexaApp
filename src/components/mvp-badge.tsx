@@ -212,6 +212,7 @@ function Ficha({ mvp, winner }: { mvp: MvpView; winner: MvpCandidateView }) {
           color={winner.ownerColor}
           image={winner.ownerAvatar}
           size={24}
+          participantId={winner.ownerId}
         />
         <span className="text-sm text-slate-300">{winner.ownerName}</span>
       </div>
