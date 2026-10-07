@@ -1055,3 +1055,42 @@ html[data-estilo="nuevo"] .etiqueta-formato {
     opacity: 0;
   }
 }
+
+/* Las reacciones al tocar al compañero que faltaban: una vuelta y una sacudida */
+@keyframes companero-giro {
+  0% {
+    transform: translateY(0) rotate(0);
+  }
+  40% {
+    transform: translateY(-6px) rotate(180deg);
+  }
+  100% {
+    transform: translateY(0) rotate(360deg);
+  }
+}
+.companero-giro {
+  animation: companero-giro 0.6s ease-in-out;
+}
+@keyframes companero-sacude {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-3px) rotate(-6deg);
+  }
+  40%,
+  80% {
+    transform: translateX(3px) rotate(6deg);
+  }
+}
+.companero-sacude {
+  animation: companero-sacude 0.5s ease-in-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .companero-giro,
+  .companero-sacude {
+    animation: none;
+  }
+}

@@ -16,7 +16,7 @@ const RECIENTE = 3 * 24 * 60 * 60 * 1000;
 /** Una evolución se enseña en la cabecera si es de esta última semana */
 const EVOLUCION_RECIENTE = 7 * 24 * 60 * 60 * 1000;
 
-type Animo = "contento" | "triste" | "toque";
+type Animo = "contento" | "triste";
 
 /** Lo que se guarda en el dispositivo; si no se puede (modo privado), se vive sin ello */
 function leer<T>(clave: string, porDefecto: T): T {
@@ -106,31 +106,61 @@ function frasesDe(participantId: string, pokemonId: number) {
 
 /**
  * Qué dice ahora. Primero, lo que le está pasando a su entrenador que aún no
- * ha dicho en esta visita; luego, sobre todo cosas de su especie, y de vez en
- * cuando de su tipo, de la hora o de cualquiera. Nunca la misma dos veces
- * seguidas.
+ * ha dicho en esta visita; luego se reparte entre lo de su especie (que es lo
+ * más suyo, pero son dos o tres), su tipo, la hora y lo de cualquiera. No
+ * repite ninguna de las últimas que ha dicho, para que tocarle seguido no sea
+ * un disco rayado.
  */
-function elegirFrase(frases: FrasesDelCompanero | null, dichas: Set<string>, ultima: string | null) {
+function elegirFrase(frases: FrasesDelCompanero | null, dichas: Set<string>, recientes: string[]) {
   const delLocke = frases?.locke.find((f) => !dichas.has(f));
   if (delLocke && Math.random() < 0.6) return delLocke;
   const deLaHora = frasesDeLaHora(new Date().getHours());
-  const tirada = Math.random();
-  const monton =
-    tirada < 0.55 && frases?.especie.length
-      ? frases.especie
-      : tirada < 0.75 && frases?.tipo.length
-        ? frases.tipo
-        : tirada < 0.85 && deLaHora.length
-          ? deLaHora
-          : tirada < 0.93 && frases?.locke.length
-            ? frases.locke
-            : (frases?.generica ?? GENERICAS);
-  const opciones = monton.filter((f) => f !== ultima);
-  const lista = opciones.length ? opciones : monton;
-  return lista[Math.floor(Math.random() * lista.length)];
+  const montones: [string[], number][] = [
+    [frases?.especie ?? [], 4],
+    [frases?.tipo ?? [], 3],
+    [deLaHora, 1],
+    [frases?.locke ?? [], 1],
+    [frases?.generica ?? GENERICAS, 1],
+  ];
+  // Cada frase, con el peso de su montón repartido entre las suyas
+  const opciones = montones.flatMap(([lista, peso]) =>
+    lista.filter((f) => !recientes.includes(f)).map((f) => ({ f, peso: peso / lista.length })),
+  );
+  if (!opciones.length) return azar(frases?.generica ?? GENERICAS);
+  let tirada = Math.random() * opciones.reduce((suma, o) => suma + o.peso, 0);
+  for (const o of opciones) {
+    tirada -= o.peso;
+    if (tirada <= 0) return o.f;
+  }
+  return opciones[opciones.length - 1].f;
 }
 
 const azar = <T,>(lista: T[]) => lista[Math.floor(Math.random() * lista.length)];
+
+/**
+ * Cómo reacciona al tocarle: un movimiento y su bocadillo pequeño, como los
+ * de HeartGold. Va con lo que dice: si echa de menos a alguien se encoge, si
+ * celebra algo salta con un corazón, si le toca combatir se pone en alerta.
+ * Si no, uno al azar, para que no haga siempre lo mismo.
+ */
+type Movimiento = "brinco" | "salta" | "giro" | "sacude" | "triste";
+type Reaccion = { mov: Movimiento; emote: string; id: number };
+const AL_AZAR: Omit<Reaccion, "id">[] = [
+  { mov: "brinco", emote: "♪" },
+  { mov: "brinco", emote: "♪" },
+  { mov: "salta", emote: "♥" },
+  { mov: "giro", emote: "♪" },
+  { mov: "sacude", emote: "!" },
+  { mov: "brinco", emote: "?" },
+];
+function reaccionA(frase: string): Omit<Reaccion, "id"> {
+  if (/echa de menos/.test(frase)) return { mov: "triste", emote: "…" };
+  if (/celebrando|conociste|a tu lado/.test(frase)) return { mov: "salta", emote: "♥" };
+  if (/impaciente|entrena para/.test(frase)) return { mov: "brinco", emote: "!" };
+  if (/brilla/.test(frase)) return { mov: "giro", emote: "✨" };
+  if (/despereza|legañas|siesta|bosteza/.test(frase)) return { mov: "sacude", emote: "z" };
+  return azar(AL_AZAR);
+}
 
 /** El icono de caja de un pokémon, y detrás el quieto de Blanco y Negro por si no hay */
 function iconosDe(pokemonId: number, shiny: boolean, estilo: EstiloDeSprites) {
@@ -201,7 +231,7 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
   const [frase, setFrase] = useState<string | null>(null);
   const [letras, setLetras] = useState(0);
   const dichas = useRef(new Set<string>());
-  const ultima = useRef<string | null>(null);
+  const recientes = useRef<string[]>([]);
   const cierre = useRef<number | undefined>(undefined);
   function decir(texto: string) {
     window.clearTimeout(cierre.current);
@@ -223,20 +253,34 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
     despues(ms, () => setAnimo(null));
   };
 
+  // La reacción al tocarle (ver `reaccionA`)
+  const [reaccion, setReaccion] = useState<Reaccion | null>(null);
+  const reaccionar = (r: Omit<Reaccion, "id">) => {
+    setReaccion({ ...r, id: Date.now() });
+    despues(r.mov === "triste" ? 2400 : 1500, () => setReaccion((ahora) => (ahora && Date.now() - ahora.id >= 1400 ? null : ahora)));
+  };
+
   const ultimoGrito = useRef(0);
   async function tocar() {
     if (caido) return decir(`${nombre} descansa en paz`);
-    if (noche) return decir(rellenar(azar(DORMIDO), nombre));
-    animar("toque", 600);
-    // Que grite, pero no cada vez si se le toca seguido: cansa
-    if (Date.now() - ultimoGrito.current > 8000) {
+    if (noche) {
+      reaccionar({ mov: "sacude", emote: "z" });
+      return decir(rellenar(azar(DORMIDO), nombre));
+    }
+    // Que grite al tocarle; si se le toca muy seguido, no a cada toque, que satura
+    if (Date.now() - ultimoGrito.current > 1500) {
       ultimoGrito.current = Date.now();
       sonarGrito(pokemonId, { volumen: 0.5 });
     }
-    const frases = await frasesDe(datos.participantId, pokemonId);
-    const elegida = elegirFrase(frases, dichas.current, ultima.current);
+    // La primera vez sus frases tardan un momento en llegar: mientras, ya reacciona
+    const pedidas = frasesDe(datos.participantId, pokemonId);
+    const espera = window.setTimeout(() => reaccionar({ mov: "brinco", emote: "♪" }), 150);
+    const frases = await pedidas;
+    window.clearTimeout(espera);
+    const elegida = elegirFrase(frases, dichas.current, recientes.current);
     dichas.current.add(elegida);
-    ultima.current = elegida;
+    recientes.current = [elegida, ...recientes.current].slice(0, 4);
+    reaccionar(reaccionA(elegida));
     decir(rellenar(elegida, nombre));
   }
 
@@ -358,13 +402,26 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
             className={cx(
               "companero-cuerpo block h-full w-full",
               animo === "contento" && "companero-salta",
-              (animo === "toque" || gesto === "salta") && "companero-brinco",
+              gesto === "salta" && "companero-brinco",
               animo === "triste" && "companero-triste",
               gesto === "mira" && "companero-mira",
               evolucion?.fase === "hecho" && "companero-recien-evolucionado",
             )}
           >
-            <Icono pokemonId={pokemonId} shiny={shiny} />
+            {/* Con la clave de la reacción: tocarle dos veces repite el movimiento */}
+            <span
+              key={reaccion?.id ?? 0}
+              className={cx(
+                "block h-full w-full",
+                reaccion?.mov === "salta" && "companero-salta",
+                reaccion?.mov === "brinco" && "companero-brinco",
+                reaccion?.mov === "triste" && "companero-triste",
+                reaccion?.mov === "giro" && "companero-giro",
+                reaccion?.mov === "sacude" && "companero-sacude",
+              )}
+            >
+              <Icono pokemonId={pokemonId} shiny={shiny} />
+            </span>
           </span>
         )}
         {caido ? <Lazo /> : null}
@@ -375,9 +432,14 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
             <span>Z</span>
           </span>
         ) : null}
-        {animo && animo !== "toque" ? (
+        {animo && !reaccion ? (
           <span key={animo} className="companero-bocadillo" aria-hidden>
             {animo === "contento" ? <Corazon /> : "…"}
+          </span>
+        ) : null}
+        {reaccion ? (
+          <span key={reaccion.id} className="companero-bocadillo" aria-hidden>
+            {reaccion.emote === "♥" ? <Corazon /> : reaccion.emote}
           </span>
         ) : null}
         {evolucion?.fase === "hecho" ? (
