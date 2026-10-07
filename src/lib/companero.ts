@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { findSpecies } from "@/lib/pokedex";
+import { leerHistoria } from "@/lib/historia";
 
 /**
  * El **compañero**: el pokémon as de cada uno, con su icono de caja al lado de
@@ -23,6 +24,11 @@ export type Companero = {
   shiny: boolean;
   /** El mote, o la especie si no tiene */
   nombre: string;
+  especie: string;
+  /** Su captura del Equipo y PC (null en los ases de antes) */
+  capturaId: string | null;
+  /** Cuándo evolucionó por última vez, para enseñarlo en la cabecera una vez */
+  evolucionadoEl: string | null;
   /** Si el as está en el cementerio (y no lo han revivido) */
   caido: boolean;
   /** El último combate ganado, para saltar una vez */
@@ -61,10 +67,11 @@ export async function companeroDe(
         imagen: string | null;
         aceCaptureId: string | null;
         bajaDelAs: string | null;
+        historia: unknown;
       }[]
     >`
       SELECT p.id, p."aceSpecies", p."aceNickname", left(p."aceImage", 64) AS imagen,
-             p."aceCaptureId", c."deathId" AS "bajaDelAs"
+             p."aceCaptureId", c."deathId" AS "bajaDelAs", c.historia
       FROM "Participant" p LEFT JOIN "Capture" c ON c.id = p."aceCaptureId"
       WHERE p."competitionId" = ${competitionId} AND p."userId" = ${userId}
     `,
@@ -117,6 +124,9 @@ export async function companeroDe(
     pokemonId,
     shiny,
     nombre: yo.aceNickname || yo.aceSpecies,
+    especie: yo.aceSpecies,
+    capturaId: yo.aceCaptureId,
+    evolucionadoEl: leerHistoria(yo.historia).findLast((s) => s.tipo === "evoluciona")?.fecha ?? null,
     caido,
     victoria: victoria ? { id: victoria.id, fecha: new Date(victoria.fecha).toISOString() } : null,
     baja: otra

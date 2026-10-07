@@ -1,0 +1,100 @@
+152|{n} agita la hoja de su cabeza para olfatear el aire|{n} suelta un aroma dulce para animarte
+153|{n} suelta un perfume especiado de sus hojas del cuello|{n} se estira al sol con su collar de brotes
+154|{n} calma a todo el mundo con el aroma de su flor|{n} hace bailar los pétalos de su cuello
+155|{n} enciende las llamas de su lomo para saludarte|{n} se hace una bolita y apaga sus llamas para dormir
+156|{n} aviva su fuego para que no se le acerque nadie|{n} corre en círculos con el lomo en llamas
+157|{n} hace estallar las llamas de su cuello|{n} frota su pelaje para soltar chispas
+158|{n} muerde todo lo que tiene delante para probar sus colmillos|{n} da saltitos agitando las fauces
+159|{n} abre la bocaza para enseñarte los dientes nuevos|{n} se agarra a una rama con los dientes
+160|{n} nada a toda velocidad con la boca abierta|{n} ruge para intimidar a los rivales del río
+161|{n} se pone de puntillas sobre la cola para vigilar|{n} avisa a los suyos dando golpecitos con la cola
+162|{n} se cuela por un hueco estrechísimo|{n} se enrosca con su larguísimo cuerpo
+163|{n} se apoya sobre una pata y gira la cabeza|{n} lleva la cuenta del tiempo exacto que pasa
+164|{n} gira la cabeza del todo hacia atrás|{n} vigila en la oscuridad con sus ojos rojos
+165|{n} se refugia entre tus cosas: le da corte la gente|{n} busca a sus compañeros para no ir por ahí sin compañía
+166|{n} vuela bajo las estrellas soltando polvo brillante|{n} lanza puñetazos a lo loco con sus cuatro manos
+167|{n} teje una tela entre dos ramas|{n} espera inmóvil a que algo caiga en su red
+168|{n} recorre su tela de un lado a otro|{n} deja hilo por todas partes
+169|{n} vuela tan rápido y sin ruido que ni lo oyes llegar|{n} usa sus cuatro alas para quedarse en el aire
+170|{n} hace brillar sus antenas en la oscuridad|{n} manda señales de luz a lo lejos
+171|{n} ilumina el fondo del agua con sus antenas|{n} usa su luz para guiarte de noche
+172|{n} suelta un calambrazo sin querer|{n} juega con las chispas de sus mejillas
+173|{n} sale a bailar cuando cae una estrella fugaz|{n} se hace una bolita brillante
+174|{n} rebota como una pelota de goma|{n} intenta cantar, pero solo le sale un gorgorito
+175|{n} reparte buen humor a todo el que pasa|{n} se balancea dentro de su cáscara
+176|{n} revolotea y lanza sonrisas a todo el mundo|{n} busca a alguien de buen corazón
+177|{n} se queda mirando al sol sin pestañear|{n} da saltitos entre las ramas
+178|{n} mira al pasado con un ojo y al futuro con el otro|{n} se queda inmóvil durante horas mirando al sol
+179|{n} se carga de electricidad frotando su lana|{n} se esponja como una nube
+180|{n} se le pone la lana de punta de electricidad|{n} se esconde de la lluvia para no calambrearse
+181|{n} enciende la luz de su cola para que la veas de lejos|{n} hace de faro en la noche
+182|{n} baila con sus pétalos al sol|{n} sacude la flor de su cabeza
+183|{n} flota en el agua con la cola de boya|{n} se rasca la barriga con la patita
+184|{n} hace burbujas para ver qué hay bajo el agua|{n} se pone de pie con sus orejas largas
+185|{n} se hace pasar por un árbol sin mover ni un pelo|{n} se esconde cuando ve que va a llover
+186|{n} croa para que le oiga todo el mundo|{n} infla su garganta cantando
+187|{n} se deja llevar por el viento|{n} se ata al suelo para no salir volando
+188|{n} abre la flor de su cabeza al sol|{n} flota al ritmo de la brisa
+189|{n} viaja con el viento dejando esporas|{n} cierra sus bolitas de algodón
+190|{n} se rasca con la mano de su cola|{n} te quita algo del bolsillo con la cola
+191|{n} toma el sol sin moverse|{n} se queda en su semilla sin hacer nada
+192|{n} gira con su cara al sol|{n} sigue al sol de un lado a otro
+193|{n} zumba en círculos muy rápido|{n} ve todo lo que pasa a su alrededor
+194|{n} sale del agua en cuanto se pone fresco|{n} se cubre de una capa viscosa para protegerse
+195|{n} sonríe de oreja a oreja sin entender nada|{n} se choca con un barco por despiste
+196|{n} usa su pelaje para predecir lo que vas a hacer|{n} mueve su cola dividida como una antena
+197|{n} hace brillar sus anillos amarillos en la oscuridad|{n} suelta un sudor venenoso si te acercas demasiado
+198|{n} aparece de la nada como un mal presagio|{n} trae cosas brillantes para su colección
+199|{n} piensa en algo con mucha seriedad|{n} aguanta muy firme al Shellder de su cabeza
+200|{n} suelta un lamento para asustarte|{n} se ríe flotando detrás de ti
+201|{n} forma una letra para comunicarse|{n} se pega a una pared y dibuja un símbolo
+202|{n} aguanta todo lo que le eches sin rechistar|{n} se protege la cola negra con su cuerpo
+203|{n} ve lo que pasa a su espalda con su cola|{n} sacude la cabeza de su cola
+204|{n} se esconde dentro de su caparazón de corteza|{n} cuelga de una rama como una piña
+205|{n} se acoraza en su caparazón de acero|{n} lanza unos trozos de su coraza por si acaso
+206|{n} cava un túnel y aparece de golpe|{n} bate sus alitas y sale de la tierra
+207|{n} se agarra a tu cara con sus pinzas|{n} planea sin hacer ruido
+208|{n} brilla tanto como el acero pulido|{n} se excava un camino por la montaña
+209|{n} enseña sus colmillos para dar miedo|{n} te sigue a todas partes sin dejar que le acaricies
+210|{n} se le cae la baba con su mandíbula enorme|{n} intenta asustarte con su cara de mal genio
+211|{n} se hincha y saca todas sus púas|{n} traga agua para inflarse
+212|{n} brilla como el acero bajo el sol|{n} abre y cierra sus pinzas para intimidar
+213|{n} guarda bayas dentro de su caparazón|{n} hace un zumo de bayas fermentado
+214|{n} levanta un peso enorme con su cuerno|{n} se lanza de cabeza contra su rival
+215|{n} enseña sus garras afiladas|{n} roba un huevo de algún nido
+216|{n} lame la miel de sus patitas|{n} se esconde la miel que encuentra
+217|{n} huele la miel a lo lejos|{n} se levanta sobre las patas traseras
+218|{n} se arrastra dejando un camino de lava|{n} se calienta en su magma
+219|{n} se calienta con su propio cuerpo|{n} su caparazón suelta llamas al moverse
+220|{n} escarba en la nieve buscando comida|{n} husmea con su hocico frío
+221|{n} saca la nariz de debajo del pelo|{n} carga por la nieve con sus colmillos
+222|{n} le crece una ramita nueva de coral en la cabeza|{n} se esconde en el agua para que no le rompan las ramas
+223|{n} dispara un chorro de agua con una puntería tremenda|{n} se esconde entre las rocas mirando de reojo
+224|{n} saca un tentáculo para agarrar una baya|{n} suelta tinta y se esconde detrás
+225|{n} te trae un regalo envuelto en su cola|{n} mete en su saco de la cola todo lo que encuentra
+226|{n} planea sobre las olas con un Remoraid enganchado|{n} salta del agua y hace un tirabuzón
+227|{n} afila los bordes de sus alas de acero|{n} hace sonar sus plumas metálicas al aterrizar
+228|{n} aúlla para llamar a su manada|{n} se relame junto a su collar de huesos
+229|{n} suelta un aullido que da escalofríos|{n} echa una llamarada que huele a azufre
+230|{n} remueve el agua con la cola para hacer olas|{n} se sumerge en las profundidades a pensar
+231|{n} se ducha con su trompa|{n} se da un revolcón en el barro
+232|{n} se hace una rueda y sale disparado|{n} embiste con sus colmillos de marfil
+233|{n} se actualiza a la última versión|{n} flota con unos movimientos muy suaves
+234|{n} hace dar vueltas tu cabeza con su cornamenta|{n} pisa el suelo con elegancia
+235|{n} pinta tu mochila con la punta de su cola|{n} marca su territorio con su firma
+236|{n} entrena puñetazos contra un árbol|{n} busca pelea para ver cómo le va
+237|{n} hace girar su cabeza como una peonza|{n} da patadas dando vueltas boca abajo
+238|{n} se mira los labios en un charco|{n} te da un besito y sale corriendo
+239|{n} junta las manos para cargar electricidad|{n} se cuelga de un enchufe para merendar
+240|{n} suelta bolitas de fuego al respirar|{n} se calienta junto a un volcán
+241|{n} te ofrece un vaso de leche mu-mu|{n} da vueltas como una peonza para entrenar
+242|{n} te ofrece su huevo para que te recuperes|{n} cuida de cualquier pokémon con mala cara
+243|{n} corre como un rayo y deja un trueno detrás|{n} se planta con las nubes de su lomo
+244|{n} ruge y hace temblar los volcanes|{n} pasa como una llamarada
+245|{n} corre sobre el agua sin hundirse|{n} limpia de un vistazo el agua sucia
+246|{n} se come un montón de tierra para crecer|{n} duerme bajo tierra para hacerse grande
+247|{n} se impulsa soltando gas a presión|{n} se endurece en su capullo de roca
+248|{n} mueve montañas solo con andar|{n} se pasea con su coraza de piedra
+249|{n} bate sus alas y desata una tormenta|{n} se sumerge en el mar en silencio
+250|{n} deja un arcoíris al volar|{n} hace brillar sus plumas de siete colores
+251|{n} hace florecer el bosque al pasar|{n} viaja un momento al futuro y vuelve

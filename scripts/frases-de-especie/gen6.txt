@@ -1,0 +1,72 @@
+650|{n} se protege con la coraza de su cabeza|{n} mordisquea una castaña
+651|{n} entrena placajes con su coraza|{n} se da cabezazos contra otros para jugar
+652|{n} se pone delante de ti con su escudo de púas|{n} se cubre con sus brazos para protegerte
+653|{n} mordisquea una ramita|{n} suelta aire caliente por las orejas
+654|{n} saca una ramita de su cola y la enciende|{n} agita su ramita como una varita
+655|{n} lee el futuro en las llamas de su rama|{n} remueve el fuego con su varita
+656|{n} se cubre de burbujas para protegerse|{n} lanza burbujas de broma
+657|{n} lanza piedras con mucha puntería|{n} salta de tejado en tejado
+658|{n} lanza estrellas de agua|{n} se ajusta su lengua de bufanda
+659|{n} cava con sus orejas de pala|{n} se echa una siesta en el hoyo que acaba de hacer
+660|{n} excava a toda velocidad con sus orejas|{n} abre un túnel para ti
+661|{n} canta de buena mañana|{n} vuela muy cerca de ti
+662|{n} echa chispas al volar|{n} vuela muy rápido
+663|{n} se lanza en picado a toda velocidad|{n} echa fuego por las plumas
+664|{n} se protege con su polvo de escamas|{n} se queda en su capullo
+665|{n} endurece su capullo cuando algo se acerca|{n} lanza un poco de polvo para que le dejen en paz
+666|{n} esparce el polvo de sus alas|{n} vuela como si estuviera bailando
+667|{n} se pone delante del grupo para entrenar|{n} se calienta su melena
+668|{n} ruge para defender a su familia|{n} sacude su melena de fuego
+669|{n} lleva su flor favorita en la mano|{n} se comunica con su flor
+670|{n} cuida de su jardín|{n} se balancea con su flor
+671|{n} pasea por su jardín|{n} cuida de las flores del mundo
+672|{n} hace la fotosíntesis con las hojas del lomo|{n} se monta en tu espalda
+673|{n} siente lo que piensas con los cuernos|{n} te lleva en su lomo
+674|{n} masca una hoja de bambú|{n} pone cara de duro, aunque se le escapa la risa
+675|{n} masca una hoja de bambú con chulería|{n} se lanza a pelear con cualquiera
+676|{n} se arregla el pelo con mucho estilo|{n} pasea con elegancia
+677|{n} se tapa las orejas para no soltar su poder|{n} saca su lengua de broma
+678|{n} se tapa los ojos con las orejas|{n} te mira de forma inquietante
+679|{n} se agarra a tu brazo con su cinta|{n} brilla su espada fantasmal
+680|{n} discute con su otra espada sobre cómo atacar|{n} cruza sus dos espadas en guardia
+681|{n} se protege con su escudo|{n} saca su espada para atacar
+682|{n} suelta un perfume muy fuerte|{n} se echa perfume encima
+683|{n} suelta un perfume embriagador|{n} se pone mucho perfume
+684|{n} se come un dulce detrás de otro|{n} huele a algodón de azúcar
+685|{n} huele un pastel a kilómetros|{n} suelta un aroma de nata montada
+686|{n} hace parpadear sus luces de colores|{n} gira para que te maree mirarle
+687|{n} se da la vuelta y te mira del revés|{n} hace brillar sus luces para hipnotizar
+688|{n} se agarra a las rocas con las manos de sus dos cabezas|{n} hace el pino con la cabeza de abajo
+689|{n} reparte golpes con sus siete brazos|{n} pone a sus brazos de acuerdo para hacer algo
+690|{n} se camufla entre las algas|{n} saca su veneno por si acaso
+691|{n} escupe veneno|{n} se esconde entre las algas
+692|{n} lanza un chorro de agua con su pinza|{n} dispara burbujas
+693|{n} dispara un chorro a presión|{n} hace ruido con su pinza
+694|{n} absorbe la energía del sol|{n} se carga de electricidad en el desierto
+695|{n} extiende sus alas para el sol|{n} brilla con sus colores
+696|{n} muerde todo con su mandíbula enorme|{n} da pisotones para hacerse notar
+697|{n} ruge como en tiempos de los dinosaurios|{n} hace temblar el suelo al andar
+698|{n} saca sus cristales del cuello cuando hace frío|{n} te mira con sus ojos azules
+699|{n} suelta destellos de colores por sus cristales|{n} hace bajar la temperatura a su alrededor
+700|{n} te da la mano con sus lazos|{n} calma a los que se pelean
+701|{n} hace llaves de lucha libre|{n} salta con mucha energía
+702|{n} se frota los bigotes para soltar chispas|{n} se le levanta el pelo
+703|{n} brilla como un diamante|{n} se esconde en la cueva
+704|{n} se ablanda y resbala por el suelo|{n} se esconde de la luz en un rincón húmedo
+705|{n} deja un rastro de baba al pasar|{n} sale a pasear cuando llueve
+706|{n} te da un abrazo babosito|{n} mueve sus antenas para ver mejor
+707|{n} hace sonar su llavero|{n} guarda una llave nueva en su colección
+708|{n} se esconde en un tronco cortado|{n} cruje como una rama vieja
+709|{n} se comunica con los árboles del bosque|{n} hace crujir sus ramas para asustar
+710|{n} se esconde en su calabaza|{n} sale a pasear al anochecer
+711|{n} canta una canción que pone los pelos de punta|{n} enreda el pelo de sus brazos
+712|{n} se planta en un témpano sin moverse|{n} congela lo que toca
+713|{n} lleva a otros Bergmite en su lomo|{n} se pone delante como un muro de hielo
+714|{n} lanza ultrasonidos con sus orejas|{n} vuela por una cueva sin chocarse
+715|{n} lanza ondas de sonido con sus orejas|{n} vuela en la oscuridad
+716|{n} hace brillar los colores de su cornamenta|{n} da vida a todo lo que toca
+717|{n} despliega sus alas oscuras|{n} se envuelve en un capullo para descansar
+718|{n} vigila el equilibrio del ecosistema|{n} reúne sus células para cambiar de forma
+719|{n} crea un diamante con las manos|{n} brilla como una joya
+720|{n} saca algo de uno de sus aros|{n} hace una travesura con sus aros
+721|{n} suelta vapor por sus brazos|{n} hace hervir el agua de su barriga

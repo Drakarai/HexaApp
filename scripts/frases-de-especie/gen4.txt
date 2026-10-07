@@ -1,0 +1,107 @@
+387|{n} se bebe un charco de agua para que le crezca la hoja|{n} toma el sol con el brote de su cabeza
+388|{n} busca un manantial de agua limpia|{n} te lleva a un sitio con sombra
+389|{n} deja que unos Starly hagan el nido en su árbol|{n} hace temblar el suelo al andar con su bosque a cuestas
+390|{n} se calienta con la llama de su trasero|{n} trepa una pared con mucha agilidad
+391|{n} salta de pared en pared con su llama|{n} hace piruetas para entrenar
+392|{n} hace bailar la corona de fuego de su cabeza|{n} se pone a pelear con sus cuatro extremidades
+393|{n} saca pecho aunque se caiga de culo|{n} nada con mucha soltura
+394|{n} corta el aire con sus alas afiladas|{n} se planta en solitario, sin juntarse con nadie
+395|{n} luce los tres cuernos de su pico como una corona|{n} rompe el hielo de un aletazo
+396|{n} vuela en bandada piando sin parar|{n} se refugia en tu bolsillo cuando hace frío
+397|{n} vuela en bandada buscando bichos|{n} luce las plumas negras de su cabeza
+398|{n} se lanza en picado con su cresta al viento|{n} enseña las garras al aterrizar
+399|{n} roe un tronco sin parar|{n} se queda con la boca abierta mirando a la nada
+400|{n} construye una presa en el río|{n} roe un árbol con sus dientes fuertes
+401|{n} hace sonar sus antenas como un xilófono|{n} se balancea con sus antenas
+402|{n} toca una melodía triste con sus brazos|{n} afila el cuchillo de sus antenas
+403|{n} suelta chispas de su pelaje|{n} se le eriza el pelo de electricidad
+404|{n} suelta chispas por las garras|{n} te mira con cara de mal genio
+405|{n} ve a través de las paredes con sus ojos dorados|{n} suelta chispas por la melena
+406|{n} cierra su capullo por el frío|{n} espera a la primavera para abrir sus pétalos
+407|{n} baila con elegancia moviendo los ramos|{n} suelta un perfume embriagador
+408|{n} se da un cabezazo contra un árbol|{n} anda con su cabeza de casco
+409|{n} embiste con su cabeza de piedra|{n} rompe una pared de un cabezazo
+410|{n} se protege la cara con su escudo|{n} come rocas para fortalecerse
+411|{n} se pone delante de ti como un muro|{n} se protege con su cabeza
+412|{n} se hace una capa con lo que encuentra|{n} se esconde dentro de su capa de hojas
+413|{n} se viste con su capa de hojas|{n} se camufla entre las ramas
+414|{n} vuela sin rumbo por la noche|{n} roba la miel de los Combee
+415|{n} zumba en grupo de tres|{n} recoge néctar de las flores
+416|{n} da órdenes a su ejército de Combee|{n} protege a sus crías dentro de su cuerpo
+417|{n} frota sus mejillas para soltar chispas|{n} se hace una bolita para dormir
+418|{n} nada con su flotador|{n} hace girar sus colas como hélices
+419|{n} se infla su collar de flotador|{n} nada a toda velocidad con sus dos colas
+420|{n} recoge sol para madurar|{n} se pone de color rojo intenso
+421|{n} abre sus pétalos al sol|{n} se encierra en su capullo cuando está nublado
+422|{n} cambia de color según dónde vive|{n} se estira como una masa de gelatina
+423|{n} se esconde en las rocas de la playa|{n} asoma la cabeza para ver el mar
+424|{n} se rasca la espalda con la mano de su cola|{n} se balancea con sus dos colas
+425|{n} flota en el aire a la deriva|{n} se lleva a quien le agarre de la mano
+426|{n} flota en silencio por la noche|{n} lleva a los que se pierden a otro sitio
+427|{n} se tapa con las orejas cuando tiene frío|{n} da saltitos con sus orejas
+428|{n} se arregla el pelo de las orejas|{n} da patadas con mucha elegancia
+429|{n} se ríe de forma inquietante|{n} lanza un conjuro que te hace sentir mal
+430|{n} lleva su sombrero con mucha elegancia|{n} da órdenes a los Murkrow
+431|{n} se estira como un gato|{n} juega con su cola en espiral
+432|{n} se pone de mal humor sin razón|{n} se ata la cintura con su cola
+433|{n} hace sonar su cascabel|{n} rebota de alegría
+434|{n} suelta un olor que tira para atrás|{n} se hace una bola cuando le asustas
+435|{n} suelta un gas apestoso de su cola|{n} se pone delante para proteger a los suyos
+436|{n} brilla como el metal pulido|{n} da vueltas como una peonza
+437|{n} hace sonar sus campanas|{n} trae buena suerte a quien lo encuentra
+438|{n} suelta unas lagrimitas para refrescarse|{n} se hace pasar por un arbolito al borde del camino
+439|{n} imita todo lo que haces|{n} se frota la nariz roja de payaso
+440|{n} lleva su piedra redonda como si fuera un huevo|{n} te la enseña muy orgullosamente
+441|{n} repite la última palabra que has dicho|{n} mueve su cola de corchea al ritmo
+442|{n} se enrosca en su piedra angular|{n} suelta un lamento de hace quinientos años
+443|{n} se esconde en un hueco de la cueva|{n} intenta morder lo primero que pasa
+444|{n} cava un hoyo buscando piedras preciosas|{n} se lima las aletas contra una roca
+445|{n} vuela tan rápido como un caza|{n} levanta un remolino de arena al pasar
+446|{n} se come de golpe todo lo que llevas encima|{n} esconde la comida bajo su pelaje
+447|{n} lee tus emociones con sus antenitas|{n} entrena con muchísimas ganas
+448|{n} lee tus pensamientos con su aura|{n} medita con los ojos cerrados
+449|{n} se cubre de arena para protegerse|{n} bosteza con su bocaza abierta
+450|{n} suelta arena por los agujeros de su cuerpo|{n} abre su enorme boca para intimidar
+451|{n} se entierra en la arena con la cola fuera|{n} levanta su pinza venenosa
+452|{n} se queda inmóvil en la arena esperando presa|{n} gira la cabeza del todo
+453|{n} hincha sus mofletes y croa con ganas|{n} se frota los nudillos venenosos
+454|{n} croa para intimidar a sus rivales|{n} afila las garras de sus nudillos
+455|{n} cuelga de un árbol soltando un olor dulce|{n} abre la boca esperando que caiga algo
+456|{n} hace brillar las líneas de sus aletas|{n} nada entre las olas al atardecer
+457|{n} brilla en las profundidades|{n} atrae a sus presas con su luz
+458|{n} nada en grupo con sus amigos|{n} salta del agua para ver el cielo
+459|{n} sacude la cabeza y caen copos de nieve|{n} se refugia en la ladera nevada
+460|{n} provoca una ventisca a su alrededor|{n} se esconde entre la nieve
+461|{n} afila sus garras en un árbol|{n} deja marcas en los árboles para comunicarse
+462|{n} levita gracias a su campo magnético|{n} recibe señales extrañas del espacio
+463|{n} te deja la cara pringosa de un lametazo|{n} enrolla su lengua larguísima
+464|{n} hace girar su cuerno taladro|{n} lanza piedras por los agujeros de sus manos
+465|{n} se envuelve con sus lianas para dar calor|{n} estira sus lianas para pillar algo
+466|{n} lanza rayos por los dedos|{n} se mete los cables de la cola en algún sitio
+467|{n} dispara bolas de fuego por los brazos|{n} echa humo por el cuerpo
+468|{n} reparte felicidad a quien la necesita|{n} flota con sus alas pequeñas
+469|{n} vuela muy rápido sin hacer ruido|{n} lleva a alguien en sus patas
+470|{n} hace la fotosíntesis con sus hojas|{n} huele a hierba recién cortada
+471|{n} congela su pelo para que sea como una espada|{n} brilla con el reflejo del sol en la nieve
+472|{n} planea en silencio por la noche|{n} se cuelga de una rama boca abajo con la cola
+473|{n} rompe el hielo con sus enormes colmillos|{n} sacude su pelaje lleno de nieve
+474|{n} hace unos movimientos muy extraños|{n} se cuelga de internet un rato
+475|{n} saca las espadas de sus codos|{n} hace una reverencia de caballero
+476|{n} lanza sus mini narices a pasear|{n} se queda mirando con su bigote
+477|{n} recibe órdenes del más allá|{n} se traga un alma
+478|{n} congela todo a su alrededor|{n} se esconde en una cueva de hielo
+479|{n} se cuela en un electrodoméstico|{n} hace funcionar tu móvil por su cuenta
+480|{n} te mira con los ojos cerrados|{n} sabe mucho de todo
+481|{n} siente lo que sientes tú|{n} se queda en el fondo de su lago
+482|{n} tiene muchísima fuerza de voluntad|{n} vuela sobre su lago
+483|{n} hace brillar su diamante del pecho|{n} juega con el tiempo
+484|{n} hace brillar sus perlas de los hombros|{n} juega con el espacio
+485|{n} hace burbujear la lava a su alrededor|{n} anda por el techo con sus garras
+486|{n} arrastra un continente con una cuerda|{n} lleva musgo en los pies
+487|{n} vuela del revés|{n} se asoma desde otra dimensión
+488|{n} trae dulces sueños|{n} brilla como una luna creciente
+489|{n} va a la deriva por el mar|{n} se lleva bien con todo el mundo
+490|{n} se une al corazón de quien tiene al lado|{n} nada en las profundidades
+491|{n} se esconde en tu sombra|{n} trae unos sueños un poco extraños
+492|{n} vuela con el viento dejando flores|{n} se hace una bolita entre la hierba
+493|{n} pasa de tipo como quien cambia de chaqueta|{n} mira el mundo con calma infinita

@@ -1,0 +1,3 @@
+# Lo de Pokémon Añil, con su número en la app (ver lib/anil.ts)
+20001|{n} se coloca bien su corona con mucha dignidad|{n} pasea con andares de realeza|{n} te mira como si fueras parte de su corte
+20002|{n} juega con la brisa que levanta su cola|{n} planea a tu alrededor con sus orejas al viento|{n} trae un soplo de aire fresco

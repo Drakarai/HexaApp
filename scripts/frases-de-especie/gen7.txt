@@ -1,0 +1,88 @@
+722|{n} gira la cabeza del todo para mirarte|{n} lanza una hoja afilada con mucha puntería
+723|{n} se arregla las plumas como si fueran un traje|{n} saca una pluma afilada de su ala
+724|{n} se coloca bien la capucha de hojas|{n} dispara una flecha de pluma sin fallar
+725|{n} se lame el pelo para hacer bolas de fuego|{n} se pone a su aire, sin hacer caso a nadie
+726|{n} hace sonar el cascabel de fuego de su cuello|{n} se pone a dar zarpazos al aire
+727|{n} hace una pose de lucha libre|{n} enciende el cinturón de fuego de su cintura
+728|{n} hace burbujas con la nariz|{n} hace equilibrio con una burbuja
+729|{n} baila sobre el agua|{n} hace globos de agua para jugar
+730|{n} canta con una voz preciosa|{n} dirige un coro de Brionne
+731|{n} picotea un árbol a toda velocidad|{n} hace un agujero en un tronco
+732|{n} guarda semillas en su pico para lanzarlas|{n} canta mientras picotea
+733|{n} calienta su pico hasta ponerlo al rojo|{n} lanza semillas ardiendo
+734|{n} patrulla por las calles con su bigote|{n} busca algo de comer
+735|{n} vigila sin moverse durante horas|{n} se planta en una esquina esperando
+736|{n} escarba en la tierra con su mandíbula|{n} se carga de electricidad comiendo hojas
+737|{n} guarda electricidad en su cuerpo|{n} se queda inmóvil para no perder energía
+738|{n} suelta un rayo por su mandíbula|{n} vuela muy rápido como un escarabajo
+739|{n} da puñetazos a los árboles para hacer caer bayas|{n} se pone en guardia con sus pinzas
+740|{n} se cubre de hielo para pelear|{n} da puñetazos con sus pinzas heladas
+741|{n} baila para sacar su fuerza|{n} se mueve al ritmo de una música que solo oye en su cabeza
+742|{n} recoge polen de las flores|{n} se pone un poco de polen en la nariz
+743|{n} hace ramilletes de polen|{n} poliniza las flores del jardín
+744|{n} se te pega como un cachorro|{n} mueve la cola de alegría
+745|{n} aúlla a la luna|{n} se pone en guardia con su melena
+746|{n} pone ojos llorosos para llamar a su banco de peces|{n} nada en grupo para parecer mucho más grande
+747|{n} se pega a una roca con sus púas|{n} esconde sus púas venenosas
+748|{n} se cubre con sus patas para protegerse|{n} saca sus púas venenosas
+749|{n} se revuelca en el barro|{n} carga con mucho peso
+750|{n} lleva una carga pesada en el lomo|{n} se pone de barro hasta las orejas
+751|{n} se lleva su burbuja de agua a todas partes|{n} se esconde en su burbuja
+752|{n} lleva una burbuja de agua en la cabeza como escafandra|{n} pega cabezazos con su burbuja
+753|{n} se hace pasar por una hojita|{n} duerme al sol con las hojas abiertas
+754|{n} se mira en un charco con mucha coquetería|{n} hace brillar sus pétalos de colores
+755|{n} brilla en la oscuridad del bosque|{n} lanza esporas que dan sueño
+756|{n} ilumina el camino con su sombrero|{n} hace dormir a quien le mira demasiado
+757|{n} suelta un gas que huele dulce|{n} se cuela entre las rocas del volcán
+758|{n} suelta un perfume que vuelve loco a cualquiera|{n} se mueve con mucha elegancia
+759|{n} se pone de pie con sus brazos de oso|{n} te da un abrazo que casi te rompe
+760|{n} te da un abrazo de oso de verdad|{n} levanta los brazos para parecer más grande
+761|{n} suelta un olor dulce a fruta|{n} da saltitos por la hierba
+762|{n} se protege con su corona de hojas|{n} da patadas con mucha elegancia
+763|{n} da patadas altísimas con sus piernas largas|{n} luce su corona de fruta
+764|{n} se pone flores nuevas en la cabeza|{n} cura a quien le toca con sus flores
+765|{n} da consejos muy sabios|{n} se mece en su hamaca de hojas
+766|{n} lanza una baya con mucha fuerza|{n} hace ejercicio con los suyos
+767|{n} corre a esconderse a la mínima|{n} vigila con sus ojos asustadizos
+768|{n} saca sus garras afiladas de la armadura|{n} se pone en guardia con su caparazón
+769|{n} se coloca bien la pala de su cabeza|{n} se traga la arena de los niños que juegan cerca
+770|{n} hace un castillo de arena enorme|{n} absorbe la energía de los demás
+771|{n} saca las tripas en forma de puño para defenderse|{n} se echa en la orilla y no se mueve ni a empujones
+772|{n} lleva su máscara pesada en la cabeza|{n} espera a que alguien le quite la máscara
+773|{n} cambia de tipo con sus discos|{n} se pone a correr a toda velocidad
+774|{n} cae del cielo y se pone a girar|{n} cambia de colores en su núcleo
+775|{n} abraza su tronco sin abrir los ojos|{n} da vueltas en sueños
+776|{n} se protege con su caparazón explosivo|{n} rueda para atacar
+777|{n} se carga de electricidad con su pelo|{n} se enrolla para pinchar
+778|{n} se esconde bajo su disfraz de Pikachu|{n} quiere que le quieran como a un Pikachu
+779|{n} rechina los dientes|{n} se esconde bajo la arena
+780|{n} vuela con elegancia sobre las nubes|{n} suelta un aliento curativo
+781|{n} vigila el fondo del mar con su ancla|{n} lanza su ancla para atacar
+782|{n} hace sonar sus escamas como castañuelas|{n} practica sus golpes con mucha disciplina
+783|{n} choca sus escamas para retar a alguien|{n} entrena sin descanso
+784|{n} hace un ruido metálico con sus escamas|{n} se pone en guardia, imponente
+785|{n} reta a cualquiera a pelear solo por curiosidad|{n} se cierra en su caparazón y sale disparado
+786|{n} esparce unas escamas que curan|{n} revolotea jugando entre las flores
+787|{n} hace sonar su cola como un cencerro|{n} se echa a descansar y le crece la hierba alrededor
+788|{n} crea una niebla a su alrededor|{n} purifica el agua con un toque
+789|{n} flota como una nubecita curiosa|{n} se acerca a todo lo que brilla
+790|{n} brilla dentro de su capullo de estrellas|{n} no se mueve nada, pero sigue creciendo
+791|{n} brilla como el sol|{n} ruge y se le ilumina la melena
+792|{n} despliega sus alas como una noche estrellada|{n} absorbe la luz y se queda brillando
+793|{n} flota de una forma muy extraña|{n} se acerca a algo para inspeccionarlo
+794|{n} hace poses para enseñar los músculos|{n} levanta algo pesadísimo con un brazo
+795|{n} corre a una velocidad increíble|{n} se limpia las patas con cara de asco
+796|{n} se ilumina como un árbol de Navidad|{n} busca un enchufe para recargarse
+797|{n} enciende los propulsores de sus brazos|{n} despega dejando una nube de humo
+798|{n} corta una hoja de papel en el aire|{n} se pone de puntillas con todos sus filos a punto
+799|{n} se come todo lo que pilla|{n} sigue con hambre después de comer
+800|{n} absorbe la luz a su alrededor|{n} brilla con su cuerpo de prisma
+801|{n} hace una reverencia con su vestido|{n} hace brillar el corazón de su pecho
+802|{n} se esconde en tu sombra|{n} imita tus movimientos desde la sombra
+803|{n} lanza veneno de broma con su aguijón|{n} revolotea feliz a tu alrededor
+804|{n} dispara agujas de veneno|{n} vuela haciendo zigzag
+805|{n} reordena sus ladrillos|{n} se pone delante como una muralla
+806|{n} hace malabares con su cabeza explosiva|{n} se ríe con una carcajada de payaso
+807|{n} se mueve como un relámpago|{n} suelta chispas por las garras
+808|{n} se come un tornillo|{n} se balancea con su tuerca
+809|{n} lanza sus puños de metal|{n} funde metal para hacerse más grande

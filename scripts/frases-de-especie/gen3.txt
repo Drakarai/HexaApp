@@ -1,0 +1,135 @@
+252|{n} trepa por una pared con las ventosas de sus patas|{n} mueve la cola para encontrar el equilibrio
+253|{n} salta de rama en rama sin hacer ruido|{n} se afila las hojas de los brazos
+254|{n} cuida de los brotes que le crecen en el lomo|{n} corta el aire con las hojas de sus brazos
+255|{n} se te acurruca encima para darte calor|{n} suelta una llamita por el pico
+256|{n} da patadas al aire a toda velocidad|{n} chilla para animarse antes de pelear
+257|{n} le salen llamas de las muñecas|{n} salta altísimo, más que un edificio
+258|{n} se refresca la cara con la aleta de la cabeza|{n} levanta una roca enorme para entrenar
+259|{n} se lleva un baño de barro|{n} se planta firme sobre sus patas fuertes
+260|{n} predice tormentas con las aletas de su cabeza|{n} arrastra una roca gigante como si nada
+261|{n} muerde lo que tiene delante para probar sus colmillos|{n} se pega a tus talones sin perderte de vista
+262|{n} sigue a su líder sin rechistar|{n} enseña los colmillos para intimidar
+263|{n} va en zigzag sin saber muy bien a dónde|{n} encuentra un objeto en el suelo
+264|{n} corre en línea recta a toda velocidad|{n} se planta en seco y gira de golpe
+265|{n} se pone de pie para asustar a los pájaros|{n} mastica una hoja tranquilamente
+266|{n} se queda en su capullo sin moverse|{n} espera a que le llegue el momento de salir
+267|{n} revolotea entre las flores para buscar néctar|{n} despliega sus alas de colores
+268|{n} se queda en su capullo con mucha paciencia|{n} espía por un agujerito del capullo
+269|{n} esparce un polvillo venenoso por la noche|{n} se acerca a las luces de las farolas
+270|{n} flota en el río con su hoja de sombrero|{n} chapotea con sus patas cortitas
+271|{n} canta mientras hace el pino|{n} se ríe feliz cuando llueve
+272|{n} baila al ritmo de cualquier música|{n} canta con ganas bajo la lluvia
+273|{n} se cuelga de una rama boca abajo|{n} asusta a los demás con un grito
+274|{n} se sopla la hoja de la nariz como un silbato|{n} sale del bosque a hacer travesuras
+275|{n} agita sus abanicos de hoja para hacer viento|{n} se sube a un árbol a observar
+276|{n} vuela contra el viento sin cansarse|{n} chilla para saludarte desde lo alto
+277|{n} hace piruetas en el aire|{n} busca un sitio cálido para pasar el invierno
+278|{n} planea sobre el mar pescando|{n} guarda comida en su pico
+279|{n} lleva cosas en su pico enorme|{n} hace el nido en un acantilado
+280|{n} siente lo que sientes con los cuernos de su cabeza|{n} se esconde detrás de ti si hay alguien desconocido
+281|{n} baila para que estés de buen humor|{n} crea un campo de energía con sus cuernos
+282|{n} te protegería con su vida|{n} baila con elegancia bajo la luna
+283|{n} corre por encima del agua|{n} se refresca la cabeza con una gota de néctar
+284|{n} vuela con sus alas de ojos para asustar|{n} se queda flotando sobre el agua
+285|{n} suelta esporas de su cabeza cuando le aprietas|{n} se esconde a la sombra de un árbol húmedo
+286|{n} estira los brazos y lanza un puñetazo elástico|{n} da saltitos de boxeo con su sombrero de seta
+287|{n} se pasa el día echado mordisqueando la hierba de alrededor|{n} se rasca la barriga sin levantarse
+288|{n} no para de dar vueltas por todas partes|{n} trepa un árbol, baja y vuelve a subir
+289|{n} se echa a lo largo y arrasa la hierba que tiene a mano|{n} bosteza con toda la calma del mundo
+290|{n} escarba la tierra buscando raíces|{n} se queda bajo tierra días y días
+291|{n} vuela tan rápido que solo oyes el zumbido|{n} aparece de repente a tu lado
+292|{n} flota en silencio sin mover ni una pata|{n} te mira por el agujero de su espalda
+293|{n} suelta un chillido y luego se asusta de su propio grito|{n} se tapa las orejas cuando hay mucho ruido
+294|{n} pega zapatazos para hacer ruido|{n} se pone a gritar por los tubos de su cara
+295|{n} hace retumbar el suelo con un grito|{n} sopla por todos sus tubos a la vez
+296|{n} da palmadas contra un árbol para entrenar|{n} se planta con las piernas abiertas, en guardia
+297|{n} empuja una roca enorme con sus manazas|{n} te da una palmada en la espalda que te tumba
+298|{n} rebota sobre su cola como una pelota|{n} se tira a la piscina rodando
+299|{n} apunta con la nariz siempre hacia el norte|{n} se mueve un centímetro al año, pero hoy lleva prisa
+300|{n} persigue su propia cola en círculos|{n} se cuela en tu mochila a curiosear
+301|{n} se lame las patitas con mucha elegancia|{n} se pasea sin rumbo fijo, a su aire
+302|{n} escarba buscando piedras preciosas para merendar|{n} brilla con sus ojos de gema en la oscuridad
+303|{n} te sonríe mientras su mandíbula de la espalda bosteza|{n} mordisquea una piedra con su enorme boca de atrás
+304|{n} se come una piedra de hierro para endurecer su coraza|{n} hace sonar su coraza con un golpecito
+305|{n} pule su coraza de acero con la lengua|{n} embiste contra una roca para probar su casco
+306|{n} vigila su montaña desde lo alto|{n} se coloca la coraza llena de marcas de batallas
+307|{n} medita con los ojos cerrados|{n} aguanta en una postura de yoga imposible
+308|{n} levita mientras medita|{n} practica katas con mucha concentración
+309|{n} corre tan rápido que suelta chispas al pasar|{n} se le eriza el pelo de electricidad
+310|{n} hace chisporrotear su melena|{n} suelta un rayo al cielo para presumir
+311|{n} anima con pompones de chispas|{n} da saltitos gritando ánimos
+312|{n} aplaude con sus manos de chispas|{n} se emociona con tus victorias
+313|{n} dibuja figuras en el aire con la luz de su cola|{n} baila en el aire por la noche
+314|{n} esparce un perfume dulce|{n} dirige un baile de luces en el cielo
+315|{n} suelta un aroma de rosas relajante|{n} sacude las flores de sus manos
+316|{n} se traga una baya entera sin masticar|{n} hace la digestión panza arriba
+317|{n} se traga un neumático de un bocado|{n} se relame su enorme boca
+318|{n} enseña los dientes en cuanto ve un barco|{n} nada en grupo, buscando presa
+319|{n} nada tan rápido que parece un torpedo|{n} muerde una roca para limarse los dientes
+320|{n} se hincha como un globo de agua y rebota|{n} lanza un chorrito por el agujero de su cabeza
+321|{n} salta del mar y cae con un chapuzón gigante|{n} se sumerge a lo más profundo de un tirón
+322|{n} se calienta con el magma de su joroba|{n} tarda un buen rato en notar que le estás tocando
+323|{n} echa humo por los volcanes de su lomo|{n} ruge cuando le hacen enfadar
+324|{n} suelta humo negro por los agujeros de su coraza|{n} come carbón para mantener el fuego encendido
+325|{n} bota sobre su cola de muelle para que le lata el corazón|{n} lleva su perla en la cabeza para pensar mejor
+326|{n} baila con pasos raros para usar su poder|{n} hace brillar las perlas negras de su cabeza
+327|{n} se tambalea de un lado para otro|{n} da pasos de baile sin querer
+328|{n} hace un hoyo en la arena para que caiga algo|{n} espera con la mandíbula abierta
+329|{n} hace vibrar las alas y suena a canción|{n} revolotea levantando una nube de arena
+330|{n} levanta una tormenta de arena con sus alas|{n} canta al volar para que nadie le vea
+331|{n} aguanta días en el desierto sin beber|{n} saca los pinchos de sus brazos
+332|{n} sigue en silencio a quien se pierde por el desierto|{n} se queda inmóvil como un cactus más
+333|{n} se pone encima de tu cabeza como un gorro de algodón|{n} limpia lo que pilla con sus alas de algodón
+334|{n} canta con una voz preciosa|{n} vuela entre las nubes con sus alas de algodón
+335|{n} enseña sus garras en cuanto huele a un Seviper|{n} se pone a dos patas, en guardia
+336|{n} afila su cola de espada|{n} saca la lengua buscando a su enemigo de siempre
+337|{n} brilla un poco más cuando hay luna llena|{n} flota en silencio mirándote
+338|{n} gira como una peonza brillando como el sol|{n} se calienta con la luz del sol
+339|{n} se revuelca en el barro|{n} nota los terremotos con sus bigotes
+340|{n} da un coletazo que hace temblar el suelo|{n} se zambulle en el barro del pantano
+341|{n} da pellizcos con sus pinzas|{n} se pelea con quien pase por su charca
+342|{n} protege su estanque con sus pinzas|{n} se pule su caparazón rojo
+343|{n} gira sobre su pata como una peonza|{n} sigue a los demás en fila india
+344|{n} gira sin parar mientras levita|{n} hace brillar los ojos de sus brazos
+345|{n} se pega a una roca con sus tentáculos|{n} espera con paciencia a que pase algo
+346|{n} atrapa a lo que pasa con sus tentáculos|{n} se agarra a la roca con su base
+347|{n} rasca la arena del río con sus garras|{n} nada con sus alas por el agua
+348|{n} se cubre con su caparazón|{n} corta el agua con sus garras
+349|{n} chapotea en un charco|{n} busca un sitio tranquilo para que no le molesten
+350|{n} luce sus escamas de colores|{n} calma a quien está nervioso
+351|{n} se pone con cara de sol cuando hace bueno|{n} cambia de aspecto con el tiempo
+352|{n} se vuelve invisible y solo se le ve la raya de la barriga|{n} saca la lengua para coger una baya
+353|{n} se esconde en un rincón oscuro|{n} se alimenta de los malos pensamientos
+354|{n} se abre la cremallera de la boca|{n} busca a quien le abandonó
+355|{n} te mira fijamente con su único ojo|{n} flota en silencio entre las tumbas
+356|{n} se esconde la lámpara de la cabeza|{n} se mueve en silencio a tu alrededor
+357|{n} te ofrece una de las frutas de su cuello|{n} vuela con sus hojas de las alas
+358|{n} suena con el viento como una campanilla|{n} se cuelga de una rama para descansar
+359|{n} te avisa de que se acerca algo malo|{n} vigila desde lo alto del monte
+360|{n} sonríe sin parar|{n} empuja a otro Wynaut de broma
+361|{n} se pone su capucha de nieve|{n} se tira por la nieve en trineo
+362|{n} congela todo con su aliento helado|{n} abre su mandíbula de hielo
+363|{n} se pone a dar palmadas|{n} rueda por el hielo como una bola
+364|{n} hace malabares con una bola de nieve en el hocico|{n} babea sin parar
+365|{n} rompe el hielo con sus colmillos|{n} se da un baño en el agua helada
+366|{n} protege su perla con su concha|{n} se cierra a cal y canto
+367|{n} brilla con su cola en la oscuridad del mar|{n} se esconde en las profundidades
+368|{n} nada con elegancia por el mar|{n} se le pone el cuerpo rosado con el sol
+369|{n} se mueve con calma en el fondo del mar|{n} lleva aquí desde antes que existieran los humanos
+370|{n} trae buena suerte a las parejas|{n} nada con su forma de corazón
+371|{n} salta desde una roca para intentar volar|{n} se da un cabezazo contra una roca para entrenar
+372|{n} se encierra en su coraza para soñar con volar|{n} espera con paciencia a que le salgan alas
+373|{n} vuela a toda velocidad lanzando fuego|{n} ruge con orgullo desde las alturas
+374|{n} flota con su cuerpo de metal|{n} se comunica con ondas magnéticas
+375|{n} une su mente con otro Metang|{n} flota con sus garras de acero
+376|{n} calcula todo con sus cuatro cerebros|{n} cruza los brazos encima de su cabeza
+377|{n} se recompone con piedras nuevas|{n} cambia de forma sus puntos de luz
+378|{n} congela el aire a su alrededor|{n} se refugia en su cueva de hielo
+379|{n} se queda inmóvil como una estatua de acero|{n} hace brillar los puntos de su cara
+380|{n} entiende todo lo que dices|{n} se vuelve invisible con sus plumas
+381|{n} vuela más rápido que un avión|{n} se esconde con su plumaje
+382|{n} hace que llueva sin parar|{n} brilla con sus líneas rojas
+383|{n} hace que salga el sol|{n} brilla con sus líneas azules
+384|{n} vuela en la capa de ozono|{n} baja para calmar a los otros
+385|{n} duerme mil años seguidos|{n} cumple tus deseos
+386|{n} cambia de forma para atacar|{n} lanza un rayo desde su cristal

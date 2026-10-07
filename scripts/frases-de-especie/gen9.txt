@@ -1,0 +1,120 @@
+906|{n} toma el sol y huele de maravilla|{n} se hace el inocente para que le mimes
+907|{n} esconde su látigo de lianas entre el pelo|{n} juega con el capullo de flor de su espalda
+908|{n} saca una flor de la nada como un mago|{n} se mueve con el sigilo de un ladrón de guante blanco
+909|{n} se calienta la barriga en una piedra al sol|{n} se come algo y le salen chispas por la cabeza
+910|{n} echa humo con cada bostezo|{n} se coloca el huevo de fuego de su cabeza
+911|{n} canta con voz de tenor|{n} hace malabares con sus bolas de fuego
+912|{n} se arregla las plumas de la cabeza|{n} se mira en un charco con mucho cuidado
+913|{n} baila zapateando en el agua|{n} se pone en pose para entrenar
+914|{n} baila con muchísima elegancia|{n} lanza un chorro de agua dando una vuelta
+915|{n} olfatea el suelo buscando comida|{n} se revuelca en la hierba
+916|{n} suelta un perfume para tranquilizar a todo el mundo|{n} husmea en tu mochila buscando algo
+917|{n} teje una bola de hilo pegajoso|{n} espera en su tela sin moverse
+918|{n} pone trampas de hilo por todas partes|{n} da un salto enorme con sus patas
+919|{n} da saltitos sin parar|{n} hace un ruido con sus patas
+920|{n} da patadas de kárate a toda velocidad|{n} cruza los brazos y te mira de reojo
+921|{n} se frota los mofletes para soltar chispas|{n} se esconde en tu bolsillo
+922|{n} da una palmada eléctrica|{n} se pone a dos patas para pelear
+923|{n} da un masaje eléctrico al que se cansa|{n} suelta un rayo con sus manos
+924|{n} se queda en grupo con sus hermanos|{n} se da la mano con su pareja
+925|{n} se mueve en familia sin separarse nunca|{n} reparte una baya entre todos los suyos
+926|{n} se pega a ti como un perrito|{n} juega con su cola de bola
+927|{n} se echa al sol hasta oler a pan tostado|{n} huele a pan recién hecho
+928|{n} suelta un aceite amargo para que no se le coman|{n} toma el sol para hacer la fotosíntesis
+929|{n} comparte el aceite de sus aceitunas|{n} se sacude las aceitunas de la cabeza
+930|{n} ofrece aceite a quien está herido|{n} lanza aceite de sus aceitunas
+931|{n} vuela en grupo cantando|{n} chilla para avisar a su bandada
+932|{n} rueda dejando un rastro de sal|{n} suelta un poco de sal para curar heridas
+933|{n} lanza bolitas de sal comprimida|{n} se pone una capa más de sal
+934|{n} hace temblar el suelo con su cuerpo de sal|{n} protege a los suyos con sus muros de sal
+935|{n} juega con las llamas de sus brazos|{n} se pone a brillar como una brasa
+936|{n} lleva su armadura brillante con orgullo|{n} lanza un cañón de fuego
+937|{n} blande sus espadas de fuego|{n} se ajusta su armadura maldita
+938|{n} hace brillar su bombilla moviendo la cola|{n} flota en el agua como una bombilla
+939|{n} se da palmaditas en la barriga y suelta chispas|{n} te mira con los ojos medio cerrados
+940|{n} planea con el viento sobre el mar|{n} suelta chispas de las alas
+941|{n} vuela por encima de las olas|{n} se lanza en picado al agua
+942|{n} gruñe para intimidar|{n} muerde lo que tiene delante
+943|{n} vigila a los más pequeños|{n} gruñe con su cara de pocos amigos
+944|{n} pinta un grafiti con su veneno|{n} se esconde en la sombra
+945|{n} pinta un grafiti con sus dedos venenosos|{n} firma su obra con la cola
+946|{n} rueda con el viento|{n} se engancha a tus pantalones
+947|{n} se enrolla en su bola de espinos|{n} rueda a toda velocidad
+948|{n} corre con sus patitas de seta|{n} se hace pasar por una seta normal
+949|{n} se agarra al suelo con sus tentáculos|{n} se esconde en el bosque oscuro
+950|{n} se cuelga de un acantilado|{n} pellizca con sus pinzas
+951|{n} se come algo picante y echa humo|{n} da saltitos de calor
+952|{n} discute con su otra cabeza picante|{n} lanza semillas picantísimas
+953|{n} empuja su bola de barro|{n} se esconde dentro de su bola
+954|{n} hace rodar su bola con las patas|{n} lanza un rayo psíquico
+955|{n} revolotea sin parar|{n} da saltitos con sus patas
+956|{n} se pone a mirar al cielo con sus ojos de flor|{n} lanza un rayo psíquico desde sus ojos
+957|{n} martillea con su pequeño martillo|{n} recoge chatarra para su martillo
+958|{n} forja su martillo con chatarra|{n} se esconde para dar un susto
+959|{n} da martillazos con su martillo enorme|{n} hace temblar el suelo de un golpe
+960|{n} asoma la cabeza desde la arena|{n} se esconde bajo la arena de la playa
+961|{n} asoma sus tres cabezas desde la arena|{n} se esconde bajo la arena de la playa
+962|{n} vuela con una piedra en las garras|{n} lanza piedras desde el cielo
+963|{n} nada en grupo con otros Finizen|{n} juega con todo el mundo
+964|{n} se transforma en héroe cuando hace falta|{n} nada a toda velocidad
+965|{n} hace sonar su motor|{n} echa humo por el tubo de escape
+966|{n} acelera a toda velocidad|{n} hace rugir sus motores
+967|{n} te lleva en su lomo por el campo|{n} corre a toda velocidad
+968|{n} se come una roca de hierro|{n} se mete bajo tierra como un tren
+969|{n} brilla con sus cristales venenosos|{n} rueda por la cueva
+970|{n} suelta gas tóxico de sus cristales|{n} brilla en la oscuridad
+971|{n} juega a buscar un hueso|{n} mueve la vela de su cabeza
+972|{n} descansa sobre su lápida|{n} brilla con su vela fantasmal
+973|{n} se pone sobre una pata|{n} baila en sincronía con los demás
+974|{n} se desliza panza abajo por la nieve|{n} sacude sus orejitas heladas
+975|{n} rompe el hielo con su cuerno|{n} se desliza por la nieve
+976|{n} se suelta lo que le sobra para nadar más ligero|{n} corta el agua con sus aletas
+977|{n} abre su enorme boca|{n} deja que un Tatsugiri se le suba encima
+978|{n} se esconde en la boca de un Dondozo|{n} se hace pasar por un trozo de sushi
+979|{n} se enfada muchísimo por una tontería|{n} da puñetazos con su rabia fantasmal
+980|{n} se pone en el agua para refrescarse|{n} saca sus púas venenosas
+981|{n} deja que la cabeza de su cola vigile por detrás|{n} mordisquea las hojas de lo más alto
+982|{n} cava un túnel con la cola|{n} se enrosca en espiral
+983|{n} afila la espada de su cabeza|{n} da órdenes a sus Bisharp
+984|{n} rueda a toda velocidad con sus colmillos|{n} levanta una roca con los colmillos
+985|{n} suelta un chillido que pone los pelos de punta|{n} se balancea con su cola larguísima
+986|{n} suelta esporas desde su sombrero|{n} muerde con sus colmillos de seta
+987|{n} revolotea con su melena como un vestido|{n} lanza un grito misterioso
+988|{n} se arrastra con sus alas|{n} esparce un polvillo de fuego
+989|{n} se cubre de arena con su magnetismo|{n} suelta chispas por su melena de arena
+990|{n} rueda a toda velocidad|{n} hace un ruido de motor al girar
+991|{n} congela con su aliento|{n} lleva su saco helado como el de un repartidor
+992|{n} da palmadas con sus manos de hierro|{n} carga electricidad en los brazos
+993|{n} vuela con sus propulsores|{n} lanza un rayo con sus cabezas
+994|{n} vuela con sus alas de fuego|{n} suelta un gas venenoso
+995|{n} carga electricidad en sus púas|{n} se planta como un muro de hierro
+996|{n} se refresca con la aleta de hielo de su espalda|{n} se esconde en una cueva fría
+997|{n} se pone la aleta de hielo de casco|{n} congela lo que toca
+998|{n} lanza hielo por la boca|{n} clava la aleta de la espalda en el suelo
+999|{n} se esconde en su cofre|{n} sale de su cofre a curiosear
+1000|{n} surfea sobre su cofre|{n} lanza monedas de oro
+1001|{n} se esconde en su caparazón de tablillas|{n} hace marchitar las plantas de alrededor
+1002|{n} lanza los colmillos de hielo de su espalda|{n} congela el aire a su alrededor
+1003|{n} hace temblar la tierra con sus cuernos|{n} carga con su vasija en la espalda
+1004|{n} se esconde entre sus llamas|{n} hace bailar sus cuentas de fuego
+1005|{n} vuela rugiendo como en otra era|{n} despliega sus alas feroces
+1006|{n} saca la espada de su brazo|{n} se mueve con la elegancia de un caballero
+1007|{n} corre como una moto de carreras|{n} te lleva a toda velocidad
+1008|{n} se transforma en una moto del futuro|{n} se ilumina con luces de neón
+1009|{n} corre por el agua levantando olas|{n} se ajusta su cresta de agua
+1010|{n} saca la espada de hojas de su cabeza|{n} se mueve como un caballero del bosque
+1011|{n} se esconde en su manzana caramelizada|{n} asoma la cabecita del caramelo
+1012|{n} se esconde en su cuenco de té|{n} prepara un té matcha muy amargo
+1013|{n} se mete en su tetera de cerámica|{n} sirve un té que da escalofríos
+1014|{n} enseña sus músculos venenosos|{n} se ajusta su collar de cadenas
+1015|{n} se ajusta su bufanda de pelo|{n} lanza veneno con una sonrisa
+1016|{n} luce sus plumas de colores|{n} suelta un veneno que embelesa
+1017|{n} se pone una de sus máscaras|{n} se esconde detrás de su máscara
+1018|{n} carga electricidad en su cuerpo de metal|{n} se mantiene en pie como un puente
+1019|{n} hace sonar sus manzanas como un dragón|{n} suelta almíbar por sus cabezas
+1020|{n} ruge con sus colmillos de fuego|{n} sopla una llamarada de otra era
+1021|{n} lanza un rayo desde su lomo|{n} se ahueca su melena de nubes
+1022|{n} corta con su cuerno de roca|{n} brilla como una piedra pulida
+1023|{n} se ajusta su corona de cuchillas|{n} lanza un rayo psíquico
+1024|{n} brilla con todos los colores teracristal|{n} se esconde en su caparazón de cristal
+1025|{n} se sienta en su silla de cadenas|{n} te ofrece un mochi muy sospechoso

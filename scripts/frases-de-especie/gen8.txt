@@ -1,0 +1,96 @@
+810|{n} toca el tambor con su palito|{n} se pone a dar golpecitos a todo lo que encuentra
+811|{n} toca un ritmo con sus dos palitos|{n} hace crecer la hierba al ritmo de su música
+812|{n} toca un solo de batería en su tocón|{n} hace vibrar el suelo con su ritmo
+813|{n} da saltitos para calentar las patas|{n} enciende la almohadilla de su nariz
+814|{n} da toques a una piedra como si fuera un balón|{n} hace una chilena con mucho estilo
+815|{n} hace malabares con su balón de fuego|{n} chuta una bola de fuego con todo su arte
+816|{n} hace pompas de agua cuando se asusta|{n} se esconde en una burbuja
+817|{n} se pone a hacer el muerto en el agua|{n} lanza una pompa de agua para jugar
+818|{n} sale de su escondite a la velocidad del rayo|{n} se prepara para disparar con la puntería de un francotirador
+819|{n} guarda bayas en sus mofletes|{n} esconde comida para luego
+820|{n} se mete una baya entera en la boca|{n} protege su colección de bayas
+821|{n} se pone a dar vueltas sobre tu cabeza|{n} pía con mucha energía
+822|{n} hace un vuelo rasante para lucirse|{n} pía para ver quién le responde
+823|{n} vuela tan alto que se ve desde muy lejos|{n} saca pecho con sus plumas de acero
+824|{n} recoge información con los pelillos de su cuerpo|{n} se esconde debajo de una hoja
+825|{n} se encierra en su caparazón a pensar|{n} usa su poder psíquico sin salir de dentro
+826|{n} hace levitar sus alas con su poder|{n} mira con sus ojos brillantes
+827|{n} roba algo de comida y se escapa corriendo|{n} esconde comida para luego
+828|{n} se lame la cola con mucho orgullo|{n} roba algo con muchísimo estilo
+829|{n} se sacude el algodón de la cabeza|{n} sopla al viento para viajar
+830|{n} suelta pelusas de algodón|{n} se mueve con mucha calma
+831|{n} se sacude la lana para limpiarla|{n} rueda por la hierba
+832|{n} amortigua cualquier golpe con su lana|{n} da un cabezazo con sus cuernos
+833|{n} muerde todo lo que pilla|{n} se echa a tomar el sol en una piedra
+834|{n} muerde una roca con su mandíbula de hierro|{n} asoma su cuello largo
+835|{n} corre en círculos para cargar electricidad|{n} ladra con muchísima energía
+836|{n} corre tan rápido que deja chispas en el suelo|{n} se tumba a descansar con las patas en alto
+837|{n} rueda por el suelo como una piedra|{n} hace brillar su núcleo de carbón
+838|{n} rueda sobre sus ruedas a toda velocidad|{n} echa un poco de humo por la cabeza
+839|{n} suelta llamas de carbón por las grietas|{n} hace temblar el suelo al andar
+840|{n} se esconde dentro de una manzana|{n} asoma la cabeza de la manzana
+841|{n} planea con sus alas de piel de manzana|{n} escupe un ácido que huele a fruta
+842|{n} se pone muy dulce para que le quieran|{n} suelta un néctar que da energía
+843|{n} se esconde en la arena con la nariz fuera|{n} escupe un chorro de arena
+844|{n} se enrosca para hacer un remolino de arena|{n} suelta arena por la nariz
+845|{n} se traga un pez sin querer|{n} se lanza al agua de cabeza
+846|{n} nada a toda velocidad para atrapar presas|{n} enseña sus dientes afilados
+847|{n} gira para cortar el agua|{n} se pone en guardia como una lanza
+848|{n} se aferra a tu brazo soltando chispitas|{n} guarda electricidad en sus bolsas venenosas
+849|{n} se pone a hacer un solo de guitarra con su pecho|{n} suelta chispas al ritmo de la música
+850|{n} se calienta su cuerpo de fuego|{n} se enrosca para dar calor
+851|{n} se calienta con sus brazos de fuego|{n} se enrosca a tu alrededor
+852|{n} da puñetazos con sus tentáculos a todo lo que le llama la atención|{n} practica sus llaves de lucha
+853|{n} agarra a su rival con sus tentáculos|{n} se pone en guardia con pose de lucha libre
+854|{n} se esconde en una taza de té|{n} hace un té muy amargo
+855|{n} se mete en una tetera|{n} sirve una taza de té
+856|{n} siente las emociones de quien tiene cerca|{n} se esconde si hay demasiado ruido
+857|{n} lanza un rayo psíquico si te pones muy cerca|{n} se esconde de los ruidos fuertes
+858|{n} pide silencio con un rayo psíquico|{n} se ajusta su gran sombrero
+859|{n} hace muecas para burlarse|{n} gasta bromas pesadas
+860|{n} se postra para pedir perdón y luego te la juega|{n} esconde una sonrisa malvada
+861|{n} se envuelve los brazos con su pelo|{n} se esconde en la oscuridad del bosque
+862|{n} cruza los brazos y saca la lengua|{n} grita para intimidar
+863|{n} afila sus garras de acero|{n} se acaricia el bigote de metal
+864|{n} se rompe un trozo de coral fantasma|{n} absorbe la energía de quien le toca
+865|{n} blande su puerro como una espada|{n} se protege con su escudo
+866|{n} hace claqué sobre el hielo|{n} hace malabares con su bastón
+867|{n} tira de la piedra que le arrastra|{n} te deja un mensaje en la arena
+868|{n} se pone una capa de crema|{n} suelta un poco de nata al dar un salto
+869|{n} decora a sus amigos con crema|{n} gira sobre sí con su crema de colores
+870|{n} marcha en formación con su tropa|{n} da órdenes a sus Falinks
+871|{n} suelta electricidad por sus púas|{n} se pega al fondo del mar
+872|{n} se arrastra por la nieve comiendo copos|{n} escupe hilos de seda helada
+873|{n} vuela entre los copos de nieve|{n} se emociona con la luz de la luna
+874|{n} se planta en el prado a mirar el amanecer|{n} se queda inmóvil como un monolito
+875|{n} se coloca bien el cubo de hielo de su cabeza|{n} pesca con el pelito de su cabeza
+876|{n} lee tus sentimientos con sus cuernos|{n} te atiende con muchísima cortesía
+877|{n} se pone de muy mal humor cuando tiene hambre|{n} se come una semilla y se le pasa el enfado
+878|{n} levanta algo pesado con la trompa|{n} se come un trocito de metal
+879|{n} pinta con su trompa como un artista|{n} carga con cualquier cosa sin despeinarse
+880|{n} intenta mantener el equilibrio sobre su cola|{n} suelta chispas por la cola
+881|{n} tirita mientras suelta chispas|{n} se sacude el hielo de la cabeza
+882|{n} muerde con su enorme mandíbula|{n} corre a toda velocidad sobre sus patas
+883|{n} congela el agua a su alrededor|{n} intenta andar con la cabeza del revés
+884|{n} brilla con su cuerpo de metal|{n} se mantiene en pie como un rascacielos
+885|{n} flota en silencio por la casa|{n} se esconde en la cola de un Drakloak
+886|{n} lleva a un Dreepy en la cabeza para cuidarlo|{n} vuela a toda velocidad por los pasillos
+887|{n} carga a dos Dreepy en sus cuernos|{n} dispara un Dreepy a toda velocidad
+888|{n} sujeta su espada con la boca|{n} brilla con su espada de valor
+889|{n} se protege con su escudo|{n} enseña su escudo de valor
+890|{n} absorbe energía de la tierra|{n} hace brillar su núcleo rojo
+891|{n} entrena con mucha concentración|{n} se ajusta el cinturón del dojo
+892|{n} da un golpe que te deja sin aliento|{n} fluye como el agua al pelear
+893|{n} se balancea de liana en liana|{n} cura a los suyos con sus lianas
+894|{n} suelta chispas por todo el cuerpo|{n} corre a la velocidad de la luz
+895|{n} congela el aire con su aliento|{n} vuela con elegancia
+896|{n} pisa fuerte y congela el suelo|{n} resopla un vaho helado
+897|{n} te mira con sus ojos de fuego|{n} se mueve como una sombra
+898|{n} lleva su corona con orgullo|{n} piensa con su gran cerebro
+899|{n} se pasea con su cornamenta de colores|{n} hipnotiza con sus cuernos
+900|{n} corta árboles con su hacha de piedra|{n} se pone en guardia con su hacha
+901|{n} huele el suelo para encontrar turba|{n} se pone de pie para asustar
+902|{n} nada con su energía fantasmal|{n} guía a los peces perdidos
+903|{n} trepa con sus garras afiladas|{n} se mueve con mucha agilidad
+904|{n} lanza púas venenosas|{n} se hincha como un globo
+905|{n} lanza un remolino de amor|{n} vuela con elegancia

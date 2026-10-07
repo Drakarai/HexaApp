@@ -1,0 +1,155 @@
+# Frases de cada especie para el compañero. Una línea por pokémon:
+# número|frase|frase|…   {n} es su mote (o su especie si no tiene).
+# Sin adjetivos con género (quieto, contento, dormido…): el mote no dice si
+# es macho o hembra. Que sean cosas que hace, no datos de la Pokédex.
+1|{n} toma el sol para que le crezca el bulbo|{n} te ofrece una hojita con sus látigos cepa
+2|{n} estira las patas para aguantar el peso de su capullo|{n} huele a flores: a su capullo le falta poco para abrirse
+3|{n} abre su gran flor al sol y suspira de gusto|{n} suelta un aroma que relaja a todo el que pasa
+4|{n} vigila que no se le apague la llama de la cola|{n} se calienta las manos con su propia cola
+5|{n} afila las garras con ganas de pelea|{n} hace chisporrotear la llama de su cola
+6|{n} echa una llamarada al cielo para presumir|{n} despliega las alas y planea sobre tu cabeza
+7|{n} se mete en su caparazón para echar una cabezadita|{n} te salpica con una pistola agua de broma
+8|{n} se peina las orejas peludas con mucho mimo|{n} mueve su cola esponjosa para nadar más recto
+9|{n} saca los cañones de su caparazón para practicar puntería|{n} se planta con todo su peso, en guardia
+10|{n} mordisquea una hoja con toda la calma del mundo|{n} saca su antena roja para espantar a los pájaros
+11|{n} endurece su coraza por si acaso|{n} espera sin moverse a que le llegue el momento de evolucionar
+12|{n} revolotea soltando un polvillo brillante|{n} busca flores con néctar por los alrededores
+13|{n} tiene a punto el aguijón de la cabeza|{n} se come una hoja más grande que su cuerpo
+14|{n} cuelga de una rama sin hacer ni un ruido|{n} se aferra a su coraza esperando a evolucionar
+15|{n} zumba a tu alrededor con sus tres aguijones|{n} defiende su colmena con mucho genio
+16|{n} picotea el suelo en busca de semillas|{n} levanta un poco de arena al aletear
+17|{n} vuela en círculos vigilando su territorio|{n} luce al viento las plumas de la cabeza
+18|{n} despliega su cresta para que se la admires|{n} planea a ras de agua como un rayo
+19|{n} roe todo lo que encuentra para limarse los dientes|{n} mueve los bigotes olfateando el aire
+20|{n} se lima los colmillos en una piedra|{n} roe un tronco por puro aburrimiento
+21|{n} chilla para que se entere todo el mundo|{n} aletea sus alitas cortas sin parar
+22|{n} planea muy alto aprovechando el viento|{n} sacude el pico largo para quitarse el polvo
+23|{n} saca la lengua para olisquear el ambiente|{n} se enrosca al sol para calentarse
+24|{n} hincha el dibujo de su cuello para intimidar|{n} se enrosca alrededor de una piedra y silba
+25|{n} suelta chispitas por las mejillas para saludarte|{n} levanta la cola para notar el ambiente
+26|{n} clava la cola en el suelo para descargar electricidad|{n} brilla un poco en la oscuridad de toda la electricidad que guarda
+27|{n} se hace una bola y rueda por el suelo|{n} escarba en la arena para refrescarse
+28|{n} se hace una bola llena de púas|{n} se lima las garras escarbando la tierra
+29|{n} mueve las orejas para escuchar cualquier peligro|{n} saca su pequeño cuerno por si acaso
+30|{n} esconde las púas para no pinchar a nadie|{n} husmea con calma los alrededores
+31|{n} se planta como un muro para proteger a los suyos|{n} enseña las escamas duras de su lomo
+32|{n} levanta las orejas para escuchar mejor|{n} se pone de puntillas para ver más lejos
+33|{n} embiste una roca para probar su cuerno|{n} va por el camino con mucho carácter
+34|{n} parte un árbol de un coletazo para presumir|{n} pisa fuerte para que se sepa quién manda
+35|{n} baila a la luz de la luna|{n} guarda un trocito de piedra lunar como un tesoro
+36|{n} da pasitos tan ligeros que casi flota|{n} escucha algo a lo lejos que tú no oyes
+37|{n} se arregla sus seis colas una a una|{n} suelta una llamita juguetona
+38|{n} se peina sus nueve colas con muchísimo cuidado|{n} te mira con sus ojos rojos y aire de misterio
+39|{n} canta una nana muy suave|{n} se hincha como un globo para que le escuches cantar
+40|{n} se hincha de aire hasta parecer una almohada|{n} se deja acariciar su pelaje suavísimo
+41|{n} se cuelga boca abajo para echar una siesta|{n} se orienta lanzando ultrasonidos
+42|{n} bate las alas sin hacer ningún ruido|{n} enseña los colmillos: tiene hambre
+43|{n} se entierra hasta las hojas para descansar|{n} sale a pasear en cuanto anochece
+44|{n} suelta un olor que tira para atrás|{n} babea un poco de néctar
+45|{n} abre sus enormes pétalos|{n} suelta un polen que te hace estornudar
+46|{n} se rasca las setas de la espalda|{n} escarba entre las raíces de un árbol
+47|{n} busca un rincón húmedo y oscuro|{n} suelta esporas al sacudirse
+48|{n} mira fijamente con sus grandes ojos rojos|{n} se acerca a la luz de noche
+49|{n} revolotea alrededor de una farola|{n} suelta escamas de polvo al batir las alas
+50|{n} asoma la cabeza del suelo y vuelve a esconderse|{n} cava un túnel a toda velocidad
+51|{n} cava con sus tres cabezas a la vez|{n} asoma por triplicado
+52|{n} persigue cualquier cosa que brille|{n} se ha guardado una moneda: la tiene escondida
+53|{n} pasea con muchísima elegancia|{n} se lame el pelo para lucir la joya de su frente
+54|{n} se agarra la cabeza: le vuelve a doler|{n} mira al infinito sin enterarse de nada
+55|{n} nada a toda velocidad por el río|{n} brilla la joya de su frente al concentrarse
+56|{n} se enfada por cualquier tontería|{n} lanza puñetazos al aire
+57|{n} pega golpes a un árbol para desahogarse|{n} da vueltas buscando pelea
+58|{n} ladra para avisarte de algo|{n} olfatea el aire con su gran olfato
+59|{n} corre como el viento y vuelve a tu lado|{n} ruge con su melena al viento
+60|{n} da vueltas a la espiral de su barriga|{n} chapotea por todas partes
+61|{n} sale del agua a hacer ejercicio|{n} suda para no secarse
+62|{n} cruza el lago a brazadas|{n} enseña los músculos con orgullo
+63|{n} se teletransporta sin despertarse|{n} echa otra de sus siestas de dieciocho horas
+64|{n} dobla una cuchara para concentrarse|{n} no suelta su cuchara ni para dormir
+65|{n} sostiene sus dos cucharas y piensa a toda velocidad|{n} se acuerda de todo lo que ha pasado en el locke
+66|{n} levanta piedras para entrenar|{n} hace flexiones a todas horas
+67|{n} se aprieta el cinturón que contiene su fuerza|{n} te ayuda a cargar con la mochila
+68|{n} da mil puñetazos en dos segundos|{n} se cruza sus cuatro brazos esperando rival
+69|{n} se balancea al viento como una flor|{n} saca las raíces para estirarse
+70|{n} cuelga de una rama boca abajo|{n} se relame: tiene ganas de comer
+71|{n} se queda con la boca abierta esperando su comida|{n} atrae a los bichos con su liana dulce
+72|{n} flota a la deriva en el agua|{n} brilla bajo el sol con sus gemas
+73|{n} extiende sus ochenta tentáculos|{n} hace brillar sus esferas rojas
+74|{n} se camufla entre las rocas|{n} anda con los brazos por el camino
+75|{n} rueda montaña abajo para ir más rápido|{n} merienda unas cuantas rocas
+76|{n} se encierra en su caparazón y rueda|{n} se sacude el polvo de la coraza
+77|{n} trota luciendo su crin de fuego|{n} da un salto altísimo
+78|{n} galopa a toda velocidad con la crin al viento|{n} te deja montarle un ratito
+79|{n} pesca con la cola sin ninguna prisa|{n} tarda un buen rato en darse cuenta de que le has llamado
+80|{n} lleva un Shellder mordiéndole la cola y ni se inmuta|{n} se olvida de lo que estaba haciendo
+81|{n} flota enganchándose a un campo magnético|{n} se pega a cualquier cosa de metal que pase
+82|{n} junta sus tres imanes y zumba|{n} hace que se vuelva loca tu brújula
+83|{n} blande su puerro como una espada|{n} protege su puerro con su vida
+84|{n} corre con sus dos cabezas a la vez|{n} picotea por partida doble
+85|{n} discute con sus tres cabezas a la vez|{n} corre tan rápido que levanta polvo
+86|{n} se tumba en un témpano a tomar el sol|{n} nada bajo el hielo, feliz
+87|{n} nada con elegancia en el agua helada|{n} se queda flotando panza arriba
+88|{n} deja un rastro de lodo por donde pasa|{n} se pega al suelo y se desparrama
+89|{n} rezuma un barro que huele fatal|{n} se derrite un poco al sol
+90|{n} cierra su concha y te saca la lengua|{n} se esconde en su caparazón
+91|{n} cierra la concha a cal y canto|{n} saca unas cuantas púas por si acaso
+92|{n} se ríe flotando a tu alrededor|{n} se cuela por una pared y vuelve a salir
+93|{n} te saca la lengua para asustarte|{n} se esconde en la sombra más cercana
+94|{n} sonríe con mucha malicia|{n} se esconde en tu sombra y te da frío de golpe
+95|{n} se retuerce bajo tierra|{n} ruge haciendo temblar las rocas de su cuerpo
+96|{n} te mira fijamente: tiene hambre de sueños|{n} se frota la nariz pensando en una siesta ajena
+97|{n} balancea su péndulo delante de tus ojos|{n} busca a alguien que se haya dormido
+98|{n} abre y cierra las pinzas|{n} hace burbujas mientras camina de lado
+99|{n} levanta su enorme pinza para saludarte|{n} camina de lado arrastrando su pinza
+100|{n} rueda a toda pastilla|{n} se hace pasar por una Poké Ball
+101|{n} suelta chispas sin avisar|{n} rueda tan rápido que da vueltas en el aire
+102|{n} se acurruca con las otras cinco cabezas|{n} se comunica con sus hermanas por telepatía
+103|{n} da sombra con sus hojas|{n} pone a sus tres cabezas de acuerdo por una vez
+104|{n} se ajusta el cráneo que lleva de casco|{n} balancea su hueso en silencio
+105|{n} lanza su hueso como un bumerán|{n} practica con su hueso sin descanso
+106|{n} estira sus piernas como muelles|{n} lanza patadas al aire
+107|{n} da puñetazos al aire con sus guantes|{n} se protege la cara y espera a que ataques
+108|{n} te lame la cara con su larguísima lengua|{n} enrolla la lengua para atrapar una baya
+109|{n} se hincha como un globo y flota|{n} suelta un gas que huele fatal
+110|{n} hincha sus dos cabezas a la vez|{n} suelta una nube de gas por si acaso
+111|{n} embiste contra todo lo que pilla|{n} corre sin pensar hacia donde sea
+112|{n} hace girar su cuerno taladro|{n} se abre paso a cabezazos entre las rocas
+113|{n} lleva su huevo en la bolsa con mucho cuidado|{n} cuida a quien esté herido
+114|{n} se esconde entre sus lianas|{n} se le ve solo la cara entre tanta maraña
+115|{n} lleva a su cría en la bolsa|{n} protege a su cría de cualquier cosa
+116|{n} se apoya en su cola enroscada|{n} suelta una nube de tinta y se esconde
+117|{n} gira como una peonza haciendo un remolino|{n} saca sus púas venenosas
+118|{n} mueve sus aletas como un vestido de gala|{n} presume de cuerno
+119|{n} hace un nido en el río|{n} nada contra corriente sin cansarse
+120|{n} hace brillar su joya por la noche|{n} gira como una estrella fugaz
+121|{n} brilla con los colores del arcoíris|{n} gira tan rápido que parece un disco
+122|{n} hace mimo delante de ti|{n} se apoya en una pared invisible
+123|{n} afila sus guadañas|{n} corta el aire de un tajo
+124|{n} baila moviendo las caderas|{n} canta en un idioma que nadie entiende
+125|{n} gira los brazos para cargar electricidad|{n} sale a buscar tormentas
+126|{n} escupe llamas de colores|{n} se calienta junto a cualquier fuego
+127|{n} aprieta sus tenazas como si estuviera entrenando|{n} parte un tronco con sus cuernos
+128|{n} se azota con sus tres colas para animarse|{n} rasca el suelo antes de embestir
+129|{n} chapotea sin parar|{n} salta sin ningún motivo
+130|{n} ruge con todas sus fuerzas|{n} te mira con cara de que nadie le toque
+131|{n} canta una canción que se oye a lo lejos|{n} te deja subir a su lomo para cruzar el agua
+132|{n} se transforma en una copia de ti|{n} se desparrama como gelatina
+133|{n} mueve la cola con alegría|{n} piensa en qué evolucionará algún día
+134|{n} se funde con el agua y desaparece|{n} mueve sus aletas con elegancia
+135|{n} eriza su pelo de púas|{n} suelta chispas al correr
+136|{n} esponja su collar de pelo|{n} se calienta hasta echar humo
+137|{n} se queda en pausa como si se cargara|{n} se dobla en ángulos imposibles
+138|{n} saca sus tentáculos de la concha|{n} se pega a una roca como hace millones de años
+139|{n} arrastra su concha, que pesa muchísimo|{n} enreda sus tentáculos
+140|{n} se esconde bajo la arena|{n} mueve sus patitas sin parar
+141|{n} afila sus guadañas|{n} nada a toda velocidad
+142|{n} vuela muy alto enseñando los colmillos|{n} lanza un rugido de otra era
+143|{n} se echa una siesta enorme encima de ti|{n} se come todo lo que llevas en la mochila
+144|{n} congela el aire al batir las alas|{n} vuela entre copos de nieve
+145|{n} lanza rayos mientras vuela|{n} se carga de electricidad en las nubes
+146|{n} arde con unas llamas preciosas|{n} sobrevuela la zona dejando chispas
+147|{n} muda su piel para crecer|{n} se enrosca en el agua, en calma
+148|{n} hace brillar las perlas de su cuello|{n} cambia un poco el tiempo a su alrededor
+149|{n} te ofrece llevarte volando a donde sea|{n} vuelve de dar la vuelta al mundo
+150|{n} levita en silencio, pensando|{n} levanta piedras sin tocarlas
+151|{n} juega con una burbuja rosa|{n} se vuelve invisible y reaparece riéndose

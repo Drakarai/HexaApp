@@ -1,0 +1,156 @@
+494|{n} te desea la victoria con un signo de la V|{n} reparte energía a quien tiene al lado
+495|{n} toma el sol para recargarse por la cola|{n} se pavonea con mucha clase
+496|{n} esquiva con elegancia a quien se acerca|{n} se mueve tan rápido que parece que se desliza
+497|{n} te mira por encima del hombro, con mucha clase|{n} amplifica la luz del sol con su cuerpo
+498|{n} sopla bolitas de humo por la nariz|{n} se pone a dar saltitos para entrar en calor
+499|{n} se pone a entrenar con el fuego de su barriga|{n} echa humo por la nariz si se cabrea
+500|{n} se peina la barba de fuego|{n} lanza puñetazos llameantes
+501|{n} saca la vieira de su barriga y la blande|{n} nada panza arriba en el río
+502|{n} limpia su vieira con muchísimo cuidado|{n} practica movimientos de espada
+503|{n} saca su espada del caparazón de la pata|{n} se pone en guardia con su casco de hierro
+504|{n} vigila con los ojos muy abiertos|{n} guarda comida en los mofletes
+505|{n} se pone de puntillas sobre la cola para vigilar|{n} hace brillar los ojos en la oscuridad
+506|{n} te mira con mucha devoción|{n} mueve la cola de alegría
+507|{n} protege a quien tiene detrás|{n} se sacude el pelo como una capa
+508|{n} vigila desde lo alto|{n} te hace sombra con su pelaje
+509|{n} te roba un objeto de la mochila haciéndose el inocente|{n} se hace el gatito para que le perdones
+510|{n} se acerca sin hacer ningún ruido|{n} desaparece en la oscuridad
+511|{n} te ofrece unas hojas de su cabeza|{n} se balancea feliz entre las hierbas
+512|{n} se mete una hoja en la boca con aire de chulería|{n} sacude las hojas de su cabeza
+513|{n} se calienta su mechón de fuego|{n} hace burbujas de fuego para entretenerse
+514|{n} echa humo por la cabeza|{n} hace una pirueta con mucha energía
+515|{n} se peina el mechón mojado|{n} salpica con su cola
+516|{n} hace brotar agua por su mechón|{n} suelta un chorro de agua con la cola
+517|{n} come sueños mientras duermes|{n} suelta un humo rosa de su frente
+518|{n} suelta un humo rosado que huele a sueños|{n} te enseña el sueño que se comió anoche
+519|{n} picotea a tu alrededor buscando semillas|{n} se te posa en el hombro
+520|{n} vuela muy alto buscando su casa|{n} vuelve siempre a donde estás tú
+521|{n} luce su máscara de colores|{n} vuela con mucha ligereza
+522|{n} corre a toda velocidad soltando chispas|{n} hace brillar su crin al cargarse
+523|{n} galopa como un relámpago|{n} suelta un rayo de su crin
+524|{n} hace brillar su cristal|{n} absorbe energía del suelo
+525|{n} hace brillar sus cristales naranjas|{n} se pone de cara al sol para cargarse
+526|{n} saca sus cristales para atacar|{n} absorbe la energía del sol
+527|{n} se pega con su nariz de corazón a tu cara|{n} hace un vuelo rasante
+528|{n} lanza ondas de amor con su nariz|{n} se cuelga del techo
+529|{n} se pone a girar como un taladro|{n} saca la cabeza de un agujero
+530|{n} perfora la montaña a toda velocidad|{n} afila su taladro de acero
+531|{n} te escucha el corazón con sus orejas|{n} se pone a escuchar los latidos
+532|{n} carga con su viga de madera|{n} te ayuda con lo que haga falta
+533|{n} lleva su viga de acero a todas partes|{n} hace ejercicio con su barra
+534|{n} se apoya en sus columnas de piedra|{n} enseña a los más jóvenes a luchar
+535|{n} hace burbujas con la boca|{n} canta de felicidad en el estanque
+536|{n} hace vibrar los bultos de su cabeza|{n} canta tan fuerte que tiembla el estanque
+537|{n} hace temblar el suelo con sus bultos|{n} canta tan grave que te vibra la tripa
+538|{n} se ata el cinturón de cuero|{n} se prepara para lanzar a su rival
+539|{n} se ata el cinturón para la pelea|{n} entrena con sus puños
+540|{n} se hace una capa de hojas|{n} se pone su capucha de hoja
+541|{n} se envuelve en sus hojas|{n} se refugia en su hoja
+542|{n} cose ropa con sus hojas|{n} cuida de los más pequeños
+543|{n} te pica con su veneno si le pisas sin querer|{n} se enrosca y saca sus antenas
+544|{n} se pone a dar vueltas como una rueda|{n} descansa dentro de su caparazón
+545|{n} se enfada y embiste a toda velocidad|{n} mueve sus antenas para olfatear el peligro
+546|{n} suelta bolitas de algodón para que no le pillen|{n} flota con el viento hasta posarse en ti
+547|{n} se cuela por cualquier rendija como el viento|{n} hace una travesura y se ríe a carcajadas
+548|{n} se esconde entre las hojas de su cabeza|{n} toma el sol a gusto
+549|{n} lleva su preciosa flor en la cabeza|{n} suelta un perfume que relaja a todo el mundo
+550|{n} nada con una mala leche increíble|{n} enseña sus colmillos en el agua
+551|{n} se esconde bajo la arena con los ojos fuera|{n} se pone las gafas negras de su cara
+552|{n} se entierra en la arena del desierto|{n} vigila con sus ojos negros
+553|{n} enseña sus enormes fauces|{n} ve a kilómetros de distancia
+554|{n} rueda con mucha energía|{n} suelta chispas de fuego por todas partes
+555|{n} se queda inmóvil meditando|{n} echa una llamarada potentísima
+556|{n} baila al ritmo de sus maracas|{n} se balancea feliz bajo el sol
+557|{n} se hace una casa en una piedra|{n} se esconde en su piedra si le asustan
+558|{n} carga con su roca enorme a la espalda|{n} se pelea con otro por una piedra buena
+559|{n} se sube los pantalones de piel|{n} da cabezazos con su cráneo duro
+560|{n} se pone sus pantalones con mucho estilo|{n} da patadas con mucha fuerza
+561|{n} vuela en círculos por las ruinas|{n} vigila su ciudad antigua
+562|{n} sostiene su máscara con cariño|{n} llora al mirar su máscara
+563|{n} se encierra en su ataúd de oro|{n} saca sus manos negras del ataúd
+564|{n} nada con calma en el agua|{n} se mete en su caparazón
+565|{n} parte una roca de un mordisco|{n} sale del agua a tomar el sol en una piedra
+566|{n} da saltitos agitando sus alas|{n} se cae de morros al intentar volar
+567|{n} coge carrerilla para despegar|{n} luce sus plumas de colores de otra era
+568|{n} asoma la cabeza de una bolsa de basura|{n} eructa un gas que apesta
+569|{n} absorbe basura con los brazos|{n} suelta un gas que hace llorar los ojos
+570|{n} se transforma en ti para engañar a alguien|{n} se ríe después de gastarte una broma
+571|{n} crea una ilusión para gastarte una broma|{n} sacude su melena roja y negra
+572|{n} te limpia la cara con su cola|{n} quita el polvo de todo lo que pilla
+573|{n} se cubre de su aceite especial para brillar|{n} te sacude el polvo con sus pañuelos blancos
+574|{n} mira fijamente a la nada|{n} ve algo que nadie más ve
+575|{n} mira las estrellas por la noche|{n} hace levitar una piedrita
+576|{n} lee el futuro en las estrellas|{n} se coloca bien su vestido negro
+577|{n} flota dentro de su gelatina protectora|{n} se comunica por telepatía
+578|{n} discute con su otra mitad|{n} piensa con sus dos cerebros a la vez
+579|{n} cierra sus manos de gelatina|{n} lanza un puñetazo psíquico
+580|{n} nada con soltura por el estanque|{n} se zambulle para pescar
+581|{n} baila al amanecer en el lago|{n} se arregla las plumas blancas
+582|{n} se pone una capita de nieve nueva|{n} suelta copitos por la boca
+583|{n} congela el aire con su aliento|{n} se hace un cucurucho de hielo
+584|{n} sopla con sus dos cabezas para hacer nevar|{n} bebe agua y escupe nieve
+585|{n} cambia de color con la estación|{n} da saltitos por el prado
+586|{n} luce la cornamenta de esta temporada|{n} corre por el bosque
+587|{n} planea entre los árboles soltando chispas|{n} guarda electricidad en las mejillas
+588|{n} escupe un ácido para defenderse|{n} mira con envidia el caparazón de un Shelmet
+589|{n} embiste con sus lanzas|{n} presume de la armadura que le quitó a un Shelmet
+590|{n} se hace pasar por una Poké Ball|{n} baila para atraer a los curiosos
+591|{n} agita sus brazos con forma de Poké Ball|{n} suelta esporas venenosas
+592|{n} flota arrastrando su capa por el agua|{n} atrapa algo con sus tentáculos
+593|{n} nada con majestuosidad por el fondo del mar|{n} vuelve a su casa en un barco hundido
+594|{n} cuida a los pokémon heridos con sus aletas|{n} te da un abrazo para que te recuperes
+595|{n} se te pega para chupar un poco de electricidad|{n} se esconde en el pelo de alguien
+596|{n} teje una tela que suelta chispas|{n} lanza hilos eléctricos para atrapar algo
+597|{n} se pega al techo de la cueva|{n} se come el hierro de las rocas
+598|{n} se cuelga del techo con sus tentáculos de acero|{n} lanza sus púas contra lo que se acerque
+599|{n} engrana sus dos ruedas para girar|{n} hace un ruidito de engranaje
+600|{n} gira sus engranajes a toda velocidad|{n} se separa en dos y se vuelve a juntar
+601|{n} carga energía en su engranaje del centro|{n} gira y suelta chispas
+602|{n} brilla con su cuerpo eléctrico|{n} nada en grupo con otros Tynamo
+603|{n} se pega a una piedra con su boca|{n} suelta un calambrazo al tocarle
+604|{n} sale del agua con sus brazos|{n} lanza descargas eléctricas
+605|{n} hace brillar sus dedos de colores|{n} te mira fijamente con sus ojos enormes
+606|{n} juega a controlarte con sus luces|{n} te borra un recuerdo de broma
+607|{n} se ilumina la llamita de su cabeza|{n} te sigue para guiarte en la oscuridad
+608|{n} se pone en tu sombra a esperar|{n} cuelga su farolillo de la mano
+609|{n} hace oscilar sus llamas fantasmales|{n} flota como una lámpara de araña
+610|{n} se afila los colmillos contra un árbol|{n} muerde una baya con sus colmillos
+611|{n} se pule sus colmillos que se rompen|{n} se pone en guardia con sus colmillos
+612|{n} afila su hacha contra una roca, feliz|{n} se prepara para la pelea con sus colmillos
+613|{n} se sorbe los mocos de hielo|{n} estornuda y se le congela la nariz
+614|{n} se hace garras de hielo con su aliento|{n} nada por el mar helado buscando presa
+615|{n} atrapa lo que pasa con cadenas de hielo|{n} brilla como un copo de nieve gigante
+616|{n} se encierra en su caparazón|{n} suelta un ácido si le molestan
+617|{n} se mueve tan rápido que deja una estela|{n} se ata bien su pañuelo de baba
+618|{n} se aplana en el barro y sonríe|{n} da un calambrazo al que le pisa
+619|{n} lanza una ráfaga de patadas|{n} grita para concentrarse
+620|{n} entrena con los látigos de sus brazos|{n} hace una acrobacia espectacular
+621|{n} calienta las alas al sol|{n} se esconde en una cueva para dar un susto
+622|{n} anda dando tumbos con su cuerpo de barro|{n} se queda inmóvil como una estatua
+623|{n} vuela con los propulsores de sus piernas|{n} se ajusta el sello de su pecho
+624|{n} afila las cuchillas de su cuerpo|{n} sigue a su líder sin rechistar
+625|{n} afila la cuchilla de su cabeza|{n} da órdenes a una tropa de Pawniard
+626|{n} se ahueca el afro|{n} embiste de cabeza con su pelo de amortiguador
+627|{n} se lanza contra rivales mucho más fuertes|{n} rompe una baya con sus garras
+628|{n} vuela muy alto sin miedo a nada|{n} presume de las cicatrices de sus batallas
+629|{n} se ajusta el cráneo que lleva de pañal|{n} da sus primeros aleteos
+630|{n} se adorna con huesos|{n} vigila desde las alturas
+631|{n} aspira el aire con su trompa de fuego|{n} busca un nido de Durant para merendar
+632|{n} marcha en fila con su colonia|{n} se protege con su armadura de acero
+633|{n} se choca con todo porque no ve|{n} muerde lo que tiene delante para saber qué es
+634|{n} discute con su otra cabeza por la comida|{n} se come todo lo que pilla
+635|{n} revolotea con sus seis alas|{n} muerde con las tres cabezas a la vez
+636|{n} suelta fuego por sus cuernos|{n} se acerca para darte calor
+637|{n} esparce escamas ardientes como un sol|{n} bate sus alas de fuego
+638|{n} se planta con firmeza para proteger a los débiles|{n} te mira con mucha nobleza
+639|{n} derriba una muralla de una embestida|{n} vigila a sus amigos desde una roca
+640|{n} corta el aire con sus cuernos|{n} salta con mucha agilidad
+641|{n} vuela sobre su nube levantando un vendaval|{n} hace travesuras con el viento
+642|{n} lanza rayos desde su nube|{n} provoca una tormenta solo por diversión
+643|{n} hace arder su llama blanca|{n} te mira buscando la verdad
+644|{n} carga de electricidad su cola|{n} busca un ideal que perseguir
+645|{n} hace crecer las cosechas al pasar|{n} sobrevuela los campos en su nube
+646|{n} congela el aire a su alrededor|{n} espera recuperar lo que perdió
+647|{n} practica con su cuerno de espada|{n} galopa por encima del agua
+648|{n} canta una melodía preciosa|{n} baila sacudiendo su pelo de pentagrama
+649|{n} ajusta el cañón de su espalda|{n} vuela a toda velocidad
