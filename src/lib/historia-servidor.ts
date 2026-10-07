@@ -13,6 +13,7 @@ import {
   ordenarSucesos,
   type Suceso,
 } from "@/lib/historia";
+import { leerAses, sucesosDelAs } from "@/lib/as";
 
 export type DeQuienEsLaHistoria =
   | { tipo: "captura"; id: string }
@@ -37,6 +38,7 @@ const DEL_JUGADOR = {
     id: true,
     userId: true,
     competitionId: true,
+    historialDeAses: true,
     competition: { select: { estilo: true, maxPlayers: true } },
   },
 } as const;
@@ -332,6 +334,19 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
       sucesos.push({ tipo: "revive", texto: "Revivió", fecha: unaBaja.revividoEl.toISOString() });
     }
   }
+
+  /**
+   * Cuándo fue el as de su entrenador y cuándo dejó de serlo. Es público, como
+   * el as: con su captura a la vista se reconoce por ella; si no, por el mote
+   * y la familia, como en las jornadas.
+   */
+  sucesos.push(
+    ...sucesosDelAs(leerAses(dueno.historialDeAses), (turno) =>
+      turno.captureId && laCapturaDeVerdad
+        ? turno.captureId === laCapturaDeVerdad.id
+        : esElMismo(turno, quien),
+    ),
+  );
 
   const ordenados = ordenarSucesos(sucesos);
   const desde = laCapturaDeVerdad ? laCapturaDeVerdad.createdAt.toISOString() : null;

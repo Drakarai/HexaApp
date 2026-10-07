@@ -355,6 +355,8 @@ model Capture {
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   muerte      Death?      @relation(fields: [deathId], references: [id], onDelete: SetNull)
+  // Los jugadores que la tienen de as (uno, el suyo)
+  esAsDe      Participant[] @relation("AsDelJugador")
 
   @@index([participantId])
   @@index([zoneId])
@@ -668,6 +670,17 @@ model Participant {
   aceReason      String?
   aceImage       String?
   aceDetailImage String?
+  /**
+   * La captura del Equipo y PC que es su as. **El as se elige de la caja**, y
+   * con esto se sabe cuál es: los campos de arriba son una copia de ella que
+   * se pone al día sola cuando evoluciona, cambia de mote, se vuelve shiny o
+   * se intercambia (ver lib/as-servidor.ts), para que todo lo que ya leía el
+   * as —la clasificación, el cementerio, su imagen— siga igual. Null en los de
+   * antes, que eran una especie escrita a mano.
+   */
+  aceCaptureId   String?
+  // Quién ha sido su as y por qué dejó de serlo: ver lib/as.ts
+  historialDeAses Json   @default("[]")
 
   // El fondo de cada caja de su Equipo y PC, separados por comas (ver
   // lib/fondos-de-caja.ts). Vacío: el de fábrica de cada caja.
@@ -678,6 +691,7 @@ model Participant {
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  aceCapture  Capture?    @relation("AsDelJugador", fields: [aceCaptureId], references: [id], onDelete: SetNull)
 
   deaths            Death[]
   wipeos            Wipeo[]

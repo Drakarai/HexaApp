@@ -84,7 +84,10 @@ export type TipoDeSuceso =
   | "final"
   | "hall"
   | "caida"
-  | "revive";
+  | "revive"
+  // Nombrado as de su entrenador, y cuándo dejó de serlo (ver lib/as.ts)
+  | "as"
+  | "deja-as";
 
 export type Suceso = {
   tipo: TipoDeSuceso;
@@ -114,6 +117,8 @@ const ORDEN: Record<TipoDeSuceso, number> = {
   hall: 6,
   caida: 7,
   revive: 8,
+  as: 2,
+  "deja-as": 8,
 };
 
 export function ordenarSucesos(sucesos: Suceso[]) {

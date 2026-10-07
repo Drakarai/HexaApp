@@ -1,11 +1,16 @@
 "use client";
 
 import { SpritePokemon } from "@/components/sprite-pokemon";
-import { useActionState, useEffect, useState } from "react";
-import { clearAceAction, updateAceAction } from "@/app/actions/aces";
+import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  candidatosAAsAction,
+  clearAceAction,
+  elegirAsAction,
+  type CandidatoAAs,
+} from "@/app/actions/aces";
 import type { FormState } from "@/app/actions/auth";
-import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
-import { SpeciesPicker } from "@/components/species-picker";
+import { ConfirmSubmit, FormMessage } from "@/components/ui";
 import { cx } from "@/lib/utils";
 import { Hoja } from "@/components/hoja";
 
@@ -83,14 +88,6 @@ export function AceBadge({
 
 function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
   const [editing, setEditing] = useState(!ace.species);
-  const [state, formAction] = useActionState<FormState, FormData>(
-    updateAceAction,
-    null,
-  );
-
-  useEffect(() => {
-    if (state?.success) setEditing(false);
-  }, [state]);
 
   // Se saca del árbol con un portal: las tarjetas llevan backdrop-blur, y eso
   // haría que un position:fixed se posicionara respecto a la tarjeta.
@@ -168,55 +165,163 @@ function AceCard({ ace, onClose }: { ace: AceInfo; onClose: () => void }) {
           ) : null}
         </>
       ) : (
-        <form action={formAction} className="space-y-4">
-          <input
-            type="hidden"
-            name="participantId"
-            value={ace.participantId}
-          />
-
-          <SpeciesPicker
-            defaultSpecies={ace.species ?? ""}
-            defaultBoxImage={ace.image}
-            defaultDetailImage={ace.detailImage}
-          />
-
-          <div>
-            <label className="label">Mote</label>
-            <input
-              name="nickname"
-              className="input"
-              defaultValue={ace.nickname ?? ""}
-              placeholder="Chispas"
-            />
-          </div>
-
-          <div>
-            <label className="label">¿Por qué es tu as? (opcional)</label>
-            <textarea
-              name="reason"
-              className="textarea"
-              rows={3}
-              defaultValue={ace.reason ?? ""}
-              placeholder="Me sacó del gimnasio de Antón con 2 PS"
-            />
-          </div>
-
-          <FormMessage state={state} />
-          <div className="flex gap-2">
-            <SubmitButton>Guardar as</SubmitButton>
-            {ace.species ? (
-              <button
-                type="button"
-                className="btn-ghost"
-                onClick={() => setEditing(false)}
-              >
-                Cancelar
-              </button>
-            ) : null}
-          </div>
-        </form>
+        <ElegirDeLaCaja ace={ace} onCancelar={ace.species ? () => setEditing(false) : null} onHecho={onClose} />
       )}
     </Hoja>
+  );
+}
+
+/**
+ * Elegir el as **de la caja**: los vivos del Equipo y PC de su dueño, en
+ * cuadrícula y agrupados como en el PC, con buscador por mote o especie. Se
+ * piden al abrir, que la caja no viaja con la clasificación (y es privada).
+ */
+function ElegirDeLaCaja({
+  ace,
+  onCancelar,
+  onHecho,
+}: {
+  ace: AceInfo;
+  onCancelar: (() => void) | null;
+  onHecho: () => void;
+}) {
+  const router = useRouter();
+  const [candidatos, setCandidatos] = useState<CandidatoAAs[] | null>(null);
+  const [elegido, setElegido] = useState<string | null>(null);
+  const [motivo, setMotivo] = useState(ace.reason ?? "");
+  const [texto, setTexto] = useState("");
+  const [estado, setEstado] = useState<FormState>(null);
+  const [guardando, empezar] = useTransition();
+
+  useEffect(() => {
+    let vigente = true;
+    candidatosAAsAction(ace.participantId)
+      .then((respuesta) => {
+        if (!vigente) return;
+        if (respuesta.error) return setEstado({ error: respuesta.error });
+        setCandidatos(respuesta.candidatos ?? []);
+        setElegido(respuesta.actual ?? null);
+      })
+      .catch(() => vigente && setEstado({ error: "Sin conexión: tu caja se ve con línea." }));
+    return () => {
+      vigente = false;
+    };
+  }, [ace.participantId]);
+
+  const plano = (t: string) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const busqueda = plano(texto.trim());
+  const grupos: { titulo: string; lista: CandidatoAAs[] }[] = [];
+  for (const c of candidatos ?? []) {
+    if (busqueda && !plano(c.nombre).includes(busqueda) && !plano(c.especie).includes(busqueda)) continue;
+    const grupo = grupos.find((g) => g.titulo === c.donde);
+    if (grupo) grupo.lista.push(c);
+    else grupos.push({ titulo: c.donde, lista: [c] });
+  }
+
+  function guardar() {
+    if (!elegido) return;
+    empezar(async () => {
+      try {
+        const hecho = await elegirAsAction({ participantId: ace.participantId, captureId: elegido, reason: motivo });
+        if (hecho.error) return setEstado({ error: hecho.error });
+        router.refresh();
+        onHecho();
+      } catch {
+        setEstado({ error: "Sin conexión: el as se cambia con línea." });
+      }
+    });
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <p className="label">Elige tu as de tu Equipo y PC</p>
+        <p className="text-xs text-slate-500">
+          Se pone al día solo: si evoluciona o le cambias el mote, tu as también.
+        </p>
+      </div>
+      {candidatos === null && !estado?.error ? (
+        <div className="grid grid-cols-5 gap-1.5 sm:grid-cols-6" aria-label="Cargando tu caja">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div key={i} className="aspect-square animate-pulse rounded-lg bg-white/[0.05]" />
+          ))}
+        </div>
+      ) : candidatos && !candidatos.length ? (
+        <p className="rounded-lg border border-dashed border-white/15 p-4 text-center text-sm text-slate-400">
+          No tienes ningún pokémon vivo en tu Equipo y PC. Apunta una captura y vuelve.
+        </p>
+      ) : candidatos ? (
+        <>
+          {candidatos.length > 8 ? (
+            <input
+              className="input"
+              type="search"
+              placeholder="Busca por mote o especie…"
+              value={texto}
+              onChange={(evento) => setTexto(evento.target.value)}
+            />
+          ) : null}
+          <div className="max-h-[45vh] space-y-3 overflow-y-auto pr-1">
+            {grupos.map((grupo) => (
+              <section key={grupo.titulo}>
+                <p className="rotulo mb-1.5">{grupo.titulo}</p>
+                <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-5">
+                  {grupo.lista.map((c) => (
+                    <button
+                      key={c.captureId}
+                      type="button"
+                      onClick={() => setElegido(c.captureId)}
+                      aria-pressed={elegido === c.captureId}
+                      className={cx(
+                        "flex flex-col items-center gap-0.5 rounded-lg border p-1.5 text-center transition",
+                        elegido === c.captureId
+                          ? "border-brand-400 bg-brand-500/15 ring-2 ring-brand-400/40"
+                          : "border-white/10 bg-white/[0.02] hover:border-white/25",
+                      )}
+                    >
+                      <SpritePokemon
+                        src={c.imagen}
+                        shiny={c.shiny}
+                        alt=""
+                        loading="lazy"
+                        className="h-11 w-11 object-contain"
+                      />
+                      <span className="w-full truncate text-[11px] leading-tight text-slate-200">{c.nombre}</span>
+                    </button>
+                  ))}
+                </div>
+              </section>
+            ))}
+            {!grupos.length ? <p className="py-4 text-center text-sm text-slate-500">Nadie con ese nombre.</p> : null}
+          </div>
+        </>
+      ) : null}
+
+      <div>
+        <label className="label" htmlFor="motivo-del-as">
+          ¿Por qué es tu as? (opcional)
+        </label>
+        <textarea
+          id="motivo-del-as"
+          className="textarea"
+          rows={2}
+          value={motivo}
+          onChange={(evento) => setMotivo(evento.target.value)}
+          placeholder="Me sacó del gimnasio de Antón con 2 PS"
+        />
+      </div>
+
+      <FormMessage state={estado} />
+      <div className="flex gap-2">
+        <button type="button" className="btn-primary" disabled={!elegido || guardando} onClick={guardar}>
+          {guardando ? "Guardando…" : "Guardar as"}
+        </button>
+        {onCancelar ? (
+          <button type="button" className="btn-ghost" onClick={onCancelar}>
+            Cancelar
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }

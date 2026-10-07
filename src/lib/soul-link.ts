@@ -97,6 +97,8 @@ export type TableroDeJugador = {
   fondos: (FondoDeCaja | null)[];
   /** El nombre puesto a cada caja; null donde se llama «Caja N» */
   nombres: (string | null)[];
+  /** La captura que es su pokémon as (ver lib/as.ts), si lo ha elegido de la caja */
+  asId: string | null;
 };
 
 export type EquiposDelLocke = {
@@ -159,6 +161,7 @@ export async function getEquiposDelLocke(
         retiredAt: true,
         fondosDeCaja: true,
         nombresDeCaja: true,
+        aceCaptureId: true,
       },
     }),
     prisma.capture.findMany({
@@ -265,6 +268,7 @@ export async function getEquiposDelLocke(
       deshacer: editable ? (ultimo.get(j.id) ?? null) : null,
       fondos: leerFondos(j.fondosDeCaja),
       nombres: leerNombresDeCaja(j.nombresDeCaja),
+      asId: j.aceCaptureId,
     };
   });
 

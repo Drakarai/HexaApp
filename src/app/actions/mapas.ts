@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { soltarAs } from "@/lib/as-servidor";
 import { prisma } from "@/lib/db";
 import { requireCreador, requireUser } from "@/lib/auth";
 import {
@@ -482,6 +483,10 @@ export async function borrarCapturaAction(formData: FormData) {
   const id = String(formData.get("captureId") ?? "");
   if (!id) return;
 
+  const suya = await prisma.capture.findFirst({ where: { id, participantId: participante.id }, select: { id: true } });
+  if (!suya) return;
+  // Si era el as, ya no hay as (ver soltarAs)
+  await soltarAs(suya.id);
   await prisma.capture.deleteMany({
     where: { id, participantId: participante.id },
   });

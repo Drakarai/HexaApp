@@ -32,6 +32,7 @@ import {
   type Foto,
 } from "@/lib/caja-servidor";
 import type { FormState } from "@/app/actions/auth";
+import { sincronizarAs, soltarAs } from "@/lib/as-servidor";
 
 /**
  * Las acciones del Equipo y PC. **Cada una comprueba en el servidor** quién
@@ -274,7 +275,8 @@ export async function evolucionarAction(entrada: {
       },
     });
     const descripcion = `Evolucionar a ${nombreDe(captura)} en ${elegida.rotulo}`;
-    await apuntarCambio(captura.participantId, descripcion, foto);
+    // Si es el as, su as evoluciona con él
+    await Promise.all([apuntarCambio(captura.participantId, descripcion, foto), sincronizarAs([captura.id])]);
     refrescar();
     const imagenes = await urlsDeImagen("captura", [captura.id]);
     return {
@@ -343,7 +345,11 @@ export async function intercambiarAction(entrada: {
       },
     });
     const descripcion = `Cambiar a ${nombreDe(captura)} por ${species}`;
-    await apuntarCambio(captura.participantId, descripcion, [{ ...foto[0], ...completa }]);
+    await Promise.all([
+      apuntarCambio(captura.participantId, descripcion, [{ ...foto[0], ...completa }]),
+      // El as era el hueco: el que llega lo hereda, como hereda el sitio
+      sincronizarAs([captura.id]),
+    ]);
     refrescar();
     return { aviso: `¡${nombreDe(captura)} se ha ido y ha llegado ${species}!`, deshacer: descripcion };
   });
@@ -392,7 +398,7 @@ export async function cambiarShinyAction(entrada: {
     const descripcion = shiny
       ? `Volver shiny a ${nombreDe(captura)}`
       : `Quitarle lo shiny a ${nombreDe(captura)}`;
-    await apuntarCambio(captura.participantId, descripcion, foto);
+    await Promise.all([apuntarCambio(captura.participantId, descripcion, foto), sincronizarAs([captura.id])]);
     refrescar();
     const imagenes = await urlsDeImagen("captura", [captura.id]);
     return {
@@ -593,6 +599,7 @@ export async function cambiarMoteAction(entrada: {
       where: { id: captura.id },
       data: { nickname: entrada.mote.trim().slice(0, 40) || null },
     });
+    await sincronizarAs([captura.id]);
     refrescar();
   });
 }
@@ -661,6 +668,8 @@ export async function cambiarFichaDeCombateAction(entrada: {
 export async function borrarDeLaCajaAction(entrada: { captureId: string }): Promise<Resultado> {
   return conError(async () => {
     const captura = await capturaQuePuedoTocar(entrada.captureId);
+    // Si era el as, ya no hay as: no se puede ser el as de una captura que no existe
+    await soltarAs(captura.id);
     await prisma.capture.delete({ where: { id: captura.id } });
     refrescar();
   });
@@ -806,6 +815,8 @@ export async function deshacerEnCajaAction(entrada: {
         ),
       prisma.cambioDeCaja.delete({ where: { id: cambio.id } }),
     ]);
+    // Deshacer una evolución (o un intercambio, o el shiny) también se la deshace al as
+    await sincronizarAs(antes.filter((f) => existen.has(f.id)).map((f) => f.id));
     refrescar(cambio.muertes.length > 0 || vuelvenACaer.length > 0);
     return { aviso: `Deshecho: ${cambio.descripcion.charAt(0).toLowerCase()}${cambio.descripcion.slice(1)}.` };
   });

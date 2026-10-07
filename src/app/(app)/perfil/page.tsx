@@ -138,8 +138,9 @@ export default async function ProfilePage() {
         <section className="card">
           <h2 className="section-title mb-1">Tu pokémon as</h2>
           <p className="muted mb-4">
-            Tu representante en {competition.name}. Se ve en la clasificación y
-            en tu cementerio; al pincharlo se abre su ficha.
+            Tu representante en {competition.name}, elegido de tu Equipo y PC:
+            si evoluciona o le cambias el mote, tu as también. Se ve en la
+            clasificación y en tu cementerio; al pincharlo se abre su ficha.
           </p>
           <AceBadge
             size={64}

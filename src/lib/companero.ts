@@ -53,9 +53,20 @@ export async function companeroDe(
      * referencia corta que dice qué pokémon es («ref:pkm-6-box»); si es de las
      * de antes, incrustada, serían decenas de KB en cada pantalla para nada.
      */
-    prisma.$queryRaw<{ id: string; aceSpecies: string | null; aceNickname: string | null; imagen: string | null }[]>`
-      SELECT id, "aceSpecies", "aceNickname", left("aceImage", 64) AS imagen
-      FROM "Participant" WHERE "competitionId" = ${competitionId} AND "userId" = ${userId}
+    prisma.$queryRaw<
+      {
+        id: string;
+        aceSpecies: string | null;
+        aceNickname: string | null;
+        imagen: string | null;
+        aceCaptureId: string | null;
+        bajaDelAs: string | null;
+      }[]
+    >`
+      SELECT p.id, p."aceSpecies", p."aceNickname", left(p."aceImage", 64) AS imagen,
+             p."aceCaptureId", c."deathId" AS "bajaDelAs"
+      FROM "Participant" p LEFT JOIN "Capture" c ON c.id = p."aceCaptureId"
+      WHERE p."competitionId" = ${competitionId} AND p."userId" = ${userId}
     `,
     prisma.death.findMany({
       where: { participant: delJugador, revividoEl: null },
@@ -90,12 +101,14 @@ export async function companeroDe(
   if (!pokemonId) return null;
 
   /**
-   * El as no va enlazado a ninguna captura: es una especie y un mote. Así que
-   * ha caído si hay una baja suya con esa especie y ese mote (o sin mote, si
-   * el as no lo lleva).
+   * El as de la caja ha caído si su captura tiene baja. Los de antes eran una
+   * especie y un mote, sin captura: esos, si hay una baja suya con esa especie
+   * y ese mote (o sin mote, si el as no lo lleva).
    */
-  const esElAs = (baja: { species: string; nickname: string | null }) =>
-    plano(baja.species) === plano(yo.aceSpecies) && plano(baja.nickname) === plano(yo.aceNickname);
+  const esElAs = (baja: { id: string; species: string; nickname: string | null }) =>
+    yo.aceCaptureId
+      ? baja.id === yo.bajaDelAs
+      : plano(baja.species) === plano(yo.aceSpecies) && plano(baja.nickname) === plano(yo.aceNickname);
   const caido = bajas.some(esElAs);
   const otra = bajas.find((baja) => !esElAs(baja));
 

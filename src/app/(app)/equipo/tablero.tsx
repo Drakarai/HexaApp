@@ -51,6 +51,7 @@ import {
   vincularAction,
 } from "@/app/actions/equipo-y-caja";
 import { directaConCola, sinConexion } from "@/lib/acciones-sin-conexion";
+import { elegirAsAction } from "@/app/actions/aces";
 
 /**
  * El equipo y la caja de cada uno, a la vista de todos.
@@ -1114,6 +1115,24 @@ function Ficha({
       sonarGrito(datos.pokemonId);
     });
   }
+  /**
+   * Nombrarlo as de su entrenador, desde su propia ficha: el as se elige de la
+   * caja, y este es el sitio donde se tiene delante. El que lo era deja de
+   * serlo, y queda en la historia de los dos.
+   */
+  function hacerAs() {
+    const nombre = pokemon.nickname ?? pokemon.species;
+    if (!window.confirm(`¿${nombre} pasa a ser el pokémon as? Sale en la clasificación y te acompaña arriba.`)) return;
+    empezar(async () => {
+      try {
+        const respuesta = await elegirAsAction({ participantId: pokemon.participantId, captureId: pokemon.id, reason: "" });
+        onAviso(respuesta.error ? { tipo: "error", texto: respuesta.error } : { tipo: "ok", texto: respuesta.success ?? "Hecho." });
+        if (!respuesta.error) sonarGrito(pokemon.pokemonId);
+      } catch {
+        onAviso({ tipo: "error", texto: "Sin conexión: el as se cambia con línea." });
+      }
+    });
+  }
   const [conId, setConId] = useState("");
   const dueno = tableros.find((t) => t.participantId === pokemon.participantId)!;
   const editable = dueno.editable && !pokemon.muerta;
@@ -1430,6 +1449,15 @@ function Ficha({
                       <Icono emoji="✨" sinColor /> Hacer shiny
                     </button>
                   ) : null}
+                  {dueno.asId === pokemon.id ? (
+                    <span className="chip border-amber-300/30 text-amber-200">
+                      <Icono emoji="👑" sinColor /> Es el as
+                    </span>
+                  ) : (
+                    <button type="button" className="btn-ghost btn-sm" disabled={pendiente} onClick={hacerAs}>
+                      <Icono emoji="👑" /> Hacerlo as
+                    </button>
+                  )}
                   {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre */}
                   <select
                     className="input w-auto min-w-0 flex-1 py-1.5 text-sm sm:flex-none"
