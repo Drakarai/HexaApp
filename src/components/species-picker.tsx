@@ -4,10 +4,10 @@ import { useId, useState } from "react";
 import {
   findSpecies,
   searchSpecies,
-  spriteCandidates,
   type PokedexSpecies,
 } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
+import { spriteMini } from "@/lib/sprites-de-quinta";
 import { Icono } from "@/components/icono";
 import { useEsAnil } from "@/components/juego-del-locke";
 import { esPokemonDeAnil } from "@/lib/anil";
@@ -220,9 +220,8 @@ function Preview({
   guardada: string;
 }) {
   const [fallo, setFallo] = useState(false);
-  const candidatas =
-    elegido && pokemonId ? spriteCandidates(pokemonId, shiny, "mini") : [];
-  const src = elegido ? (fallo ? candidatas[1] : candidatas[0]) : guardada;
+  // Por el servidor, que ya prueba él las alternativas si falta el pequeño (ver /api/sprite)
+  const src = elegido ? (fallo || !pokemonId ? null : spriteMini(pokemonId, shiny)) : guardada;
 
   return (
     <div className="text-center">

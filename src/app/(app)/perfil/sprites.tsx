@@ -5,6 +5,7 @@ import { SpritePokemon, useEstiloDeSprites } from "@/components/sprite-pokemon";
 import {
   COOKIE_DE_SPRITES,
   iconoDeCaja,
+  spriteDeHome,
   spriteQuietoDeQuinta,
   type EstiloDeSprites,
 } from "@/lib/sprites-de-quinta";
@@ -79,11 +80,10 @@ export function PreferenciaDeSpritesPicker({ muestra }: { muestra: number }) {
             <SpritePokemon
               src={
                 opcion.valor === "quinta"
-                  ? spriteQuietoDeQuinta(muestra, false)
+                  ? spriteQuietoDeQuinta(muestra, false, true)
                   : opcion.valor === "iconos"
                     ? iconoDeCaja(muestra, false, actual === "iconos-todos")
-                    : // A mano y no con lib/pokedex, que arrastraría la Pokédex entera al navegador
-                    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${muestra}.png`
+                    : spriteDeHome(muestra, false)
               }
               alt=""
               className="h-14 w-14 shrink-0 object-contain"

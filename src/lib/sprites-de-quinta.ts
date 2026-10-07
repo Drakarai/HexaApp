@@ -1,4 +1,5 @@
 import iconos from "./iconos-de-caja.json";
+import { esPokemonDeAnil, spritesDeAnil } from "./anil";
 
 /**
  * Los sprites al estilo de Blanco y Negro, sin cargar la Pokédex: solo arma
@@ -10,15 +11,46 @@ import iconos from "./iconos-de-caja.json";
  * algunas formas, como Rotom Lavado). Así ninguno sale con el modelo 3D de los
  * juegos de ahora, que al grupo no le gusta.
  */
-const CARPETA =
+/** De dónde salen en PokéAPI: solo lo usa el servidor (ver lib/sprites-guardados.ts) */
+export const ORIGEN_BW =
   "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white";
+export const ORIGEN_ICONOS =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
 
-export function spriteQuietoDeQuinta(pokemonId: number, shiny: boolean) {
-  return `${CARPETA}/${shiny ? "shiny/" : ""}${pokemonId}.png`;
+/**
+ * Los sprites de PokéAPI **no se piden a GitHub desde el navegador**: van por
+ * `/api/sprite`, que se los baja una vez, los deja preparados (recortados los
+ * quietos y los iconos) y los guarda. Ver lib/sprites-guardados.ts.
+ */
+export const CLASES_DE_SPRITE = ["bw", "bw-recorte", "bw-animado", "icono", "home", "mini", "objeto"] as const;
+export type ClaseDeSprite = (typeof CLASES_DE_SPRITE)[number];
+
+export function urlDeSprite(clase: ClaseDeSprite, id: number | string, shiny = false) {
+  return `/api/sprite/v1/${clase}/${shiny ? "shiny/" : ""}${id}`;
+}
+
+/**
+ * El quieto de Blanco y Negro. `recortado` para las casillas (el pokémon a
+ * todo lo que da su hueco); entero, en su lienzo de 96, para la ficha, que tiene
+ * que verse igual que el animado.
+ */
+export function spriteQuietoDeQuinta(pokemonId: number, shiny: boolean, recortado = false) {
+  return urlDeSprite(recortado ? "bw-recorte" : "bw", pokemonId, shiny);
 }
 
 export function spriteAnimadoDeQuinta(pokemonId: number, shiny: boolean) {
-  return `${CARPETA}/animated/${shiny ? "shiny/" : ""}${pokemonId}.gif`;
+  return urlDeSprite("bw-animado", pokemonId, shiny);
+}
+
+/** El sprite pequeño de siempre, para las vistas previas del buscador (unos cientos de bytes) */
+export function spriteMini(pokemonId: number, shiny: boolean) {
+  // Los de Añil no están en PokéAPI: su quieto, que va en la app
+  return esPokemonDeAnil(pokemonId) ? spritesDeAnil(pokemonId, shiny).quieto : urlDeSprite("mini", pokemonId, shiny);
+}
+
+/** El render de HOME (el mismo que se guarda al apuntar una captura) */
+export function spriteDeHome(pokemonId: number, shiny: boolean) {
+  return urlDeSprite("home", pokemonId, shiny);
 }
 
 /** Para la ficha grande, en el orden en que se prueban: el animado y, si no hay, el quieto */
@@ -55,7 +87,6 @@ export function pokemonDeLaImagen(src: string | null | undefined) {
  * `scripts/iconos-de-caja.py`). Las formas que se ven igual que otra (los
  * Dominantes, Minior Meteorito…) usan el de esa.
  */
-const ICONOS = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
 const DEL_PAQUETE = {
   todos: new Set<number>(iconos.todos),
   shiny: new Set<number>(iconos.shiny),
@@ -70,7 +101,7 @@ export const REPINTAR = "#colores";
 export function iconoDeCaja(pokemonId: number, shiny = false, todosIguales = false): string {
   const id = ALIAS[pokemonId] ?? pokemonId;
   const delPaquete = DEL_PAQUETE.todos.has(id) && (todosIguales || DEL_PAQUETE.sinEspadaYEscudo.has(id));
-  if (!delPaquete) return `${ICONOS}/${id}.png`;
+  if (!delPaquete) return urlDeSprite("icono", id);
   if (todosIguales && shiny && DEL_PAQUETE.shiny.has(id)) return `/iconos-de-caja/shiny/${id}.png`;
   if (todosIguales && shiny && DEL_PAQUETE.colores.has(id)) return `/iconos-de-caja/${id}.png${REPINTAR}`;
   return `/iconos-de-caja/${id}.png`;

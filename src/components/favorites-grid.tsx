@@ -9,7 +9,7 @@ import {
 import type { FormState } from "@/app/actions/auth";
 import { ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
-import { spriteCandidates } from "@/lib/pokedex";
+import { spriteMini } from "@/lib/sprites-de-quinta";
 
 export type Favorito = {
   id: string;
@@ -58,7 +58,7 @@ export function FavoritesGrid({
       nickname: String(formData.get("nickname") ?? "").trim() || null,
       // El sprite pixelado de siempre mientras llega el bueno: 900 bytes
       image: pokemonId
-        ? spriteCandidates(pokemonId, formData.get("shiny") === "on", "mini")[0]
+        ? spriteMini(pokemonId, formData.get("shiny") === "on")
         : null,
     };
     setPendientes((actuales) => [...actuales, provisional]);

@@ -11,7 +11,7 @@ import { leerRepeticionAction, leerShowdownAction } from "@/app/actions/showdown
 import type { JugadorDeLaRepeticion, PokemonDeShowdown } from "@/lib/showdown";
 import { Avatar, ConfirmSubmit, FormMessage } from "@/components/ui";
 import { SpeciesPicker } from "@/components/species-picker";
-import { spriteCandidates } from "@/lib/pokedex";
+import { spriteMini } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 import { Hoja } from "@/components/hoja";
 import { Pestanas } from "@/components/pestanas";
@@ -383,7 +383,7 @@ function TeamEditor({
         nickname: String(formData.get("nickname") ?? "").trim() || null,
         // El sprite pequeño de siempre, que pesa unos 900 bytes
         boxImage: pokemonId
-          ? spriteCandidates(pokemonId, formData.get("shiny") === "on", "mini")[0]
+          ? spriteMini(pokemonId, formData.get("shiny") === "on")
           : null,
         participantId: dueno,
       });
@@ -449,7 +449,7 @@ function TeamEditor({
         id: `pendiente-${Date.now()}-${dueno}-${metidos}`,
         species: pokemon.especie,
         nickname: pokemon.mote,
-        boxImage: pokemon.pokemonId ? spriteCandidates(pokemon.pokemonId, pokemon.shiny, "mini")[0] : null,
+        boxImage: pokemon.pokemonId ? spriteMini(pokemon.pokemonId, pokemon.shiny) : null,
         participantId: dueno,
       });
       const respuesta = await addMatchPokemonAction(null, datos);

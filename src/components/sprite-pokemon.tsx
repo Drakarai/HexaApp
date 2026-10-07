@@ -5,6 +5,7 @@ import {
   iconoDeCaja,
   pokemonDeLaImagen,
   REPINTAR,
+  spriteDeHome,
   spriteQuietoDeQuinta,
   spritesDeQuinta,
   type EstiloDeSprites,
@@ -107,11 +108,6 @@ const DE_LOS_JUEGOS = 649;
 /** Cuántos milisegundos dura cada fotograma: los oficiales van a unos 100 */
 const POR_FOTOGRAMA = 100;
 
-/** El render de HOME de un pokémon, a mano para no traer la pokédex al navegador */
-function deHome(pokemonId: number, shiny: boolean) {
-  return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/home/${shiny ? "shiny/" : ""}${pokemonId}.png`;
-}
-
 /** El estilo de sprites de quien mira: lo pone el layout, leído de su cookie */
 const Estilo = createContext<EstiloDeSprites>("quinta");
 
@@ -121,84 +117,6 @@ export function ProveedorDeSprites({ estilo, children }: { estilo: EstiloDeSprit
 
 export function useEstiloDeSprites() {
   return useContext(Estilo);
-}
-
-/**
- * Los sprites de Blanco y Negro van en un lienzo de 96×96 en el que el
- * pokémon ocupa a veces un tercio: en una casilla salían diminutos al lado de
- * los de HOME, que llenan la suya. Así que se **recortan** al pokémon (con un
- * margen de 2 píxeles) en un lienzo y se pinta el recorte. Cada uno se recorta
- * una vez por visita y se reusa. Se puede porque GitHub los sirve con CORS
- * abierto; si algo falla, se queda el sprite tal cual.
- */
-const recortes = new Map<string, string | null>();
-const recortando = new Map<string, Promise<string | null>>();
-
-/**
- * Los iconos de caja se recortan con un lado mínimo: en los juegos un Pikachu
- * es la mitad que un Charizard, y recortados al justo salían los dos igual de
- * grandes (y el pequeño, con los píxeles como puños).
- */
-const LADO_MINIMO_DE_ICONO = 26;
-
-function recortar(url: string): Promise<string | null> {
-  const minimo = url.includes("/icons/") ? LADO_MINIMO_DE_ICONO : 0;
-  if (recortes.has(url)) return Promise.resolve(recortes.get(url) ?? null);
-  let pedido = recortando.get(url);
-  if (!pedido) {
-    pedido = new Promise<string | null>((resolver) => {
-      const imagen = new Image();
-      imagen.crossOrigin = "anonymous";
-      imagen.onload = () => {
-        try {
-          const { naturalWidth: ancho, naturalHeight: alto } = imagen;
-          const lienzo = document.createElement("canvas");
-          lienzo.width = ancho;
-          lienzo.height = alto;
-          const ctx = lienzo.getContext("2d", { willReadFrequently: true });
-          if (!ctx) return resolver(null);
-          ctx.drawImage(imagen, 0, 0);
-          const { data } = ctx.getImageData(0, 0, ancho, alto);
-          let x0 = ancho, y0 = alto, x1 = -1, y1 = -1;
-          for (let y = 0; y < alto; y++) {
-            for (let x = 0; x < ancho; x++) {
-              if (data[(y * ancho + x) * 4 + 3] > 0) {
-                if (x < x0) x0 = x;
-                if (x > x1) x1 = x;
-                if (y < y0) y0 = y;
-                if (y > y1) y1 = y;
-              }
-            }
-          }
-          if (x1 < 0) return resolver(null);
-          // Cuadrado, para que object-contain lo deje centrado y sin deformar
-          const lado = Math.max(x1 - x0 + 1 + 4, y1 - y0 + 1 + 4, minimo);
-          const recorte = document.createElement("canvas");
-          recorte.width = lado;
-          recorte.height = lado;
-          const rctx = recorte.getContext("2d");
-          if (!rctx) return resolver(null);
-          rctx.imageSmoothingEnabled = false;
-          rctx.drawImage(
-            imagen,
-            Math.round((lado - (x1 - x0 + 1)) / 2) - x0,
-            Math.round((lado - (y1 - y0 + 1)) / 2) - y0,
-          );
-          resolver(recorte.toDataURL("image/png"));
-        } catch {
-          resolver(null);
-        }
-      };
-      imagen.onerror = () => resolver(null);
-      imagen.src = url;
-    }).then((hecho) => {
-      recortes.set(url, hecho);
-      recortando.delete(url);
-      return hecho;
-    });
-    recortando.set(url, pedido);
-  }
-  return pedido;
 }
 
 /**
@@ -214,6 +132,12 @@ function recortar(url: string): Promise<string | null> {
  * que se guarda. Si la de Blanco y Negro no carga, o la imagen no dice qué
  * pokémon es, se queda con la guardada. Como el estilo llega del servidor en
  * la primera pintada, no se ve el cambio de una a otra.
+ *
+ * Los de PokéAPI llegan **por el servidor** (`/api/sprite`), que los baja una
+ * vez, los guarda y los deja ya recortados a su casilla: en una casilla, el
+ * pokémon a todo lo que da (el lienzo de 96 de Blanco y Negro lo dejaba
+ * diminuto), y los iconos con un lado mínimo para que un Pikachu no salga tan
+ * grande como un Charizard. Antes se recortaba aquí, en cada visita.
  */
 export function SpritePokemon({
   src,
@@ -260,8 +184,8 @@ export function SpritePokemon({
       ? [iconoDeCaja(id, variocolor, estilo === "iconos-todos")]
       : []),
     // También detrás del icono, por si no carga
-    ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor)] : []),
-    ...(id && !ficha && estilo === "home" && otraForma ? [deHome(id, variocolor)] : []),
+    ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor, true)] : []),
+    ...(id && !ficha && estilo === "home" && otraForma ? [spriteDeHome(id, variocolor)] : []),
     ...(src ? [src] : []),
   ];
 
@@ -282,33 +206,25 @@ export function SpritePokemon({
   // Las que no han cargado, por dirección: si cambia de pokémon, las suyas empiezan de cero
   const [fallidas, setFallidas] = useState<string[]>([]);
   const actual = candidatas.find((c) => !fallidas.includes(c));
+  // Pixel art: todo lo de Blanco y Negro, los iconos y lo de Añil; HOME y lo guardado, no
   const pixelado = Boolean(
-    actual?.includes("black-white") ||
-      actual?.includes("/icons/") ||
+    (actual?.startsWith("/api/sprite/") && !actual.includes("/home/")) ||
       actual?.startsWith("/iconos-de-caja/") ||
       actual?.startsWith("/anil/"),
   );
-  // Los quietos de Blanco y Negro y los iconos, recortados; en la ficha no, que el animado
-  // no se puede recortar y el quieto de respaldo tiene que verse igual que él. Los
-  // iconos del paquete de Essentials ya vienen recortados
-  const aRecortar =
-    pixelado && !ficha && actual?.endsWith(".png") && !actual.startsWith("/iconos-de-caja/") && !actual.startsWith("/anil/")
-      ? actual
-      : null;
-  // Un icono shiny que es el normal repintado: hay que esperar al repintado igual que a un recorte
+  // Un icono shiny que es el normal repintado: hasta tenerlo, no se enseña el normal
   const aRepintar = actual?.endsWith(REPINTAR) ? actual : null;
-  const aPreparar = aRecortar ?? aRepintar;
-  const [recorte, setRecorte] = useState<{ de: string; url: string | null } | null>(null);
+  const [repintado, setRepintado] = useState<{ de: string; url: string | null } | null>(null);
   useEffect(() => {
-    if (!aPreparar) return;
+    if (!aRepintar) return;
     let sigue = true;
-    void (aPreparar.endsWith(REPINTAR) ? repintar(aPreparar) : recortar(aPreparar)).then((url) => {
-      if (sigue) setRecorte({ de: aPreparar, url });
+    void repintar(aRepintar).then((url) => {
+      if (sigue) setRepintado({ de: aRepintar, url });
     });
     return () => {
       sigue = false;
     };
-  }, [aPreparar]);
+  }, [aRepintar]);
 
   if (!actual) {
     // Uno de Añil cuyos dibujos no cargan: una silueta con interrogación, no un hueco vacío
@@ -337,12 +253,11 @@ export function SpritePokemon({
       />
     );
   }
-  const hechas = aRepintar ? repintadasYa : recortes;
-  const listo = aPreparar
-    ? recorte?.de === aPreparar
-      ? recorte
-      : hechas.has(aPreparar)
-        ? { de: aPreparar, url: hechas.get(aPreparar) ?? null }
+  const listo = aRepintar
+    ? repintado?.de === aRepintar
+      ? repintado
+      : repintadasYa.has(aRepintar)
+        ? { de: aRepintar, url: repintadasYa.get(aRepintar) ?? null }
         : null
     : null;
   return (
@@ -356,9 +271,8 @@ export function SpritePokemon({
       className={cx(
         className,
         pixelado && "[image-rendering:pixelated]",
-        // Hasta tener el recorte, invisible: si no, se ve en pequeño y luego crece (y
-        // el repintado, para que no se vea el normal y cambie de color)
-        aPreparar && !listo && "opacity-0",
+        // Hasta tener el repintado, invisible: que no se vea el normal y cambie de color
+        aRepintar && !listo && "opacity-0",
       )}
     />
   );

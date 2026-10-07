@@ -8,7 +8,8 @@ import {
   type MiembroDelEquipo,
   type QueTabla,
 } from "@/app/actions/tipos";
-import { searchSpecies, spriteCandidates } from "@/lib/pokedex";
+import { searchSpecies } from "@/lib/pokedex";
+import { spriteMini } from "@/lib/sprites-de-quinta";
 import {
   coberturaOfensiva,
   comoSeLee,
@@ -794,7 +795,8 @@ function Casilla({
 
 /** El sprite pixelado, que pesa menos de 1 KB y aquí solo hay que reconocerlo */
 function Sprite({ pokemonId, shiny = false, grande = false }: { pokemonId: number; shiny?: boolean; grande?: boolean }) {
-  const candidatas = spriteCandidates(pokemonId, shiny, "mini");
+  // Por el servidor, que ya prueba él las alternativas si falta el pequeño (ver /api/sprite)
+  const candidatas = [spriteMini(pokemonId, shiny)];
   /**
    * Se van probando en orden y, si se acaban, no se pinta nada: dejar el icono
    * de imagen rota en cada hueco queda peor que un cuadro vacío, y aquí el

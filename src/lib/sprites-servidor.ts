@@ -1,7 +1,7 @@
 import "server-only";
 import sharp from "sharp";
 import { spriteCandidates } from "@/lib/pokedex";
-import { spriteDeObjeto } from "@/lib/objetos";
+import { origenDeObjeto, spriteDeObjeto } from "@/lib/objetos";
 import { esPokemonDeAnil } from "@/lib/anil";
 // Los quietos de lo de Añil, dentro del código: ver scripts/anil-sprites.py
 import quietosDeAnil from "@/lib/anil-quietos.json";
@@ -86,7 +86,7 @@ export async function descargarSprites(
  * devuelve es la referencia. Apuntar un equipo de seis pasa de seis descargas
  * a ninguna en cuanto el grupo lleva un rato jugando.
  */
-async function spriteDeEspecie(
+export async function spriteDeEspecie(
   pokemonId: number,
   shiny: boolean,
   tipo: "box" | "detail",
@@ -129,7 +129,7 @@ async function spriteDeEspecie(
 export async function descargarSpriteDeObjeto(slug: string) {
   // Los de Añil van en la propia aplicación (`public/anil/objetos`): no hay nada que bajar
   if (slug.startsWith("anil-")) return spriteDeObjeto(slug);
-  const original = await bajarPrimeraQueExista([spriteDeObjeto(slug)]);
+  const original = await bajarPrimeraQueExista([origenDeObjeto(slug)]);
   return original ? aWebp(original, IMAGE_SIZES.objeto) : null;
 }
 

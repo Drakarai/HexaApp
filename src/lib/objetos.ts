@@ -57,9 +57,18 @@ export function esObjetoDeAnil(slug: string) {
   return slug.startsWith("anil-");
 }
 
-/** Dirección del dibujo de un objeto: en PokéAPI, o en la app si es de Añil */
+/**
+ * Dirección del dibujo de un objeto para enseñarlo: los de Añil van en la app
+ * y los demás salen de PokéAPI **a través del servidor**, que se los baja una
+ * vez y los guarda (ver lib/sprites-guardados.ts).
+ */
 export function spriteDeObjeto(slug: string) {
-  return esObjetoDeAnil(slug) ? `/anil/objetos/${slug}.png` : `${SPRITES_DE_OBJETOS}/${slug}.png`;
+  return esObjetoDeAnil(slug) ? `/anil/objetos/${slug}.png` : `/api/sprite/v1/objeto/${slug}`;
+}
+
+/** De dónde se baja el dibujo de un objeto de los juegos: solo lo usa el servidor */
+export function origenDeObjeto(slug: string) {
+  return `${SPRITES_DE_OBJETOS}/${slug}.png`;
 }
 
 /**
