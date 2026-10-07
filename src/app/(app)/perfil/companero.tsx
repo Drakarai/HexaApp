@@ -9,17 +9,19 @@ import { CLAVE_DEL_PASEO } from "@/components/companero";
  * una cookie y no en localStorage por lo mismo que los sprites: el servidor
  * pinta la cabecera, y así no sale para desaparecer al momento.
  *
- * El paseo, en cambio, es cosa solo del navegador: va en localStorage.
+ * El paseo, en cambio, es cosa solo del navegador: va en localStorage, y
+ * viene apagado.
  */
 export function InterruptorDelCompanero({ puesto, cookie }: { puesto: boolean; cookie: string }) {
   const router = useRouter();
   const [marcado, setMarcado] = useState(puesto);
-  const [paseo, setPaseo] = useState(true);
+  // Viene apagado: solo se pasea si se ha encendido aquí
+  const [paseo, setPaseo] = useState(false);
   useEffect(() => {
     try {
-      setPaseo(localStorage.getItem(CLAVE_DEL_PASEO) !== '"no"');
+      setPaseo(localStorage.getItem(CLAVE_DEL_PASEO) === '"si"');
     } catch {
-      // sin almacenamiento, se queda puesto
+      // sin almacenamiento, se queda apagado
     }
   }, []);
 
@@ -66,7 +68,8 @@ export function InterruptorDelCompanero({ puesto, cookie }: { puesto: boolean; c
           <span>
             <span className="font-semibold text-white">Que se dé un paseo de vez en cuando</span>
             <span className="mt-0.5 block text-xs text-slate-500">
-              Baja, cruza la pantalla por abajo y vuelve a su sitio. De prueba: si molesta, se quita aquí.
+              Baja, cruza la pantalla por abajo y vuelve a su sitio. Si le tocas por el camino, se
+              para a hablar. Viene apagado.
             </span>
           </span>
         </label>

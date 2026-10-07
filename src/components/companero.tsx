@@ -35,7 +35,10 @@ function guardar(clave: string, valor: unknown) {
   }
 }
 
-/** Si se pasea por abajo: se quita en Mi perfil (ver perfil/companero.tsx) */
+/**
+ * Si se pasea por abajo. **Viene apagado**: se enciende en Mi perfil (ver
+ * perfil/companero.tsx). Se probó encendido para todos y molestaba.
+ */
 export const CLAVE_DEL_PASEO = "hexaapp-companero-paseo";
 
 /**
@@ -351,7 +354,7 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
     const programar = (primera: boolean) => {
       const espera = primera ? 45_000 + Math.random() * 30_000 : 240_000 + Math.random() * 180_000;
       reloj = window.setTimeout(() => {
-        const puesto = leer<string | null>(CLAVE_DEL_PASEO, null) !== "no";
+        const puesto = leer<string | null>(CLAVE_DEL_PASEO, null) === "si";
         if (puesto && seVe() && !sinMovimiento() && document.visibilityState === "visible") {
           setPaseo({ desde: "derecha" });
         }
@@ -454,6 +457,7 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
           pokemonId={pokemonId}
           shiny={shiny}
           bocadillo={bocadillo}
+          hablando={frase !== null}
           onTocar={tocar}
           onFin={() => setPaseo(null)}
         />
@@ -466,25 +470,34 @@ export function Companero({ datos, tamano = 32 }: { datos: DatosDelCompanero; ta
  * El paseo: baja a la parte de abajo de la pantalla (encima de la barra de
  * pestañas en el móvil), la cruza de un lado a otro botando, se para a mirar y
  * vuelve. Va fuera de la cabecera, en el `body`, porque se mueve por toda la
- * pantalla. Si se le toca por el camino, habla igual.
+ * pantalla. Si se le toca por el camino, **se para mientras habla**: andando,
+ * el bocadillo se iba con él y no había forma de leerlo. Y el bocadillo se
+ * abre hacia donde haya sitio, según en qué mitad de la pantalla esté.
  */
 function Paseo({
   pokemonId,
   shiny,
   bocadillo,
+  hablando,
   onTocar,
   onFin,
 }: {
   pokemonId: number;
   shiny: boolean;
   bocadillo: React.ReactNode;
+  hablando: boolean;
   onTocar: () => void;
   onFin: () => void;
 }) {
   const caja = useRef<HTMLButtonElement>(null);
   const [haciaLaDerecha, setHaciaLaDerecha] = useState(false);
   const [parado, setParado] = useState(false);
-  const [mitad, setMitad] = useState<"derecha" | "izquierda">("derecha");
+  const [bocadilloALaIzquierda, setBocadilloALaIzquierda] = useState(false);
+  const quieto = useRef(false);
+  useEffect(() => {
+    quieto.current = hablando;
+    caja.current?.getAnimations().forEach((a) => (hablando ? a.pause() : a.play()));
+  }, [hablando]);
 
   useEffect(() => {
     const el = caja.current;
@@ -495,28 +508,29 @@ function Paseo({
     // A paso de pokémon: unos 55 píxeles por segundo
     const ida = ((derecha - izquierda) / 55) * 1000;
     let cancelado = false;
-    const andar = (de: number, a: number, ms: number) =>
-      el.animate([{ transform: `translateX(${de}px)` }, { transform: `translateX(${a}px)` }], {
+    const andar = (de: number, a: number, ms: number) => {
+      const paso = el.animate([{ transform: `translateX(${de}px)` }, { transform: `translateX(${a}px)` }], {
         duration: ms,
         easing: "linear",
         fill: "forwards",
-      }).finished;
+      });
+      // Si está hablando cuando le toca echar a andar, espera a terminar
+      if (quieto.current) paso.pause();
+      return paso.finished;
+    };
     (async () => {
       try {
         // Entra por la derecha, cruza, se para a mirar y vuelve
         setHaciaLaDerecha(false);
-        setMitad("derecha");
         await andar(window.innerWidth + 10, derecha, 900);
         await andar(derecha, izquierda, ida);
         if (cancelado) return;
-        setMitad("izquierda");
         setParado(true);
         await new Promise((r) => setTimeout(r, 1800));
         if (cancelado) return;
         setParado(false);
         setHaciaLaDerecha(true);
         await andar(izquierda, derecha, ida);
-        setMitad("derecha");
         await andar(derecha, window.innerWidth + 10, 900);
       } catch {
         // Cancelada al salir: nada
@@ -536,13 +550,17 @@ function Paseo({
       ref={caja}
       type="button"
       aria-label="Tu compañero, de paseo"
-      onClick={onTocar}
-      className={cx("companero-paseo", mitad === "izquierda" && "companero-paseo-izquierda")}
+      onClick={() => {
+        const donde = caja.current?.getBoundingClientRect().left ?? 0;
+        setBocadilloALaIzquierda(donde < window.innerWidth / 2);
+        onTocar();
+      }}
+      className={cx("companero-paseo", bocadilloALaIzquierda && "companero-paseo-izquierda")}
     >
       <span
         className={cx(
           "block h-full w-full",
-          parado ? "companero-mira" : "companero-anda",
+          parado ? "companero-mira" : !hablando && "companero-anda",
           haciaLaDerecha && !parado && "companero-de-espaldas",
         )}
       >
