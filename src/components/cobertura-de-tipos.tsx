@@ -434,7 +434,7 @@ export function CoberturaDeTipos({
                 </span>
               ))}
             </div>
-            <p className="mt-2 text-[11px] text-slate-600">
+            <p className="mt-2 text-[11px] text-slate-500">
               {conMovimientos === conQuePegan.length
                 ? "Cuenta con los movimientos de daño de la ficha de cada uno."
                 : conMovimientos
@@ -451,7 +451,7 @@ export function CoberturaDeTipos({
         </div>
       )}
 
-      <p className="text-xs text-slate-600">
+      <p className="text-xs text-slate-500">
         {guardado ? "Guardado. " : ""}El equipo se queda apuntado para la próxima
         vez, y es tan privado como las notas.
       </p>
@@ -774,7 +774,7 @@ function Casilla({
         {miembro.nombre}
       </span>
       {detalle ? (
-        <span className="w-full truncate text-center text-[10px] leading-tight text-slate-500">{detalle}</span>
+        <span className="w-full truncate text-center text-[11px] leading-tight text-slate-500">{detalle}</span>
       ) : null}
       <span className="mt-1 flex gap-0.5">
         {tiposDePokemon(miembro.id, generacion).map((id) => (

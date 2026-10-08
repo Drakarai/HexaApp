@@ -133,7 +133,7 @@ export default async function ClasificacionPublica({ params }: { params: Promise
         </ol>
       </section>
 
-      <p className="mt-6 text-center text-xs text-slate-600">
+      <p className="mt-6 text-center text-xs text-slate-500">
         Se pone al día cada vez que recargas. Solo se ve la clasificación: lo demás es de quien juega.
       </p>
     </main>

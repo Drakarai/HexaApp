@@ -14,8 +14,11 @@ import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
 
 /**
- * La bolsa de alguien. Cada objeto con su cantidad y, si es tuya, su botón de
- * gastarlo.
+ * La bolsa, **como la de los juegos**: a un lado la lista de lo que llevas,
+ * con su cantidad, y al otro el objeto elegido con su descripción en un
+ * recuadro de texto y el botón de usarlo. En el móvil, el elegido va debajo
+ * de la lista. Antes era una rejilla de tarjetas iguales que, con dos
+ * objetos, dejaba la pantalla vacía.
  *
  * Los que llevan opciones dentro ("Captura extra") abren un menú para elegir
  * con qué te quedas; los que no, se gastan de una y sin más ventanas, que era
@@ -32,10 +35,10 @@ export function Bolsa({
   vacia?: React.ReactNode;
 }) {
   /**
-   * Gastar va con **un solo estado para toda la bolsa**, no uno por ficha: si
-   * era el último, la ficha desaparece en cuanto se gasta, y con ella se iba
-   * el aviso —y ahora, el botón de deshacer—. Se apunta qué ficha lo pidió
-   * para enseñar los errores debajo de la suya.
+   * Gastar va con **un solo estado para toda la bolsa**, no uno por objeto: si
+   * era el último, el objeto desaparece en cuanto se gasta, y con él se iba
+   * el aviso —y ahora, el botón de deshacer—. Se apunta qué objeto lo pidió
+   * para enseñar los errores debajo del suyo.
    */
   const [estado, usar] = useActionState<EstadoDeUso, FormData>(
     usarObjetoAction,
@@ -46,23 +49,73 @@ export function Bolsa({
     setFicha(String(datos.get("entryId") ?? ""));
     usar(datos);
   };
+  const [elegido, setElegido] = useState<string | null>(null);
+  // Si el elegido se ha gastado entero, se pasa al primero que quede
+  const actual = objetos.find((o) => o.entryId === elegido) ?? objetos[0] ?? null;
+  const unidades = objetos.reduce((suma, objeto) => suma + objeto.quantity, 0);
 
   return (
     <>
       {estado?.usoId ? <Deshacer key={estado.usoId} estado={estado} /> : null}
-      {objetos.length ? null : vacia}
-      <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {objetos.map((objeto) => (
+      {objetos.length && actual ? (
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+          <section className="overflow-hidden rounded-2xl border border-white/10 bg-ink-900">
+            <header className="flex items-center gap-3 border-b border-white/10 bg-gradient-to-r from-brand-600/25 to-transparent px-4 py-3">
+              <Icono emoji="🎒" />
+              <p className="font-[family-name:var(--font-display)] text-lg font-bold uppercase tracking-wide text-white">
+                Bolsillo
+              </p>
+              <p className="ml-auto text-xs text-slate-400">
+                {objetos.length} {objetos.length === 1 ? "objeto" : "objetos"} · {unidades}{" "}
+                {unidades === 1 ? "unidad" : "unidades"}
+              </p>
+            </header>
+            <ul role="listbox" aria-label="Lo que llevas" className="divide-y divide-white/5">
+              {objetos.map((objeto) => {
+                const esEste = objeto.entryId === actual.entryId;
+                return (
+                  <li key={objeto.entryId} role="option" aria-selected={esEste}>
+                    <button
+                      type="button"
+                      onClick={() => setElegido(objeto.entryId)}
+                      className={cx(
+                        "flex w-full items-center gap-3 px-4 py-2.5 text-left transition",
+                        esEste ? "bg-brand-600/20" : "hover:bg-white/[0.04]",
+                      )}
+                    >
+                      {/* El cursor de los juegos, en el elegido */}
+                      <span aria-hidden className={cx("w-2 shrink-0 text-brand-300", !esEste && "invisible")}>
+                        ▸
+                      </span>
+                      <Dibujo src={objeto.item.image} nombre={objeto.item.name} pequeno />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium text-slate-100">{objeto.item.name}</span>
+                        {objeto.item.isGroup ? (
+                          <span className="block text-xs text-brand-300/90">Para elegir uno</span>
+                        ) : null}
+                      </span>
+                      <span className="shrink-0 font-[family-name:var(--font-display)] text-xl font-bold tabular-nums text-slate-200">
+                        ×{objeto.quantity}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+
           <FichaDeObjeto
-            key={objeto.entryId}
-            objeto={objeto}
+            key={actual.entryId}
+            objeto={actual}
             puedoUsar={puedoUsar}
             usar={enviar}
-            estado={ficha === objeto.entryId && estado?.error ? estado : null}
-            usoReciente={estado?.entryId === objeto.entryId ? estado.usoId : undefined}
+            estado={ficha === actual.entryId && estado?.error ? estado : null}
+            usoReciente={estado?.entryId === actual.entryId ? estado.usoId : undefined}
           />
-        ))}
-      </ul>
+        </div>
+      ) : (
+        vacia
+      )}
     </>
   );
 }
@@ -147,37 +200,29 @@ function FichaDeObjeto({
   }, [usoReciente]);
 
   return (
-    <li className="card flex flex-col gap-3">
-      <div className="flex items-start gap-3">
-        <Dibujo src={objeto.item.image} nombre={objeto.item.name} />
-
-        <div className="min-w-0 flex-1">
-          <p className="flex items-baseline gap-2">
-            <span className="truncate font-semibold text-slate-100">
-              {objeto.item.name}
-            </span>
-            {objeto.quantity > 1 ? (
-              <span className="shrink-0 text-sm font-bold text-brand-300 tabular-nums">
-                ×{objeto.quantity}
-              </span>
-            ) : null}
+    <section className="card flex flex-col gap-4 lg:sticky lg:top-6">
+      <div className="flex flex-col items-center gap-2 text-center">
+        <Dibujo src={objeto.item.image} nombre={objeto.item.name} grande />
+        <p className="text-lg font-semibold text-white">
+          {objeto.item.name}
+          <span className="ml-2 text-base font-bold tabular-nums text-brand-300">×{objeto.quantity}</span>
+        </p>
+        {esGrupo ? (
+          <p className="text-[11px] uppercase tracking-wide text-brand-300/80">
+            <Icono emoji="📦" />{" "}
+            {grupoVacio ? "Grupo · todavía vacío" : `Grupo · eliges 1 de ${dentro.length}`}
           </p>
-          {objeto.item.description ? (
-            <p className="mt-0.5 text-xs text-slate-400">
-              {objeto.item.description}
-            </p>
-          ) : null}
-          {objeto.note ? (
-            <p className="mt-1 text-xs text-slate-500"><Icono emoji="📝" /> {objeto.note}</p>
-          ) : null}
-          {esGrupo ? (
-            <p className="mt-1 text-[11px] uppercase tracking-wide text-brand-300/80">
-              <Icono emoji="📦" /> {grupoVacio
-                ? "Grupo · todavía vacío"
-                : `Grupo · eliges 1 de ${dentro.length}`}
-            </p>
-          ) : null}
-        </div>
+        ) : null}
+      </div>
+
+      {/* El recuadro de texto de abajo, como en la bolsa de los juegos */}
+      <div className="min-h-16 rounded-xl border-2 border-white/15 bg-ink-950/70 px-4 py-3 text-sm leading-relaxed text-slate-200">
+        {objeto.item.description ?? <span className="text-slate-500">Sin descripción.</span>}
+        {objeto.note ? (
+          <p className="mt-2 text-xs text-slate-400">
+            <Icono emoji="📝" /> {objeto.note}
+          </p>
+        ) : null}
       </div>
 
       {puedoUsar ? (
@@ -225,7 +270,7 @@ function FichaDeObjeto({
           ) : null}
         </form>
       ) : null}
-    </li>
+    </section>
   );
 }
 
@@ -300,16 +345,18 @@ export function Dibujo({
   src,
   nombre,
   pequeno = false,
+  grande = false,
 }: {
   src: string | null;
   nombre: string;
   pequeno?: boolean;
+  grande?: boolean;
 }) {
   return (
     <span
       className={cx(
         "flex shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-ink-850",
-        pequeno ? "h-10 w-10" : "h-14 w-14",
+        pequeno ? "h-10 w-10" : grande ? "h-20 w-20 rounded-2xl" : "h-14 w-14",
       )}
     >
       {src ? (
@@ -318,11 +365,11 @@ export function Dibujo({
         <img
           src={src}
           alt={nombre}
-          className={cx("object-contain", pequeno ? "h-7 w-7" : "h-10 w-10")}
+          className={cx("object-contain", pequeno ? "h-7 w-7" : grande ? "h-14 w-14" : "h-10 w-10")}
           loading="lazy"
         />
       ) : (
-        <span className={pequeno ? "text-base" : "text-xl"} aria-hidden>
+        <span className={pequeno ? "text-base" : grande ? "text-3xl" : "text-xl"} aria-hidden>
           <Icono emoji="🎁" />
         </span>
       )}

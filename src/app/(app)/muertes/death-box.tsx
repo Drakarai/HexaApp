@@ -143,19 +143,30 @@ export function DeathBox({
               </div>
             ) : null}
 
-            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+            {/**
+             * **Lápidas**, no casillas: la piedra con su arco, el sprite apagado,
+             * el mote grabado y la causa debajo, todas plantadas en la misma
+             * franja de césped. Antes eran las mismas casillas que la caja del
+             * PC y el cementerio no se distinguía del Equipo y PC.
+             */}
+            <div className="grid grid-cols-3 gap-x-2.5 gap-y-4 border-b-4 border-emerald-900/50 pb-0 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
               {group.items.map((death) => (
                 <button
                   key={death.id}
                   type="button"
                   onClick={() => setSelectedId(death.id)}
                   title={`${death.nickname ?? death.species} — ver ficha`}
-                  className="group flex flex-col items-center gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-2 transition hover:border-brand-500/50 hover:bg-white/[0.07]"
+                  className={cx(
+                    "group relative flex flex-col items-center gap-0.5 rounded-b-sm rounded-t-[999px] border border-b-0 px-2 pb-2 pt-3 transition",
+                    death.revividoLabel
+                      ? "border-emerald-400/30 bg-gradient-to-b from-emerald-400/[0.12] to-ink-850"
+                      : "border-white/15 bg-gradient-to-b from-slate-400/[0.16] to-ink-850 hover:from-slate-300/[0.24]",
+                  )}
                 >
-                  <span
-                    className="relative flex aspect-square w-full items-center justify-center overflow-hidden rounded-lg bg-ink-850"
-                    style={{ boxShadow: `inset 0 0 0 1px ${death.participant.color}33` }}
-                  >
+                  <span aria-hidden className="text-[10px] font-bold tracking-[0.3em] text-slate-500">
+                    {death.revividoLabel ? "VOLVIÓ" : "Q.E.P.D."}
+                  </span>
+                  <span className="relative flex aspect-square w-4/5 items-center justify-center">
                     {death.boxImage ? (
                       <SpritePokemon
                         sinIconos
@@ -163,33 +174,39 @@ export function DeathBox({
                         alt={death.species}
                         loading="lazy"
                         className={cx(
-                          "h-full w-full object-contain p-1 transition",
-                          !death.revividoLabel && "grayscale-[35%] group-hover:grayscale-0",
+                          "h-full w-full object-contain transition",
+                          !death.revividoLabel && "opacity-80 grayscale group-hover:opacity-100 group-hover:grayscale-[35%]",
                         )}
                       />
                     ) : (
                       <PokeballGlyph />
                     )}
-                    <span
-                      className="absolute right-1 top-1 h-2 w-2 rounded-full"
-                      style={{ background: death.participant.color }}
-                      aria-hidden
-                    />
                     {death.revividoLabel ? (
                       <span
-                        className="absolute bottom-1 left-1 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/90 text-white"
+                        className="absolute bottom-0 left-0 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/90 text-white"
                         title="Revivido"
                       >
                         <Icono emoji="💊" tamano={10} sinColor />
                       </span>
                     ) : null}
                   </span>
-                  <span className="w-full truncate text-center text-xs font-medium text-slate-200">
+                  <span className="w-full truncate text-center font-[family-name:var(--font-display)] text-sm font-bold uppercase tracking-wide text-slate-100">
                     {death.nickname ?? death.species}
                   </span>
-                  <span className="w-full truncate text-center text-[10px] text-slate-500">
-                    {death.species}
+                  <span className="w-full truncate text-center text-[11px] text-slate-400">
+                    {death.nickname ? death.species : death.diedAtLabel}
                   </span>
+                  {death.cause ? (
+                    <span className="line-clamp-2 w-full text-center text-[11px] italic leading-tight text-slate-500">
+                      {death.cause}
+                    </span>
+                  ) : null}
+                  {/* El color de su dueño, como una flor al pie */}
+                  <span
+                    aria-hidden
+                    className="absolute -bottom-1 right-2 h-2 w-2 rounded-full ring-2 ring-ink-900"
+                    style={{ background: death.participant.color }}
+                  />
                 </button>
               ))}
             </div>

@@ -171,6 +171,9 @@ console.log("gimnasios marcados");
 // portada enseña con el rival de cada uno. Siempre el primer botón sin poner,
 // que después de cada clic es el del gimnasio siguiente
 for (let vez = 0; vez < 3; vez++) {
+  // Los que ha pasado todo el mundo salen plegados: se abren para llegar al botón
+  const plegados = p.locator("ol details:not([open]) > summary");
+  while (await plegados.count()) await plegados.first().click();
   await p.locator('button[aria-label="Poner jornada después de este hito"]').first().click();
   await p.waitForTimeout(1800);
 }
@@ -178,7 +181,8 @@ console.log("checkpoints de jornada");
 
 // --- Una regla cambiada con el locke ya en marcha, que es lo que avisa a
 // todos. La casilla de avisar viene marcada, así que basta con guardar
-await p.goto(BASE + "/reglas", { waitUntil: "domcontentloaded" });
+// Los botones de editar solo salen en «Editar reglas»
+await p.goto(BASE + "/reglas?editar=1", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(1200);
 {
   const regla = p.locator("article", { hasText: "Añadidos a las reglas generales" }).first();

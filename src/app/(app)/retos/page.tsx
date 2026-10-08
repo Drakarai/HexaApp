@@ -130,50 +130,58 @@ export default async function RetosPage() {
               <section
                 key={reto.id}
                 className={cx(
-                  "card",
-                  jugado && "border-emerald-500/20 bg-emerald-500/[0.02]",
+                  "card relative overflow-hidden",
+                  jugado && "border-emerald-500/20",
                 )}
               >
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
-                    <Jugador
-                      participantId={reto.participantAId}
-                      name={a?.displayName ?? "?"}
-                      color={a?.color ?? "#64748b"}
-                      image={a?.user.avatarImage ?? null}
-                      winner={reto.winnerId === reto.participantAId}
-                    />
-                    <span className="shrink-0 text-xs text-slate-500">vs</span>
-                    <Jugador
-                      participantId={reto.participantBId}
-                      name={b?.displayName ?? "?"}
-                      color={b?.color ?? "#64748b"}
-                      image={b?.user.avatarImage ?? null}
-                      winner={reto.winnerId === reto.participantBId}
-                    />
-                  </div>
-                  <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
-                    <ChapaDeFormato formato={reto.formato} />
-                    <ReplayLink url={reto.replayUrl} />
-                    {reto.pokemonDiff !== null ? (
-                      <span className="chip">dif. {reto.pokemonDiff}</span>
-                    ) : null}
+                {/**
+                 * **El cartel del duelo**: los dos frente a frente con el «VS» en
+                 * medio, como el anuncio de un combate. El que gana se lleva la
+                 * corona y el que pierde se apaga. Antes eran dos nombres
+                 * pequeños en una línea y el reto no parecía un reto.
+                 */}
+                <div className="-mx-5 -mt-5 mb-3 grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/5 bg-white/[0.02] px-5 pb-3 pt-5">
+                  <Jugador
+                    participantId={reto.participantAId}
+                    name={a?.displayName ?? "?"}
+                    color={a?.color ?? "#64748b"}
+                    image={a?.user.avatarImage ?? null}
+                    winner={reto.winnerId === reto.participantAId}
+                    perdio={jugado && reto.winnerId !== reto.participantAId}
+                  />
+                  <div className="flex flex-col items-center gap-1 px-1 text-center">
+                    <span className="font-[family-name:var(--font-display)] text-3xl font-bold italic leading-none text-slate-500">
+                      VS
+                    </span>
                     {reto.playedAt ? (
-                      <span>{formatDate(reto.playedAt)}</span>
+                      <span className="text-[11px] text-slate-400">
+                        {formatDate(reto.playedAt)}
+                        {reto.pokemonDiff !== null ? ` · dif. ${reto.pokemonDiff}` : ""}
+                      </span>
                     ) : (
-                      <span className="text-amber-400/80">Pendiente</span>
+                      <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] font-semibold text-amber-300">
+                        Pendiente
+                      </span>
                     )}
-                    {canManage ? (
-                      <form action={deleteChallengeAction}>
-                        <input type="hidden" name="challengeId" value={reto.id} />
-                        <ConfirmSubmit message="¿Borrar este reto?">✕</ConfirmSubmit>
-                      </form>
-                    ) : null}
                   </div>
+                  <Jugador
+                    participantId={reto.participantBId}
+                    name={b?.displayName ?? "?"}
+                    color={b?.color ?? "#64748b"}
+                    image={b?.user.avatarImage ?? null}
+                    winner={reto.winnerId === reto.participantBId}
+                    perdio={jugado && reto.winnerId !== reto.participantBId}
+                    derecha
+                  />
+                </div>
+
+                <div className="mb-1 flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+                  <ChapaDeFormato formato={reto.formato} />
+                  <ReplayLink url={reto.replayUrl} />
                 </div>
 
                 {reto.prize || reto.punishment ? (
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2">
                     {reto.prize ? (
                       <p className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-3 py-2 text-sm text-emerald-100">
                         <span className="mr-1" aria-hidden>
@@ -227,6 +235,19 @@ export default async function RetosPage() {
                 ) : null}
 
                 {canManage ? (
+                  <details className="group mt-3 rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
+                    <summary className="cursor-pointer list-none text-xs font-medium text-slate-400">
+                      <span className="mr-1.5 inline-block transition group-open:rotate-90">▸</span>
+                      <Icono emoji="🎒" /> Objetos del premio
+                      <span className="text-slate-500">
+                        {" · "}
+                        {reto.premios.length
+                          ? reto.premios
+                              .map((premio) => `${premio.quantity > 1 ? `${premio.quantity} × ` : ""}${premio.item.name}`)
+                              .join(", ")
+                          : "ninguno"}
+                      </span>
+                    </summary>
                   <PremioEnObjetos
                     challengeId={reto.id}
                     premios={reto.premios.map((premio) => ({
@@ -248,6 +269,7 @@ export default async function RetosPage() {
                         : null
                     }
                   />
+                  </details>
                 ) : null}
 
                 {reto.notes ? (
@@ -283,6 +305,16 @@ export default async function RetosPage() {
                     }}
                   />
                 ) : null}
+
+                {/* Abajo y aparte: arriba se montaba encima del de la derecha */}
+                {canManage ? (
+                  <form action={deleteChallengeAction} className="mt-3 flex justify-end border-t border-white/5 pt-3">
+                    <input type="hidden" name="challengeId" value={reto.id} />
+                    <ConfirmSubmit message="¿Borrar este reto?" title="Borrar el reto">
+                      ✕ Borrar
+                    </ConfirmSubmit>
+                  </form>
+                ) : null}
               </section>
             );
           })}
@@ -307,27 +339,45 @@ function Jugador({
   color,
   image,
   winner,
+  perdio,
+  derecha = false,
 }: {
   participantId: string;
   name: string;
   color: string;
   image: string | null;
   winner: boolean;
+  perdio: boolean;
+  /** El de la derecha va al revés, mirando al de la izquierda */
+  derecha?: boolean;
 }) {
   return (
     <EnlaceDeJugador
       participantId={participantId}
       name={name}
       className={cx(
-        "gap-1.5 rounded-lg px-2 py-1 text-sm",
-        winner
-          ? "bg-emerald-500/15 font-semibold text-emerald-200 ring-1 ring-emerald-500/30"
-          : "text-slate-300 hover:bg-white/5",
+        "min-w-0 flex-col gap-1.5 rounded-xl p-2 text-center transition sm:flex-row sm:text-left",
+        derecha && "sm:flex-row-reverse sm:text-right",
+        winner ? "bg-emerald-500/10 ring-1 ring-emerald-500/30" : "hover:bg-white/5",
+        perdio && "opacity-55",
       )}
     >
-      <Avatar name={name} color={color} image={image} size={20} />
-      <span className="truncate">{name}</span>
-      {winner ? <span aria-hidden><Icono emoji="👑" /></span> : null}
+      <span className="relative shrink-0">
+        <Avatar name={name} color={color} image={image} size={44} />
+        {winner ? (
+          <span aria-label="Ganó" className="absolute -right-1.5 -top-2.5 text-lg">
+            <Icono emoji="👑" />
+          </span>
+        ) : null}
+      </span>
+      <span
+        className={cx(
+          "min-w-0 max-w-full truncate font-[family-name:var(--font-display)] text-lg font-bold uppercase tracking-wide",
+          winner ? "text-emerald-200" : "text-white",
+        )}
+      >
+        {name}
+      </span>
     </EnlaceDeJugador>
   );
 }

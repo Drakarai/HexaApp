@@ -435,7 +435,7 @@ function FilaPokemon({
             className="h-full w-full object-contain"
           />
         ) : (
-          <span className="text-[10px] text-slate-500" aria-hidden>
+          <span className="text-[11px] text-slate-500" aria-hidden>
             ?
           </span>
         )}

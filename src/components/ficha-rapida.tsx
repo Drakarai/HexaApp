@@ -152,7 +152,7 @@ function Mini({ pokemon, caido = false }: { pokemon: PokemonDeLaFicha; caido?: b
             className={caido ? "h-10 w-10 object-contain opacity-60 grayscale" : "h-10 w-10 object-contain"}
           />
         ) : (
-          <span className="text-[10px] text-slate-500">{pokemon.especie.slice(0, 3)}</span>
+          <span className="text-[11px] text-slate-500">{pokemon.especie.slice(0, 3)}</span>
         )}
       </span>
       <span className="mt-0.5 w-full truncate text-center text-[10px] text-slate-400">{pokemon.nombre}</span>

@@ -117,7 +117,7 @@ export function ThemePicker({ current }: { current: string }) {
                       el tuyo
                     </span>
                   ) : null}
-                  <span className="shrink-0 text-[11px] text-slate-600">
+                  <span className="shrink-0 text-[11px] text-slate-500">
                     {themes.length}
                   </span>
                 </button>

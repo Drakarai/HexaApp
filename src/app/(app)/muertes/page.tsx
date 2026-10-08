@@ -241,7 +241,7 @@ export default async function DeathsPage({
     <>
       <PageHeader
         title="Cementerio"
-        subtitle="Los caídos de cada uno. Pincha en cualquier casilla para abrir su ficha y ponerle imagen."
+        subtitle="Los caídos de cada uno, cada cual con su lápida. Tócala para abrir su ficha y ponerle imagen."
       />
 
       {/* Escrita a mano, una baja no sabe de vínculos: la pareja no cae sola */}

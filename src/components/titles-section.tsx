@@ -83,7 +83,7 @@ export function TitlesSection({
                 <p className="mt-2 text-sm text-slate-400">{titulo.description}</p>
               ) : null}
 
-              <p className="mt-1.5 text-[11px] text-slate-600">
+              <p className="mt-1.5 text-[11px] text-slate-500">
                 {formatDate(titulo.awardedAt)}
                 {titulo.awardedBy ? ` · lo dio ${titulo.awardedBy}` : ""}
               </p>

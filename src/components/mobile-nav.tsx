@@ -177,7 +177,7 @@ export function MobileTabBar({
                         className="h-2.5 w-2.5 shrink-0 rounded-full bg-amber-400"
                       />
                     ) : null}
-                    <span aria-hidden className="text-xs text-slate-600">
+                    <span aria-hidden className="text-xs text-slate-500">
                       ›
                     </span>
                   </Link>

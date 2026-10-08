@@ -216,7 +216,7 @@ function TeamBox({
         <span className="min-w-0 truncate text-xs font-semibold text-slate-300">
           {side.displayName}
         </span>
-        <span className="ml-auto shrink-0 text-[11px] text-slate-600">
+        <span className="ml-auto shrink-0 text-[11px] text-slate-500">
           {side.team.length}/{maximo}
         </span>
       </div>
@@ -304,7 +304,7 @@ export function Sprite({
           className="h-full w-full object-contain"
         />
       ) : (
-        <span className="text-[10px] text-slate-500" aria-hidden>
+        <span className="text-[11px] text-slate-500" aria-hidden>
           ?
         </span>
       )}

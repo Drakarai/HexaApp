@@ -404,7 +404,7 @@ function FilaDeZona({
           )}
         </span>
       ) : (
-        <span className="shrink-0 text-xs text-slate-600">vacía</span>
+        <span className="shrink-0 text-xs text-slate-500">vacía</span>
       )}
     </button>
   );

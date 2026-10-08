@@ -10,6 +10,15 @@
   --color-brand-400: #818cf8;
   --color-brand-500: #6366f1;
   --color-brand-600: #4f46e5;
+  /*
+   * Los dos grises de los textos secundarios, más claros que los de Tailwind:
+   * con los de fábrica, una fecha o un «1 de 4» se quedaban en 4:1 y 2,6:1
+   * sobre las tarjetas, y con el móvil al sol no se leían. Ahora el 500 pasa
+   * del 4,5:1 que se pide al texto pequeño y el 600, el de lo que casi no
+   * importa, se queda justo por debajo, para que siga habiendo escalones.
+   */
+  --color-slate-500: #7d889c;
+  --color-slate-600: #687389;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 }
@@ -322,8 +331,9 @@ html[data-estilo="nuevo"] {
   --color-slate-200: #e3e3e7;
   --color-slate-300: #c8c8ce;
   --color-slate-400: #9c9ca5;
-  --color-slate-500: #74747d;
-  --color-slate-600: #55555d;
+  /* Los dos de abajo, aclarados para que se lean al sol (ver arriba, en @theme) */
+  --color-slate-500: #8b8b94;
+  --color-slate-600: #73737c;
   --color-slate-700: #3b3b42;
 
   /*

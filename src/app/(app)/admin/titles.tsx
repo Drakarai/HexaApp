@@ -328,7 +328,7 @@ function Titulo({
           </div>
         </form>
       ) : (
-        <p className="mt-2 text-xs text-slate-600">Lo tiene ya todo el mundo.</p>
+        <p className="mt-2 text-xs text-slate-500">Lo tiene ya todo el mundo.</p>
       )}
     </li>
   );

@@ -219,7 +219,7 @@ export function Sorteo({
                     </span>
                   ))}
                   {!suyos.length ? (
-                    <span className="text-xs text-slate-600">
+                    <span className="text-xs text-slate-500">
                       No le ha tocado nada.
                     </span>
                   ) : null}

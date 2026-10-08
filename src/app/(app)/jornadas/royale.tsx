@@ -270,7 +270,7 @@ function Ordenador({
           );
         })}
         {!orden.length ? (
-          <li className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-center text-xs text-slate-600">
+          <li className="rounded-lg border border-dashed border-white/10 px-3 py-2 text-center text-xs text-slate-500">
             Nadie todavía
           </li>
         ) : null}

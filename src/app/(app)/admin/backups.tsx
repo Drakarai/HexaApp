@@ -120,7 +120,7 @@ function Copia({ copia }: { copia: CopiaView }) {
         </div>
       </div>
 
-      <p className="mt-1.5 truncate text-[11px] text-slate-600" title={copia.summary}>
+      <p className="mt-1.5 truncate text-[11px] text-slate-500" title={copia.summary}>
         {copia.summary}
       </p>
 

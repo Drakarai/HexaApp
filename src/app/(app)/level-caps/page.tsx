@@ -19,7 +19,7 @@ import { urlDeImagen } from "@/lib/imagen-url";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { primerosEnPasar } from "@/lib/coronas";
 import { MatchTeams } from "@/components/match-team";
-import { cx, readableTextColor } from "@/lib/utils";
+import { cx } from "@/lib/utils";
 import { LevelCapArt } from "./level-cap-art";
 import {
   deleteLevelCapAction,
@@ -170,6 +170,129 @@ export default async function LevelCapsPage({
       }));
   };
 
+  /**
+   * El cuerpo de un hito: quién lo ha pasado, el equipo (en solitario), los
+   * vídeos y el editor. Es igual plegado que sin plegar; lo que cambia es la
+   * cabecera.
+   */
+  const cuerpo = (levelCap: (typeof levelCaps)[number], images: string[]) => (
+    <>
+      {levelCap.notes ? <p className="mt-3 text-sm text-slate-400">{levelCap.notes}</p> : null}
+
+      {participants.length ? (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {participants.map((participant) => {
+            const cleared = clearedSet.has(`${levelCap.id}:${participant.id}`);
+            const retirado = participant.retiredAt !== null;
+            const editable = !retirado && !cerrada && (canManage || participant.userId === user.id);
+
+            return (
+              <MarcarGimnasio
+                key={participant.id}
+                levelCapId={levelCap.id}
+                participantId={participant.id}
+                nombre={participant.displayName}
+                color={participant.color}
+                hito={levelCap.label}
+                superado={cleared}
+                editable={editable}
+                retirado={retirado}
+                primero={cleared && (coronas.get(levelCap.id)?.has(participant.id) ?? false)}
+                celebrar={levelCap.kind === LEVEL_CAP_KINDS.CHAMPION}
+              />
+            );
+          })}
+        </div>
+      ) : null}
+
+      {/* El equipo con el que lo pasaste, como los de un combate */}
+      {perfil.enSolitario && yo ? (
+        <MatchTeams
+          matchId={levelCap.id}
+          levelCapId={levelCap.id}
+          rotulo={levelCap.label}
+          canManage={!cerrada && (canManage || yo.userId === user.id)}
+          sides={[
+            {
+              participantId: yo.id,
+              displayName: yo.displayName,
+              color: yo.color,
+              avatarImage: yo.user.avatarImage,
+              team: equiposPorHito
+                .filter((pokemon) => pokemon.levelCapId === levelCap.id)
+                .map((pokemon) => ({
+                  id: pokemon.id,
+                  species: pokemon.species,
+                  nickname: pokemon.nickname,
+                  boxImage: spritesDeEquipo(pokemon.id),
+                })),
+            },
+          ]}
+        />
+      ) : null}
+
+      <GymVideos
+        levelCapId={levelCap.id}
+        label={levelCap.label}
+        jugadores={videosDe(levelCap)}
+        mio={cerrada ? null : (yo?.id ?? null)}
+      />
+
+      {canManage ? (
+        <EditLevelCapForm
+          levelCap={{
+            id: levelCap.id,
+            label: levelCap.label,
+            cap: levelCap.cap,
+            kind: levelCap.kind,
+            badge: levelCap.badge,
+            notes: levelCap.notes,
+            images,
+          }}
+        />
+      ) : null}
+    </>
+  );
+
+  /** Los botones de quien administra: la jornada de después y borrar */
+  const botonesDeAdmin = (levelCap: (typeof levelCaps)[number]) =>
+    canManage ? (
+      <div className="flex shrink-0 items-center gap-1">
+        {perfil.sinJornadas ? null : (
+          <form action={toggleJornadaDespuesAction}>
+            <input type="hidden" name="levelCapId" value={levelCap.id} />
+            {/* Solo el icono, encendido cuando está puesto: con rótulo empujaba
+                la cabecera a dos filas en el móvil. Lo que hace se lee en la
+                franja de debajo */}
+            <button
+              type="submit"
+              className={cx("btn-ghost btn-sm", levelCap.jornadaDespues && "border-brand-400/50 bg-brand-600/20 text-brand-200")}
+              aria-pressed={levelCap.jornadaDespues}
+              aria-label={
+                levelCap.jornadaDespues
+                  ? "Quitar la jornada de después de este hito"
+                  : "Poner jornada después de este hito"
+              }
+              title={
+                levelCap.jornadaDespues
+                  ? "Quitar la jornada de después de este hito"
+                  : "Jornada después: cuando todos pasen este hito, toca jornada"
+              }
+            >
+              <Icono emoji="⚔️" />
+            </button>
+          </form>
+        )}
+        <form action={deleteLevelCapAction}>
+          <input type="hidden" name="levelCapId" value={levelCap.id} />
+          <ConfirmSubmit message={`¿Borrar el level cap de ${levelCap.label}?`}>✕</ConfirmSubmit>
+        </form>
+      </div>
+    ) : null;
+
+  /** El hito al que va el grupo: el primero que no han pasado todos */
+  const delGrupo = primeroSinPasar === -1 ? null : levelCaps[primeroSinPasar];
+
   return (
     <>
       <PageHeader
@@ -182,21 +305,16 @@ export default async function LevelCapsPage({
         }
       />
 
-      {apuntar === "1" && miProximo ? (
-        <Resaltar id={`cap-${miProximo.id}`} />
-      ) : null}
+      {apuntar === "1" && miProximo ? <Resaltar id={`cap-${miProximo.id}`} /> : null}
 
       <Pendientes tipo="gimnasio" />
-
 
       {levelCaps.length === 0 ? (
         <div className="card text-center">
           <p className="text-4xl" aria-hidden>
             <Icono emoji="🎯" />
           </p>
-          <h2 className="mt-3 text-lg font-semibold text-white">
-            No hay level caps configurados
-          </h2>
+          <h2 className="mt-3 text-lg font-semibold text-white">No hay level caps configurados</h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-slate-400">
             {canManage
               ? "Tráete los del juego de un tirón y ajústalos, o añádelos a mano abajo."
@@ -204,259 +322,244 @@ export default async function LevelCapsPage({
           </p>
           {canManage && nombreJuego ? (
             <div className="mx-auto max-w-sm">
-              <TraerPlantilla
-                competitionId={competition.id}
-                nombreDelJuego={nombreJuego}
-                hayAlguno={false}
-              />
+              <TraerPlantilla competitionId={competition.id} nombreDelJuego={nombreJuego} hayAlguno={false} />
             </div>
           ) : null}
         </div>
       ) : (
-        /* En pantalla ancha, de dos en dos: una tarjeta de gimnasio no llega ni
-           a media pantalla de ancha y en fila de una sola la página medía casi
-           tres mil píxeles. En el móvil siguen una debajo de otra. */
-        <div className="grid gap-3 xl:grid-cols-2">
-          {levelCaps.map((levelCap) => {
-            /**
-             * Solo cuentan los que siguen jugando: si un retirado tuviera que
-             * marcar su casilla, el grupo entero se quedaría esperando a
-             * alguien que ya no va a jugar. Sus marcas de antes se respetan.
-             */
-            const clearedCount = levelCap.clears.filter((clear) =>
-              activos.some((jugador) => jugador.id === clear.participantId),
-            ).length;
-            const allCleared =
-              activos.length > 0 && clearedCount === activos.length;
-            const images = medallas(levelCap.id);
+        <>
+          <EstucheDeMedallas
+            hitos={levelCaps.map((cap) => ({
+              id: cap.id,
+              label: cap.label,
+              cap: cap.cap,
+              imagen: medallas(cap.id)[0] ?? null,
+              // Quien juega ve las suyas; quien solo mira, las de todo el grupo
+              conseguida: yo ? clearedSet.has(`${cap.id}:${yo.id}`) : pasadoPorTodos(cap),
+            }))}
+            siguiente={yo ? (miProximo ?? null) : delGrupo}
+            deQuien={yo ? "tuyo" : "grupo"}
+            grupo={!yo || perfil.enSolitario ? null : delGrupo}
+          />
 
-            const checkpoint = checkpoints.find(
-              (punto) => punto.hito.id === levelCap.id,
-            );
+          {/**
+           * **La ruta**: los hitos en un camino de arriba abajo, cada uno con
+           * su parada en la raya de la izquierda. Los que ha pasado todo el
+           * mundo se quedan plegados en una línea, que lo que importa es lo que
+           * queda; se abren para ver los vídeos o corregir algo.
+           */}
+          <ol className="relative mt-6 space-y-3 before:absolute before:bottom-4 before:left-[11px] before:top-4 before:w-px before:bg-white/10">
+            {levelCaps.map((levelCap) => {
+              /**
+               * Solo cuentan los que siguen jugando: si un retirado tuviera que
+               * marcar su casilla, el grupo entero se quedaría esperando a
+               * alguien que ya no va a jugar. Sus marcas de antes se respetan.
+               */
+              const clearedCount = levelCap.clears.filter((clear) =>
+                activos.some((jugador) => jugador.id === clear.participantId),
+              ).length;
+              const allCleared = activos.length > 0 && clearedCount === activos.length;
+              const images = medallas(levelCap.id);
+              const esElSiguiente = (yo ? miProximo : delGrupo)?.id === levelCap.id;
+              const checkpoint = checkpoints.find((punto) => punto.hito.id === levelCap.id);
 
-            return (
-              <Fragment key={levelCap.id}>
-              <article
-                id={`cap-${levelCap.id}`}
-                className={cx(
-                  "card relative isolate overflow-hidden transition",
-                  allCleared && "border-emerald-500/30 bg-emerald-500/[0.04]",
-                )}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="flex items-center gap-3.5">
-                    <LevelCapArt
-                      images={images}
-                      cap={levelCap.cap}
-                      label={levelCap.label}
-                      allCleared={allCleared}
-                    />
-
-                    <div>
-                      <h3 className="font-semibold text-white">
-                        {levelCap.label}
-                        {levelCap.badge ? (
-                          <span className="ml-2 text-xs font-normal text-slate-500">
-                            {levelCap.badge}
-                          </span>
-                        ) : null}
-                      </h3>
-                      <p className="text-xs text-slate-500">
-                        {LEVEL_CAP_KIND_LABELS[levelCap.kind] ?? levelCap.kind}
-                        {" · "}
-                        {clearedCount}/{activos.length} superado
-                        {clearedCount === 1 ? "" : "s"}
-                      </p>
-                    </div>
+              const cabecera = (
+                <div className="flex min-w-0 items-center gap-3.5">
+                  <LevelCapArt images={images} cap={levelCap.cap} label={levelCap.label} allCleared={allCleared} />
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-white">
+                      {levelCap.label}
+                      {levelCap.badge ? (
+                        <span className="ml-2 text-xs font-normal text-slate-500">{levelCap.badge}</span>
+                      ) : null}
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      {LEVEL_CAP_KIND_LABELS[levelCap.kind] ?? levelCap.kind}
+                      {" · "}
+                      {allCleared
+                        ? "superado por todos"
+                        : `${clearedCount}/${activos.length} superado${clearedCount === 1 ? "" : "s"}`}
+                    </p>
                   </div>
-
-                  {canManage ? (
-                    <div className="flex shrink-0 items-center gap-1">
-                    {perfil.sinJornadas ? null : (
-                      <form action={toggleJornadaDespuesAction}>
-                        <input type="hidden" name="levelCapId" value={levelCap.id} />
-                        {/* Solo el icono, encendido cuando está puesto: con
-                            rótulo empujaba la cabecera a dos filas en el móvil.
-                            Lo que hace se lee en la franja de debajo */}
-                        <button
-                          type="submit"
-                          className={cx(
-                            "btn-ghost btn-sm",
-                            levelCap.jornadaDespues &&
-                              "border-brand-400/50 bg-brand-600/20 text-brand-200",
-                          )}
-                          aria-pressed={levelCap.jornadaDespues}
-                          aria-label={
-                            levelCap.jornadaDespues
-                              ? "Quitar la jornada de después de este hito"
-                              : "Poner jornada después de este hito"
-                          }
-                          title={
-                            levelCap.jornadaDespues
-                              ? "Quitar la jornada de después de este hito"
-                              : "Jornada después: cuando todos pasen este hito, toca jornada"
-                          }
-                        >
-                          <Icono emoji="⚔️" />
-                        </button>
-                      </form>
-                    )}
-                    <form action={deleteLevelCapAction}>
-                      <input
-                        type="hidden"
-                        name="levelCapId"
-                        value={levelCap.id}
-                      />
-                      <ConfirmSubmit
-                        message={`¿Borrar el level cap de ${levelCap.label}?`}
-                      >
-                        ✕
-                      </ConfirmSubmit>
-                    </form>
-                    </div>
-                  ) : null}
                 </div>
+              );
 
-                {levelCap.notes ? (
-                  <p className="mt-3 text-sm text-slate-400">{levelCap.notes}</p>
-                ) : null}
-
-                {participants.length ? (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {participants.map((participant) => {
-                      const cleared = clearedSet.has(
-                        `${levelCap.id}:${participant.id}`,
-                      );
-                      const retirado = participant.retiredAt !== null;
-                      const editable =
-                        !retirado &&
-                        !cerrada &&
-                        (canManage || participant.userId === user.id);
-
-                      return (
-                        <MarcarGimnasio
-                          key={participant.id}
-                          levelCapId={levelCap.id}
-                          participantId={participant.id}
-                          nombre={participant.displayName}
-                          color={participant.color}
-                          hito={levelCap.label}
-                          superado={cleared}
-                          editable={editable}
-                          retirado={retirado}
-                          primero={
-                            cleared &&
-                            (coronas.get(levelCap.id)?.has(participant.id) ?? false)
-                          }
-                          celebrar={levelCap.kind === LEVEL_CAP_KINDS.CHAMPION}
-                        />
-                      );
-                    })}
-                  </div>
-                ) : null}
-
-                {/* El equipo con el que lo pasaste, como los de un combate */}
-                {perfil.enSolitario && yo ? (
-                  <MatchTeams
-                    matchId={levelCap.id}
-                    levelCapId={levelCap.id}
-                    rotulo={levelCap.label}
-                    canManage={!cerrada && (canManage || yo.userId === user.id)}
-                    sides={[
-                      {
-                        participantId: yo.id,
-                        displayName: yo.displayName,
-                        color: yo.color,
-                        avatarImage: yo.user.avatarImage,
-                        team: equiposPorHito
-                          .filter(
-                            (pokemon) => pokemon.levelCapId === levelCap.id,
-                          )
-                          .map((pokemon) => ({
-                            id: pokemon.id,
-                            species: pokemon.species,
-                            nickname: pokemon.nickname,
-                            boxImage: spritesDeEquipo(pokemon.id),
-                          })),
-                      },
-                    ]}
-                  />
-                ) : null}
-
-                <GymVideos
-                  levelCapId={levelCap.id}
-                  label={levelCap.label}
-                  jugadores={videosDe(levelCap)}
-                  mio={cerrada ? null : (yo?.id ?? null)}
-                />
-
-                {canManage ? (
-                  <EditLevelCapForm
-                    levelCap={{
-                      id: levelCap.id,
-                      label: levelCap.label,
-                      cap: levelCap.cap,
-                      kind: levelCap.kind,
-                      badge: levelCap.badge,
-                      notes: levelCap.notes,
-                      images,
-                    }}
-                  />
-                ) : null}
-              </article>
-              {checkpoint ? (
-                <FranjaDeJornada
-                  numero={checkpoint.numero}
-                  hito={levelCap.label}
-                  jornada={checkpoint.jornada?.label ?? null}
-                  estado={
-                    checkpoint.jugada
-                      ? "jugada"
-                      : abierto?.hito.id === levelCap.id
-                        ? "toca"
-                        : pasadoPorTodos(levelCap)
-                          ? "debida"
-                          : "espera"
-                  }
-                />
-              ) : null}
-              </Fragment>
-            );
-          })}
-        </div>
+              return (
+                <Fragment key={levelCap.id}>
+                  <li className="relative pl-9">
+                    {/* La parada en el camino: hecha, la de ahora o por venir */}
+                    <span
+                      aria-hidden
+                      className={cx(
+                        "absolute left-[5px] top-7 flex h-[13px] w-[13px] items-center justify-center rounded-full border-2",
+                        allCleared
+                          ? "border-emerald-400 bg-emerald-400"
+                          : esElSiguiente
+                            ? "border-brand-400 bg-ink-950 ring-4 ring-brand-500/25"
+                            : "border-slate-600 bg-ink-950",
+                      )}
+                    />
+                    {allCleared ? (
+                      <details
+                        id={`cap-${levelCap.id}`}
+                        className="card group relative isolate overflow-hidden border-emerald-500/20 bg-emerald-500/[0.03] py-3"
+                      >
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
+                          {cabecera}
+                          <span className="shrink-0 text-xs text-slate-500">
+                            <span className="group-open:hidden">Ver ▾</span>
+                            <span className="hidden group-open:inline">Plegar ▴</span>
+                          </span>
+                        </summary>
+                        {canManage ? <div className="mt-3 flex justify-end">{botonesDeAdmin(levelCap)}</div> : null}
+                        {cuerpo(levelCap, images)}
+                      </details>
+                    ) : (
+                      <article
+                        id={`cap-${levelCap.id}`}
+                        className={cx(
+                          "card relative isolate overflow-hidden transition",
+                          esElSiguiente && "border-brand-400/40 shadow-[0_0_0_1px_rgb(129_140_248/0.15)]",
+                        )}
+                      >
+                        {esElSiguiente ? (
+                          <p className="antetitulo mb-3">{yo ? "Tu próximo combate" : "Por aquí va el grupo"}</p>
+                        ) : null}
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {cabecera}
+                          {botonesDeAdmin(levelCap)}
+                        </div>
+                        {cuerpo(levelCap, images)}
+                      </article>
+                    )}
+                  </li>
+                  {checkpoint ? (
+                    <li className="relative pl-9">
+                      <FranjaDeJornada
+                        numero={checkpoint.numero}
+                        hito={levelCap.label}
+                        jornada={checkpoint.jornada?.label ?? null}
+                        estado={
+                          checkpoint.jugada
+                            ? "jugada"
+                            : abierto?.hito.id === levelCap.id
+                              ? "toca"
+                              : pasadoPorTodos(levelCap)
+                                ? "debida"
+                                : "espera"
+                        }
+                      />
+                    </li>
+                  ) : null}
+                </Fragment>
+              );
+            })}
+          </ol>
+        </>
       )}
 
       {canManage ? (
         <div className="mt-8">
           <NewLevelCapForm competitionId={competition.id} />
           {nombreJuego && levelCaps.length ? (
-            <TraerPlantilla
-              competitionId={competition.id}
-              nombreDelJuego={nombreJuego}
-              hayAlguno
-            />
+            <TraerPlantilla competitionId={competition.id} nombreDelJuego={nombreJuego} hayAlguno />
           ) : null}
         </div>
       ) : null}
-
-      {participants.length ? (
-        <p className="mt-6 text-xs text-slate-500">
-          Leyenda:{" "}
-          {participants.map((participant) => (
-            <span
-              key={participant.id}
-              className="mr-1.5 inline-block rounded px-1.5 py-0.5 text-[11px]"
-              style={{
-                background: participant.color,
-                color: readableTextColor(participant.color),
-              }}
-            >
-              {participant.displayName}
-            </span>
-          ))}
-        </p>
-      ) : null}
     </>
+  );
+}
+
+/**
+ * **El estuche de medallas**, como el de los juegos: todas en fila, encendidas
+ * las conseguidas y la siguiente marcada, con su nivel debajo. De un vistazo
+ * se sabe por dónde vas sin bajar por la lista.
+ */
+function EstucheDeMedallas({
+  hitos,
+  siguiente,
+  deQuien,
+  grupo,
+}: {
+  hitos: { id: string; label: string; cap: number; imagen: string | null; conseguida: boolean }[];
+  siguiente: { id: string; label: string; cap: number } | null;
+  deQuien: "tuyo" | "grupo";
+  /** Por dónde va el grupo, si no es por donde vas tú */
+  grupo: { id: string; label: string } | null;
+}) {
+  const conseguidas = hitos.filter((h) => h.conseguida).length;
+  return (
+    <section className="card relative overflow-hidden bg-gradient-to-br from-ink-850 to-ink-900">
+      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+        <div>
+          <p className="antetitulo">{deQuien === "tuyo" ? "Tu estuche" : "El estuche del grupo"}</p>
+          <p className="mt-1 text-lg font-semibold text-white">
+            {siguiente ? (
+              <>
+                {deQuien === "tuyo" ? "Te toca" : "Toca"} {siguiente.label}
+                <span className="text-slate-400"> · nivel {siguiente.cap}</span>
+              </>
+            ) : (
+              "Todo superado"
+            )}
+          </p>
+          {grupo && grupo.id !== siguiente?.id ? (
+            <a href={`#cap-${grupo.id}`} className="text-xs text-slate-400 hover:text-slate-200">
+              El grupo sigue en {grupo.label}
+            </a>
+          ) : null}
+        </div>
+        <p className="font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums text-white">
+          {conseguidas}
+          <span className="text-lg text-slate-500">/{hitos.length}</span>
+        </p>
+      </div>
+      <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        {hitos.map((hito) => {
+          const esLaSiguiente = hito.id === siguiente?.id;
+          return (
+            <li key={hito.id} className="shrink-0">
+              <a href={`#cap-${hito.id}`} className="group flex w-14 flex-col items-center gap-1" title={hito.label}>
+                <span
+                  className={cx(
+                    "flex h-12 w-12 items-center justify-center rounded-full border-2 transition",
+                    hito.conseguida
+                      ? "border-amber-300/70 bg-amber-300/10"
+                      : esLaSiguiente
+                        ? "border-brand-400 bg-brand-600/15 ring-4 ring-brand-500/20"
+                        : "border-dashed border-white/15 bg-ink-950/60",
+                  )}
+                >
+                  {hito.imagen ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={hito.imagen}
+                      alt=""
+                      className={cx(
+                        "h-9 w-9 object-contain",
+                        !hito.conseguida && "opacity-30 grayscale",
+                      )}
+                    />
+                  ) : (
+                    <span
+                      className={cx(
+                        "font-[family-name:var(--font-display)] text-lg font-bold",
+                        hito.conseguida ? "text-amber-200" : esLaSiguiente ? "text-brand-200" : "text-slate-500",
+                      )}
+                    >
+                      {hito.conseguida ? "✓" : hito.cap}
+                    </span>
+                  )}
+                </span>
+                <span className="w-full truncate text-center text-[11px] text-slate-400 group-hover:text-slate-200">
+                  {hito.label}
+                </span>
+              </a>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
 

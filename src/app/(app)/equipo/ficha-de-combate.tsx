@@ -164,7 +164,7 @@ export function FichaDeCombate({
                   ) : null}
                   <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{m.nombre}</span>
                   <span
-                    className="shrink-0 text-[10px] tabular-nums text-slate-500"
+                    className="shrink-0 text-[11px] tabular-nums text-slate-500"
                     title={m.clase === 0 ? "De estado" : m.clase === 1 ? "Físico" : "Especial"}
                   >
                     {m.clase === 0 ? "estado" : (m.potencia ?? "—")}
