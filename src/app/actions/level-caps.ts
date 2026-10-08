@@ -15,6 +15,7 @@ import {
 } from "@/lib/image";
 
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * Lista de imágenes válidas que llega del formulario, sin huecos ni basura.
@@ -52,7 +53,8 @@ export async function createLevelCapAction(
   formData: FormData,
 ): Promise<FormState> {
   const competitionId = String(formData.get("competitionId") ?? "");
-  await requireCompetitionManager(competitionId);
+  const [, sinPermiso] = await conPermiso(requireCompetitionManager(competitionId));
+  if (sinPermiso) return sinPermiso;
 
   const label = String(formData.get("label") ?? "").trim();
   const cap = Number(formData.get("cap") ?? 0);

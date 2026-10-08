@@ -11,6 +11,7 @@ import { PALETTE } from "@/lib/constants";
 import { slugify } from "@/lib/utils";
 import { JUGADORES_DEL_SOUL_LINK, JUGADORES_MAXIMOS, leerEstilo } from "@/lib/perfiles-de-locke";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * Pedir, aceptar y rechazar lockes.
@@ -215,7 +216,8 @@ export async function crearLockeEnSolitarioAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireCreador();
+  const [admin, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Ponle un nombre a tu locke." };

@@ -32,6 +32,9 @@ import { ResumenEnSolitario } from "@/components/resumen-solitario";
 
 export const metadata = { title: "Puntos" };
 
+/** Los últimos movimientos que se ven sin desplegar nada */
+const A_LA_VISTA = 8;
+
 export default async function PointsPage() {
   const user = await requireUser();
   const competition = await getActiveCompetition();
@@ -81,6 +84,43 @@ export default async function PointsPage() {
       : standings
           .filter((row) => row.userId === user.id)
           .map((row) => row.participantId);
+
+  /** Un movimiento del historial, con su botón de deshacer si se puede */
+  const movimiento = (entry: (typeof history)[number]) => (
+    <li
+      key={entry.id}
+      className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
+    >
+      <span
+        className={cx(
+          "w-12 shrink-0 text-center text-sm font-bold tabular-nums",
+          entry.delta > 0 ? "text-emerald-400" : "text-red-400",
+        )}
+      >
+        {entry.delta > 0 ? "+" : ""}
+        {entry.delta}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm text-white">
+          {entry.participant.displayName}
+          <span className="text-slate-400"> · {entry.reason}</span>
+        </p>
+        <p className="text-xs text-slate-500">
+          {formatDateTime(entry.createdAt)}
+          {entry.createdBy ? ` · por ${entry.createdBy.displayName}` : ""}
+          {entry.sourceMatchId ? " · automático (jornada)" : ""}
+        </p>
+      </div>
+      {canManage && !entry.sourceMatchId ? (
+        <form action={deletePointEntryAction}>
+          <input type="hidden" name="entryId" value={entry.id} />
+          <ConfirmSubmit message="¿Deshacer este movimiento de puntos?">
+            ✕
+          </ConfirmSubmit>
+        </form>
+      ) : null}
+    </li>
+  );
 
   return (
     <>
@@ -140,75 +180,6 @@ export default async function PointsPage() {
           movimientos={movimientosEnLaTabla(grafico, standings)}
         />
 
-        {canManage ? (
-          <div className="mt-5 space-y-2 border-t border-white/10 pt-4">
-            <p className="text-xs uppercase tracking-wide text-slate-500">
-              Ajuste rápido
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {standings.map((row) => (
-                <div
-                  key={row.participantId}
-                  className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1"
-                >
-                  <Avatar
-                    name={row.displayName}
-                    color={row.color}
-                    image={row.avatarImage}
-                    size={22}
-                    participantId={row.participantId}
-                  />
-                  <span className="mx-1 text-sm text-slate-200">
-                    {row.displayName}
-                  </span>
-                  <form action={quickAdjustPointsAction}>
-                    <input
-                      type="hidden"
-                      name="competitionId"
-                      value={competition.id}
-                    />
-                    <input
-                      type="hidden"
-                      name="participantId"
-                      value={row.participantId}
-                    />
-                    <input type="hidden" name="delta" value="-1" />
-                    <button
-                      className="btn-ghost btn-sm px-2"
-                      title="Restar 1 punto"
-                      type="submit"
-                    >
-                      −
-                    </button>
-                  </form>
-                  <span className="w-7 text-center text-sm font-bold tabular-nums text-white">
-                    {row.points}
-                  </span>
-                  <form action={quickAdjustPointsAction}>
-                    <input
-                      type="hidden"
-                      name="competitionId"
-                      value={competition.id}
-                    />
-                    <input
-                      type="hidden"
-                      name="participantId"
-                      value={row.participantId}
-                    />
-                    <input type="hidden" name="delta" value="1" />
-                    <button
-                      className="btn-ghost btn-sm px-2"
-                      title="Sumar 1 punto"
-                      type="submit"
-                    >
-                      +
-                    </button>
-                  </form>
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </section>
       )}
 
@@ -216,16 +187,96 @@ export default async function PointsPage() {
         <CampeonesDeLiga campeones={campeonesDeLiga} />
       </div>
 
+      {/**
+       * Lo de tocar puntos, **plegado en una sola caja**: el ajuste rápido de
+       * ±1, sumar o restar con motivo y aplicar a todos. Iba todo abierto entre
+       * la clasificación y el historial y alargaba la pantalla de quien la
+       * administra; se usa de vez en cuando, no cada vez que se entra.
+       */}
       {canManage && !perfil.enSolitario ? (
-        <div className="mt-6">
-          <PointsForms
-            competitionId={competition.id}
-            participants={standings.map((row) => ({
-              id: row.participantId,
-              displayName: row.displayName,
-            }))}
-          />
-        </div>
+        <details className="card group mt-6">
+          <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-slate-200 marker:hidden">
+            <span className="inline-block transition group-open:rotate-90">▸</span>
+            Ajustar puntos
+            <span className="font-normal text-slate-500">· a uno, con motivo o a todos</span>
+          </summary>
+          <div className="mt-4 space-y-5">
+      <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Ajuste rápido
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {standings.map((row) => (
+                    <div
+                      key={row.participantId}
+                      className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2 py-1"
+                    >
+                      <Avatar
+                        name={row.displayName}
+                        color={row.color}
+                        image={row.avatarImage}
+                        size={22}
+                        participantId={row.participantId}
+                      />
+                      <span className="mx-1 text-sm text-slate-200">
+                        {row.displayName}
+                      </span>
+                      <form action={quickAdjustPointsAction}>
+                        <input
+                          type="hidden"
+                          name="competitionId"
+                          value={competition.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="participantId"
+                          value={row.participantId}
+                        />
+                        <input type="hidden" name="delta" value="-1" />
+                        <button
+                          className="btn-ghost btn-sm px-2"
+                          title="Restar 1 punto"
+                          type="submit"
+                        >
+                          −
+                        </button>
+                      </form>
+                      <span className="w-7 text-center text-sm font-bold tabular-nums text-white">
+                        {row.points}
+                      </span>
+                      <form action={quickAdjustPointsAction}>
+                        <input
+                          type="hidden"
+                          name="competitionId"
+                          value={competition.id}
+                        />
+                        <input
+                          type="hidden"
+                          name="participantId"
+                          value={row.participantId}
+                        />
+                        <input type="hidden" name="delta" value="1" />
+                        <button
+                          className="btn-ghost btn-sm px-2"
+                          title="Sumar 1 punto"
+                          type="submit"
+                        >
+                          +
+                        </button>
+                      </form>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            <PointsForms
+              competitionId={competition.id}
+              participants={standings.map((row) => ({
+                id: row.participantId,
+                displayName: row.displayName,
+              }))}
+            />
+          </div>
+        </details>
       ) : null}
 
       <section className={perfil.enSolitario ? "hidden" : "card mt-6"}>
@@ -233,43 +284,19 @@ export default async function PointsPage() {
         {history.length === 0 ? (
           <EmptyState dibujo="trofeo" title="Todavía no se han movido puntos" />
         ) : (
-          <ul className="space-y-2">
-            {history.map((entry) => (
-              <li
-                key={entry.id}
-                className="flex items-center gap-3 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2"
-              >
-                <span
-                  className={cx(
-                    "w-12 shrink-0 text-center text-sm font-bold tabular-nums",
-                    entry.delta > 0 ? "text-emerald-400" : "text-red-400",
-                  )}
-                >
-                  {entry.delta > 0 ? "+" : ""}
-                  {entry.delta}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-white">
-                    {entry.participant.displayName}
-                    <span className="text-slate-400"> · {entry.reason}</span>
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {formatDateTime(entry.createdAt)}
-                    {entry.createdBy ? ` · por ${entry.createdBy.displayName}` : ""}
-                    {entry.sourceMatchId ? " · automático (jornada)" : ""}
-                  </p>
-                </div>
-                {canManage && !entry.sourceMatchId ? (
-                  <form action={deletePointEntryAction}>
-                    <input type="hidden" name="entryId" value={entry.id} />
-                    <ConfirmSubmit message="¿Deshacer este movimiento de puntos?">
-                      ✕
-                    </ConfirmSubmit>
-                  </form>
-                ) : null}
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="space-y-2">{history.slice(0, A_LA_VISTA).map(movimiento)}</ul>
+            {/* Los de antes, plegados: se buscan poco y eran la mitad de la pantalla */}
+            {history.length > A_LA_VISTA ? (
+              <details className="group mt-3">
+                <summary className="cursor-pointer list-none text-sm text-brand-400 marker:hidden hover:underline">
+                  <span className="group-open:hidden">Ver los {history.length - A_LA_VISTA} anteriores</span>
+                  <span className="hidden group-open:inline">Ocultar los anteriores</span>
+                </summary>
+                <ul className="mt-2 space-y-2">{history.slice(A_LA_VISTA).map(movimiento)}</ul>
+              </details>
+            ) : null}
+          </>
         )}
       </section>
     </>

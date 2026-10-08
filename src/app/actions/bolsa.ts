@@ -13,6 +13,7 @@ import { imagenEditada, sanitizeImageValue } from "@/lib/image";
 import { objetoPorSlug } from "@/lib/objetos";
 import { descargarSpriteDeObjeto } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * La bolsa.
@@ -57,7 +58,8 @@ export async function crearObjetoAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const apiSlug = slugDelFormulario(formData);
   const esGrupo = formData.get("tipo") === "grupo";
@@ -126,7 +128,8 @@ export async function anadirOpcionAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const itemId = String(formData.get("itemId") ?? "");
   if (!itemId) return { error: "No sé a qué grupo añadirlo." };

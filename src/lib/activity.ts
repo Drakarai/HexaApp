@@ -19,6 +19,12 @@ export type ActivityEntry = {
   /** Y quién es, para que su foto lleve a su perfil (no lo hay si no juega: quien gira la ruleta) */
   whoId?: string;
   whoImage?: string | null;
+  /**
+   * Lo que se junta en una sola línea cuando le pasa a varios el mismo día
+   * (seis jugadores pasándose el mismo gimnasio eran seis tarjetas iguales).
+   * `plural` es la frase para todos: «han superado al Alto Mando».
+   */
+  grupo?: { clave: string; plural: string };
 };
 
 const NEUTRAL = "#64748b";
@@ -30,7 +36,8 @@ const NEUTRAL = "#64748b";
  * datos reales.
  */
 export async function getActivity(competitionId: string, limit = 60) {
-  const take = Math.min(limit, 50);
+  // Cada fuente trae como mucho lo que se va a enseñar: con «Ver lo anterior» se pide más
+  const take = Math.min(limit, 600);
 
   /**
    * Los jugadores se piden **una vez** y de aquí salen los nombres y colores.
@@ -183,6 +190,7 @@ export async function getActivity(competitionId: string, limit = 60) {
       color: jugador.color,
       title: `${jugador.displayName} ha superado ${aQuienSeSupera(clear.levelCap.label)}`,
       detail: `Level cap ${clear.levelCap.cap}`,
+      grupo: { clave: `clear-${clear.levelCapId}`, plural: `han superado ${aQuienSeSupera(clear.levelCap.label)}` },
       who: jugador.displayName,
       whoId: jugador.id,
       whoImage: avatares(jugador.userId),

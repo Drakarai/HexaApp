@@ -17,6 +17,7 @@ import {
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { IMAGEN_SIN_CAMBIOS, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * La plantilla de level caps de cada juego, que es de dónde salen los hitos al
@@ -102,7 +103,8 @@ export async function anadirItemPlantillaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const grupo = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
   if (!grupo) return { error: "Ese grupo de juegos no está en la lista." };
@@ -291,7 +293,8 @@ export async function copiarDeOtraPlantillaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const destino = grupoDePlantillaPorId(String(formData.get("grupoId") ?? ""));
   const origen = grupoDePlantillaPorId(String(formData.get("origenId") ?? ""));

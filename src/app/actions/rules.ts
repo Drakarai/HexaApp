@@ -6,13 +6,15 @@ import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
 import { lockeEmpezado } from "@/lib/reglas";
+import { conPermiso } from "@/lib/permiso";
 
 export async function createRuleAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
   const competitionId = String(formData.get("competitionId") ?? "");
-  const manager = await requireCompetitionManager(competitionId);
+  const [manager, sinPermiso] = await conPermiso(requireCompetitionManager(competitionId));
+  if (sinPermiso) return sinPermiso;
 
   const title = String(formData.get("title") ?? "").trim();
   const body = String(formData.get("body") ?? "").trim();

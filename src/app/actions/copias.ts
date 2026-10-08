@@ -10,6 +10,7 @@ import {
   restaurarVolcado,
 } from "@/lib/copias";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /** Lo que hay que escribir para restaurar. Sin esto, un clic sin querer borra. */
 const PALABRA = "RESTAURAR";
@@ -18,7 +19,8 @@ const PALABRA = "RESTAURAR";
 const MAXIMO_FICHERO = 60 * 1024 * 1024;
 
 export async function crearCopiaAction(): Promise<FormState> {
-  const admin = await requireCreador();
+  const [admin, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
   const copia = await crearCopia("manual", admin.displayName);
   revalidatePath("/admin");
   if (!copia) return { error: "Justo ahora se estaba haciendo otra copia." };
@@ -42,7 +44,8 @@ export async function restaurarCopiaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireCreador();
+  const [admin, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   if (String(formData.get("confirmacion") ?? "").trim() !== PALABRA) {
     return { error: `Para restaurar hay que escribir ${PALABRA} en la casilla.` };
@@ -77,7 +80,8 @@ export async function restaurarFicheroAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireCreador();
+  const [admin, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   if (String(formData.get("confirmacion") ?? "").trim() !== PALABRA) {
     return { error: `Para restaurar hay que escribir ${PALABRA} en la casilla.` };

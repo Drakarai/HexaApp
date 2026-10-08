@@ -84,15 +84,6 @@ async function recortar() {
   }
 }
 
-/** Para Diagnóstico: los últimos, de un locke o de todos */
-export async function getCambios(competitionId: string | null, cuantos = 200) {
-  return prisma.cambioDelLocke.findMany({
-    where: competitionId ? { competitionId } : {},
-    orderBy: { createdAt: "desc" },
-    take: cuantos,
-  });
-}
-
 /** El nombre de cada jugador, para escribir los textos del registro */
 export async function nombresDeJugadores(...ids: (string | null | undefined)[]) {
   const validos = ids.filter((id): id is string => Boolean(id));

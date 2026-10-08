@@ -5,6 +5,7 @@ import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { esCreador, getCurrentUser, requireCreador } from "@/lib/auth";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * Títulos: los inventa un administrador y los reparte a quien quiera. Son
@@ -23,7 +24,8 @@ export async function crearTituloAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "El título necesita un nombre." };
@@ -73,7 +75,8 @@ export async function concederTituloAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const admin = await requireCreador();
+  const [admin, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const titleId = String(formData.get("titleId") ?? "");
   const userId = String(formData.get("userId") ?? "");

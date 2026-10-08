@@ -22,6 +22,7 @@ import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 import { sitioParaUnaNueva } from "@/lib/equipo-y-caja";
 import { vincularCapturaNueva } from "@/lib/soul-link";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * Los mapas y las capturas.
@@ -110,7 +111,8 @@ export async function anadirZonaAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const slug = String(formData.get("slug") ?? "");
   const name = String(formData.get("name") ?? "").trim();
@@ -222,7 +224,8 @@ export async function detectarZonasAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const slug = String(formData.get("slug") ?? "");
   // Aquí sí hacen falta los bytes del fondo: se pide a propósito
@@ -289,7 +292,8 @@ export async function moverZonasAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   let sitios: {
     id: string;
@@ -340,7 +344,8 @@ export async function guardarFondoAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  await requireCreador();
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
   const slug = String(formData.get("slug") ?? "");
   const region = await asegurarRegion(slug);

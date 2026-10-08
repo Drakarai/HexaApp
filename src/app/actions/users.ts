@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth";
 import { ROLES } from "@/lib/constants";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /**
  * Las cuentas.
@@ -42,7 +43,8 @@ export async function createUserAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const quien = await requireOrganizador();
+  const [quien, sinPermiso] = await conPermiso(requireOrganizador());
+  if (sinPermiso) return sinPermiso;
   const mandaEnTodo = esCreador(quien);
 
   const username = String(formData.get("username") ?? "")
@@ -91,7 +93,8 @@ export async function resetUserPasswordAction(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const quien = await requireOrganizador();
+  const [quien, sinPermiso] = await conPermiso(requireOrganizador());
+  if (sinPermiso) return sinPermiso;
 
   const userId = String(formData.get("userId") ?? "");
   const password = String(formData.get("password") ?? "");

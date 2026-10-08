@@ -67,13 +67,11 @@ export function GymVideos({
 
   return (
     <div className="mt-3 border-t border-white/5 pt-3">
-      <p className="mb-2 text-[11px] uppercase tracking-wide text-slate-500">
-        {conVideo.length
-          ? `Vídeos del combate · ${conVideo.length}`
-          : "Vídeos del combate"}
-      </p>
-
-      <div className="flex flex-wrap gap-2">
+      {/* El rótulo en la misma fila que los vídeos: en su propia línea, nueve gimnasios eran nueve líneas de más */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-[11px] uppercase tracking-wide text-slate-500">
+          {conVideo.length ? `Vídeos · ${conVideo.length}` : "Vídeos"}
+        </span>
         {conVideo.map((jugador) => (
           <button
             key={jugador.participantId}

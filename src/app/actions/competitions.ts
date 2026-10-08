@@ -30,6 +30,7 @@ import { slugify } from "@/lib/utils";
 import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import type { FormState } from "@/app/actions/auth";
+import { conPermiso } from "@/lib/permiso";
 
 /** Un número entero de un formulario, o null si viene vacío o mal. */
 function numeroOpcional(valor: FormDataEntryValue | null, tope: number) {
@@ -90,7 +91,8 @@ export async function createCompetitionAction(
    * Lo monta un administrador global **o un organizador**: alguien a quien se
    * le ha dado permiso para llevar sus propios lockes.
    */
-  const admin = await requireOrganizador();
+  const [admin, sinPermiso] = await conPermiso(requireOrganizador());
+  if (sinPermiso) return sinPermiso;
   const esAdminGlobal = esCreador(admin);
 
   const name = String(formData.get("name") ?? "").trim();
@@ -321,7 +323,8 @@ export async function updateCompetitionAction(
   formData: FormData,
 ): Promise<FormState> {
   const competitionId = String(formData.get("competitionId") ?? "");
-  await requireCompetitionManager(competitionId);
+  const [, sinPermiso] = await conPermiso(requireCompetitionManager(competitionId));
+  if (sinPermiso) return sinPermiso;
 
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "El nombre no puede estar vacío." };
@@ -461,7 +464,8 @@ export async function addParticipantAction(
   formData: FormData,
 ): Promise<FormState> {
   const competitionId = String(formData.get("competitionId") ?? "");
-  await requireCompetitionManager(competitionId);
+  const [, sinPermiso] = await conPermiso(requireCompetitionManager(competitionId));
+  if (sinPermiso) return sinPermiso;
 
   // El usuario escrito a mano manda sobre la lista (ver AddParticipantForm)
   const username = String(formData.get("username") ?? "").trim().replace(/^@/, "");
