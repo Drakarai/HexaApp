@@ -62,6 +62,8 @@ export type Foto = Prisma.CaptureGetPayload<{ select: typeof CAMPOS }> & {
   movimientos?: Prisma.JsonValue;
   habilidad?: string | null;
   habilidadMega?: string | null;
+  /** Solo en la foto de leer la partida, que puede poner al día la fecha de captura */
+  createdAt?: Date | string;
 };
 
 export async function fotos(ids: string[]): Promise<Foto[]> {

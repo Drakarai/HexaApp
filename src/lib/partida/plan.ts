@@ -57,6 +57,8 @@ export type DatosNuevos = {
   habilidad?: string | null;
   objeto?: string | null;
   movimientos?: string[];
+  /** El día de captura de la partida (ISO), si no es el que tiene apuntado */
+  createdAt?: string;
 };
 
 export type PasoDelPlan =
@@ -211,6 +213,12 @@ export function emparejar(
   return parejas;
 }
 
+// El día en España, que es donde se juega: a medianoche de aquí cambia la fecha
+const DIA = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });
+const FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", day: "numeric", month: "short", year: "numeric" });
+const diaDe = (iso: string) => DIA.format(new Date(iso));
+const fechaCorta = (iso: string) => FECHA_CORTA.format(new Date(iso));
+
 const nombreDeNaturaleza = (s: string | null) => (s ? (naturalezaPorSlug(s)?.n ?? s) : "—");
 const nombreDeHabilidad = (s: string | null) => (s ? (habilidadPorSlug(s, true)?.n ?? s) : "—");
 const nombreDeObjeto = (s: string | null) => (s ? (objetoPorSlug(s)?.nombre ?? s) : "Nada");
@@ -263,6 +271,15 @@ function ponerAlDia(c: CapturaParaPlan, p: PokemonTraducido) {
   if (p.movimientos.length && p.movimientos.join() !== c.movimientos.join()) {
     datos.movimientos = p.movimientos;
     cambios.push({ campo: "Movimientos", antes: nombresDeMovimientos(c.movimientos), despues: nombresDeMovimientos(p.movimientos) });
+  }
+  /**
+   * El día de captura, si la partida lo guarda (4ª en adelante y Añil) y no es
+   * el apuntado. Se compara **el día**, no la hora: la partida oficial solo
+   * guarda el día, y apuntarlo a mano el mismo día no es una diferencia.
+   */
+  if (p.recibido && diaDe(p.recibido) !== diaDe(c.creado)) {
+    datos.createdAt = p.recibido;
+    cambios.push({ campo: "Fecha de captura", antes: fechaCorta(c.creado), despues: fechaCorta(p.recibido) });
   }
   return { cambios, datos, evoluciona };
 }

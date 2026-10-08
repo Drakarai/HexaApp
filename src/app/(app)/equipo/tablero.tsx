@@ -86,7 +86,15 @@ export function EquiposYCajas({
   /** La ficha que se abre al llegar (`/equipo?ver=…`, desde el buscador rápido) */
   abrirDeEntrada?: string | null;
 }) {
-  const [abierto, setAbierto] = useState<string | null>(abrirDeEntrada);
+  const [abierto, setAbierto] = useState<string | null>(null);
+  /**
+   * La de `?ver=` se abre **ya en el navegador**, no de entrada: la ficha va en
+   * un portal sobre `document.body`, que en el servidor no existe, y pintarla
+   * allí rompía la carga de la página (React tenía que rehacerla entera).
+   */
+  useEffect(() => {
+    if (abrirDeEntrada) setAbierto(abrirDeEntrada);
+  }, [abrirDeEntrada]);
   const [aviso, setAviso] = useState<Aviso | null>(null);
 
   useEffect(() => {
@@ -1327,6 +1335,11 @@ function Ficha({
                 // Si llegó por intercambio, la ruta es la del que se fue: el encuentro que se gastó
                 <Fila etiqueta={pokemon.llegoPorIntercambio ? "Encuentro" : "Capturado en"} valor={pokemon.sitio} />
               ) : null}
+              {/* El día, que es lo que se recuerda («lo pillé el primer día»); la hora no aporta */}
+              <Fila
+                etiqueta={pokemon.llegoPorIntercambio ? "Encuentro el" : "Capturado el"}
+                valor={FECHA_DE_CAPTURA.format(new Date(pokemon.creado))}
+              />
               {pokemon.apunte ? <Fila etiqueta="Apunte" valor={pokemon.apunte} /> : null}
               <Fila
                 etiqueta="Ahora"
@@ -1736,6 +1749,13 @@ const RAFAGA: [number, number, number, number][] = [
   [-10, 46, 260, 10],
   [100, 26, 300, 10],
 ];
+
+const FECHA_DE_CAPTURA = new Intl.DateTimeFormat("es-ES", {
+  timeZone: "Europe/Madrid",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+});
 
 function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
   return (

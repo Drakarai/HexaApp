@@ -300,7 +300,8 @@ export async function aplicarPartidaAction(
     const fichas = actualizar.length
       ? await prisma.capture.findMany({
           where: { id: { in: actualizar.map((p) => p.captureId) }, participantId: participant.id },
-          select: { ...CAMPOS, nickname: true, naturaleza: true, objeto: true, movimientos: true, habilidad: true, habilidadMega: true },
+          // La fecha también: si se pone al día la de captura, Deshacer la devuelve
+          select: { ...CAMPOS, nickname: true, naturaleza: true, objeto: true, movimientos: true, habilidad: true, habilidadMega: true, createdAt: true },
         })
       : [];
     const porId = new Map(fichas.map((f) => [f.id, f]));
@@ -341,6 +342,7 @@ export async function aplicarPartidaAction(
           where: { id: paso.captureId },
           data: {
             ...paso.datos,
+            ...(paso.datos.createdAt ? { createdAt: new Date(paso.datos.createdAt) } : {}),
             ...(imagen ? { image: imagen } : {}),
             ...(paso.evoluciona
               ? { historia: [...leerHistoria(ficha.historia), { tipo: "evoluciona", ...paso.evoluciona, fecha: ahora }] }

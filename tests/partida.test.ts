@@ -188,6 +188,26 @@ describe("El plan", () => {
     });
   });
 
+  test("la fecha de captura de la partida pone al día la apuntada, si es otro día", () => {
+    const conFecha = (recibido: string | null) =>
+      planear({
+        partida: [{ ...traducidos[1], recibido }],
+        capturas: [captura({ id: "pidgey", species: "Pidgey", pokemonId: 16, shiny: true, creado: "2026-07-01T18:30:00.000Z" })],
+        bajasSueltas: [],
+        zonas: [],
+        cajaDeCaidos: null,
+      }).pasos[0];
+    const otroDia = conFecha("2026-06-20T12:00:00.000Z");
+    assert.ok(otroDia?.tipo === "actualizar");
+    assert.equal(otroDia.datos.createdAt, "2026-06-20T12:00:00.000Z");
+    assert.ok(otroDia.cambios.some((c) => c.campo === "Fecha de captura"));
+    // El mismo día a otra hora no es un cambio; y sin fecha en la partida, tampoco
+    for (const recibido of ["2026-07-01T12:00:00.000Z", null]) {
+      const paso = conFecha(recibido);
+      assert.ok(!paso || (paso.tipo === "actualizar" && paso.datos.createdAt === undefined));
+    }
+  });
+
   test("sin mote, con el de su familia sin mote; el shiny solo se gana", () => {
     const pidgey = paso("e1");
     assert.ok(pidgey?.tipo === "actualizar");

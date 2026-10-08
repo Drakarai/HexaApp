@@ -829,6 +829,8 @@ export async function deshacerEnCajaAction(entrada: {
               ...(f.movimientos !== undefined ? { movimientos: f.movimientos ?? [] } : {}),
               ...(f.habilidad !== undefined ? { habilidad: f.habilidad } : {}),
               ...(f.habilidadMega !== undefined ? { habilidadMega: f.habilidadMega } : {}),
+              // Solo en la foto de leer la partida (ver `Foto`)
+              ...(f.createdAt !== undefined ? { createdAt: new Date(f.createdAt) } : {}),
               deathId: f.deathId && bajasVivas.has(f.deathId) ? f.deathId : null,
             },
           }),
