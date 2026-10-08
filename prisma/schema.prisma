@@ -377,6 +377,8 @@ model CambioDeCaja {
   descripcion   String
   antes         Json
   muertes       String[] @default([])
+  // Las capturas que creó el cambio (leer la partida): deshacer las borra
+  capturas      String[] @default([])
   createdAt     DateTime @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

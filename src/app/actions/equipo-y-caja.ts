@@ -791,7 +791,10 @@ export async function deshacerEnCajaAction(entrada: {
       .filter((f) => existen.has(f.id) && f.deathId && bajasVivas.has(f.deathId))
       .map((f) => f.deathId!);
 
+    // Las que nacieron con el cambio (leer la partida) se borran: antes no existían
+    for (const id of cambio.capturas) await soltarAs(id);
     await prisma.$transaction([
+      prisma.capture.deleteMany({ where: { id: { in: cambio.capturas } } }),
       prisma.death.deleteMany({ where: { id: { in: cambio.muertes } } }),
       prisma.death.updateMany({ where: { id: { in: vuelvenACaer } }, data: { revividoEl: null } }),
       ...antes
@@ -824,7 +827,7 @@ export async function deshacerEnCajaAction(entrada: {
     ]);
     // Deshacer una evolución (o un intercambio, o el shiny) también se la deshace al as
     await sincronizarAs(antes.filter((f) => existen.has(f.id)).map((f) => f.id));
-    refrescar(cambio.muertes.length > 0 || vuelvenACaer.length > 0);
+    refrescar(cambio.muertes.length > 0 || vuelvenACaer.length > 0 || cambio.capturas.length > 0);
     return { aviso: `Deshecho: ${cambio.descripcion.charAt(0).toLowerCase()}${cambio.descripcion.slice(1)}.` };
   });
 }

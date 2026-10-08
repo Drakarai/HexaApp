@@ -77,10 +77,12 @@ export async function apuntarCambio(
   descripcion: string,
   antes: Foto[],
   muertes: string[] = [],
+  /** Las capturas que se crearon con el cambio (leer la partida): deshacer las borra */
+  capturas: string[] = [],
 ) {
-  if (!antes.length && !muertes.length) return;
+  if (!antes.length && !muertes.length && !capturas.length) return;
   await prisma.cambioDeCaja.create({
-    data: { participantId, descripcion, antes: antes as unknown as Prisma.InputJsonValue, muertes },
+    data: { participantId, descripcion, antes: antes as unknown as Prisma.InputJsonValue, muertes, capturas },
   });
   const sobran = await prisma.cambioDeCaja.findMany({
     where: { participantId },
@@ -156,6 +158,22 @@ export async function darPorMuerto(
    */
   sitio: { zoneId: string | null; location: string | null } = { zoneId: null, location: null },
 ) {
+  const { foto, muertes, mensaje } = await caer(captura, causaEscrita, sitio);
+  await apuntarCambio(captura.participantId, `Dar por muerto a ${nombreDe(captura)}`, foto, muertes);
+  refrescarCaja(true);
+  return mensaje;
+}
+
+/**
+ * La caída en sí, sin apuntarla para deshacer: devuelve la foto de antes y las
+ * bajas creadas para que quien llama la apunte. Leer la partida da por muertos
+ * a varios de golpe y los deshace todos juntos, con lo demás que cambió.
+ */
+export async function caer(
+  captura: CapturaTocable,
+  causaEscrita: string,
+  sitio: { zoneId: string | null; location: string | null },
+) {
   if (captura.deathId) throw new Error("Ya estaba en el cementerio.");
   const { competition } = captura.participant;
   const causa = causaEscrita.trim().slice(0, 200) || null;
@@ -203,12 +221,11 @@ export async function darPorMuerto(
     await prisma.capture.update({ where: { id: c.id }, data: { deathId: baja.id } });
   }
 
-  await apuntarCambio(captura.participantId, `Dar por muerto a ${nombreDe(captura)}`, foto, muertes);
-  refrescarCaja(true);
   const otras = todas.filter((c) => c.id !== captura.id);
-  return otras.length
+  const mensaje = otras.length
     ? `F por ${nombreDe(captura)}. Con él cae ${otras
         .map((c) => `${nombreDe(c)} de ${c.participant.displayName}`)
         .join(" y ")}.`
     : `F por ${nombreDe(captura)}.`;
+  return { foto, muertes, mensaje };
 }

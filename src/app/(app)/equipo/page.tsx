@@ -17,9 +17,13 @@ import { EmptyState } from "@/components/ui";
 import { Icono } from "@/components/icono";
 import { EquiposYCajas } from "./tablero";
 import { ApuntarEnCaja } from "./apuntar-form";
+import { LeerPartida } from "./leer-partida";
+import { esPokemonAnil } from "@/lib/anil";
 import { Pendientes } from "@/components/pendientes";
 
 export const metadata = { title: "Equipo y PC" };
+// Leer la partida del Añil apunta de golpe lo que haga falta, con sus sprites
+export const maxDuration = 60;
 
 /**
  * El equipo y la caja. Aquí se mueve, se evoluciona y se da por muerto; el
@@ -133,6 +137,15 @@ export default async function EquipoYPcPage({
             esSoulLink={perfil.cooperativo}
             abierto={apuntar === "1"}
             competitionId={competition.id}
+          />
+        </div>
+      ) : null}
+
+      {puedenApuntar.length && esPokemonAnil(competition) ? (
+        <div className="mb-5">
+          <LeerPartida
+            jugadores={puedenApuntar.map((t) => ({ id: t.participantId, displayName: t.displayName }))}
+            miId={yo && puedenApuntar.some((t) => t.participantId === yo.id) ? yo.id : null}
           />
         </div>
       ) : null}

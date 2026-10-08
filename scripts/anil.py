@@ -344,6 +344,35 @@ def main():
         open(os.path.join(AQUI, "anil-objetos.json"), "w", encoding="utf-8"),
         separators=(",", ":"),
     )
+    # Los nombres internos del juego («PIKACHU», «STATIC», «THUNDERBOLT») a los
+    # de la app, para leer la partida (ver lib/partida). Va aparte y solo lo
+    # carga el servidor: el navegador manda los internos tal cual.
+    internos = {
+        "especies": {c: numero_de_especie[c.upper()] for c in por_clave if c.upper() in numero_de_especie},
+        "formas": {f"{b}_{n}": v for (b, n), v in numero_de_forma.items()},
+        "habilidadesDe": {},
+        "habilidades": {h["clave"][0]: habilidad_de(h["clave"][0]) for h in leer_pbs(os.path.join(pbs, "abilities.txt"))},
+        "movimientos": {},
+        "objetos": {o["clave"][0]: objeto_de(o["clave"][0]) for o in objetos},
+    }
+    for s in especies:
+        crudas = de_la_especie.get(s["clave"][0])
+        if crudas:
+            internos["habilidadesDe"][s["clave"][0]] = [crudas["normales"], crudas["ocultas"]]
+    for s in formas:
+        base, n = s["clave"][0], s["clave"][1] if len(s["clave"]) > 1 else "0"
+        if n != "0" and ("Abilities" in s["campos"] or "HiddenAbilities" in s["campos"]) and base in de_la_especie:
+            _, crudas = suyas(s["campos"], de_la_especie[base])
+            internos["habilidadesDe"][f"{base}_{n}"] = [crudas["normales"], crudas["ocultas"]]
+    for s in leer_pbs(os.path.join(pbs, "moves.txt")):
+        clave = s["clave"][0]
+        plano_ = clave.lower()
+        if plano_ in OFICIALES and OFICIALES[plano_] is None:
+            continue
+        plano_ = OFICIALES[plano_].replace("-", "") if plano_ in OFICIALES else plano_
+        internos["movimientos"][clave] = slugs_app[plano_]["s"] if plano_ in slugs_app else f"anil-{plano_}"
+    json.dump(internos, open(os.path.join(LIB, "anil-internos.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+
     nuevas_hab = [h["n"] for h in habilidades if h["s"].startswith("anil-")]
     print(
         f"{len(nuevos)} pokémon nuevos, {len(formas_nuevas)} formas nuevas ({sum(1 for f in formas_nuevas if 'mega' in f)} megas), "
