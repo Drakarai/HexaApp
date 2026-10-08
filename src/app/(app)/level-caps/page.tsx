@@ -12,7 +12,7 @@ import {
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { ConfirmSubmit } from "@/components/ui";
-import { LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
+import { LEVEL_CAP_KINDS, LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 import { grupoDePlantillaDeJuego } from "@/lib/juegos";
 import { firmaDeColumna, urlsDeMedallasDelLocke } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
@@ -348,6 +348,7 @@ export default async function LevelCapsPage({
                             cleared &&
                             (coronas.get(levelCap.id)?.has(participant.id) ?? false)
                           }
+                          celebrar={levelCap.kind === LEVEL_CAP_KINDS.CHAMPION}
                         />
                       );
                     })}

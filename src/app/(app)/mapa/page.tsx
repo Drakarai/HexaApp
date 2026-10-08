@@ -34,13 +34,13 @@ export const metadata = { title: "Mapa de capturas" };
 export default async function MapaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ apuntar?: string; region?: string }>;
+  searchParams: Promise<{ apuntar?: string; region?: string; buscar?: string }>;
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const { apuntar, region: pedida } = await searchParams;
+  const { apuntar, region: pedida, buscar } = await searchParams;
   const regiones = regionesDelJuego(competition.gameId);
   // La pedida solo vale si es del juego; si no, la principal
   const region = regiones.find((slug) => slug === pedida) ?? regiones[0] ?? null;
@@ -153,6 +153,8 @@ export default async function MapaPage({
         )}
         bajas={bajasDeAqui}
         buscarDeEntrada={apuntar === "1"}
+        // Desde el buscador rápido: la ruta ya escrita
+        busquedaDeEntrada={buscar?.slice(0, 60) ?? ""}
         soloMirar={cerrada}
       />
       <CapturasExtra

@@ -2,6 +2,7 @@
 
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useEffect, useRef, useState } from "react";
+import { lanzarConfeti } from "@/lib/confeti";
 import { createPortal } from "react-dom";
 import { cx } from "@/lib/utils";
 import { precargarGrito, sonarGrito } from "@/lib/gritos";
@@ -80,8 +81,9 @@ export function EntradaAlHall({
         if (temporizador.current) window.clearTimeout(temporizador.current);
       };
     }
-    // El final: un toque de vibración, que la fanfarria no la podemos poner
+    // El final: un toque de vibración, que la fanfarria no la podemos poner, y confeti
     navigator.vibrate?.([30, 60, 30]);
+    lanzarConfeti(220);
   }, [paso, pokemon]);
 
   const alFinal = paso >= pokemon.length;

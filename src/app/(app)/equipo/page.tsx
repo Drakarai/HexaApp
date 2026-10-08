@@ -40,14 +40,14 @@ export const maxDuration = 60;
 export default async function EquipoYPcPage({
   searchParams,
 }: {
-  searchParams: Promise<{ apuntar?: string }>;
+  searchParams: Promise<{ apuntar?: string; ver?: string }>;
 }) {
   const user = await requireUser();
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
   const perfil = perfilDeLocke(competition.maxPlayers, competition.estilo);
-  const { apuntar } = await searchParams;
+  const { apuntar, ver } = await searchParams;
   /**
    * **Todo a la vez**: los tableros no esperan a saber qué participante eres
    * (lo tuyo se busca por tu cuenta en el locke) ni si administras (eso solo
@@ -164,7 +164,14 @@ export default async function EquipoYPcPage({
       <Pendientes tipo="caida" />
 
       {datos.tableros.length ? (
-        <EquiposYCajas tableros={tableros} numeros={numeros} esSoulLink={perfil.cooperativo} zonas={zonas} />
+        <EquiposYCajas
+          tableros={tableros}
+          numeros={numeros}
+          esSoulLink={perfil.cooperativo}
+          zonas={zonas}
+          // Solo si es de los que se ven aquí: uno ajeno no está en los tableros y no abre nada
+          abrirDeEntrada={ver ?? null}
+        />
       ) : (
         <EmptyState
           dibujo="caja"

@@ -16,6 +16,7 @@ import { logoutAction } from "@/app/actions/auth";
 import { dejarDeVerComoAction } from "@/app/actions/ver-como";
 import { CompetitionSwitcher } from "@/components/competition-switcher";
 import { Nav, type NavEntry, type NavGroup, type NavItem } from "@/components/nav";
+import { BuscadorRapido } from "@/components/buscador-rapido";
 import { MobileTabBar } from "@/components/mobile-nav";
 import { BotonApuntar, type AtajoDeApunte } from "@/components/boton-apuntar";
 import { MarcarVisto } from "@/components/marcar-visto";
@@ -324,6 +325,14 @@ export default async function AppLayout({
       : [grupo],
   );
   const sidebarItems: NavEntry[] = [...PRIMARY_ITEMS, ...grupos];
+  /**
+   * Las pantallas del buscador rápido: las del menú (que ya sabe cuáles te
+   * tocan) y, para quien lleva la aplicación, las dos que viven en Mi perfil.
+   */
+  const pantallasParaBuscar: NavItem[] = [
+    ...sidebarItems.flatMap((entrada) => ("children" in entrada ? entrada.children : [entrada])),
+    ...(esCreador(user) ? [S.admin, { href: "/diagnostico", label: "Diagnóstico", icon: "🩺" }] : []),
+  ].filter((item, i, todas) => todas.findIndex((otra) => otra.href === item.href) === i);
 
   /**
    * Qué eres **en este locke**, que no siempre es lo que eres en la aplicación:
@@ -460,6 +469,9 @@ export default async function AppLayout({
         </div>
 
         <div className="mt-5 lg:sticky lg:top-6">
+          <div className="mb-3">
+            <BuscadorRapido pantallas={pantallasParaBuscar} />
+          </div>
           <Nav items={sidebarItems} avisos={avisos} />
           <form action={logoutAction} className="mt-4">
             <button type="submit" className="btn-ghost btn-sm w-full">

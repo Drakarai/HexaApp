@@ -75,6 +75,7 @@ export function EquiposYCajas({
   numeros,
   esSoulLink,
   zonas = [],
+  abrirDeEntrada = null,
 }: {
   tableros: TableroDeJugador[];
   /** El número de cada vínculo, por su clave */
@@ -82,8 +83,10 @@ export function EquiposYCajas({
   esSoulLink: boolean;
   /** Las zonas del mapa, para decir dónde cayó uno al darlo por muerto */
   zonas?: ZonaParaElegir[];
+  /** La ficha que se abre al llegar (`/equipo?ver=…`, desde el buscador rápido) */
+  abrirDeEntrada?: string | null;
 }) {
-  const [abierto, setAbierto] = useState<string | null>(null);
+  const [abierto, setAbierto] = useState<string | null>(abrirDeEntrada);
   const [aviso, setAviso] = useState<Aviso | null>(null);
 
   useEffect(() => {

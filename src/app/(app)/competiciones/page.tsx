@@ -25,7 +25,7 @@ import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { perderElLockeAction } from "@/app/actions/wipeos";
 import { firmaDeColumna, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
-import { leerEstilo } from "@/lib/perfiles-de-locke";
+import { leerEstilo, perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { NewUserForm } from "../admin/user-forms";
 import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
 import {
@@ -41,6 +41,7 @@ import {
   CopiarDeOtraEdicionForm,
 } from "./competition-forms";
 import { AccionesDeJugador } from "./acciones-de-jugador";
+import { EnlacePublico } from "./enlace-publico";
 import { Icono } from "@/components/icono";
 import { seccionActiva } from "@/components/menu-de-secciones";
 import {
@@ -670,6 +671,14 @@ export default async function CompetitionsPage({
               activo={active.challengeDiffCounts}
             />
           </div>
+
+          {/* Solo donde hay tabla: en solitario o en un Soul Link no hay clasificación que enseñar */}
+          {(() => {
+            const perfilActivo = perfilDeLocke(active.maxPlayers, active.estilo);
+            return perfilActivo.enSolitario || perfilActivo.cooperativo ? null : (
+              <EnlacePublico competitionId={active.id} clave={active.enlacePublico} />
+            );
+          })()}
         </div>
       ) : null}
 

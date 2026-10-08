@@ -31,6 +31,7 @@ import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import type { FormState } from "@/app/actions/auth";
 import { conPermiso } from "@/lib/permiso";
+import { randomBytes } from "node:crypto";
 
 /** Un número entero de un formulario, o null si viene vacío o mal. */
 function numeroOpcional(valor: FormDataEntryValue | null, tope: number) {
@@ -725,4 +726,27 @@ export async function quitarEspectadorAction(formData: FormData) {
     await registrar(competitionId, "jugadores", `Ya no deja mirar el locke a ${quien?.displayName ?? "alguien"}`);
   }
   revalidatePath("/", "layout");
+}
+
+/**
+ * Crea (o cambia) o quita el **enlace público** de la clasificación. Cambiarlo
+ * es la forma de cortar el acceso a quien ya lo tenía: la clave de antes deja
+ * de abrir nada.
+ */
+export async function enlacePublicoAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const competitionId = String(formData.get("competitionId") ?? "");
+  const [, sinPermiso] = await conPermiso(requireCompetitionManager(competitionId));
+  if (sinPermiso) return sinPermiso;
+
+  const quitar = formData.get("que") === "quitar";
+  // 24 bytes al azar: 32 letras, imposible de acertar probando
+  const clave = quitar ? null : randomBytes(24).toString("base64url");
+  await prisma.competition.update({ where: { id: competitionId }, data: { enlacePublico: clave } });
+  await registrar(
+    competitionId,
+    "locke",
+    quitar ? "Quita el enlace público de la clasificación" : "Crea un enlace público nuevo de la clasificación",
+  );
+  revalidatePath("/competiciones");
+  return { success: quitar ? "Enlace quitado: ya no abre nada." : "Enlace listo. Si había otro, ya no sirve." };
 }

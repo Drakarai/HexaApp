@@ -5,6 +5,7 @@ import { toggleGymClearAction } from "@/app/actions/level-caps";
 import { encolar } from "@/lib/cola";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { lanzarConfeti } from "@/lib/confeti";
 
 /**
  * La casilla de "me lo he pasado" de cada jugador en cada hito.
@@ -27,6 +28,7 @@ export function MarcarGimnasio({
   editable,
   retirado,
   primero = false,
+  celebrar = false,
 }: {
   levelCapId: string;
   participantId: string;
@@ -39,6 +41,8 @@ export function MarcarGimnasio({
   retirado: boolean;
   /** Se lo pasó antes que nadie: lleva la corona */
   primero?: boolean;
+  /** Es la Liga: al marcarla, confeti */
+  celebrar?: boolean;
 }) {
   const [enCola, setEnCola] = useState<boolean | null>(null);
   const [enviando, empezar] = useTransition();
@@ -48,6 +52,8 @@ export function MarcarGimnasio({
   function alPulsar() {
     if (!editable) return;
     const quiero = !marcado;
+    // Pasarse la Liga se celebra al momento, también sin conexión: el logro es de ahora
+    if (quiero && celebrar) lanzarConfeti();
 
     const datos = new FormData();
     datos.set("levelCapId", levelCapId);

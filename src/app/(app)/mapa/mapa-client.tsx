@@ -25,12 +25,16 @@ import { SpritePokemon } from "@/components/sprite-pokemon";
  * de 390 píxeles: **el mapa**, para verlo de un vistazo, y **el buscador**, que
  * es lo que se usa de verdad mientras juegas.
  */
+type Cuales = "todas" | "libres" | "usadas";
+const CLAVE_DE_CUALES = "hexaapp-mapa-cuales";
+
 export function MapaDeCapturas({
   mapa,
   capturas,
   bajas,
   competitionId,
   buscarDeEntrada = false,
+  busquedaDeEntrada = "",
   soloMirar = false,
 }: {
   mapa: MapaDeRegion;
@@ -45,6 +49,8 @@ export function MapaDeCapturas({
   competitionId: string;
   /** Llega con el buscador enfocado, desde el botón de apuntar */
   buscarDeEntrada?: boolean;
+  /** Llega con una ruta ya escrita en el buscador, desde el buscador rápido */
+  busquedaDeEntrada?: string;
   /** Edición archivada: se ve lo apuntado, pero ya no se apunta ni se borra */
   soloMirar?: boolean;
 }) {
@@ -58,9 +64,28 @@ export function MapaDeCapturas({
    * apuntando capturas a ciegas.
    */
   const [avisada, setAvisada] = useState<ZonaDelMapa | null>(null);
-  const [busqueda, setBusqueda] = useState("");
+  const [busqueda, setBusqueda] = useState(busquedaDeEntrada);
   const [vista, setVista] = useState<"mapa" | "lista">("lista");
+  const [cuales, setCuales] = useState<Cuales>("todas");
   const buscador = useRef<HTMLInputElement>(null);
+
+  // La elección de «Libres», recordada en el dispositivo: quien la usa, la usa siempre
+  useEffect(() => {
+    try {
+      const guardada = localStorage.getItem(CLAVE_DE_CUALES);
+      if (guardada === "libres" || guardada === "usadas") setCuales(guardada);
+    } catch {
+      // Sin almacenamiento (modo privado): se empieza por todas
+    }
+  }, []);
+  function elegirCuales(valor: Cuales) {
+    setCuales(valor);
+    try {
+      localStorage.setItem(CLAVE_DE_CUALES, valor);
+    } catch {
+      // Igual que arriba
+    }
+  }
 
   /**
    * Llegando desde el botón de apuntar, el cursor ya está en el buscador: lo
@@ -121,13 +146,26 @@ export function MapaDeCapturas({
     [mapa.zones],
   );
 
+  // Un grupo no se captura él mismo: en la lista salen sus hijas, no él
+  const capturables = useMemo(() => todas.filter((zona) => !zona.children.length), [todas]);
+  /**
+   * Libre es **sin nada apuntado**: ni captura ni encuentro fallado, que en un
+   * locke también gasta la ruta. Es lo que se pregunta al jugar: ¿dónde me
+   * queda por capturar?
+   */
+  const esLibre = (zona: ZonaDelMapa) => !porZona[zona.id]?.hechas && !porZona[zona.id]?.fallos;
+  const libres = capturables.filter(esLibre).length;
+
   const filtradas = useMemo(() => {
     const aguja = busqueda.trim().toLowerCase();
-    // Un grupo no se captura él mismo: en la lista salen sus hijas, no él
-    const capturables = todas.filter((zona) => !zona.children.length);
-    if (!aguja) return capturables;
-    return capturables.filter((zona) => zona.name.toLowerCase().includes(aguja));
-  }, [busqueda, todas]);
+    return capturables.filter(
+      (zona) =>
+        (!aguja || zona.name.toLowerCase().includes(aguja)) &&
+        (cuales === "todas" || (cuales === "libres") === esLibre(zona)),
+    );
+    // esLibre solo lee porZona, que ya está en la lista
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busqueda, capturables, cuales, porZona]);
 
   /** Al tocar una zona del mapa: la primera vez dice cuál es, la segunda abre */
   function tocar(zona: ZonaDelMapa) {
@@ -140,8 +178,9 @@ export function MapaDeCapturas({
     else setAbierta(zona);
   }
 
-  const hechas = filtradas.filter((zona) => porZona[zona.id]?.hechas).length;
-  const falladas = filtradas.filter(
+  // La cuenta de arriba es de todas: con «Libres» marcado saldría siempre «0 de N»
+  const hechas = capturables.filter((zona) => porZona[zona.id]?.hechas).length;
+  const falladas = capturables.filter(
     (zona) => !porZona[zona.id]?.hechas && porZona[zona.id]?.fallos,
   ).length;
 
@@ -175,7 +214,7 @@ export function MapaDeCapturas({
           </button>
         </div>
         <p className="text-xs text-slate-500">
-          {hechas} de {filtradas.length} zonas capturadas
+          {hechas} de {capturables.length} zonas capturadas
           {falladas ? ` · ${falladas} sin premio` : ""} ·{" "}
           {capturas.filter((captura) => !captura.failed).length}{" "}
           {capturas.filter((captura) => !captura.failed).length === 1
@@ -217,11 +256,35 @@ export function MapaDeCapturas({
         <>
           <input
             ref={buscador}
-            className="input mb-3"
+            className="input mb-2"
             placeholder="Buscar una ruta o un sitio…"
             value={busqueda}
             onChange={(evento) => setBusqueda(evento.target.value)}
           />
+          <div className="mb-3 flex flex-wrap gap-1.5" role="group" aria-label="Qué zonas enseñar">
+            {(
+              [
+                ["todas", `Todas · ${capturables.length}`],
+                ["libres", `Libres · ${libres}`],
+                ["usadas", `Usadas · ${capturables.length - libres}`],
+              ] as const
+            ).map(([valor, rotulo]) => (
+              <button
+                key={valor}
+                type="button"
+                aria-pressed={cuales === valor}
+                onClick={() => elegirCuales(valor)}
+                className={cx(
+                  "rounded-full border px-3 py-1 text-xs font-medium transition",
+                  cuales === valor
+                    ? "border-brand-500/50 bg-brand-600/25 text-white"
+                    : "border-white/10 text-slate-400 hover:text-slate-200",
+                )}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
           {filtradas.length ? (
             <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {filtradas.map((zona) => (
@@ -237,7 +300,11 @@ export function MapaDeCapturas({
             </ul>
           ) : (
             <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-slate-500">
-              Ninguna zona se llama así.
+              {cuales === "libres" && !busqueda.trim()
+                ? "No te queda ninguna ruta libre."
+                : cuales === "usadas" && !busqueda.trim()
+                  ? "Todavía no has apuntado nada en ninguna."
+                  : "Ninguna zona se llama así."}
             </p>
           )}
         </>

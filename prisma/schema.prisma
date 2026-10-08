@@ -555,6 +555,18 @@ model Competition {
    */
   challengeDiffCounts Boolean   @default(false)
   /**
+   * La clave del **enlace público** de la clasificación (`/clasificacion/<clave>`),
+   * o null si no hay. Para que la siga gente de fuera sin cuenta: solo enseña
+   * la tabla. Larga y al azar, así que no se adivina; cambiarla deja
+   * inservible la de antes. La crea y la quita quien lleva el locke.
+   *
+   * Con índice y **no `@unique`**: añadir una restricción única hace que
+   * `prisma db push` pida `--accept-data-loss`, y el build de Vercel lo lanza
+   * sin él, así que el despliegue se pararía. Que no se repita ya lo asegura
+   * el azar (32 letras).
+   */
+  enlacePublico       String?
+  /**
    * Cuántas jornadas se van a jugar en total, si se sabe de antemano.
    * Hace falta para los lockes que se ganan **por jornadas** y no por puntos
    * (el dualocke): "gana el que se lleve 4 de las 6" solo se puede calcular
@@ -604,6 +616,8 @@ model Competition {
   espectadores Spectator[]
   sorteos      Sorteo[]
   papelera     JornadaBorrada[]
+
+  @@index([enlacePublico])
 }
 
 /**
