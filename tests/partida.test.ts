@@ -235,3 +235,83 @@ describe("El plan", () => {
     assert.ok(!sin.pasos.some((p) => p.tipo === "muere" || p.tipo === "baja"));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Juegos oficiales
+// ---------------------------------------------------------------------------
+
+import { leerPartidaOficial } from "@/lib/partida/oficial";
+import { traducirOficial, partidaOficialDelNavegador } from "@/lib/partida/traducir-oficial";
+import { pk, partidaG1, partidaG2, partidaG3, partidaG4, partidaG5, partidaG6 } from "./partidas-falsas";
+
+const oficial = (sav: Uint8Array) => {
+  const p = leerPartidaOficial(sav);
+  return { p, t: p.pokemon.map((x) => traducirOficial(x, p.familia)!) };
+};
+
+describe("Partidas de los juegos oficiales", () => {
+  test("1ª: Rojo, con el mote y los movimientos; la especie, del número interno", () => {
+    const { p, t } = oficial(partidaG1(pk("raichu.pk1")));
+    assert.equal(p.familia, "rby");
+    assert.equal(t[0].especie, "Raichu");
+    assert.equal(t[0].mote, "RAZOR");
+    assert.deepEqual(t[0].movimientos, ["thunder", "body-slam", "mega-kick", "thunderbolt"]);
+    assert.equal(t[0].naturaleza, null);
+    assert.equal(t[1].clave, "c0-0");
+  });
+
+  test("2ª: Cristal, con objeto y dónde se capturó; sin mote si se llama como su especie", () => {
+    const { p, t } = oficial(partidaG2(pk("hitmonchan.pk2"), pk("dodrio.pk2")));
+    assert.equal(p.familia, "c");
+    assert.equal(t[0].mote, null);
+    assert.equal(t[0].sitio, "Mt. Mortero");
+    assert.equal(t[1].mote, "DORIS");
+    assert.equal(t[1].objeto, "smoke-ball");
+  });
+
+  test("3ª: Rojo Fuego, descifrado, con su habilidad de entre las dos de su especie", () => {
+    const { p, t } = oficial(partidaG3(pk("psyduck.pk3"), pk("jynx.pk3")));
+    assert.equal(p.familia, "frlg");
+    assert.equal(t[0].especie, "Psyduck");
+    assert.equal(t[0].mote, null);
+    assert.equal(t[0].habilidad, "damp");
+    assert.equal(t[0].naturaleza, "impish");
+    assert.equal(t[1].clave, "c0-2");
+    assert.equal(t[1].mote, "ZYNX");
+    assert.equal(t[1].habilidad, "oblivious");
+    assert.equal(t[1].sitio, "(Intercambio del juego)");
+  });
+
+  test("4ª: Diamante, con la copia buena, la fecha y el sitio", () => {
+    const { p, t } = oficial(partidaG4(pk("roserade.pk4"), pk("geodude.pk4")));
+    assert.equal(p.familia, "dp");
+    assert.equal(t[0].habilidad, "natural-cure");
+    assert.equal(t[0].recibido, "2018-04-18T12:00:00.000Z");
+    assert.equal(t[1].clave, "c1-5");
+    assert.equal(t[1].sitio, "Ruinas Alfa");
+  });
+
+  test("5ª: Negro, firmado con su CRC, con las cajas abiertas", () => {
+    const { p, t } = oficial(partidaG5(pk("roserade.pk5"), pk("blissey.pk5")));
+    assert.equal(p.familia, "bw");
+    assert.equal(p.cajas.length, 3);
+    assert.equal(t[1].especie, "Blissey");
+    assert.deepEqual(t[1].movimientos, ["pound", "helping-hand", "snore", "swagger"]);
+  });
+
+  test("6ª: X, con el lugar de Hoenn de un pokémon traído", () => {
+    const { p, t } = oficial(partidaG6(pk("clefairy.pk6"), pk("ludicolo.pk7")));
+    assert.equal(p.familia, "xy");
+    assert.equal(t[0].habilidad, "friend-guard");
+    assert.equal(t[0].sitio, "Cascada Meteoro");
+    assert.equal(t[1].sitio, "Ruta 114");
+    assert.equal(t[1].clave, "c1-0");
+  });
+
+  test("lo que no es una partida no se lee, y lo que llega del navegador se comprueba", () => {
+    assert.throws(() => leerPartidaOficial(new Uint8Array(1234)));
+    const { p } = oficial(partidaG4(pk("roserade.pk4"), pk("geodude.pk4")));
+    assert.deepEqual(partidaOficialDelNavegador(JSON.parse(JSON.stringify(p))), p);
+    assert.equal(partidaOficialDelNavegador({ ...p, familia: "swsh" }), null);
+  });
+});

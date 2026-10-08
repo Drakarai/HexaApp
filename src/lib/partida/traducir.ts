@@ -55,6 +55,18 @@ export type PokemonTraducido = {
   avisos: string[];
 };
 
+/**
+ * El mote, o null si no tiene: uno igual que su especie no es mote (los juegos
+ * de antes no guardan si se lo pusieron y escriben la especie en mayúsculas,
+ * «PIKACHU»), y se recorta a lo que cabe en la app.
+ */
+export function sinMoteDeEspecie(mote: string | null, especie: string) {
+  const plano = (t: string) =>
+    t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const limpio = mote?.trim();
+  return limpio && plano(limpio) !== plano(especie) ? limpio.slice(0, 40) : null;
+}
+
 export const claveDe = (donde: DondeEnLaPartida) =>
   donde.lugar === "equipo" ? `e${donde.hueco}` : `c${donde.caja}-${donde.hueco}`;
 
@@ -123,9 +135,7 @@ export function traducir(p: PokemonDeLaPartida, random: PartidaLeida["habilidade
     } else avisos.push(`el movimiento ${m}`);
   }
 
-  // Un mote igual que su especie es que no tiene mote
-  const plano = (t: string) => t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  const mote = p.mote && plano(p.mote) !== plano(especie) ? p.mote.slice(0, 40) : null;
+  const mote = sinMoteDeEspecie(p.mote, especie);
 
   return {
     clave: claveDe(p.donde),

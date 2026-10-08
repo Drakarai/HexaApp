@@ -1,20 +1,35 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { aplicarPartidaAction, verPartidaAction, type PasoParaVer, type VistaDeLaPartida } from "@/app/actions/partida";
 import { leerPartida, PartidaNoValida, type PartidaLeida } from "@/lib/partida/essentials";
+import { leerPartidaOficial, PartidaOficialNoValida, type PartidaOficial } from "@/lib/partida/oficial";
 import { FormMessage } from "@/components/ui";
 import { SpritePokemon } from "@/components/sprite-pokemon";
+import { cx } from "@/lib/utils";
 
 /**
- * **Leer la partida** de Pokémon Añil (solo en sus lockes). El fichero se lee
- * aquí, en el navegador, y al servidor va solo lo sacado de él: unos KB, y la
- * partida no se guarda en ningún sitio.
+ * **Leer la partida** y poner el Equipo y PC como en ella: la de Pokémon Añil
+ * en sus lockes y la del juego oficial en los demás (1ª a 7ª generación). El
+ * fichero se lee aquí, en el navegador, y al servidor va solo lo sacado de él:
+ * unos KB, y la partida no se guarda en ningún sitio.
  *
  * Primero se enseña qué va a pasar —con cada cosa marcada, para quitar lo que
  * no cuadre— y luego se aplica. Todo lo aplicado es un solo «Deshacer».
+ *
+ * - **Añil** se juega en el ordenador: en el móvil ni sale. En el ordenador, la
+ *   ventana para elegirla recuerda la carpeta (`showOpenFilePicker` con un
+ *   `id`): ningún navegador deja abrirla de primeras en una carpeta concreta
+ *   como `%APPDATA%`, así que la primera vez se llega a mano y desde ahí se
+ *   abre sola en ella.
+ * - **Los oficiales**: arrastrando el fichero encima o con el botón, en el
+ *   ordenador y en el móvil.
  */
+
+export type FormatoParaLeer = { tipo: "anil" } | { tipo: "oficial"; juego: string; fichero: string };
+
+type Leida = PartidaLeida | PartidaOficial;
 
 const GRUPOS: { tipo: PasoParaVer["tipo"][]; titulo: string; pista: string }[] = [
   { tipo: ["actualizar"], titulo: "Al día", pista: "Ya estaban: se les pone lo del juego." },
@@ -22,16 +37,34 @@ const GRUPOS: { tipo: PasoParaVer["tipo"][]; titulo: string; pista: string }[] =
   { tipo: ["muere", "baja"], titulo: "Al cementerio", pista: "Están en la caja de caídos: solo se dan por muertos." },
 ];
 
-export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; displayName: string }[]; miId: string | null }) {
+type VentanaDeFicheros = (opciones: {
+  id?: string;
+  multiple?: boolean;
+  types?: { description: string; accept: Record<string, string[]> }[];
+}) => Promise<{ getFile: () => Promise<File> }[]>;
+
+export function LeerPartida({
+  jugadores,
+  miId,
+  formato,
+}: {
+  jugadores: { id: string; displayName: string }[];
+  miId: string | null;
+  formato: FormatoParaLeer;
+}) {
   const router = useRouter();
+  const anil = formato.tipo === "anil";
   const [para, setPara] = useState(miId ?? jugadores[0]?.id ?? "");
-  const [partida, setPartida] = useState<PartidaLeida | null>(null);
+  const [partida, setPartida] = useState<Leida | null>(null);
   const [vista, setVista] = useState<VistaDeLaPartida | null>(null);
   const [quitados, setQuitados] = useState<Set<string>>(new Set());
   const [estado, setEstado] = useState<{ error?: string; success?: string } | null>(null);
+  const [encima, setEncima] = useState(false);
+  const [copiado, setCopiado] = useState(false);
   const [ocupado, empezar] = useTransition();
+  const entrada = useRef<HTMLInputElement>(null);
 
-  function ver(leida: PartidaLeida, cajaDeCaidos: number | null, participantId = para) {
+  function ver(leida: Leida, cajaDeCaidos: number | null, participantId = para) {
     setEstado(null);
     empezar(async () => {
       const respuesta = await verPartidaAction({ participantId, partida: leida, cajaDeCaidos });
@@ -50,15 +83,49 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
     setVista(null);
     setEstado(null);
     try {
-      const leida = leerPartida(new Uint8Array(await fichero.arrayBuffer()));
+      const bytes = new Uint8Array(await fichero.arrayBuffer());
+      const leida = anil ? leerPartida(bytes) : leerPartidaOficial(bytes);
       setPartida(leida);
       // Los caídos suelen ir en la última caja
       ver(leida, leida.cajas.length ? leida.cajas.length - 1 : null);
     } catch (error) {
       setPartida(null);
       setEstado({
-        error: error instanceof PartidaNoValida ? error.message : "No he podido leer ese fichero. ¿Es la partida del Añil?",
+        error:
+          error instanceof PartidaNoValida || error instanceof PartidaOficialNoValida
+            ? error.message
+            : anil
+              ? "No he podido leer ese fichero. ¿Es la partida del Añil?"
+              : "No he podido leer ese fichero. ¿Es la partida de este juego?",
       });
+    }
+  }
+
+  /** En el Añil, la ventana del sistema que recuerda la carpeta; si el navegador no la tiene, la de siempre */
+  async function elegir() {
+    const ventana = (window as unknown as { showOpenFilePicker?: VentanaDeFicheros }).showOpenFilePicker;
+    if (!anil || !ventana) {
+      entrada.current?.click();
+      return;
+    }
+    try {
+      const [elegido] = await ventana({
+        id: "partida-anil",
+        types: [{ description: "Partida del Añil", accept: { "application/octet-stream": [".rxdata"] } }],
+      });
+      if (elegido) await alElegir(await elegido.getFile());
+    } catch {
+      // Cerrar la ventana sin elegir nada no es un error
+    }
+  }
+
+  async function copiarRuta() {
+    try {
+      await navigator.clipboard.writeText("%APPDATA%");
+      setCopiado(true);
+      setTimeout(() => setCopiado(false), 2000);
+    } catch {
+      // Sin permiso para el portapapeles: se escribe a mano, está a la vista
     }
   }
 
@@ -93,17 +160,25 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
     });
 
   return (
-    <details className="card group">
+    // El Añil es de ordenador: en una pantalla táctil ni se ofrece
+    <details className={cx("card group", anil && "hidden [@media(pointer:fine)]:block")}>
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
-        Leer la partida del Añil
+        {anil ? "Leer la partida del Añil" : `Leer la partida de ${formato.juego}`}
       </summary>
       <div className="mt-4 space-y-3">
         <p className="text-sm text-slate-400">
-          Sube tu <strong className="text-slate-200">Partida N.rxdata</strong> (en Windows, en la carpeta del Añil dentro
-          de <code className="text-slate-300">%APPDATA%</code>) y se ponen al día tus pokémon: especie, forma, shiny,
-          naturaleza, habilidad, objeto y movimientos. Los que no estén se apuntan, y los de la caja de caídos van al
-          cementerio. Las medallas no se tocan. Antes de cambiar nada te enseña qué va a hacer.
+          {anil ? (
+            <>
+              Sube tu <strong className="text-slate-200">Partida N.rxdata</strong> y se ponen al día tus pokémon
+            </>
+          ) : (
+            <>
+              Sube {formato.fichero} y se ponen al día tus pokémon
+            </>
+          )}
+          : especie, forma, shiny, naturaleza, habilidad, objeto y movimientos. Los que no estén se apuntan, y los de la
+          caja de caídos van al cementerio. Las medallas no se tocan. Antes de cambiar nada te enseña qué va a hacer.
         </p>
 
         {jugadores.length > 1 ? (
@@ -127,16 +202,52 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
         ) : null}
 
         <input
+          ref={entrada}
           type="file"
-          accept=".rxdata"
-          className="input"
-          aria-label="Partida del Añil"
+          accept={anil ? ".rxdata" : undefined}
+          className="hidden"
+          aria-label={anil ? "Partida del Añil" : "Partida"}
           onChange={(evento) => {
             void alElegir(evento.target.files?.[0]);
             // Para poder volver a elegir el mismo fichero después de jugar
             evento.target.value = "";
           }}
         />
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => void elegir()}
+          onDragOver={(evento) => {
+            evento.preventDefault();
+            setEncima(true);
+          }}
+          onDragLeave={() => setEncima(false)}
+          onDrop={(evento) => {
+            evento.preventDefault();
+            setEncima(false);
+            void alElegir(evento.dataTransfer.files?.[0]);
+          }}
+          className={cx(
+            "flex w-full flex-col items-center gap-1 rounded-xl border-2 border-dashed px-4 py-6 text-center text-sm transition",
+            encima ? "border-brand-400 bg-brand-500/10 text-slate-100" : "border-white/15 text-slate-300 hover:border-white/30",
+          )}
+        >
+          <strong>{ocupado ? "Leyendo la partida…" : "Elegir la partida"}</strong>
+          <span className="text-xs text-slate-500">
+            {anil ? "o arrástrala aquí" : "o arrástrala aquí desde el ordenador"}
+          </span>
+        </button>
+        {anil ? (
+          <p className="text-xs text-slate-500">
+            Está en la carpeta del Añil dentro de <code className="text-slate-300">%APPDATA%</code>. La primera vez,
+            escribe <code className="text-slate-300">%APPDATA%</code> arriba en la ventana (o{" "}
+            <button type="button" className="underline" onClick={() => void copiarRuta()}>
+              {copiado ? "copiado" : "cópialo"}
+            </button>{" "}
+            y pégalo), entra en la carpeta del juego y elige la partida: desde ahí, la ventana se abre sola en esa
+            carpeta.
+          </p>
+        ) : null}
 
         {partida && vista ? (
           <div className="space-y-4">
@@ -157,6 +268,17 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
                 ))}
               </select>
             </div>
+
+            {vista.sinLugares ? (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Este juego no guarda dónde se capturó cada pokémon ni cuándo: los nuevos se apuntan sin ruta y con la
+                fecha de hoy. Ponles la ruta desde su ficha.
+              </p>
+            ) : vista.sinFecha ? (
+              <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                Este juego no guarda cuándo se capturó cada pokémon: los nuevos se apuntan con la fecha de hoy.
+              </p>
+            ) : null}
 
             {vista.sinMapas ? (
               <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
@@ -215,8 +337,16 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
             })}
 
             <ul className="space-y-1 text-xs text-slate-500">
-              {vista.iguales ? <li>{vista.iguales} ya estaban al día.</li> : null}
-              {vista.yaCaidos ? <li>{vista.yaCaidos} de la caja de caídos ya estaban en el cementerio.</li> : null}
+              {vista.iguales ? (
+                <li>{vista.iguales === 1 ? "1 ya estaba al día." : `${vista.iguales} ya estaban al día.`}</li>
+              ) : null}
+              {vista.yaCaidos ? (
+                <li>
+                  {vista.yaCaidos === 1
+                    ? "1 de la caja de caídos ya estaba en el cementerio."
+                    : `${vista.yaCaidos} de la caja de caídos ya estaban en el cementerio.`}
+                </li>
+              ) : null}
               {vista.caidosEnLaApp.length ? (
                 <li>
                   Vivos en el juego pero caídos en la app (se dejan): {vista.caidosEnLaApp.join(", ")}.
@@ -238,8 +368,6 @@ export function LeerPartida({ jugadores, miId }: { jugadores: { id: string; disp
               <p className="text-sm text-slate-300">Todo está ya como en tu partida.</p>
             )}
           </div>
-        ) : ocupado ? (
-          <p className="text-sm text-slate-400">Leyendo la partida…</p>
         ) : null}
 
         <FormMessage state={estado} />

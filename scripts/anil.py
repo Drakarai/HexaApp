@@ -52,9 +52,10 @@ LIB = os.path.join(AQUI, "..", "src", "lib")
 PRIMER_NUMERO = 20001
 CATEGORIAS = {"Status": 0, "Physical": 1, "Special": 2}
 
-# Movimientos oficiales que Essentials escribe distinto que PokéAPI, y los
-# oficiales que la app no tiene (Plegaria Vital, Luz Devastadora): no son de Añil
-OFICIALES = {"visegrip": "vice-grip", "eeveevolley": "veevee-volley", "revivalblessing": None, "nihillight": None}
+# Movimientos oficiales que Essentials escribe distinto que PokéAPI. Los
+# oficiales que la app no tiene (Plegaria Vital, Luz Devastadora) entran como
+# si fueran de Añil: en una partida pueden salir, y si no, se perderían
+OFICIALES = {"visegrip": "vice-grip", "eeveevolley": "veevee-volley"}
 
 # Habilidades que Essentials escribe distinto que PokéAPI
 HABILIDADES_OFICIALES = {
@@ -301,7 +302,7 @@ def main():
     for s in leer_pbs(os.path.join(pbs, "moves.txt")):
         clave, campos = s["clave"][0].lower(), s["campos"]
         tipo = tipo_id.get(campos["Type"].lower())
-        if tipo is None or (clave in OFICIALES and OFICIALES[clave] is None):
+        if tipo is None:
             continue
         if clave in OFICIALES:
             clave = OFICIALES[clave].replace("-", "")
@@ -367,8 +368,6 @@ def main():
     for s in leer_pbs(os.path.join(pbs, "moves.txt")):
         clave = s["clave"][0]
         plano_ = clave.lower()
-        if plano_ in OFICIALES and OFICIALES[plano_] is None:
-            continue
         plano_ = OFICIALES[plano_].replace("-", "") if plano_ in OFICIALES else plano_
         internos["movimientos"][clave] = slugs_app[plano_]["s"] if plano_ in slugs_app else f"anil-{plano_}"
     json.dump(internos, open(os.path.join(LIB, "anil-internos.json"), "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))

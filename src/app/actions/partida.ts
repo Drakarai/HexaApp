@@ -1,7 +1,6 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { esPokemonAnil } from "@/lib/anil";
 import { getZonasParaElegir } from "@/lib/mapas";
 import { regionesDelJuego } from "@/lib/juegos";
 import { leerMovimientos } from "@/lib/movimientos";
@@ -19,13 +18,17 @@ import {
   CAMPOS,
   type Foto,
 } from "@/lib/caja-servidor";
-import { partidaDelNavegador, traducir } from "@/lib/partida/traducir";
+import { partidaDelNavegador, traducir, type PokemonTraducido } from "@/lib/partida/traducir";
+import { partidaOficialDelNavegador, traducirOficial } from "@/lib/partida/traducir-oficial";
+import { formatoDePartida } from "@/lib/partida/formato";
+import { NOMBRE_DE_FAMILIA } from "@/lib/partida/oficial/comun";
 import { planear, type PasoDelPlan, type Plan } from "@/lib/partida/plan";
 import mapas from "@/lib/anil-mapas.json";
 
 /**
- * **Leer la partida** de Pokémon Añil y ponerla en el Equipo y PC (ver
- * lib/partida). El fichero se lee en el navegador; aquí llega solo lo que se
+ * **Leer la partida** y ponerla en el Equipo y PC (ver lib/partida): la de
+ * Pokémon Añil en sus lockes, y la del juego oficial en los demás (1ª a 7ª
+ * generación). El fichero se lee en el navegador; aquí llega solo lo que se
  * sacó de él, que se comprueba entero porque podría mandarlo cualquiera.
  *
  * Dos pasos: `verPartidaAction` dice qué va a cambiar, y
@@ -70,6 +73,10 @@ export type VistaDeLaPartida = {
   desconocidos: string[];
   /** Si la app aún no sabe los nombres de los mapas de Añil: las rutas quedan en blanco */
   sinMapas: boolean;
+  /** Si el juego no guarda dónde se capturó (1ª, Oro y Plata): las rutas quedan en blanco */
+  sinLugares: boolean;
+  /** Si no guarda cuándo (hasta la 3ª): los nuevos se apuntan con la fecha de hoy */
+  sinFecha: boolean;
 };
 
 const HAY_MAPAS = Object.keys(mapas).length > 0;
@@ -80,20 +87,41 @@ async function prepararPlan(entrada: Entrada) {
     where: { id: participant.competitionId },
     select: { id: true, game: true, gameId: true, juegoNoOficial: true, estilo: true },
   });
-  if (!esPokemonAnil(competicion)) throw new Error("Leer la partida es cosa de los lockes de Pokémon Añil.");
-  const partida = partidaDelNavegador(entrada.partida);
-  if (!partida || !partida.pokemon.length) throw new Error("En esa partida no hay ningún pokémon que leer.");
+  const formato = formatoDePartida(competicion);
+  if (!formato) throw new Error("En este locke no se pueden leer partidas: es de un fangame o no tiene juego elegido.");
+
+  const desconocidos: string[] = [];
+  let partida: { jugador: string | null; cajas: string[]; familia?: string };
+  let traducidos: PokemonTraducido[];
+  if (formato.tipo === "anil") {
+    const leida = partidaDelNavegador(entrada.partida);
+    if (!leida || !leida.pokemon.length) throw new Error("En esa partida no hay ningún pokémon que leer.");
+    partida = leida;
+    traducidos = leida.pokemon.flatMap((p) => {
+      const t = traducir(p, leida.habilidadesRandom);
+      if (!t) desconocidos.push(p.mote || p.especie);
+      return t ? [t] : [];
+    });
+  } else {
+    const leida = partidaOficialDelNavegador(entrada.partida);
+    if (!leida) throw new Error("Esa partida no se ha podido leer.");
+    if (leida.familia !== formato.familia) {
+      throw new Error(
+        `Esa partida es de ${NOMBRE_DE_FAMILIA[leida.familia]} y este locke se juega a ${NOMBRE_DE_FAMILIA[formato.familia]}.`,
+      );
+    }
+    if (!leida.pokemon.length) throw new Error("En esa partida no hay ningún pokémon que leer.");
+    partida = leida;
+    traducidos = leida.pokemon.flatMap((p) => {
+      const t = traducirOficial(p, leida.familia);
+      if (!t) desconocidos.push(p.mote || `nº ${p.especie}`);
+      return t ? [t] : [];
+    });
+  }
   const cajaDeCaidos =
     Number.isInteger(entrada.cajaDeCaidos) && (entrada.cajaDeCaidos ?? -1) >= 0 && entrada.cajaDeCaidos! < partida.cajas.length
       ? entrada.cajaDeCaidos
       : null;
-
-  const desconocidos: string[] = [];
-  const traducidos = partida.pokemon.flatMap((p) => {
-    const t = traducir(p, partida.habilidadesRandom);
-    if (!t) desconocidos.push(p.mote || p.especie);
-    return t ? [t] : [];
-  });
 
   const [capturas, bajasSueltas, zonas] = await Promise.all([
     prisma.capture.findMany({
@@ -132,7 +160,7 @@ async function prepararPlan(entrada: Entrada) {
     zonas: zonas.map((z) => ({ id: z.id, name: z.label.split(" › ").pop() ?? z.label, label: z.label })),
     cajaDeCaidos,
   });
-  return { participant, competicion, partida, cajaDeCaidos, plan, desconocidos };
+  return { participant, competicion, partida, cajaDeCaidos, plan, desconocidos, anil: formato.tipo === "anil" };
 }
 
 function paraVer(paso: PasoDelPlan, cajas: string[], cajaDeCaidos: number | null): PasoParaVer {
@@ -186,10 +214,11 @@ function paraVer(paso: PasoDelPlan, cajas: string[], cajaDeCaidos: number | null
 }
 
 function vista(
-  partida: { jugador: string | null; cajas: string[] },
+  partida: { jugador: string | null; cajas: string[]; familia?: string },
   cajaDeCaidos: number | null,
   plan: Plan,
   desconocidos: string[],
+  anil: boolean,
 ): VistaDeLaPartida {
   return {
     jugador: partida.jugador,
@@ -201,14 +230,16 @@ function vista(
     caidosEnLaApp: plan.caidosEnLaApp,
     soloEnLaApp: plan.soloEnLaApp,
     desconocidos,
-    sinMapas: !HAY_MAPAS,
+    sinMapas: anil && !HAY_MAPAS,
+    sinLugares: partida.familia === "rby" || partida.familia === "gs",
+    sinFecha: ["rby", "gs", "c", "rs", "e", "frlg"].includes(partida.familia ?? ""),
   };
 }
 
 export async function verPartidaAction(entrada: Entrada): Promise<{ error?: string; vista?: VistaDeLaPartida }> {
   try {
-    const { partida, cajaDeCaidos, plan, desconocidos } = await prepararPlan(entrada);
-    return { vista: vista(partida, cajaDeCaidos, plan, desconocidos) };
+    const { partida, cajaDeCaidos, plan, desconocidos, anil } = await prepararPlan(entrada);
+    return { vista: vista(partida, cajaDeCaidos, plan, desconocidos, anil) };
   } catch (error) {
     return { error: (error as Error).message };
   }

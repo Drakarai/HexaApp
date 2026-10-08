@@ -18,7 +18,8 @@ import { Icono } from "@/components/icono";
 import { EquiposYCajas } from "./tablero";
 import { ApuntarEnCaja } from "./apuntar-form";
 import { LeerPartida } from "./leer-partida";
-import { esPokemonAnil } from "@/lib/anil";
+import { formatoDePartida, queFicheroSubir } from "@/lib/partida/formato";
+import { NOMBRE_DE_FAMILIA } from "@/lib/partida/oficial/comun";
 import { Pendientes } from "@/components/pendientes";
 
 export const metadata = { title: "Equipo y PC" };
@@ -84,6 +85,8 @@ export default async function EquipoYPcPage({
   }
 
   const cerrada = soloLectura(competition, gestiona);
+  // Qué partida se puede leer aquí: la del Añil, la de su juego oficial o ninguna
+  const formato = formatoDePartida(competition);
 
   // Lo tuyo primero: es lo que se viene a tocar
   const tableros = [...datos.tableros].sort(
@@ -141,11 +144,16 @@ export default async function EquipoYPcPage({
         </div>
       ) : null}
 
-      {puedenApuntar.length && esPokemonAnil(competition) ? (
+      {puedenApuntar.length && formato ? (
         <div className="mb-5">
           <LeerPartida
             jugadores={puedenApuntar.map((t) => ({ id: t.participantId, displayName: t.displayName }))}
             miId={yo && puedenApuntar.some((t) => t.participantId === yo.id) ? yo.id : null}
+            formato={
+              formato.tipo === "anil"
+                ? formato
+                : { tipo: "oficial", juego: NOMBRE_DE_FAMILIA[formato.familia], fichero: queFicheroSubir(formato.familia) }
+            }
           />
         </div>
       ) : null}
