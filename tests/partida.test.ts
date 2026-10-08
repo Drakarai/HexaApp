@@ -13,7 +13,7 @@ import path from "node:path";
 import { leerMarshal, Diccionario, Objeto, Simbolo } from "@/lib/partida/marshal";
 import { leerPartida, PartidaNoValida } from "@/lib/partida/essentials";
 import { partidaDelNavegador, traducir, type PokemonTraducido } from "@/lib/partida/traducir";
-import { planear, zonaDelSitio, type CapturaParaPlan } from "@/lib/partida/plan";
+import { fechaDeCaptura, planear, zonaDelSitio, type CapturaParaPlan } from "@/lib/partida/plan";
 
 const bytes = new Uint8Array(readFileSync(path.join(__dirname, "partidas", "anil.rxdata")));
 const partida = leerPartida(bytes);
@@ -115,6 +115,9 @@ describe("Traducido a la app", () => {
     const tramposa = { ...ida, pokemon: [{ especie: "PIKACHU'; DROP", donde: { lugar: "equipo", hueco: 0 } }, { especie: "PIKACHU", donde: { lugar: "equipo", hueco: 9 } }] };
     assert.equal(partidaDelNavegador(tramposa)!.pokemon.length, 0);
     assert.equal(partidaDelNavegador("nada"), null);
+    // Una fecha de captura absurda no llega: al pasarla a fecha reventaba la lectura
+    const conFechaRara = { ...ida, pokemon: ida.pokemon.map((q: { recibido: number }) => ({ ...q, recibido: 1e20 })) };
+    assert.ok(partidaDelNavegador(conFechaRara)!.pokemon.every((q) => q.recibido === null));
   });
 });
 
@@ -313,5 +316,16 @@ describe("Partidas de los juegos oficiales", () => {
     const { p } = oficial(partidaG4(pk("roserade.pk4"), pk("geodude.pk4")));
     assert.deepEqual(partidaOficialDelNavegador(JSON.parse(JSON.stringify(p))), p);
     assert.equal(partidaOficialDelNavegador({ ...p, familia: "swsh" }), null);
+  });
+
+  test("las fechas de captura imposibles no se apuntan tal cual", () => {
+    const desde = new Date("2026-06-16T10:00:00.000Z");
+    assert.equal(fechaDeCaptura("2026-07-01T12:00:00.000Z", desde), "2026-07-01T12:00:00.000Z");
+    // Una que no existe (mes 13) o del futuro: nada, se apunta con la de hoy
+    assert.equal(fechaDeCaptura("2026-13-45T12:00:00.000Z", desde), null);
+    assert.equal(fechaDeCaptura("2255-01-01T12:00:00.000Z", desde), null);
+    // De antes de que existiera el locke (un reloj de consola mal puesto): el día que se creó
+    assert.equal(fechaDeCaptura("2000-01-01T12:00:00.000Z", desde), desde.toISOString());
+    assert.equal(fechaDeCaptura(null, desde), null);
   });
 });

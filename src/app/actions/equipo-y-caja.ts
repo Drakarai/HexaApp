@@ -791,8 +791,18 @@ export async function deshacerEnCajaAction(entrada: {
       .filter((f) => existen.has(f.id) && f.deathId && bajasVivas.has(f.deathId))
       .map((f) => f.deathId!);
 
-    // Las que nacieron con el cambio (leer la partida) se borran: antes no existían
-    for (const id of cambio.capturas) await soltarAs(id);
+    /**
+     * Las que nacieron con el cambio (leer la partida) se borran: antes no
+     * existían. Si alguna se hizo as, deja de serlo; se pregunta de una vez
+     * cuáles, que una partida grande trae cientos.
+     */
+    const asesQueSeVan = cambio.capturas.length
+      ? await prisma.participant.findMany({
+          where: { aceCaptureId: { in: cambio.capturas } },
+          select: { aceCaptureId: true },
+        })
+      : [];
+    for (const { aceCaptureId } of asesQueSeVan) if (aceCaptureId) await soltarAs(aceCaptureId);
     await prisma.$transaction([
       prisma.capture.deleteMany({ where: { id: { in: cambio.capturas } } }),
       prisma.death.deleteMany({ where: { id: { in: cambio.muertes } } }),

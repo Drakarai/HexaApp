@@ -197,7 +197,8 @@ export function partidaDelNavegador(entrada: unknown): PartidaLeida | null {
       movimientos: (Array.isArray(p.movimientos) ? p.movimientos : []).map(interno).filter((m): m is string => Boolean(m)).slice(0, 8),
       mapa: entero(p.mapa),
       textoDeObtencion: corto(p.textoDeObtencion, 80),
-      recibido: entero(p.recibido),
+      // En segundos; fuera de lo razonable (antes de 1970 o después de 2100) no se fía
+      recibido: ((v) => (v !== null && v > 0 && v < 4_102_444_800 ? v : null))(entero(p.recibido)),
       donde,
     });
   }

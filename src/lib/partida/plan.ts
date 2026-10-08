@@ -366,3 +366,18 @@ export function planear(entrada: {
     soloEnLaApp: capturas.filter((c) => !c.muerta && !emparejadas.has(c.id)).map(nombreDe),
   };
 }
+
+/**
+ * La fecha de captura que se apunta, sacada del juego. Un reloj de consola mal
+ * puesto o una partida tocada traen fechas imposibles: una que no existe (que
+ * al guardarla rompería la lectura a medias) o del futuro se queda en nada —se
+ * apunta con la de hoy—, y una de antes de que existiera el locke en la app se
+ * queda en el día en que se creó, para que nada salga capturado antes de
+ * empezar.
+ */
+export function fechaDeCaptura(iso: string | null, desde: Date): string | null {
+  if (!iso) return null;
+  const cuando = Date.parse(iso);
+  if (!Number.isFinite(cuando) || cuando > Date.now()) return null;
+  return new Date(Math.max(cuando, desde.getTime())).toISOString();
+}

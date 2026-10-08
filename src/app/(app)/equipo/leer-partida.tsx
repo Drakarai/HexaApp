@@ -43,6 +43,10 @@ type VentanaDeFicheros = (opciones: {
   types?: { description: string; accept: Record<string, string[]> }[];
 }) => Promise<{ getFile: () => Promise<File> }[]>;
 
+const SIN_CONEXION = "No se ha podido hablar con el servidor.";
+const TOPE_DEL_ANIL = 64 * 1024 * 1024;
+const TOPE_DE_CONSOLA = 4 * 1024 * 1024;
+
 export function LeerPartida({
   jugadores,
   miId,
@@ -63,11 +67,15 @@ export function LeerPartida({
   const [copiado, setCopiado] = useState(false);
   const [ocupado, empezar] = useTransition();
   const entrada = useRef<HTMLInputElement>(null);
+  const aplicando = useRef(false);
 
   function ver(leida: Leida, cajaDeCaidos: number | null, participantId = para) {
     setEstado(null);
     empezar(async () => {
-      const respuesta = await verPartidaAction({ participantId, partida: leida, cajaDeCaidos });
+      const respuesta = await verPartidaAction({ participantId, partida: leida, cajaDeCaidos }).catch(() => ({
+        error: SIN_CONEXION,
+        vista: undefined,
+      }));
       if (respuesta.error) {
         setEstado({ error: respuesta.error });
         setVista(null);
@@ -82,6 +90,20 @@ export function LeerPartida({
     if (!fichero) return;
     setVista(null);
     setEstado(null);
+    /**
+     * Antes de leerlo, el tamaño: el fichero entero se carga en memoria, y
+     * arrastrar un vídeo por error dejaba la pestaña colgada. La del Añil real
+     * ronda los 6 MB y las de las consolas no llegan a 1 MB.
+     */
+    if (fichero.size > (anil ? TOPE_DEL_ANIL : TOPE_DE_CONSOLA)) {
+      setPartida(null);
+      setEstado({
+        error: anil
+          ? "Ese fichero es demasiado grande para ser una partida del Añil."
+          : "Ese fichero es demasiado grande para ser una partida: las de las consolas no llegan a 1 MB.",
+      });
+      return;
+    }
     try {
       const bytes = new Uint8Array(await fichero.arrayBuffer());
       const leida = anil ? leerPartida(bytes) : leerPartidaOficial(bytes);
@@ -130,15 +152,29 @@ export function LeerPartida({
   }
 
   function aplicar() {
-    if (!partida || !vista) return;
+    // Un doble toque no la aplica dos veces: el botón tarda un instante en apagarse
+    if (!partida || !vista || aplicando.current) return;
+    aplicando.current = true;
     const claves = vista.pasos.map((p) => p.clave).filter((c) => !quitados.has(c));
     empezar(async () => {
+      /**
+       * Si se corta la conexión (o el servidor tarda demasiado) la llamada falla
+       * sin respuesta, y sin recogerlo se caía la pantalla entera. No se sabe
+       * si llegó a aplicarse: se dice, y volver a leerla no duplica nada.
+       */
       const respuesta = await aplicarPartidaAction({
         participantId: para,
         partida,
         cajaDeCaidos: vista.cajaDeCaidos,
         claves,
-      });
+      })
+        .catch(() => ({
+          error: `${SIN_CONEXION} Puede que se aplicara: vuelve a leer la partida y mira qué falta (lo que ya esté no se repite).`,
+          aviso: undefined,
+        }))
+        .finally(() => {
+          aplicando.current = false;
+        });
       if (respuesta.error) {
         setEstado({ error: respuesta.error });
         return;
@@ -151,6 +187,9 @@ export function LeerPartida({
   }
 
   const marcados = vista ? vista.pasos.filter((p) => !quitados.has(p.clave)).length : 0;
+  const alCementerio = vista
+    ? vista.pasos.filter((p) => (p.tipo === "muere" || p.tipo === "baja") && !quitados.has(p.clave)).length
+    : 0;
   const alternar = (clave: string) =>
     setQuitados((antes) => {
       const ahora = new Set(antes);
@@ -358,6 +397,18 @@ export function LeerPartida({
                 <li>No sé qué pokémon son (se saltan): {vista.desconocidos.join(", ")}.</li>
               ) : null}
             </ul>
+
+            {/**
+             * Lo único delicado: dar por muertos a los de una caja. Si la que se
+             * toma por caja de caídos no lo es, caerían vivos; se avisa justo
+             * antes del botón, con cuántos y de qué caja (y Deshacer lo arregla).
+             */}
+            {alCementerio && vista.cajaDeCaidos !== null ? (
+              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
+                Ojo: {alCementerio === 1 ? "1 irá" : `${alCementerio} irán`} al cementerio, los de «
+                {vista.cajas[vista.cajaDeCaidos]}». Si esa no es tu caja de caídos, cámbiala arriba o desmárcalos.
+              </p>
+            ) : null}
 
             {vista.pasos.length ? (
               <button type="button" className="btn-primary w-full" disabled={ocupado || !marcados} onClick={aplicar}>
