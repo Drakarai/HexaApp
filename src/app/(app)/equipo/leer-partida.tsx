@@ -233,9 +233,8 @@ export function LeerPartida({
           )}
         >
           <strong>{ocupado ? "Leyendo la partida…" : "Elegir la partida"}</strong>
-          <span className="text-xs text-slate-500">
-            {anil ? "o arrástrala aquí" : "o arrástrala aquí desde el ordenador"}
-          </span>
+          {/* Arrastrar solo se puede con ratón: en el móvil es solo el botón */}
+          <span className="hidden text-xs text-slate-500 [@media(pointer:fine)]:inline">o arrástrala aquí</span>
         </button>
         {anil ? (
           <p className="text-xs text-slate-500">
