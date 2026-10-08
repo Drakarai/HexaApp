@@ -43,6 +43,8 @@ export async function montarEquipo(p) {
   await p.waitForTimeout(1200);
   await p.locator('button[aria-label*="Sentret"]').first().click();
   const ficha = p.getByRole("dialog");
+  // La ficha de combate está en su pestaña
+  await ficha.getByRole("tab", { name: "Combate" }).click();
   await ficha.getByRole("button", { name: /^(Apuntar|Editar)$/ }).click();
   await ficha.locator("select").first().waitFor();
   await ficha.getByText("Pegar de Showdown").click();
@@ -70,7 +72,7 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const p = await (
     await navegador.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
   ).newPage();
-  p.on("dialog", (aviso) => aviso.accept());
+  p.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
   await p.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
   await p.fill('input[name="username"]', "draka");
   await p.fill('input[name="password"]', CLAVE);

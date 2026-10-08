@@ -38,7 +38,14 @@ async function enLaFicha(p, dueno, pokemon, boton) {
   const tablero = p.locator("section.card", { has: p.locator("h2", { hasText: dueno }) }).first();
   await tablero.locator(`button[aria-label*="${pokemon}"]`).first().click();
   await p.waitForTimeout(500);
-  await p.locator("div.fixed").getByRole("button", { name: boton }).first().click();
+  const elBoton = p.locator("div.fixed").getByRole("button", { name: boton }).first();
+  // Sin ese botón ya está como se quería (las capturas nuevas van al equipo si hay hueco)
+  if (!(await elBoton.count())) {
+    await p.keyboard.press("Escape");
+    await p.waitForTimeout(300);
+    return;
+  }
+  await elBoton.click();
   await p.waitForTimeout(3000);
   if (await p.locator("div.fixed h3").count()) await p.keyboard.press("Escape");
   await p.waitForTimeout(300);
@@ -63,7 +70,7 @@ async function capturar(p, { para, especie, mote = "", ruta }) {
 
 /** Con la sesión del Creador (Draka) ya abierta en `p`. */
 export async function montarSoulLink(p) {
-  p.on("dialog", (aviso) => aviso.accept());
+  p.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
 
   // --- El equipo de Draka en el Hexalocke 2
   await aLocke(p, "Hexalocke 2");
@@ -74,8 +81,8 @@ export async function montarSoulLink(p) {
     console.log("al equipo:", especie);
   }
 
-  // --- El Soul Link, de dos y sin archivar nada
-  await p.goto(BASE + "/competiciones", { waitUntil: "domcontentloaded" });
+  // --- El Soul Link, de dos y sin archivar nada (en la pestaña Nueva)
+  await p.goto(BASE + "/competiciones?seccion=nueva", { waitUntil: "domcontentloaded" });
   await p.waitForTimeout(1200);
   const alta = p.locator("details", {
     has: p.locator("summary", { hasText: "Crear una competición nueva" }),

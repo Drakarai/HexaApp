@@ -74,7 +74,7 @@ async function abrirMovil() {
   });
   await imagenesDesdeNode(contexto);
   const pagina = await contexto.newPage();
-  pagina.on("dialog", (aviso) => aviso.accept());
+  pagina.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
   return { contexto, pagina };
 }
 
@@ -384,7 +384,7 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await imagenesDesdeNode(contexto);
   const pagina = await contexto.newPage();
-  pagina.on("dialog", (aviso) => aviso.accept());
+  pagina.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
   await entrar(pagina, "draka");
   await aLocke(pagina, "Hexalocke 2");
 

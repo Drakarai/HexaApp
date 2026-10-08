@@ -33,7 +33,7 @@ const contexto = await navegador.newContext({
 });
 const p = await contexto.newPage();
 // Los botones de borrar y de rellenar piden confirmación del navegador
-p.on("dialog", (aviso) => aviso.accept());
+p.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
 
 await p.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
 await p.fill('input[name="username"]', "draka");
@@ -49,14 +49,16 @@ await p.waitForTimeout(1500);
  * enseñar las rutas. Todo lo de abajo —las capturas, las bajas con su zona— se
  * cae detrás.
  */
-await p.goto(BASE + "/competiciones", { waitUntil: "domcontentloaded" });
+// En su pestaña de Ajustes, donde el formulario ya viene desplegado
+await p.goto(BASE + "/competiciones?seccion=ajustes", { waitUntil: "domcontentloaded" });
 await p.waitForTimeout(900);
 {
-  // Hay más de un formulario con selector de juego en la página (el de crear
-  // una edición nueva, por ejemplo): se trabaja dentro del de editar
+  // Hay más de un formulario con selector de juego en la aplicación (el de
+  // crear una edición nueva, por ejemplo): se trabaja dentro del de editar
   const bloque = p.locator("details", { hasText: "Editar datos" }).first();
   if (await bloque.count()) {
-    await bloque.locator("summary").first().click();
+    // Ya viene abierto: un toque en el título lo cerraría
+    if ((await bloque.getAttribute("open")) === null) await bloque.locator("summary").first().click();
     await p.waitForTimeout(500);
     await bloque.locator('select[name="gameId"]').first().selectOption("heartgold-soulsilver");
     await p.waitForTimeout(400);

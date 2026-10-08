@@ -22,7 +22,7 @@ const navegador = await chromium.launch({ executablePath: chromiumDelSistema() }
 async function sesion(ancho, alto) {
   const contexto = await navegador.newContext({ viewport: { width: ancho, height: alto } });
   const pagina = await contexto.newPage();
-  pagina.on("dialog", (aviso) => aviso.accept());
+  pagina.on("dialog", (aviso) => aviso.accept().catch(() => {})); // Si ya lo aceptó otro, nada
   await pagina.goto(BASE + "/login", { waitUntil: "domcontentloaded" });
   await pagina.waitForTimeout(400);
   if (await pagina.locator('input[name="username"]').count()) {

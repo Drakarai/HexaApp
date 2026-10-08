@@ -177,7 +177,7 @@ const GUIAS: Record<
     de: "Para todo el mundo: apuntar capturas y bajas, llevar tus gimnasios y no perderte nada.",
     pdf: `/guia-de-uso.pdf?v=${process.env.HUELLA_GUIA_USO}`,
     fichero: "guia-de-uso.pdf",
-    version: "04/10/2026",
+    version: "08/10/2026",
     paginas: 28,
     contenido: [
       [3, "Entrar y dejarla en el móvil"],
@@ -215,7 +215,7 @@ const GUIAS: Record<
     de: "Para quien lleva una edición: montarla, emparejar las jornadas, anotar resultados y repartir premios.",
     pdf: `/guia-de-administrador.pdf?v=${process.env.HUELLA_GUIA_ADMIN}`,
     fichero: "guia-de-administrador.pdf",
-    version: "04/10/2026",
+    version: "08/10/2026",
     paginas: 15,
     contenido: [
       [2, "Qué puedes y qué no"],
