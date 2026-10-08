@@ -1,5 +1,6 @@
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import Link from "next/link";
+import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
@@ -60,7 +61,7 @@ export default async function EquipoYPcPage({
     gestiona: perfil.cooperativo ? gestiona : false,
     soloLectura: soloLectura(competition, gestiona),
   }));
-  const [yo, gestiona, datos, zonas] = await Promise.all([
+  const [yo, gestiona, datos, zonas, caps] = await Promise.all([
     getMyParticipant(competition.id, user.id),
     gestionaPedido,
     perfil.cooperativo
@@ -68,6 +69,12 @@ export default async function EquipoYPcPage({
       : // Solo lo tuyo
         getEquiposDelLocke(competition, quienMira, { userId: user.id }),
     getZonasParaElegir(regionesDelJuego(competition.gameId)),
+    // Para exportar a Showdown al nivel que se juega: el cap que le toca a cada uno
+    prisma.levelCap.findMany({
+      where: { competitionId: competition.id },
+      orderBy: { position: "asc" },
+      select: { cap: true, clears: { select: { participantId: true } } },
+    }),
   ]);
 
   // Fuera del Soul Link la caja es de cada uno: sin ficha, no hay nada tuyo
@@ -93,6 +100,17 @@ export default async function EquipoYPcPage({
     (a, b) => Number(b.participantId === yo?.id) - Number(a.participantId === yo?.id),
   );
   const numeros = Object.fromEntries(datos.vinculos.map((v, i) => [v.clave, i + 1]));
+  /**
+   * El level cap de cada uno: el primero que no ha superado, o el último si ya
+   * los ha pasado todos. Es el nivel al que se juegan los combates, y con el
+   * que sale el equipo exportado a Showdown. Sin level caps, ninguno.
+   */
+  const niveles = Object.fromEntries(
+    datos.tableros.map((t) => [
+      t.participantId,
+      (caps.find((c) => !c.clears.some((s) => s.participantId === t.participantId)) ?? caps.at(-1))?.cap ?? null,
+    ]),
+  );
   const puedenApuntar = cerrada
     ? []
     : datos.tableros.filter((t) => t.editable && !t.fuera);
@@ -167,6 +185,7 @@ export default async function EquipoYPcPage({
         <EquiposYCajas
           tableros={tableros}
           numeros={numeros}
+          niveles={niveles}
           esSoulLink={perfil.cooperativo}
           zonas={zonas}
           // Solo si es de los que se ven aquí: uno ajeno no está en los tableros y no abre nada

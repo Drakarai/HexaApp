@@ -11,7 +11,7 @@ import { debilidadesDe, tiposDePokemon, TIPOS } from "@/lib/tipos";
 import { evolucionesDe, raizDeLaFamilia } from "@/lib/evoluciones";
 import { findSpecies, searchSpecies } from "@/lib/pokedex";
 import { movimientoParaVer, movimientoPorNombre, movimientosDelJuego } from "@/lib/movimientos";
-import { formatoDelLog, leerRepeticion, leerShowdown, logDeLaPagina, paginaDeRepeticionDeAnil } from "@/lib/showdown";
+import { escribirShowdown, formatoDelLog, leerRepeticion, leerShowdown, logDeLaPagina, paginaDeRepeticionDeAnil } from "@/lib/showdown";
 import { megaPorPiedra } from "@/lib/megas";
 import { habilidadesDe, habilidadesDelJuego, habilidadPorNombre, habilidadPorSlug } from "@/lib/habilidades";
 import { objetosDelJuego } from "@/lib/objetos";
@@ -141,6 +141,28 @@ describe("Pokémon Añil: formas, megas, habilidades y objetos", () => {
     const [fuera] = leerShowdown("Venusaur @ Venusaurite Y\nAbility: Realeza\n- Giga Drain");
     assert.equal(fuera.objeto, null);
     assert.equal(fuera.habilidad, null);
+  });
+
+  test("exportar a Showdown lo de Añil y volver a pegarlo", () => {
+    const royaleon = findSpecies("Royaleon", true)!;
+    const texto = escribirShowdown([
+      {
+        pokemonId: royaleon.dex,
+        especie: "Royaleon",
+        mote: null,
+        shiny: false,
+        objeto: "anil-venusauritey",
+        habilidad: "anil-realeza",
+        naturaleza: "modest",
+        movimientos: ["anil-escalofrio", "hyper-voice"],
+      },
+    ]);
+    assert.ok(texto.startsWith("Royaleon @ "));
+    const [vuelta] = leerShowdown(texto, true);
+    assert.equal(vuelta.pokemonId, royaleon.dex);
+    assert.equal(vuelta.objeto, "anil-venusauritey");
+    assert.equal(vuelta.habilidad, "anil-realeza");
+    assert.deepEqual(vuelta.movimientos, ["anil-escalofrio", "hyper-voice"]);
   });
 
   test("las potencias de Añil y cómo se llama una mega", () => {

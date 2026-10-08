@@ -10,7 +10,8 @@
  *   completa del Equipo y PC y la cobertura de Mis notas.
  * - showdown.json: el nombre de cada pokémon tal y como lo escribe Showdown,
  *   sin guiones ni mayúsculas ("rotomwash", "ninetalesalola"), con su número.
- *   Solo lo lee el servidor, al pegar un equipo exportado de Showdown.
+ *   Lo lee el servidor al pegar un equipo exportado de Showdown, y el
+ *   navegador al exportar el Equipo y PC (`escribirShowdown`).
  *
  * Como los otros generadores, lee los CSV del repositorio de PokéAPI y el
  * resultado se sube: la aplicación no depende de nadie en marcha.

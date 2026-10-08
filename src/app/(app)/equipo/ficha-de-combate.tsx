@@ -72,12 +72,15 @@ export function FichaDeCombate({
   ficha,
   editable,
   onAviso,
+  extra = null,
 }: {
   captureId: string;
   especie: string;
   ficha: Ficha;
   editable: boolean;
   onAviso: (aviso: Aviso) => void;
+  /** Lo que va al lado de «Editar»: copiarlo para Showdown */
+  extra?: React.ReactNode;
 }) {
   const [editando, setEditando] = useState(false);
   const vacia = !ficha.naturaleza && !ficha.objeto && !ficha.habilidad && !ficha.movimientos.length;
@@ -98,11 +101,14 @@ export function FichaDeCombate({
     <section className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <div className="mb-2 flex items-center gap-2">
         <p className="rotulo">Para combatir</p>
-        {editable ? (
-          <button type="button" className="btn-ghost btn-sm ml-auto" onClick={() => setEditando(true)}>
-            {vacia ? "Apuntar" : "Editar"}
-          </button>
-        ) : null}
+        <div className="ml-auto flex flex-wrap justify-end gap-1.5">
+          {extra}
+          {editable ? (
+            <button type="button" className="btn-ghost btn-sm" onClick={() => setEditando(true)}>
+              {vacia ? "Apuntar" : "Editar"}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {vacia ? (

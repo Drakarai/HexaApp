@@ -25,6 +25,7 @@ import { FichaDeCombate } from "./ficha-de-combate";
 import { Debilidades } from "./debilidades";
 import { Intercambio } from "./intercambio";
 import { ConFichaAlPasar } from "./ficha-al-pasar";
+import { CopiarParaShowdown, ExportarEquipo } from "./exportar-showdown";
 import {
   HUECOS_POR_CAJA,
   colocar,
@@ -73,6 +74,7 @@ type Aviso = { tipo: "ok" | "error"; texto: string };
 export function EquiposYCajas({
   tableros,
   numeros,
+  niveles = {},
   esSoulLink,
   zonas = [],
   abrirDeEntrada = null,
@@ -80,6 +82,8 @@ export function EquiposYCajas({
   tableros: TableroDeJugador[];
   /** El número de cada vínculo, por su clave */
   numeros: Record<string, number>;
+  /** El level cap que le toca a cada jugador, para exportar a Showdown a ese nivel */
+  niveles?: Record<string, number | null>;
   esSoulLink: boolean;
   /** Las zonas del mapa, para decir dónde cayó uno al darlo por muerto */
   zonas?: ZonaParaElegir[];
@@ -122,6 +126,7 @@ export function EquiposYCajas({
             key={tablero.participantId}
             tablero={tablero}
             numeros={numeros}
+            nivel={niveles[tablero.participantId] ?? null}
             resaltados={resaltados}
             onAbrir={setAbierto}
             onAviso={setAviso}
@@ -135,6 +140,7 @@ export function EquiposYCajas({
           tableros={tableros}
           todos={todos}
           numero={pokemonAbierto.vinculo ? numeros[pokemonAbierto.vinculo] : undefined}
+          nivel={niveles[pokemonAbierto.participantId] ?? null}
           esSoulLink={esSoulLink}
           zonas={zonas}
           onCerrar={() => setAbierto(null)}
@@ -175,12 +181,14 @@ type Destino = { lugar: Lugar; hueco: number };
 function Tablero({
   tablero,
   numeros,
+  nivel,
   resaltados,
   onAbrir,
   onAviso,
 }: {
   tablero: TableroDeJugador;
   numeros: Record<string, number>;
+  nivel: number | null;
   resaltados: Set<string>;
   onAbrir: (id: string) => void;
   onAviso: (aviso: Aviso) => void;
@@ -494,9 +502,12 @@ function Tablero({
         ) : null}
       </div>
 
-      <p className="rotulo mb-1.5">
-        Equipo
-      </p>
+      <div className="mb-1.5 flex min-h-8 items-center gap-2">
+        <p className="rotulo">Equipo</p>
+        {equipo.some(Boolean) ? (
+          <ExportarEquipo equipo={equipo.filter((p): p is PokemonDelTablero => Boolean(p))} nivel={nivel} />
+        ) : null}
+      </div>
       <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
         {equipo.map((pokemon, hueco) => (
           <Casilla
@@ -1041,6 +1052,7 @@ function Ficha({
   tableros,
   todos,
   numero,
+  nivel,
   esSoulLink,
   zonas,
   onCerrar,
@@ -1050,6 +1062,7 @@ function Ficha({
   tableros: TableroDeJugador[];
   todos: PokemonDelTablero[];
   numero: number | undefined;
+  nivel: number | null;
   esSoulLink: boolean;
   zonas: ZonaParaElegir[];
   onCerrar: () => void;
@@ -1312,6 +1325,8 @@ function Ficha({
               ficha={pokemon.combate}
               editable={editable}
               onAviso={onAviso}
+              // Los caídos ya no combaten
+              extra={pokemon.muerta ? null : <CopiarParaShowdown pokemon={pokemon} nivel={nivel} />}
             />
           ) : null}
           {pestana === "combate" ? <Debilidades pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}

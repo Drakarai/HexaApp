@@ -4,7 +4,9 @@
  */
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { datosDeLaRepeticion, leerRepeticion, leerShowdown } from "@/lib/showdown";
+import { datosDeLaRepeticion, escribirShowdown, especieEnShowdown, leerRepeticion, leerShowdown } from "@/lib/showdown";
+import { POKEDEX } from "@/lib/pokedex";
+import { MOVIMIENTOS } from "@/lib/movimientos";
 import { ataquesDeLosMovimientos, leerMovimientos, movimientoPorNombre } from "@/lib/movimientos";
 import { tipoDelMovimiento } from "@/lib/tipo-del-movimiento";
 
@@ -149,5 +151,81 @@ describe("leerRepeticion", () => {
     );
     assert.equal(datosDeLaRepeticion("https://www.youtube.com/watch?v=x"), null);
     assert.equal(datosDeLaRepeticion("https://replay.pokemonshowdown.com.malo.com/gen9ou-1"), null);
+  });
+});
+
+describe("escribirShowdown", () => {
+  const brasas = {
+    pokemonId: 6,
+    especie: "Charizard",
+    mote: "Brasas",
+    shiny: true,
+    objeto: "charizardite-x",
+    habilidad: "blaze",
+    naturaleza: "timid",
+    movimientos: ["flamethrower", "u-turn", "will-o-wisp", "dragon-claw"],
+  };
+
+  test("el formato de Showdown, con el nivel del cap", () => {
+    assert.equal(
+      escribirShowdown([brasas], { nivel: 34 }),
+      `Brasas (Charizard) @ Charizardite X
+Ability: Blaze
+Level: 34
+Shiny: Yes
+Timid Nature
+- Flamethrower
+- U-turn
+- Will-O-Wisp
+- Dragon Claw`,
+    );
+  });
+
+  test("sin motes y sin nivel, una línea en blanco entre pokémon", () => {
+    const texto = escribirShowdown(
+      [brasas, { ...brasas, pokemonId: 10009, especie: "Rotom", mote: null, shiny: false, objeto: null, habilidad: null, naturaleza: null, movimientos: [] }],
+      { conMotes: false },
+    );
+    assert.equal(texto.split("\n\n")[1], "Rotom-Wash");
+    assert.ok(texto.startsWith("Charizard @ Charizardite X\n"));
+    assert.ok(!texto.includes("Level"));
+  });
+
+  test("lo que se exporta se vuelve a pegar igual", () => {
+    const [vuelta] = leerShowdown(escribirShowdown([brasas]));
+    assert.equal(vuelta.pokemonId, 6);
+    assert.equal(vuelta.mote, "Brasas");
+    assert.equal(vuelta.objeto, "charizardite-x");
+    assert.equal(vuelta.habilidad, "blaze");
+    assert.equal(vuelta.naturaleza, "timid");
+    assert.equal(vuelta.shiny, true);
+    assert.deepEqual(vuelta.movimientos, brasas.movimientos);
+  });
+
+  test("los nombres que Showdown escribe distinto que PokéAPI", () => {
+    assert.equal(especieEnShowdown(772, "Código Cero"), "Type: Null");
+    assert.equal(especieEnShowdown(29, "Nidoran♀"), "Nidoran-F");
+    assert.equal(especieEnShowdown(669, "Flabébé"), "Flabebe");
+    assert.equal(especieEnShowdown(10186, "Indeedee"), "Indeedee-F");
+    assert.equal(especieEnShowdown(10094, "Pikachu"), "Pikachu-Original");
+    assert.equal(especieEnShowdown(10250, "Tauros"), "Tauros-Paldea-Combat");
+    // La mega y el Gigamax son del combate: la especie, y la piedra hace el resto
+    assert.equal(especieEnShowdown(10034, "Charizard"), "Charizard");
+    assert.equal(especieEnShowdown(10196, "Charizard"), "Charizard");
+  });
+
+  test("todas las formas y todos los movimientos van y vuelven", () => {
+    const delCombate = /mega|gmax|t[oó]tem|primigenia|infinito|meteorito|build|mode|own tempo|10%|50%/i;
+    for (const especie of POKEDEX) {
+      for (const forma of especie.forms) {
+        if (delCombate.test(forma.label)) continue;
+        const texto = escribirShowdown([{ ...brasas, pokemonId: forma.id, especie: especie.name, mote: null }]);
+        assert.equal(leerShowdown(texto)[0].pokemonId, forma.id, `${especie.name} (${forma.label}): ${texto.split("\n")[0]}`);
+      }
+    }
+    for (const movimiento of MOVIMIENTOS) {
+      const [vuelta] = leerShowdown(escribirShowdown([{ ...brasas, movimientos: [movimiento.s] }]));
+      assert.deepEqual(vuelta.movimientos, [movimiento.s], movimiento.s);
+    }
   });
 });

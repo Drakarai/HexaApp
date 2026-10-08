@@ -1,12 +1,13 @@
 import nombresDeShowdown from "./showdown.json";
 import { queEs } from "@/lib/evoluciones";
-import { findSpecies } from "@/lib/pokedex";
+import { findSpecies, POKEDEX } from "@/lib/pokedex";
 import { esPokemonDeAnil } from "@/lib/anil";
 import { objetosDelJuego } from "@/lib/objetos";
-import { habilidadPorNombre } from "@/lib/habilidades";
+import { habilidadPorNombre, habilidadPorSlug } from "@/lib/habilidades";
 import {
   MOVIMIENTOS_POR_POKEMON,
   movimientoPorNombre,
+  movimientoPorSlug,
   naturalezaPorNombre,
   plano,
 } from "@/lib/movimientos";
@@ -15,8 +16,9 @@ import {
  * Leer un equipo **exportado de Showdown** («Export» en el Teambuilder), para
  * meterlo en la aplicación sin teclear: los seis de un combate de jornada, o
  * la naturaleza, el objeto y los movimientos de un pokémon del Equipo y PC.
- *
- * Solo se lee, no se escribe: el grupo lo quiere en ese sentido. El formato es
+ * Y al revés: **escribir** el equipo del Equipo y PC para pegarlo en el
+ * Teambuilder («Import from text») y probar el combate (`escribirShowdown`,
+ * más abajo). El formato es
  *
  *     Brasas (Charizard) (M) @ Leftovers
  *     Ability: Blaze
@@ -72,7 +74,7 @@ function numeroDe(especie: string, conAnil: boolean): number | null {
   // Royaleon y Cefireon, como los escribe el servidor de Showdown de Añil
   const deAnil = conAnil ? findSpecies(especie, true) : undefined;
   if (deAnil && esPokemonDeAnil(deAnil.dex)) return deAnil.dex;
-  const exacto = NUMERO[plano(especie)];
+  const exacto = formasDeShowdown().get(plano(especie)) ?? NUMERO[plano(especie)];
   if (exacto) return exacto;
   const partes = especie.split("-");
   for (let i = partes.length - 1; i > 0; i--) {
@@ -80,6 +82,28 @@ function numeroDe(especie: string, conAnil: boolean): number | null {
     if (numero) return numero;
   }
   return null;
+}
+
+/**
+ * Los nombres de Showdown que no están en `showdown.json` porque PokéAPI los
+ * llama de otra manera ("Indeedee-F", "Pikachu-Original", "Tauros-Paldea-Combat"):
+ * los mismos que escribe `especieEnShowdown`, para que lo que sale de la
+ * aplicación vuelva a entrar como la misma forma. Los que valen para varias
+ * («Minior-Meteor», de siete colores) no entran: se quedan en la especie.
+ */
+let formas: Map<string, number> | null = null;
+function formasDeShowdown() {
+  if (formas) return formas;
+  const vistos = new Map<string, number | null>();
+  for (const especie of POKEDEX) {
+    for (const forma of especie.forms) {
+      const clave = plano(especieEnShowdown(forma.id, especie.name));
+      if (NUMERO[clave] && !NUMERO_EN_SHOWDOWN[forma.id]) continue;
+      vistos.set(clave, vistos.has(clave) && vistos.get(clave) !== forma.id ? null : forma.id);
+    }
+  }
+  formas = new Map([...vistos].filter((par): par is [string, number] => par[1] !== null));
+  return formas;
 }
 
 /** El nombre que le da la aplicación a ese número: el de su especie */
@@ -166,6 +190,176 @@ export function leerShowdown(texto: string, conAnil = false): PokemonDeShowdown[
     });
   }
   return equipo;
+}
+
+// ---------------------------------------------------------------------------
+// Escribir: del Equipo y PC al Teambuilder
+// ---------------------------------------------------------------------------
+
+/** Un pokémon tal y como se guarda: los slugs de PokéAPI, igual que salen de `leerShowdown` */
+export type PokemonParaShowdown = {
+  pokemonId: number | null;
+  especie: string;
+  mote: string | null;
+  shiny: boolean;
+  objeto: string | null;
+  /** La de siempre, no la de la mega: Showdown pone la mega solo con la piedra */
+  habilidad: string | null;
+  naturaleza: string | null;
+  movimientos: string[];
+};
+
+/**
+ * El nombre de Showdown de cada número. En `showdown.json` van sin guiones ni
+ * mayúsculas ("rotomheat"), y una especie puede tener dos ("deoxys" y
+ * "deoxysnormal"): se queda el más corto, que es el de la forma de siempre.
+ */
+const CLAVE_DE_NUMERO = new Map<number, string>();
+for (const [clave, numero] of Object.entries(NUMERO)) {
+  const antes = CLAVE_DE_NUMERO.get(numero);
+  if (!antes || clave.length < antes.length) CLAVE_DE_NUMERO.set(numero, clave);
+}
+
+/** Los pocos cuyo nombre en castellano no es el de Showdown */
+const ESPECIE_EN_SHOWDOWN: Record<string, string> = {
+  nidoranf: "Nidoran-F",
+  nidoranm: "Nidoran-M",
+  typenull: "Type: Null",
+};
+
+/**
+ * Las formas que PokéAPI llama de otra manera que Showdown (de ahí sale
+ * `showdown.json`). Con `null`, Showdown no la tiene aparte: solo existe
+ * dentro del combate (la mega sale sola con su piedra puesta) o es la de
+ * siempre con otra habilidad, así que se escribe la especie y ya.
+ */
+const FORMA_EN_SHOWDOWN: [RegExp, string | null][] = [
+  [/mega[xyz]?$|gmax|primal|eternamax|totem|build$|mode$|owntempo|^50powerconstruct$/, null],
+  [/^(10)powerconstruct$/, "10"],
+  [/^female$/, "F"],
+  [/^galarstandard$/, "Galar"],
+  [/^paldea(combat|blaze|aqua)breed$/, "Paldea-$1"],
+  // Las gorras de Pikachu y los plumajes de Squawkabilly, sin la palabra
+  [/^(\w+)(cap|plumage)$/, "$1"],
+  [/^\w+meteor$/, "Meteor"],
+];
+
+/** Las que van al revés: en PokéAPI la de siempre es la de cuatro, en Showdown la de tres */
+const NUMERO_EN_SHOWDOWN: Record<number, string> = { 925: "Maushold-Four", 10257: "Maushold" };
+
+const sinTildes = (texto: string) => texto.normalize("NFD").replace(/[̀-ͯ]/g, "");
+const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+/**
+ * "Rotom-Heat", "Lycanroc-Midnight", "Farfetch’d-Galar". Showdown compara los
+ * nombres sin mayúsculas ni signos, así que basta con que las letras sean las
+ * suyas; los guiones son para que se lea bien.
+ */
+export function especieEnShowdown(pokemonId: number | null, especie: string): string {
+  const es = queEs(pokemonId, especie);
+  if (es && NUMERO_EN_SHOWDOWN[es.pokemonId]) return NUMERO_EN_SHOWDOWN[es.pokemonId];
+  const base = es?.especie;
+  const claveBase = base ? CLAVE_DE_NUMERO.get(base.dex) : undefined;
+  // Royaleon, Cefireon y lo que Showdown no tenga: su nombre, sin tildes
+  if (!base || !claveBase) return sinTildes(base?.name ?? especie);
+  const nombreBase =
+    ESPECIE_EN_SHOWDOWN[claveBase] ??
+    (plano(base.name) === claveBase ? sinTildes(base.name) : mayuscula(claveBase));
+  const clave = es.pokemonId === base.dex ? claveBase : CLAVE_DE_NUMERO.get(es.pokemonId);
+  // Una forma de Añil que Showdown no tiene se queda en su especie
+  if (!clave || clave === claveBase) return nombreBase;
+  if (!clave.startsWith(claveBase)) return mayuscula(clave);
+  const forma = clave.slice(claveBase.length);
+  const cambio = FORMA_EN_SHOWDOWN.find(([patron]) => patron.test(forma));
+  if (!cambio) return `${nombreBase}-${mayuscula(forma)}`;
+  if (cambio[1] === null) return nombreBase;
+  return `${nombreBase}-${forma.replace(cambio[0], cambio[1]).split("-").map(mayuscula).join("-")}`;
+}
+
+/**
+ * Los nombres en inglés que no salen de poner mayúsculas al slug. Tampoco
+ * hace falta que estén todos: Showdown los reconoce igual sin el apóstrofo o
+ * con otro guion, esto es para que se lea como lo escribe él.
+ */
+const EN_INGLES: Record<string, string> = {
+  "u-turn": "U-turn",
+  "v-create": "V-create",
+  "will-o-wisp": "Will-O-Wisp",
+  "x-scissor": "X-Scissor",
+  "double-edge": "Double-Edge",
+  "self-destruct": "Self-Destruct",
+  "soft-boiled": "Soft-Boiled",
+  "freeze-dry": "Freeze-Dry",
+  "lock-on": "Lock-On",
+  "mud-slap": "Mud-Slap",
+  "wake-up-slap": "Wake-Up Slap",
+  "baby-doll-eyes": "Baby-Doll Eyes",
+  "power-up-punch": "Power-Up Punch",
+  "trick-or-treat": "Trick-or-Treat",
+  "multi-attack": "Multi-Attack",
+  "kings-shield": "King's Shield",
+  "forests-curse": "Forest's Curse",
+  "lands-wrath": "Land's Wrath",
+  "natures-madness": "Nature's Madness",
+  "kings-rock": "King's Rock",
+  "never-melt-ice": "Never-Melt Ice",
+};
+
+/** "choice-scarf" → "Choice Scarf" */
+function nombreDeSlug(slug: string) {
+  return EN_INGLES[slug] ?? slug.split("-").map(mayuscula).join(" ");
+}
+
+function objetoEnShowdown(slug: string) {
+  // Las megapiedras de Añil van con «anil-» en la aplicación y sin él en su servidor
+  return nombreDeSlug(slug.replace(/^anil-/, ""));
+}
+
+function movimientoEnShowdown(slug: string) {
+  const movimiento = movimientoPorSlug(slug);
+  if (!movimiento) return null;
+  // Los nuevos de Añil, por su nombre de allí y sin tildes, como los escribe su servidor
+  return slug.startsWith("anil-") ? sinTildes(movimiento.n) : nombreDeSlug(slug);
+}
+
+function habilidadEnShowdown(slug: string) {
+  const habilidad = habilidadPorSlug(slug, slug.startsWith("anil-"));
+  if (!habilidad) return null;
+  return slug.startsWith("anil-") ? sinTildes(habilidad.n) : nombreDeSlug(slug);
+}
+
+/** Lo que rompería la primera línea: los paréntesis y la @ son del formato */
+const moteLimpio = (mote: string) => mote.replace(/[()@]/g, "").replace(/\s+/g, " ").trim();
+
+/**
+ * El equipo en el formato de «Export» de Showdown, para pegarlo en su
+ * Teambuilder. Con `nivel`, todos a ese nivel (el level cap, que es a lo que
+ * se juegan los combates); sin él, Showdown pone el que toque al formato.
+ */
+export function escribirShowdown(
+  equipo: PokemonParaShowdown[],
+  { nivel = null, conMotes = true }: { nivel?: number | null; conMotes?: boolean } = {},
+): string {
+  return equipo
+    .map((p) => {
+      const especie = especieEnShowdown(p.pokemonId, p.especie);
+      const mote = conMotes && p.mote ? moteLimpio(p.mote) : "";
+      const lineas = [
+        (mote && plano(mote) !== plano(especie) ? `${mote} (${especie})` : especie) +
+          (p.objeto ? ` @ ${objetoEnShowdown(p.objeto)}` : ""),
+      ];
+      const habilidad = p.habilidad ? habilidadEnShowdown(p.habilidad) : null;
+      if (habilidad) lineas.push(`Ability: ${habilidad}`);
+      if (nivel && nivel >= 1 && nivel <= 100) lineas.push(`Level: ${Math.round(nivel)}`);
+      if (p.shiny) lineas.push("Shiny: Yes");
+      if (p.naturaleza) lineas.push(`${mayuscula(p.naturaleza)} Nature`);
+      for (const slug of p.movimientos) {
+        const movimiento = movimientoEnShowdown(slug);
+        if (movimiento) lineas.push(`- ${movimiento}`);
+      }
+      return lineas.join("\n");
+    })
+    .join("\n\n");
 }
 
 /**
