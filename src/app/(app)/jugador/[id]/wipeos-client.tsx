@@ -50,7 +50,7 @@ export function Wipeos({
   }, [estado]);
 
   return (
-    <section className="card mb-4">
+    <section className="card">
       <div className="mb-1 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="section-title">Wipeos</h2>
         <span className="text-sm font-semibold text-red-400">

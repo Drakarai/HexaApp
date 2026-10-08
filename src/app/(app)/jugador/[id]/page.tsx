@@ -27,6 +27,7 @@ import { cx, formatDate } from "@/lib/utils";
 import { coronasDe } from "@/lib/coronas";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { Icono } from "@/components/icono";
+import { MarcaPokeBall } from "@/components/marca-poke-ball";
 
 export const metadata = { title: "Jugador" };
 
@@ -157,17 +158,23 @@ export default async function PlayerPage({
           .join(" · ")}
       />
 
-      {/* Cabecera con la foto grande y las cifras del jugador */}
-      <section className="card mb-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <Avatar
-            name={participant.displayName}
-            color={participant.color}
-            image={fila?.avatarImage ?? null}
-            size={72}
-          />
+      {/* Su ficha de entrenador, como la de Mi perfil: foto, título, su as y sus cifras */}
+      <section className="ficha-de-entrenador relative mb-4 overflow-hidden rounded-2xl border border-white/10 p-5 sm:p-6">
+        <MarcaPokeBall />
+        <p className="relative text-[11px] font-bold uppercase tracking-[0.2em] text-brand-400">
+          Ficha de entrenador
+        </p>
+        <div className="relative mt-4 flex flex-wrap items-center gap-4">
+          <div className="rounded-full p-1 ring-2 ring-brand-500/50">
+            <Avatar
+              name={participant.displayName}
+              color={participant.color}
+              image={fila?.avatarImage ?? null}
+              size={72}
+            />
+          </div>
           <div className="min-w-0 flex-1">
-            <h2 className="section-title">
+            <h2 className="font-[Barlow_Condensed] text-3xl font-bold uppercase leading-none tracking-wide text-white">
               {participant.displayName}
               {comoEstaFuera(participant) ? (
                 <span
@@ -216,7 +223,7 @@ export default async function PlayerPage({
           ) : null}
         </div>
 
-        <div className="mt-4 grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
+        <div className="relative mt-5 grid grid-cols-2 items-start gap-2 sm:grid-cols-4">
           <Cifra valor={fila?.points ?? 0} etiqueta="Puntos" />
           <Cifra valor={deaths.length} etiqueta="Caídos" />
           <HeadToHead
@@ -240,19 +247,9 @@ export default async function PlayerPage({
         </div>
       </section>
 
-      <Wipeos
-        participantId={id}
-        nombre={participant.displayName}
-        editable={editableDelLocke}
-        wipeos={wipeos.map((wipeo) => ({
-          id: wipeo.id,
-          ocurridoAt: formatDate(wipeo.ocurridoAt),
-          contra: wipeo.contra,
-          notas: wipeo.notas,
-        }))}
-      />
-
-      <section className="card mb-4">
+      {/* En pantalla ancha, de dos en dos: lo del locke a la izquierda, lo suyo a la derecha */}
+      <div className="grid items-start gap-4 xl:grid-cols-2">
+      <section className="card">
         <h2 className="section-title mb-1">Pokémon favoritos</h2>
         <p className="muted mb-4">
           {editableDelLocke
@@ -265,16 +262,6 @@ export default async function PlayerPage({
           editable={editableDelLocke}
         />
       </section>
-
-      <div className="mb-4">
-        <TitlesSection
-          userId={participant.userId}
-          titulos={titulos}
-          editable={editable}
-          propio={esMio}
-          nombre={participant.displayName}
-        />
-      </div>
 
       <section className="card">
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
@@ -290,7 +277,7 @@ export default async function PlayerPage({
         {deaths.length === 0 ? (
           <p className="muted">Todavía no ha perdido a nadie. Qué suerte.</p>
         ) : (
-          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6">
+          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-4">
             {deaths.slice(0, BAJAS_VISIBLES).map((baja) => (
               <li
                 key={baja.id}
@@ -327,6 +314,29 @@ export default async function PlayerPage({
           </p>
         ) : null}
       </section>
+      <Wipeos
+        participantId={id}
+        nombre={participant.displayName}
+        editable={editableDelLocke}
+        wipeos={wipeos.map((wipeo) => ({
+          id: wipeo.id,
+          ocurridoAt: formatDate(wipeo.ocurridoAt),
+          contra: wipeo.contra,
+          notas: wipeo.notas,
+        }))}
+      />
+
+      <div>
+        <TitlesSection
+          userId={participant.userId}
+          titulos={titulos}
+          editable={editable}
+          propio={esMio}
+          nombre={participant.displayName}
+        />
+      </div>
+
+      </div>
     </>
   );
 }
@@ -342,7 +352,7 @@ function Cifra({
   nota?: React.ReactNode;
 }) {
   return (
-    <div className={cx("rounded-xl border border-white/5 bg-white/[0.03] p-3")}>
+    <div className={cx("rounded-xl border border-white/10 bg-black/20 p-3")}>
       <p className="text-xl font-bold text-white tabular-nums">{valor}</p>
       <p className="text-[11px] uppercase tracking-wide text-slate-500">
         {etiqueta}
