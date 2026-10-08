@@ -122,7 +122,14 @@ async function p_cerrar(p) {
   await p.waitForTimeout(400);
 }
 
+/**
+ * Con `GUIA_FOTOS=perfil,admin` solo se rehacen esas: cuando cambia una
+ * pantalla no hace falta repetir las cuarenta.
+ */
+const SOLO = process.env.GUIA_FOTOS ? new Set(process.env.GUIA_FOTOS.split(",")) : null;
+
 async function foto(pagina, nombre, ruta, prepara) {
+  if (SOLO && !SOLO.has(nombre)) return;
   if (ruta) {
     await pagina.goto(BASE + ruta, { waitUntil: "domcontentloaded" });
     await pagina.waitForTimeout(1400);
@@ -261,10 +268,9 @@ async function foto(pagina, nombre, ruta, prepara) {
     await arriba(p, p.locator("h2", { hasText: "Vínculos" }).first(), 90);
   });
   // Y el estilo de juego, en el formulario de la edición
-  await foto(pagina, "estilo", "/competiciones", async (p) => {
+  // En su pestaña de Ajustes el formulario ya viene abierto
+  await foto(pagina, "estilo", "/competiciones?seccion=ajustes", async (p) => {
     const bloque = p.locator("details", { hasText: "Editar datos" }).first();
-    await bloque.locator("summary").first().click();
-    await p.waitForTimeout(600);
     await arriba(p, bloque.locator("text=Estilo de juego").first(), 140);
   });
   await aLocke(pagina, "Hexalocke 2");
@@ -304,15 +310,13 @@ async function foto(pagina, nombre, ruta, prepara) {
   });
   await p_cerrar(pagina);
   await foto(pagina, "jugadores", "/competiciones");
-  // El aspecto se elige en el perfil, más abajo de lo que cabe en la pantalla
-  await foto(pagina, "aspecto", "/perfil", async (p) => {
+  // El aspecto se elige en el perfil, en su pestaña Personalizar
+  await foto(pagina, "aspecto", "/perfil?seccion=personalizar", async (p) => {
     await arriba(p, p.locator("h2", { hasText: "Aspecto" }).first(), 110);
   });
   // El formulario de la edición abierto por donde se sube el logo
-  await foto(pagina, "logo-edicion", "/competiciones", async (p) => {
+  await foto(pagina, "logo-edicion", "/competiciones?seccion=ajustes", async (p) => {
     const bloque = p.locator("details", { hasText: "Editar datos" }).first();
-    await bloque.locator("summary").first().click();
-    await p.waitForTimeout(600);
     await bloque.locator("text=Logo de la edición").first().scrollIntoViewIfNeeded();
     await p.evaluate(() => window.scrollBy(0, 160));
     await p.waitForTimeout(500);

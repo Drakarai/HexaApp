@@ -40,6 +40,9 @@ node guia/capturas.mjs   # 2. saca las fotos a guia/img
 node guia/pdf.mjs        # 3. arma los dos PDF de public/
 ```
 
+Si solo ha cambiado alguna pantalla, `GUIA_FOTOS=perfil,admin node
+guia/capturas.mjs` rehace solo esas fotos (por su nombre en `img/`).
+
 `pdf.mjs` sin argumentos hace las dos; con `uso` o `admin`, solo esa. Con
 `GUIA_VISTAS=/una/carpeta` deja además una foto de cada hoja, para repasarlas
 sin abrir el PDF.

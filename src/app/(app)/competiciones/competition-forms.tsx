@@ -254,7 +254,10 @@ function Check({
 
 export function EditCompetitionForm({
   competition,
+  abierto = false,
 }: {
+  /** Desplegado de entrada: en su pestaña de Ajustes es a lo que se viene */
+  abierto?: boolean;
   competition: {
     id: string;
     name: string;
@@ -290,7 +293,7 @@ export function EditCompetitionForm({
   const enSolitario = competition.maxPlayers === 1;
 
   return (
-    <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-4">
+    <details className="group rounded-xl border border-white/10 bg-white/[0.02] p-4" open={abierto}>
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         <span className="mr-2 inline-block transition group-open:rotate-90">▸</span>
         Editar datos de la competición

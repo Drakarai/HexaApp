@@ -165,7 +165,7 @@ export default async function PlayerPage({
           Ficha de entrenador
         </p>
         <div className="relative mt-4 flex flex-wrap items-center gap-4">
-          <div className="rounded-full p-1 ring-2 ring-brand-500/50">
+          <div className="flex shrink-0 rounded-full p-1 ring-2 ring-brand-500/50">
             <Avatar
               name={participant.displayName}
               color={participant.color}

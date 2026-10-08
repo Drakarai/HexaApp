@@ -56,7 +56,7 @@ export function Titles({
   usuarios: UsuarioSimple[];
 }) {
   return (
-    <section className="card mt-4">
+    <section className="card">
       <h2 className="section-title mb-1">Títulos</h2>
       <p className="muted mb-4">
         Distinciones que te inventas y repartes. Salen debajo del nombre en el

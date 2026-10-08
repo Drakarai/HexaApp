@@ -32,6 +32,7 @@ import { COOKIE_DEL_COMPANERO } from "@/lib/companero";
 import { Icono } from "@/components/icono";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { MarcaPokeBall } from "@/components/marca-poke-ball";
+import { Atajo, MenuDeSecciones, seccionActiva } from "@/components/menu-de-secciones";
 
 export const metadata = { title: "Mi perfil" };
 
@@ -133,7 +134,7 @@ export default async function ProfilePage({
     { valor: "personalizar", rotulo: "Personalizar", icono: "🎨" },
     { valor: "cuenta", rotulo: "Cuenta", icono: "🔑" },
   ];
-  const activa: Seccion = secciones.find((s) => s.valor === pedida)?.valor ?? secciones[0].valor;
+  const activa = seccionActiva(secciones, pedida);
 
   return (
     <>
@@ -166,40 +167,7 @@ export default async function ProfilePage({
         perfilPublico={myParticipant ? `/jugador/${myParticipant.id}` : null}
       />
 
-      {/**
-       * El menú de las partes del perfil: cuatro botones a lo ancho, con su
-       * icono encima en el móvil (en una fila de pestañas no cabían) y al lado
-       * en el ordenador.
-       */}
-      <nav
-        aria-label="Partes de tu perfil"
-        className={cx(
-          "mb-5 mt-6 grid gap-1 rounded-xl border border-white/10 bg-white/[0.03] p-1",
-          secciones.length === 4 ? "grid-cols-4" : "grid-cols-3",
-        )}
-      >
-        {secciones.map((s) => (
-          <Link
-            key={s.valor}
-            href={`/perfil?seccion=${s.valor}`}
-            aria-current={s.valor === activa ? "page" : undefined}
-            className={cx(
-              "flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-2 text-[11px] font-medium transition sm:flex-row sm:gap-2 sm:text-sm",
-              s.valor === activa
-                ? "bg-brand-600/25 text-white ring-1 ring-brand-500/40"
-                : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200",
-            )}
-          >
-            <Icono emoji={s.icono} tamano={18} />
-            <span className="truncate">{s.rotulo}</span>
-            {s.cuenta ? (
-              <span className="hidden rounded-full bg-white/10 px-1.5 text-[11px] tabular-nums text-slate-300 sm:inline">
-                {s.cuenta}
-              </span>
-            ) : null}
-          </Link>
-        ))}
-      </nav>
+      <MenuDeSecciones ruta="/perfil" secciones={secciones} activa={activa} etiqueta="Partes de tu perfil" />
 
       {activa === "locke" && myParticipant && competition ? (
         <div className="grid gap-4 xl:grid-cols-2">
@@ -412,7 +380,7 @@ function FichaDeEntrenador({
       </div>
 
       <div className="relative mt-4 flex items-center gap-4">
-        <div className="rounded-full p-1 ring-2 ring-brand-500/50">
+        <div className="flex shrink-0 rounded-full p-1 ring-2 ring-brand-500/50">
           <Avatar name={nombre} color={avatar.color} image={avatar.image} size={72} />
         </div>
         <div className="min-w-0 flex-1">
@@ -466,24 +434,6 @@ function FichaDeEntrenador({
         ) : null}
       </div>
     </section>
-  );
-}
-
-/** Un acceso a una pantalla de gestionar, con su icono y para qué sirve */
-function Atajo({ href, icono, nombre, detalle }: { href: string; icono: string; nombre: string; detalle: string }) {
-  return (
-    <Link
-      href={href}
-      className="flex items-start gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 transition hover:border-brand-500/40 hover:bg-brand-600/10"
-    >
-      <span className="mt-0.5 text-brand-400">
-        <Icono emoji={icono} tamano={18} />
-      </span>
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-white">{nombre}</span>
-        <span className="block text-xs text-slate-400">{detalle}</span>
-      </span>
-    </Link>
   );
 }
 

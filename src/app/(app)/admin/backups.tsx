@@ -48,7 +48,7 @@ export function Backups({
   );
 
   return (
-    <section className="card mt-4">
+    <section className="card">
       <h2 className="section-title mb-1">Copias de seguridad</h2>
       <p className="muted mb-4">
         Se hace una sola cada {cadaHoras} horas, cuando alguien entra, y se
