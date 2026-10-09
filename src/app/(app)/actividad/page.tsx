@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
-import { getActiveCompetition } from "@/lib/competition";
+import { getActiveCompetition, getParticipants, soloActivos } from "@/lib/competition";
 import { getActivity } from "@/lib/activity";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -24,7 +24,10 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
 
   const pedidas = Number((await searchParams).ver);
   const cuantas = Number.isInteger(pedidas) ? Math.min(Math.max(pedidas, DE_ENTRADA), COMO_MUCHO) : DE_ENTRADA;
-  const entries = await getActivity(competition.id, cuantas);
+  const [entries, participantes] = await Promise.all([
+    getActivity(competition.id, cuantas),
+    getParticipants(competition.id),
+  ]);
 
   return (
     <>
@@ -33,7 +36,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         subtitle={`Todo lo que ha ido pasando en ${competition.name}, de lo más reciente a lo más antiguo.`}
       />
       <section className="card">
-        <ActivityFeed entries={entries} />
+        <ActivityFeed entries={entries} jugadores={soloActivos(participantes).length} />
         {/* Si han salido todas las que se pidieron, puede haber más detrás */}
         {entries.length === cuantas && cuantas < COMO_MUCHO ? (
           <div className="mt-4 text-center">

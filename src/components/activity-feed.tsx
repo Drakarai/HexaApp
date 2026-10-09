@@ -58,10 +58,16 @@ function agrupar(entradas: ActivityEntry[]): Linea[] {
 export function ActivityFeed({
   entries,
   compact = false,
+  jugadores,
 }: {
   entries: ActivityEntry[];
   /** En el resumen se enseñan menos cosas por entrada y sin rótulos de día */
   compact?: boolean;
+  /**
+   * Los que siguen jugando. Si lo de una línea lo han hecho todos, se dice
+   * «Todos han superado a Blanca» en vez de seis nombres en fila.
+   */
+  jugadores?: number;
 }) {
   if (!entries.length) {
     return (
@@ -131,7 +137,11 @@ export function ActivityFeed({
                 <div className="min-w-0 flex-1">
                   <p className="text-sm text-white">
                     {varios && entrada.grupo
-                      ? `${enumerar(quienes.map((q) => q.who ?? "?"))} ${entrada.grupo.plural}`
+                      ? `${
+                          jugadores && jugadores > 2 && new Set(quienes.map((q) => q.whoId ?? q.who)).size >= jugadores
+                            ? "Todos"
+                            : enumerar(quienes.map((q) => q.who ?? "?"))
+                        } ${entrada.grupo.plural}`
                       : entrada.title}
                   </p>
                   {entrada.detail ? <p className="truncate text-xs text-slate-500">{entrada.detail}</p> : null}

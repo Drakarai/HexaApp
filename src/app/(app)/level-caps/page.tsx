@@ -292,6 +292,8 @@ export default async function LevelCapsPage({
 
   /** El hito al que va el grupo: el primero que no han pasado todos */
   const delGrupo = primeroSinPasar === -1 ? null : levelCaps[primeroSinPasar];
+  /** Hasta dónde se está jugando: el del grupo o, si vas por delante, el tuyo */
+  const indiceDeAhora = Math.max(primeroSinPasar, miProximo ? levelCaps.indexOf(miProximo) : -1);
 
   return (
     <>
@@ -371,7 +373,7 @@ export default async function LevelCapsPage({
            * queda; se abren para ver los vídeos o corregir algo.
            */}
           <ol className="relative mt-6 space-y-3 before:absolute before:bottom-4 before:left-[11px] before:top-4 before:w-px before:bg-white/10">
-            {levelCaps.map((levelCap) => {
+            {levelCaps.map((levelCap, posicion) => {
               /**
                * Solo cuentan los que siguen jugando: si un retirado tuviera que
                * marcar su casilla, el grupo entero se quedaría esperando a
@@ -383,6 +385,14 @@ export default async function LevelCapsPage({
               const allCleared = activos.length > 0 && clearedCount === activos.length;
               const images = medallas(levelCap.id);
               const esElSiguiente = (yo ? miProximo : delGrupo)?.id === levelCap.id;
+              /**
+               * **Por venir**: los de después del que toca, que nadie ha marcado.
+               * Como nadie sigue hasta que el grupo entero pasa el de ahora, no
+               * hay nada que hacer en ellos todavía: plegados, como los ya
+               * pasados, la pantalla se queda en lo que importa. Si alguien
+               * marcó uno (por adelantado o por error), sale abierto.
+               */
+              const porVenir = !allCleared && clearedCount === 0 && posicion > indiceDeAhora;
               const checkpoint = checkpoints.find((punto) => punto.hito.id === levelCap.id);
 
               const cabecera = (
@@ -400,7 +410,9 @@ export default async function LevelCapsPage({
                       {" · "}
                       {allCleared
                         ? "superado por todos"
-                        : `${clearedCount}/${activos.length} superado${clearedCount === 1 ? "" : "s"}`}
+                        : porVenir
+                          ? "por venir"
+                          : `${clearedCount}/${activos.length} superado${clearedCount === 1 ? "" : "s"}`}
                     </p>
                   </div>
                 </div>
@@ -421,10 +433,13 @@ export default async function LevelCapsPage({
                             : "border-slate-600 bg-ink-950",
                       )}
                     />
-                    {allCleared ? (
+                    {allCleared || porVenir ? (
                       <details
                         id={`cap-${levelCap.id}`}
-                        className="card group relative isolate overflow-hidden border-emerald-500/20 bg-emerald-500/[0.03] py-3"
+                        className={cx(
+                          "card group relative isolate overflow-hidden py-3",
+                          allCleared && "border-emerald-500/20 bg-emerald-500/[0.03]",
+                        )}
                       >
                         <summary className="flex cursor-pointer list-none items-center justify-between gap-3">
                           {cabecera}

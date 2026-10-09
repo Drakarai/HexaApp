@@ -18,6 +18,8 @@ import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 
+const ORDEN_NATURAL = new Intl.Collator("es", { numeric: true, sensitivity: "base" });
+
 /**
  * El mapa de capturas de una persona.
  *
@@ -146,8 +148,16 @@ export function MapaDeCapturas({
     [mapa.zones],
   );
 
-  // Un grupo no se captura él mismo: en la lista salen sus hijas, no él
-  const capturables = useMemo(() => todas.filter((zona) => !zona.children.length), [todas]);
+  /**
+   * Un grupo no se captura él mismo: en la lista salen sus hijas, no él. Y en
+   * **orden natural** («Ruta 29» antes que «Ruta 30» y que «Ruta 100»): las
+   * zonas vienen en el orden en que se dibujaron, que en la lista parecía
+   * revuelto y obligaba a buscar.
+   */
+  const capturables = useMemo(
+    () => todas.filter((zona) => !zona.children.length).sort((a, b) => ORDEN_NATURAL.compare(a.name, b.name)),
+    [todas],
+  );
   /**
    * Libre es **sin nada apuntado**: ni captura ni encuentro fallado, que en un
    * locke también gasta la ruta. Es lo que se pregunta al jugar: ¿dónde me

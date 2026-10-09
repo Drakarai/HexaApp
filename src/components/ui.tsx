@@ -59,7 +59,7 @@ export function FormMessage({
 export function ConfirmSubmit({
   children,
   message,
-  className = "btn-danger btn-sm",
+  className,
   title,
 }: {
   children: React.ReactNode;
@@ -81,13 +81,20 @@ export function ConfirmSubmit({
   const soloUnSimbolo =
     typeof children === "string" && !/[a-záéíóúñ]/i.test(children);
   const etiqueta = title ?? (soloUnSimbolo ? message : undefined);
+  /**
+   * La ✕ suelta va **en gris y se pone roja al pasar por encima**: sale en
+   * cada jornada, cada combate y cada gimnasio, y en caja roja era lo que más
+   * gritaba de la pantalla sin ser lo importante. Lo que lleva texto («Rehacer
+   * el cuadro», «Borrar») sigue en rojo: ahí sí es la acción de la que se habla.
+   */
+  const clases = className ?? (soloUnSimbolo ? "btn-borrar btn-sm" : "btn-danger btn-sm");
 
   return (
     <button
       type="submit"
       title={etiqueta}
       aria-label={etiqueta}
-      className={className}
+      className={clases}
       disabled={pending}
       onClick={(event) => {
         if (!window.confirm(message)) event.preventDefault();

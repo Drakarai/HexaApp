@@ -88,16 +88,17 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "el buscador");
   });
 
-  test("marcar un gimnasio enciende su medalla", async () => {
+  test("marcar un gimnasio sube el tope al siguiente", async () => {
     const { pagina, problemas } = sesion;
     await ir(pagina, "/level-caps");
-    const estuche = pagina.locator("section", { hasText: "Tu estuche" }).first();
-    assert.match(await estuche.innerText(), /\b0\s*\/\s*\d+/);
+    const cartel = pagina.locator("section", { hasText: "Tu nivel máximo" }).first();
+    assert.match(await cartel.innerText(), /Llevas\s*0\s*de\s*\d+/);
+    assert.match(await cartel.innerText(), /pegaso/i);
     // Los botones de marcar llevan el punto de color de cada jugador
     await pagina.locator("button.chip:has(span.rounded-full)", { hasText: "Draka" }).first().click();
-    await pagina.waitForFunction(() =>
-      /\b1\s*\/\s*\d+/.test(document.querySelector("section")?.innerText ?? ""),
-    );
+    // Pasado Pegaso, el tope es el de Antón
+    await cartel.getByText("Antón").waitFor();
+    assert.match(await cartel.innerText(), /Llevas\s*1\s*de\s*\d+/);
     sinProblemas(problemas, "Level caps");
   });
 

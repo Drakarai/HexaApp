@@ -753,7 +753,7 @@ export default async function DashboardPage() {
               Ver todo →
             </Link>
           </div>
-          <ActivityFeed entries={activity} compact />
+          <ActivityFeed entries={activity} compact jugadores={activos} />
         </section>
 
         <section className={progreso ? "hidden" : "card self-start"}>
