@@ -11,7 +11,7 @@ import {
 } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
-import { ConfirmSubmit } from "@/components/ui";
+import { Avatar, ConfirmSubmit } from "@/components/ui";
 import { LEVEL_CAP_KINDS, LEVEL_CAP_KIND_LABELS } from "@/lib/constants";
 import { grupoDePlantillaDeJuego } from "@/lib/juegos";
 import { firmaDeColumna, urlsDeMedallasDelLocke } from "@/lib/imagenes";
@@ -328,19 +328,41 @@ export default async function LevelCapsPage({
         </div>
       ) : (
         <>
-          <EstucheDeMedallas
-            hitos={levelCaps.map((cap) => ({
-              id: cap.id,
-              label: cap.label,
-              cap: cap.cap,
-              imagen: medallas(cap.id)[0] ?? null,
-              // Quien juega ve las suyas; quien solo mira, las de todo el grupo
-              conseguida: yo ? clearedSet.has(`${cap.id}:${yo.id}`) : pasadoPorTodos(cap),
-            }))}
-            siguiente={yo ? (miProximo ?? null) : delGrupo}
-            deQuien={yo ? "tuyo" : "grupo"}
-            grupo={!yo || perfil.enSolitario ? null : delGrupo}
-          />
+          {(() => {
+            // Quien juega ve su tope; quien solo mira, el del grupo
+            const hito = yo ? (miProximo ?? null) : delGrupo;
+            const lohan = hito
+              ? activos.filter((j) => clearedSet.has(`${hito.id}:${j.id}`))
+              : [];
+            return (
+              <CartelDelTope
+                hito={
+                  hito
+                    ? {
+                        id: hito.id,
+                        label: hito.label,
+                        cap: hito.cap,
+                        donde: hito.badge,
+                        tipo: LEVEL_CAP_KIND_LABELS[hito.kind] ?? hito.kind,
+                        imagen: medallas(hito.id)[0] ?? null,
+                      }
+                    : null
+                }
+                deQuien={yo ? "tuyo" : "grupo"}
+                yaLoHan={lohan.map((j) => ({
+                  id: j.id,
+                  nombre: j.displayName,
+                  color: j.color,
+                  imagen: j.user.avatarImage,
+                }))}
+                activos={activos.length}
+                llevas={levelCaps.filter((cap) => (yo ? clearedSet.has(`${cap.id}:${yo.id}`) : pasadoPorTodos(cap))).length}
+                total={levelCaps.length}
+                // Si vas por delante, dónde se ha quedado el grupo
+                grupo={yo && !perfil.enSolitario && delGrupo && delGrupo.id !== hito?.id ? delGrupo : null}
+              />
+            );
+          })()}
 
           {/**
            * **La ruta**: los hitos en un camino de arriba abajo, cada uno con
@@ -471,94 +493,112 @@ export default async function LevelCapsPage({
 }
 
 /**
- * **El estuche de medallas**, como el de los juegos: todas en fila, encendidas
- * las conseguidas y la siguiente marcada, con su nivel debajo. De un vistazo
- * se sabe por dónde vas sin bajar por la lista.
+ * **El cartel del tope**: lo primero que se mira en esta pantalla es a qué
+ * nivel se puede llevar el equipo, así que va arriba y en grande, como el
+ * marcador de un estadio. Al lado, contra quién es y quién del grupo lo ha
+ * pasado ya. La medalla, si la hay, de fondo. (Antes había un estuche con
+ * todas las medallas en fila, y no gustó: mucho círculo para una sola cifra.)
  */
-function EstucheDeMedallas({
-  hitos,
-  siguiente,
+function CartelDelTope({
+  hito,
   deQuien,
+  yaLoHan,
+  activos,
+  llevas,
+  total,
   grupo,
 }: {
-  hitos: { id: string; label: string; cap: number; imagen: string | null; conseguida: boolean }[];
-  siguiente: { id: string; label: string; cap: number } | null;
+  hito: { id: string; label: string; cap: number; donde: string | null; tipo: string; imagen: string | null } | null;
   deQuien: "tuyo" | "grupo";
-  /** Por dónde va el grupo, si no es por donde vas tú */
+  yaLoHan: { id: string; nombre: string; color: string; imagen: string | null }[];
+  activos: number;
+  llevas: number;
+  total: number;
   grupo: { id: string; label: string } | null;
 }) {
-  const conseguidas = hitos.filter((h) => h.conseguida).length;
-  return (
-    <section className="card relative overflow-hidden bg-gradient-to-br from-ink-850 to-ink-900">
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+  if (!hito) {
+    return (
+      <section className="card flex items-center gap-4">
+        <span className="font-[family-name:var(--font-display)] text-5xl font-bold leading-none text-emerald-300">✓</span>
         <div>
-          <p className="antetitulo">{deQuien === "tuyo" ? "Tu estuche" : "El estuche del grupo"}</p>
+          <p className="antetitulo">Sin tope</p>
           <p className="mt-1 text-lg font-semibold text-white">
-            {siguiente ? (
+            {deQuien === "tuyo" ? "Lo has superado todo" : "El grupo lo ha superado todo"}
+          </p>
+          <p className="text-sm text-slate-400">Ya no hay level cap que respetar.</p>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <section className="card relative isolate overflow-hidden">
+      {hito.imagen ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={hito.imagen}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute -right-6 top-1/2 -z-10 h-48 w-48 -translate-y-1/2 object-contain opacity-[0.14] sm:right-6"
+        />
+      ) : null}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4">
+        <div className="shrink-0 text-center">
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-brand-400">
+            {deQuien === "tuyo" ? "Tu nivel máximo" : "Nivel máximo"}
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-7xl font-bold leading-none tabular-nums text-white sm:text-8xl">
+            {hito.cap}
+          </p>
+        </div>
+
+        <div className="min-w-0 flex-1 border-white/10 sm:border-l sm:pl-6">
+          <p className="text-sm text-slate-400">
+            {deQuien === "tuyo" ? "hasta que te pases a" : "hasta que todos pasen a"}
+          </p>
+          <p className="font-[family-name:var(--font-display)] text-3xl font-bold uppercase leading-tight tracking-wide text-white">
+            {hito.label}
+          </p>
+          <p className="text-sm text-slate-400">
+            {/* «Alto Mando · Alto Mando» no: si el tipo es el nombre, sobra */}
+            {[hito.tipo !== hito.label ? hito.tipo : null, hito.donde].filter(Boolean).join(" · ")}
+          </p>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            {yaLoHan.length ? (
               <>
-                {deQuien === "tuyo" ? "Te toca" : "Toca"} {siguiente.label}
-                <span className="text-slate-400"> · nivel {siguiente.cap}</span>
+                <span className="flex -space-x-2">
+                  {yaLoHan.map((j) => (
+                    <span key={j.id} className="rounded-full ring-2 ring-ink-900" title={j.nombre}>
+                      <Avatar name={j.nombre} color={j.color} image={j.imagen} size={26} />
+                    </span>
+                  ))}
+                </span>
+                <span className="text-slate-300">
+                  {yaLoHan.length === activos
+                    ? "ya lo han pasado todos"
+                    : `${yaLoHan.length} de ${activos} ya lo ${yaLoHan.length === 1 ? "ha" : "han"} pasado`}
+                </span>
               </>
             ) : (
-              "Todo superado"
+              <span className="text-slate-400">Nadie lo ha pasado todavía.</span>
             )}
-          </p>
-          {grupo && grupo.id !== siguiente?.id ? (
-            <a href={`#cap-${grupo.id}`} className="text-xs text-slate-400 hover:text-slate-200">
-              El grupo sigue en {grupo.label}
-            </a>
-          ) : null}
+          </div>
         </div>
-        <p className="font-[family-name:var(--font-display)] text-3xl font-bold tabular-nums text-white">
-          {conseguidas}
-          <span className="text-lg text-slate-500">/{hitos.length}</span>
-        </p>
       </div>
-      <ol className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-        {hitos.map((hito) => {
-          const esLaSiguiente = hito.id === siguiente?.id;
-          return (
-            <li key={hito.id} className="shrink-0">
-              <a href={`#cap-${hito.id}`} className="group flex w-14 flex-col items-center gap-1" title={hito.label}>
-                <span
-                  className={cx(
-                    "flex h-12 w-12 items-center justify-center rounded-full border-2 transition",
-                    hito.conseguida
-                      ? "border-amber-300/70 bg-amber-300/10"
-                      : esLaSiguiente
-                        ? "border-brand-400 bg-brand-600/15 ring-4 ring-brand-500/20"
-                        : "border-dashed border-white/15 bg-ink-950/60",
-                  )}
-                >
-                  {hito.imagen ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={hito.imagen}
-                      alt=""
-                      className={cx(
-                        "h-9 w-9 object-contain",
-                        !hito.conseguida && "opacity-30 grayscale",
-                      )}
-                    />
-                  ) : (
-                    <span
-                      className={cx(
-                        "font-[family-name:var(--font-display)] text-lg font-bold",
-                        hito.conseguida ? "text-amber-200" : esLaSiguiente ? "text-brand-200" : "text-slate-500",
-                      )}
-                    >
-                      {hito.conseguida ? "✓" : hito.cap}
-                    </span>
-                  )}
-                </span>
-                <span className="w-full truncate text-center text-[11px] text-slate-400 group-hover:text-slate-200">
-                  {hito.label}
-                </span>
-              </a>
-            </li>
-          );
-        })}
-      </ol>
+
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/5 pt-3 text-xs text-slate-400">
+        <span>
+          {deQuien === "tuyo" ? "Llevas" : "El grupo lleva"} <strong className="text-slate-200">{llevas}</strong> de {total}
+        </span>
+        {grupo ? (
+          <a href={`#cap-${grupo.id}`} className="hover:text-slate-200">
+            El grupo sigue en {grupo.label}
+          </a>
+        ) : null}
+        <a href={`#cap-${hito.id}`} className="ml-auto font-semibold text-brand-400 hover:underline">
+          {deQuien === "tuyo" ? "Marcarlo al pasarlo ↓" : "Ver quién falta ↓"}
+        </a>
+      </div>
     </section>
   );
 }
