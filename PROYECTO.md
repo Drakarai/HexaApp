@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de octubre de 2026 (el **Buzón**: errores, mejoras y cambios que la gente le manda a quien lleva la aplicación).
+Última actualización: 10 de octubre de 2026 (el buzón de sugerencias pasa a llamarse **HexaPost**, en `/hexapost`).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -83,7 +83,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Botón de apuntar** | Un "＋" fijo, en todas las pantallas menos Administración, con tres atajos: registrar una baja, apuntar una captura y marcar un gimnasio. Cada uno lleva a su página **con el formulario ya abierto**. |
 | **Aspecto** | Sobrio y deportivo —letra condensada de marcador en títulos y cifras, superficies planas en grises neutros, etiquetas cuadradas en vez de píldoras e iconos de línea en el menú en vez de emojis—, con el color del tema en los acentos. **Es el de todo el mundo.** El de antes, el *clásico*, se puede seguir eligiendo en *Mi perfil*, y se guarda por dispositivo. En el móvil, **las fichas suben desde abajo** —la de un pokémon, una baja, una zona del mapa, un objeto, el MVP, el as, los equipos de un combate, los vídeos de un gimnasio— y se cierran **deslizándolas hacia abajo**; en la portada y en Equipo y PC se **tira hacia abajo para refrescar**, con la media ball girando. Lo que está vacío lleva **un dibujo en línea fina** (una ball, una lápida, la mochila, el mapa…) en vez de una caja a rayas. Los dos grises de los textos secundarios (`slate-500` y `slate-600`) van **más claros que los de Tailwind** (en `@theme` y en el aspecto nuevo): el 500 pasa del 4,5:1 sobre las tarjetas y el 600 sube de 2,4:1 a 3,8:1, para que se lean con el móvil al sol. Las **✕ de borrar** sueltas van en gris y se ponen rojas al pasar por encima (`btn-borrar`, lo que pone `ConfirmSubmit` cuando el botón es solo un símbolo); las que llevan texto siguen en rojo. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. Algún apartado lleva **punto propio** además del de su grupo: *Reglas*, cuando cambia una. |
-| **Buzón** | En *Lo mío → Buzón* (también sin ningún locke), cualquiera manda **un error, una mejora o un cambio** a quien lleva la aplicación: una línea de resumen, el texto, **dónde** (la pantalla de la que viene, ya elegida) y una **captura** opcional; va solo con su navegador y tamaño de pantalla. Debajo ve lo suyo y en qué está —*Enviada*, *Leída* (en cuanto el Creador abre el Buzón), *Apuntada*, *Hecha* o *No se hará*— con la respuesta, y un **punto de aviso** en *Lo mío* cuando le contestan. Lo puede retirar mientras nadie lo haya leído; cinco al día. El Creador ve en el mismo sitio **lo de todos**, por resolver primero (filtros por estado y por tipo), cambia el estado, contesta o borra, y le avisa el punto mientras haya algo sin leer. La pantalla de **«Se ha roto algo»** lleva a él con el código del fallo ya escrito. |
+| **HexaPost** | En *Lo mío → HexaPost* (también sin ningún locke), cualquiera manda **un error, una mejora o un cambio** a quien lleva la aplicación: una línea de resumen, el texto, **dónde** (la pantalla de la que viene, ya elegida) y una **captura** opcional; va solo con su navegador y tamaño de pantalla. Debajo ve lo suyo y en qué está —*Enviada*, *Leída* (en cuanto el Creador abre HexaPost), *Apuntada*, *Hecha* o *No se hará*— con la respuesta, y un **punto de aviso** en *Lo mío* cuando le contestan. Lo puede retirar mientras nadie lo haya leído; cinco al día. El Creador ve en el mismo sitio **lo de todos**, por resolver primero (filtros por estado y por tipo), cambia el estado, contesta o borra, y le avisa el punto mientras haya algo sin leer. La pantalla de **«Se ha roto algo»** lleva a él con el código del fallo ya escrito. |
 
 Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
 **administrador de locke** (participante con mando en *esa* edición y en nada
@@ -3631,16 +3631,19 @@ cambio grande. Usan **su propia base**, recién sembrada en cada pasada, para
 que nunca dependan de lo que haya en la de trabajo ni la toquen; por eso se
 niegan a crear o borrar nada si la base de `.env` no está en la máquina.
 
-**El Buzón, dentro de la aplicación y no por WhatsApp.** El usuario lo pidió
+**HexaPost, dentro de la aplicación y no por WhatsApp.** El usuario lo pidió
 para cuando la use más gente: un sitio donde lo que se cuenta no se pierde y
-se ve en qué quedó. Decisiones:
+se ve en qué quedó. Nació como «Buzón» y él lo rebautizó **HexaPost**; en la
+interfaz y en la dirección (`/hexapost`) se llama así, y por dentro el código
+sigue diciendo `buzon` (`lib/buzon.ts`, `actions/buzon.ts`, la tabla
+`Sugerencia`). Decisiones:
 
 - **Es de la aplicación, no de un locke** (`Sugerencia` no cuelga de ninguna
   edición), así que está en *Lo mío* para todos, también sin locke.
 - **Cada uno ve solo lo suyo y el Creador todo**: se comprueba en las
   acciones y en la página, filtrando por `userId`; contestar, cambiar el
   estado y borrar es `requireCreador`.
-- **«Leída» sale sola** al abrir el Creador el Buzón: un acuse de recibo que
+- **«Leída» sale sola** al abrir el Creador HexaPost: un acuse de recibo que
   no le obliga a tocar una a una, y no enciende el aviso de nadie. Lo que sí lo
   enciende es contestar o cambiar el estado (`vistaPorAutor`).
 - **La captura solo puede ser subida** (un data URL reducido en el
@@ -4062,7 +4065,7 @@ Piezas con truco:
 - `lib/solitario.ts` — cómo va una partida de una persona (hitos, siguiente,
   caídos, zonas). `components/resumen-solitario.tsx` lo pinta, y sale tanto en
   la portada como en la pantalla de la tabla.
-- `lib/buzon.ts`, `app/actions/buzon.ts` y `(app)/buzon/` — el Buzón: tipos,
+- `lib/buzon.ts`, `app/actions/buzon.ts` y `(app)/hexapost/` — HexaPost: tipos,
   estados, límites y la pantalla de la que vienes (probado en
   `tests/buzon.test.ts` y en `tests/interfaz/3-buzon.prueba.mjs`); las
   acciones con sus permisos; y la página, con la cara del que manda y la
@@ -4725,4 +4728,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 141. **Deslizar entre cajas** en el móvil y causas largas que se abren al tocarlas.
 142. **Palmarés como almanaque** y el logo de la portada que ya no tapa el texto en el móvil.
 143. **Las fotos del mapa de las guías, con el Melemele del usuario** (dibujo y zonas hechas a mano).
-144. **El Buzón**: errores, mejoras y cambios que cualquiera le manda a quien lleva la aplicación, con respuesta y aviso.
+144. **HexaPost** (nació como «Buzón»): errores, mejoras y cambios que cualquiera le manda a quien lleva la aplicación, con respuesta y aviso.

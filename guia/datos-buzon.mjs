@@ -1,5 +1,5 @@
 /**
- * El Buzón, para sus fotos en las guías: Héctor manda un error con la pantalla
+ * HexaPost, para sus fotos en las guías: Héctor manda un error con la pantalla
  * de la que viene, Enzo una mejora y Rodri un cambio, y Draka —que lleva la
  * aplicación— contesta el de Héctor y deja apuntado el de Enzo.
  *
@@ -30,7 +30,7 @@ async function mandar(navegador, { quien, desde, tipo, titulo, texto }) {
   // Se pasa antes por la pantalla de la que habla, como haría cualquiera
   // (hasta que carga del todo: la pantalla se apunta cuando la página arranca)
   if (desde) await p.goto(BASE + desde, { waitUntil: "networkidle" });
-  await p.goto(BASE + "/buzon", { waitUntil: "networkidle" });
+  await p.goto(BASE + "/hexapost", { waitUntil: "networkidle" });
   await p.locator("label", { hasText: tipo }).first().click();
   await p.fill('input[name="titulo"]', titulo);
   await p.fill('textarea[name="texto"]', texto);
@@ -73,7 +73,7 @@ export async function montarBuzon(navegador) {
   });
 
   const p = await entrar(navegador, "draka");
-  await p.goto(BASE + "/buzon", { waitUntil: "networkidle" });
+  await p.goto(BASE + "/hexapost", { waitUntil: "networkidle" });
   await contestar(p, "La ruleta se queda pillada", "Hecha", "Arreglado: ahora el botón espera a que pare. ¡Gracias, Héctor!");
   await contestar(p, "cuántas zonas quedan", "Apuntada", "Buena idea, la apunto para la próxima tanda.");
   await p.close();

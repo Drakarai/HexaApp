@@ -170,15 +170,15 @@ export async function getAvisos({
     // Reglas vive en "La edición": su punto enciende también el del grupo, o
     // desde fuera no habría forma de enterarse
     "La edición": Boolean(fila?.edicion) || Boolean(fila?.peticiones) || reglas,
-    // El Buzón vive en "Lo mío"
+    // HexaPost vive en "Lo mío"
     "Lo mío": Boolean(fila?.lomio) || buzon,
     Reglas: reglas,
-    Buzón: buzon,
+    HexaPost: buzon,
   };
 }
 
 /**
- * El punto del **Buzón** (ver `lib/buzon.ts`). Como el de las peticiones, no
+ * El punto de **HexaPost** (ver `lib/buzon.ts`). Como el de las peticiones, no
  * se apaga por mirar la pestaña sino cuando se hace lo que toca: al Creador le
  * avisa lo que ha llegado sin leer, y a cada uno, lo que le han contestado
  * desde la última vez que entró.
@@ -191,13 +191,13 @@ function sqlDelBuzon(userId: string, esAdmin: boolean) {
 }
 
 /**
- * Sin ningún locke elegido no hay más avisos que el del Buzón, que es de la
+ * Sin ningún locke elegido no hay más avisos que el de HexaPost, que es de la
  * aplicación: va solo, en su propia consulta.
  */
 export async function getAvisoDelBuzon(userId: string, esAdmin: boolean): Promise<Avisos> {
   const [fila] = await prisma.$queryRaw<{ buzon: boolean }[]>`SELECT (${sqlDelBuzon(userId, esAdmin)}) AS buzon`;
   const buzon = Boolean(fila?.buzon);
-  return { "Lo mío": buzon, Buzón: buzon };
+  return { "Lo mío": buzon, HexaPost: buzon };
 }
 
 /** Apunta que alguien acaba de mirar una pestaña. */

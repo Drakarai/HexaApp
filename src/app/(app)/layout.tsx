@@ -68,7 +68,7 @@ const S = {
   notas: { href: "/notas", label: "Mis notas", icon: "🗒️" },
   perfil: { href: "/perfil", label: "Mi perfil", icon: "👤" },
   guia: { href: "/guia", label: "Guía de uso", icon: "❓" },
-  buzon: { href: "/buzon", label: "Buzón", icon: "💬" },
+  buzon: { href: "/hexapost", label: "HexaPost", icon: "💬" },
   ediciones: { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
   admin: { href: "/admin", label: "Administración", icon: "⚙️" },
 } satisfies Record<string, NavItem>;
@@ -104,7 +104,7 @@ const GRUPOS: NavGroup[] = [
     // entrar sin saber dónde se aprieta
     // Ediciones volvió al menú aquí, en lo tuyo: son tus lockes, y escondida
     // dentro de Mi perfil no la encontraba nadie
-    // El Buzón, al lado de la guía: es de la aplicación y lo ve todo el mundo
+    // HexaPost, al lado de la guía: es de la aplicación y lo ve todo el mundo
     children: [S.mapa, S.bolsa, S.notas, S.perfil, S.ediciones, S.buzon, S.guia],
   },
 ];

@@ -195,7 +195,7 @@ const LINEA: Record<string, Linea> = {
   "▶️": { icono: Play },
   "🗑️": { icono: Trash2 },
   "❔": { icono: CircleHelp },
-  // El Buzón y lo que se manda en él
+  // HexaPost y lo que se manda en él
   "💬": { icono: MessageSquareText },
   "🐞": { icono: Bug },
   "💡": { icono: Lightbulb, color: ORO },

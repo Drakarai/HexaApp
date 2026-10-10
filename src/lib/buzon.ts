@@ -1,5 +1,5 @@
 /**
- * El **Buzón**: donde cualquiera le cuenta a quien lleva la aplicación un
+ * **HexaPost**: donde cualquiera le cuenta a quien lleva la aplicación un
  * error, una mejora o un cambio que haría. Lo pidió el Creador para tener
  * algo mejor que mensajes sueltos por WhatsApp si la aplicación la empieza a
  * usar más gente.
@@ -37,7 +37,7 @@ export function esTipoDeSugerencia(valor: string): valor is TipoDeSugerencia {
 
 /**
  * Por dónde pasa cada una. **Enviada** y **Leída** salen solas —la segunda en
- * cuanto el Creador abre el Buzón, para que quien la mandó sepa que alguien
+ * cuanto el Creador abre HexaPost, para que quien la mandó sepa que alguien
  * la ha visto—; las otras tres las elige él.
  */
 export const ESTADOS_DE_SUGERENCIA = {
@@ -114,12 +114,12 @@ export function rotuloDePantalla(href: string | null | undefined) {
 }
 
 /**
- * De qué pantalla viene quien abre el Buzón, para dejarla ya elegida: casi
+ * De qué pantalla viene quien abre HexaPost, para dejarla ya elegida: casi
  * siempre se entra justo después de ver el fallo. La más larga que encaje,
  * para que `/equipo?ver=…` sea Equipo y PC y no el Resumen.
  */
 export function pantallaDeLaQueVienes(ruta: string | null | undefined) {
-  if (!ruta || ruta.startsWith("/buzon")) return "";
+  if (!ruta || ruta.startsWith("/hexapost")) return "";
   const camino = ruta.split(/[?#]/)[0];
   if (camino === "/") return "/";
   const encaja = PANTALLAS_DEL_BUZON.filter(

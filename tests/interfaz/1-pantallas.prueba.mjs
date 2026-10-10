@@ -29,7 +29,7 @@ const PANTALLAS = [
   "/perfil",
   "/competiciones",
   "/guia",
-  "/buzon",
+  "/hexapost",
 ];
 // Las que solo son de quien administra
 const DE_ADMINISTRAR = ["/reglas?editar=1", "/admin", "/diagnostico", "/bolsa/todas"];

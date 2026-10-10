@@ -52,12 +52,12 @@ export default function ErrorDeLaAplicacion({
         <Link href="/" className="btn-ghost">
           Volver al resumen
         </Link>
-        {/* Que contarlo no cueste nada: el Buzón ya sale como error y con el código */}
+        {/* Que contarlo no cueste nada: HexaPost ya sale como error y con el código */}
         <Link
-          href={error.digest ? `/buzon?fallo=${encodeURIComponent(error.digest)}` : "/buzon?fallo=navegador"}
+          href={error.digest ? `/hexapost?fallo=${encodeURIComponent(error.digest)}` : "/hexapost?fallo=navegador"}
           className="btn-ghost"
         >
-          Contarlo en el Buzón
+          Contarlo en HexaPost
         </Link>
       </div>
     </section>

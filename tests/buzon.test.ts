@@ -1,5 +1,5 @@
 /**
- * El Buzón: qué se acepta al mandar algo, de qué pantalla se viene y cuántas
+ * HexaPost: qué se acepta al mandar algo, de qué pantalla se viene y cuántas
  * se pueden mandar al día.
  */
 import { describe, test } from "node:test";
@@ -14,7 +14,7 @@ import {
 
 const buena = { tipo: "error", titulo: "Se cae el mapa", texto: "Al tocar la Ruta 2.", pantalla: "/mapa" };
 
-describe("Buzón", () => {
+describe("HexaPost", () => {
   test("una bien rellena pasa limpia", () => {
     const r = validarSugerencia({ ...buena, titulo: "  Se   cae\nel mapa " });
     assert.ok("datos" in r);
@@ -44,8 +44,8 @@ describe("Buzón", () => {
     assert.equal(pantallaDeLaQueVienes("/equipo?ver=abc"), "/equipo");
     assert.equal(pantallaDeLaQueVienes("/admin/mapas"), "/admin");
     assert.equal(pantallaDeLaQueVienes("/"), "/");
-    // Ni el propio Buzón ni lo que no se parece a nada
-    assert.equal(pantallaDeLaQueVienes("/buzon"), "");
+    // Ni el propio HexaPost ni lo que no se parece a nada
+    assert.equal(pantallaDeLaQueVienes("/hexapost"), "");
     assert.equal(pantallaDeLaQueVienes("/mapache"), "");
     assert.equal(pantallaDeLaQueVienes(null), "");
   });

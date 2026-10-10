@@ -16,7 +16,7 @@ import {
 import type { FormState } from "@/app/actions/auth";
 
 /**
- * Mandar, contestar y retirar lo del Buzón (ver `lib/buzon.ts`).
+ * Mandar, contestar y retirar lo de HexaPost (ver `lib/buzon.ts`).
  *
  * Quién toca qué se comprueba aquí, no en la pantalla: cada uno manda y retira
  * **lo suyo** (por eso todo filtra por `userId`), y contestar o cambiar el
@@ -24,7 +24,7 @@ import type { FormState } from "@/app/actions/auth";
  */
 
 function refrescar() {
-  revalidatePath("/buzon");
+  revalidatePath("/hexapost");
   // El punto de aviso del menú vive en el layout
   revalidatePath("/", "layout");
 }
@@ -132,7 +132,7 @@ export async function contestarSugerenciaAction(
 }
 
 /**
- * Al abrir el Buzón el Creador, las que acaban de llegar pasan a **Leídas**.
+ * Al abrir HexaPost el Creador, las que acaban de llegar pasan a **Leídas**.
  * Así quien la mandó sabe que alguien la ha visto, sin que el Creador tenga
  * que tocar una a una. No enciende el aviso de nadie: es un acuse de recibo,
  * no una respuesta.
@@ -147,7 +147,7 @@ export async function marcarSugerenciasLeidasAction() {
 }
 
 /**
- * Quien entra en el Buzón ya ha visto lo que le han contestado.
+ * Quien entra en HexaPost ya ha visto lo que le han contestado.
  *
  * Ni esta ni la de arriba revalidan, como `marcarVistaAction`: estando dentro
  * el punto del menú ya no se pinta, y refrescar la página le quitaría al

@@ -66,8 +66,8 @@ Sentret pegada de Showdown y el equipo de ahora en el planificador; y, desde
 dibujo y las zonas que colocó el usuario (`mapa-melemele.webp` y
 `mapa-melemele.json`, solo el mapa) y un locke de Ultrasol y Ultraluna de Draka,
 el *Hexalocke Alola*, con capturas, un fallo y una baja en la isla, para las
-fotos del mapa y del editor; y, desde `datos-buzon.mjs`, lo que mandan al
-**Buzón** Héctor, Enzo y Rodri, con lo que contesta Draka. La isla entra directamente en la base, porque el
+fotos del mapa y del editor; y, desde `datos-buzon.mjs`, lo que mandan a
+**HexaPost** Héctor, Enzo y Rodri, con lo que contesta Draka. La isla entra directamente en la base, porque el
 editor no tiene «importar», así que ese paso **pide `DATABASE_URL` en el
 entorno** (la de la guía, como en los pasos de arriba) y no usa la de `.env`.
 Como los últimos lockes creados no son el de casi todas las fotos,

@@ -401,7 +401,7 @@ await montarEquipo(p);
 // --- El mapa hecho a mano de Melemele, con su locke de Alola
 await montarMapa(p);
 
-// --- Lo que mandan al Buzón Héctor, Enzo y Rodri, y lo que contesta Draka
+// --- Lo que mandan a HexaPost Héctor, Enzo y Rodri, y lo que contesta Draka
 await montarBuzon(navegador);
 
 await navegador.close();

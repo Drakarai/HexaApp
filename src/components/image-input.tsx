@@ -32,7 +32,7 @@ export function ImageInput({
   shape?: "square" | "circle";
   /**
    * Solo subir, sin el campo de pegar un enlace: para lo que tiene que ser una
-   * imagen nuestra (la captura del Buzón), que un enlace de fuera puede morir
+   * imagen nuestra (la captura de HexaPost), que un enlace de fuera puede morir
    */
   sinEnlace?: boolean;
 }) {

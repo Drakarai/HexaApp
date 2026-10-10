@@ -18,10 +18,10 @@ import {
 import { cx, formatDateTime } from "@/lib/utils";
 import { ContestarSugerencia, FormularioDeSugerencia, MarcarBuzonVisto } from "./buzon-forms";
 
-export const metadata = { title: "Buzón" };
+export const metadata = { title: "HexaPost" };
 
 /**
- * El Buzón (ver `lib/buzon.ts`). Una pantalla, dos caras: quien juega manda y
+ * HexaPost (ver `lib/buzon.ts`). Una pantalla, dos caras: quien juega manda y
  * ve en qué quedó lo suyo; el Creador ve lo de todos y contesta. Es de la
  * aplicación, no de un locke: funciona igual sin ninguno elegido.
  */
@@ -46,7 +46,7 @@ export default async function BuzonPage({
   return (
     <>
       <PageHeader
-        title="Buzón"
+        title="HexaPost"
         subtitle="¿Algo falla, falta o lo harías de otra forma? Cuéntalo aquí: le llega directamente a quien lleva la aplicación."
       />
       <MarcarBuzonVisto nuevas={false} respuestas={mias.some((s) => !s.vistaPorAutor)} />
@@ -215,14 +215,14 @@ async function Bandeja({ searchParams }: { searchParams: { ver?: string; tipo?: 
     if (v !== "pendientes") params.set("ver", v);
     if (t) params.set("tipo", t);
     const query = params.toString();
-    return query ? `/buzon?${query}` : "/buzon";
+    return query ? `/hexapost?${query}` : "/hexapost";
   };
   const nuevas = lista.some((s) => s.estado === "NUEVA");
 
   return (
     <>
       <PageHeader
-        title="Buzón"
+        title="HexaPost"
         subtitle="Lo que os cuentan quienes usan la aplicación: errores, mejoras y cambios. Al abrirlo, lo que acaba de llegar pasa a «Leída» para quien lo mandó."
       />
       <MarcarBuzonVisto nuevas={nuevas} respuestas={false} />
@@ -298,7 +298,7 @@ async function Bandeja({ searchParams }: { searchParams: { ver?: string; tipo?: 
         <EmptyState
           dibujo="libreta"
           title={ver === "pendientes" ? "Nada por resolver" : "Aquí no hay nada"}
-          hint="Lo que manden los jugadores desde Lo mío → Buzón llega aquí."
+          hint="Lo que manden los jugadores desde Lo mío → HexaPost llega aquí."
         />
       )}
     </>
