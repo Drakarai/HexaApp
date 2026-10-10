@@ -179,6 +179,14 @@ function Tablero({
   const cajas = caja.length / HUECOS_POR_CAJA;
   const [pagina, setPagina] = useState(0);
   const paginaVisible = Math.min(pagina, cajas - 1);
+  /** Hacia dónde se pasó de caja la última vez: la nueva entra por ese lado */
+  const [direccion, setDireccion] = useState<1 | -1 | 0>(0);
+  function pasarCaja(paso: 1 | -1) {
+    setDireccion(paso);
+    setPagina((actual) => (Math.min(actual, cajas - 1) + paso + cajas) % cajas);
+  }
+  /** Dónde empezó el dedo, para saber si al levantarlo fue un deslizamiento */
+  const toque = useRef<{ x: number; y: number; t: number } | null>(null);
   // Bip al pasar de caja; solo la cambia quien juega, así que basta con mirar
   // si `pagina` es otra (comparando, y no saltándose el primer efecto, que en
   // desarrollo React lo ejecuta dos veces)
@@ -275,7 +283,7 @@ function Tablero({
     participantId: tablero.participantId,
     onSoltar: soltar,
     // Como en los juegos, de la última se pasa a la primera
-    onCambiarPagina: (paso) => setPagina((actual) => (Math.min(actual, cajas - 1) + paso + cajas) % cajas),
+    onCambiarPagina: (paso) => pasarCaja(paso > 0 ? 1 : -1),
   });
 
   const enEquipo = equipo.filter(Boolean).length;
@@ -308,7 +316,17 @@ function Tablero({
   function columnaDeCaja(n: number, orden: number, className?: string) {
     const fondo = fondoDe(n);
     return (
-      <div key={n} style={{ order: orden }} className={cx("flex min-w-0 flex-1 flex-col", className)}>
+      <div
+        key={n}
+        style={{ order: orden }}
+        className={cx(
+          "flex min-w-0 flex-1 flex-col",
+          className,
+          // La que entra lo hace por el lado al que se ha ido, como en el PC de los juegos
+          orden === 1 && direccion === 1 && "motion-safe:animate-[caja-desde-la-derecha_220ms_ease-out]",
+          orden === 1 && direccion === -1 && "motion-safe:animate-[caja-desde-la-izquierda_220ms_ease-out]",
+        )}
+      >
         <div className="mb-1.5 flex items-center gap-2 px-1">
           {nombrando === n ? (
             <input
@@ -501,19 +519,46 @@ function Tablero({
        * segunda está siempre y se esconde en lo estrecho) para que al cargar
        * no salte de una a dos.
        */}
-      <div className="-mx-4 mt-4 flex max-w-lg items-stretch gap-1 sm:mx-0 xl:max-w-none">
+      {/**
+       * **Deslizando con el dedo también se pasa de caja**, como en el PC de los
+       * juegos. Cuenta si el gesto es sobre todo de lado, de más de 50 píxeles y
+       * rápido (menos de 0,7 s): así no se confunde con bajar por la página ni con
+       * coger un pokémon, que es dejar el dedo quieto. Mientras se arrastra uno, o
+       * justo al soltarlo, no cuenta: ese gesto ya es del arrastre.
+       *
+       * `touch-pan-y` le dice al navegador que aquí **los gestos de lado son de
+       * la app** y él solo sube y baja la página: sin eso, deslizar hacia la
+       * derecha lo tomaba Chrome por «atrás» y se iba de la pantalla.
+       */}
+      <div
+        className="-mx-4 mt-4 flex max-w-lg touch-pan-y items-stretch gap-1 sm:mx-0 xl:max-w-none"
+        onTouchStart={(evento) => {
+          const dedo = evento.touches[0];
+          toque.current = evento.touches.length === 1 ? { x: dedo.clientX, y: dedo.clientY, t: Date.now() } : null;
+        }}
+        onTouchEnd={(evento) => {
+          const inicio = toque.current;
+          toque.current = null;
+          if (!inicio || cajas < 2 || arrastre.fantasma || arrastre.acabaDeSoltar()) return;
+          const dedo = evento.changedTouches[0];
+          const dx = dedo.clientX - inicio.x;
+          const dy = dedo.clientY - inicio.y;
+          if (Date.now() - inicio.t > 700 || Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+          pasarCaja(dx < 0 ? 1 : -1);
+        }}
+      >
         <FlechaDeCaja
           paso={-1}
           dueno={tablero.participantId}
           encendida={arrastre.flecha === -1}
-          onClick={() => setPagina((paginaVisible - 1 + cajas) % cajas)}
+          onClick={() => pasarCaja(-1)}
         />
         {columnas.map((c) => columnaDeCaja(c.n, c.orden, c.className))}
         <FlechaDeCaja
           paso={1}
           dueno={tablero.participantId}
           encendida={arrastre.flecha === 1}
-          onClick={() => setPagina((paginaVisible + 1) % cajas)}
+          onClick={() => pasarCaja(1)}
         />
       </div>
 

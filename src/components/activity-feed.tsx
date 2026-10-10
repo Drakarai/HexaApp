@@ -3,6 +3,7 @@ import type { ActivityEntry } from "@/lib/activity";
 import { Avatar, EmptyState } from "@/components/ui";
 import { formatDateTime, relativeTime } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { TextoQueSeAbre } from "@/components/texto-que-se-abre";
 
 /** Una línea de la cronología: una cosa suelta, o la misma cosa a varios el mismo día */
 type Linea = { entrada: ActivityEntry; quienes: ActivityEntry[] };
@@ -144,7 +145,7 @@ export function ActivityFeed({
                         } ${entrada.grupo.plural}`
                       : entrada.title}
                   </p>
-                  {entrada.detail ? <p className="truncate text-xs text-slate-500">{entrada.detail}</p> : null}
+                  {entrada.detail ? <TextoQueSeAbre texto={entrada.detail} className="text-xs text-slate-500" /> : null}
                 </div>
 
                 <time

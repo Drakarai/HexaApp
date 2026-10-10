@@ -1139,3 +1139,25 @@ html[data-estilo="nuevo"] .etiqueta-formato {
   background:
     linear-gradient(135deg, color-mix(in oklab, var(--color-brand-600) 50%, var(--color-ink-900)), color-mix(in oklab, var(--color-brand-600) 12%, var(--color-ink-900)));
 }
+
+/* Al pasar de caja en el Equipo y PC, la nueva entra por el lado al que se va */
+@keyframes caja-desde-la-derecha {
+  from {
+    transform: translateX(14%);
+    opacity: 0.25;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+@keyframes caja-desde-la-izquierda {
+  from {
+    transform: translateX(-14%);
+    opacity: 0.25;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
