@@ -200,95 +200,145 @@ export function CuentaDeCadaUno({
 
       <p className="muted mb-4">{EXPLICACION[pestanaVisible]}</p>
 
-      <ul className="space-y-2">
-        {filas.map((fila, index) => {
-          const cuenta = cuentaDe(fila);
-          const desglose =
-            pestanaVisible === "todo"
-              ? (["grupo", "dual", "solitario", "soullink"] as const)
-                  .filter((categoria) => fila.porCategoria[categoria].ganados > 0)
-                  .map(
-                    (categoria) =>
-                      `${fila.porCategoria[categoria].ganados} ${EN_EL_DESGLOSE[categoria]}`,
-                  )
-              : [];
-          // Sin combates que contar: se gana pasándose la Liga
-          const soloLiga = pestanaVisible === "solitario" || pestanaVisible === "soullink";
-          return (
-            <li
-              key={fila.userId}
-              className={cx(
-                "rounded-xl border px-3 py-2.5",
-                index === 0 && cuenta.ganados > 0
-                  ? "border-amber-400/30 bg-amber-400/[0.05]"
-                  : "border-white/5 bg-white/[0.03]",
-              )}
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-6 text-center text-lg">
-                  {cuenta.ganados > 0 && index < 3 ? (
-                    <Icono emoji={MEDALS[index]} />
-                  ) : (
-                    <span className="text-sm text-slate-500">{index + 1}º</span>
-                  )}
-                </span>
-                <Avatar name={fila.displayName} color={fila.color} image={fila.avatarImage} size={32} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-white">
-                    {fila.displayName}
-                    {fila.userId === yoId ? <span className="ml-1 text-xs font-normal text-slate-500">(tú)</span> : null}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">
-                    {cuenta.lockes} {cuenta.lockes === 1 ? "locke" : "lockes"}
-                    {/* De dónde salen sus títulos, en una línea: así no hace
-                        falta ir pestaña por pestaña para saberlo */}
-                    {desglose.length ? (
-                      <>
-                        {" · "}
-                        <Icono emoji="🏆" /> {desglose.join(" · ")}
-                      </>
-                    ) : null}
-                  </p>
-                </div>
-              </div>
-
-              {/* Las cifras debajo y no al lado: con cuatro columnas en un
-                  móvil el nombre se quedaba en dos letras */}
-              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
-                <Cifra
-                  valor={cuenta.ganados}
-                  rotulo={<><Icono emoji="🏆" /> {soloLiga ? "Ligas" : "Lockes"}</>}
-                />
-                {/* En solitario no hay combates entre jugadores */}
-                {soloLiga ? (
-                  <Cifra valor={cuenta.lockes} rotulo="Jugados" />
-                ) : (
-                  <Cifra valor={`${cuenta.victorias}-${cuenta.derrotas}`} rotulo="V-D" />
-                )}
-                <Cifra valor={cuenta.bajas} rotulo={<><Icono emoji="💀" /> Caídos</>} />
-              </div>
-
-              <Vitrina
-                titulos={
-                  pestanaVisible === "todo"
-                    ? fila.titulos
-                    : fila.titulos.filter((titulo) => titulo.categoria === pestanaVisible)
-                }
+      {/**
+       * **Una tabla de almanaque**, como la clasificación histórica de una liga:
+       * una fila por persona y las cifras en columnas, alineadas para comparar
+       * de un vistazo. Antes era una tarjeta grande por persona con tres cajas, y
+       * con seis personas la pantalla no acababa nunca. Tocando una fila se
+       * abre su vitrina con los títulos.
+       */}
+      <div className="-mx-2 overflow-hidden sm:mx-0">
+        <table className="w-full border-separate border-spacing-0 text-sm">
+          <thead>
+            <tr className="text-[11px] uppercase tracking-wider text-slate-500">
+              <th className="w-8 pb-2 text-center font-semibold">#</th>
+              <th className="pb-2 text-left font-semibold">Entrenador</th>
+              <th className="pb-2 text-left font-semibold">
+                <Icono emoji="🏆" /> <span className="sr-only">Títulos</span>
+              </th>
+              <th className="pb-2 text-right font-semibold">{pestanaVisible === "solitario" || pestanaVisible === "soullink" ? "Jug." : "V-D"}</th>
+              <th className="pb-2 pr-2 text-right font-semibold">
+                <Icono emoji="💀" /> <span className="sr-only">Caídos</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {filas.map((fila, index) => (
+              <FilaDelAlmanaque
+                key={fila.userId}
+                fila={fila}
+                puesto={index + 1}
+                cuenta={cuentaDe(fila)}
+                esYo={fila.userId === yoId}
+                pestana={pestanaVisible}
               />
-            </li>
-          );
-        })}
-      </ul>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
 
-function Cifra({ valor, rotulo }: { valor: string | number; rotulo: React.ReactNode }) {
+/** Cuántos trofeos se dibujan antes de pasar a «×N» */
+const TROFEOS_A_LA_VISTA = 4;
+
+function FilaDelAlmanaque({
+  fila,
+  puesto,
+  cuenta,
+  esYo,
+  pestana,
+}: {
+  fila: FilaDelPalmares;
+  puesto: number;
+  cuenta: Cuenta;
+  esYo: boolean;
+  pestana: Pestana;
+}) {
+  const [abierta, setAbierta] = useState(false);
+  const titulos = pestana === "todo" ? fila.titulos : fila.titulos.filter((t) => t.categoria === pestana);
+  // Sin combates que contar: se gana pasándose la Liga
+  const soloLiga = pestana === "solitario" || pestana === "soullink";
+  const jugados = cuenta.victorias + cuenta.derrotas;
+  const lider = puesto === 1 && cuenta.ganados > 0;
+  const desglose =
+    pestana === "todo"
+      ? (["grupo", "dual", "solitario", "soullink"] as const)
+          .filter((categoria) => fila.porCategoria[categoria].ganados > 0)
+          .map((categoria) => `${fila.porCategoria[categoria].ganados} ${EN_EL_DESGLOSE[categoria]}`)
+      : [];
+  const celda = cx("border-t border-white/5 py-2.5", lider && "bg-amber-400/[0.06]");
+
   return (
-    <div className="rounded-lg bg-white/[0.03] px-2 py-1.5">
-      <p className="text-base font-black text-white">{valor}</p>
-      <p className="text-[10px] uppercase tracking-wide text-slate-500">{rotulo}</p>
-    </div>
+    <>
+      <tr
+        onClick={titulos.length ? () => setAbierta((antes) => !antes) : undefined}
+        className={cx(titulos.length > 0 && "cursor-pointer hover:bg-white/[0.03]", esYo && "bg-brand-600/[0.07]")}
+        aria-expanded={titulos.length ? abierta : undefined}
+      >
+        <td className={cx(celda, "text-center")}>
+          {cuenta.ganados > 0 && puesto <= 3 ? (
+            <Icono emoji={MEDALS[puesto - 1]} />
+          ) : (
+            <span className="font-[family-name:var(--font-display)] text-base font-bold tabular-nums text-slate-500">{puesto}</span>
+          )}
+        </td>
+        <td className={celda}>
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Avatar name={fila.displayName} color={fila.color} image={fila.avatarImage} size={28} />
+            <div className="min-w-0">
+              <p className={cx("truncate font-semibold", lider ? "text-amber-100" : "text-white")}>
+                {fila.displayName}
+                {esYo ? <span className="ml-1 text-xs font-normal text-slate-500">(tú)</span> : null}
+              </p>
+              <p className="truncate text-xs text-slate-500">
+                {cuenta.lockes} {cuenta.lockes === 1 ? "locke" : "lockes"}
+                {/* De dónde salen sus títulos: así no hace falta ir pestaña por pestaña */}
+                {desglose.length ? ` · ${desglose.join(" · ")}` : ""}
+              </p>
+            </div>
+          </div>
+        </td>
+        <td className={celda}>
+          {cuenta.ganados ? (
+            // Los trofeos dibujados, como en una vitrina; muchos, con su número
+            <span className="flex items-center gap-0.5 text-amber-300" aria-label={`${cuenta.ganados} títulos`}>
+              {Array.from({ length: Math.min(cuenta.ganados, TROFEOS_A_LA_VISTA) }, (_, i) => (
+                <Icono key={i} emoji="🏆" />
+              ))}
+              {cuenta.ganados > TROFEOS_A_LA_VISTA ? (
+                <span className="ml-0.5 text-xs font-bold tabular-nums">×{cuenta.ganados}</span>
+              ) : null}
+            </span>
+          ) : (
+            <span className="text-slate-600">—</span>
+          )}
+        </td>
+        <td className={cx(celda, "text-right tabular-nums")}>
+          {soloLiga ? (
+            <span className="font-semibold text-slate-200">{cuenta.lockes}</span>
+          ) : (
+            <>
+              <span className="font-semibold text-slate-200">
+                {cuenta.victorias}-{cuenta.derrotas}
+              </span>
+              {jugados ? (
+                <span className="block text-[11px] text-slate-500">{Math.round((cuenta.victorias / jugados) * 100)} %</span>
+              ) : null}
+            </>
+          )}
+        </td>
+        <td className={cx(celda, "pr-2 text-right font-semibold tabular-nums text-slate-300")}>{cuenta.bajas}</td>
+      </tr>
+      {abierta ? (
+        <tr>
+          <td colSpan={5} className={cx("pb-3", lider && "bg-amber-400/[0.06]")}>
+            <Vitrina titulos={titulos} />
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 
@@ -297,54 +347,38 @@ function Cifra({ valor, rotulo }: { valor: string | number; rotulo: React.ReactN
  * también los que ganó con otra gente, que es la gracia de compararse entre
  * amigos.
  *
- * **Plegada de entrada**, con un botón pequeño para verla: abierta en todos a
- * la vez llenaba la tabla, y muchos lockes no tienen logo, así que tampoco
+ * **Plegada de entrada**: se abre tocando la fila de su dueño. Abierta en todos
+ * a la vez llenaba la tabla, y muchos lockes no tienen logo, así que tampoco
  * valía enseñar solo los logos.
  */
 function Vitrina({ titulos }: { titulos: Titulo[] }) {
-  const [abierta, setAbierta] = useState(false);
-  if (!titulos.length) return null;
-
   return (
-    <div className="mt-2">
-      <button
-        type="button"
-        className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/25 px-2 py-1 text-xs text-amber-200/80 transition hover:bg-amber-400/[0.06]"
-        aria-expanded={abierta}
-        onClick={() => setAbierta((antes) => !antes)}
-      >
-        <Icono emoji="🏆" />
-        {abierta ? "Ocultar títulos" : `Ver títulos (${titulos.length})`}
-      </button>
-      {abierta ? (
-        <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Lockes ganados">
-          {titulos.map((titulo) => (
-            <li
-              key={titulo.id}
-              className="flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] py-1 pl-1 pr-2 text-xs text-amber-100"
-              title={titulo.deAntes ? `${titulo.nombre} · apuntado a mano` : titulo.nombre}
-            >
-              {titulo.logo ? (
-                // eslint-disable-next-line @next/next/no-img-element -- el logo ya viene reducido de la base de datos
-                <img
-                  src={titulo.logo}
-                  alt=""
-                  width={20}
-                  height={20}
-                  loading="lazy"
-                  className="h-5 w-5 shrink-0 rounded object-contain"
-                />
-              ) : (
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center text-amber-300">
-                  <Icono emoji={titulo.deAntes ? "📜" : "🏆"} />
-                </span>
-              )}
-              <span className="truncate">{titulo.nombre}</span>
-              <span className="shrink-0 text-amber-200/50">{titulo.anio}</span>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </div>
+    <ul className="flex flex-wrap gap-1.5 pl-10" aria-label="Lockes ganados">
+      {titulos.map((titulo) => (
+        <li
+          key={titulo.id}
+          className="flex max-w-full items-center gap-1.5 rounded-lg border border-amber-400/25 bg-amber-400/[0.06] py-1 pl-1 pr-2 text-xs text-amber-100"
+          title={titulo.deAntes ? `${titulo.nombre} · apuntado a mano` : titulo.nombre}
+        >
+          {titulo.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element -- el logo ya viene reducido de la base de datos
+            <img
+              src={titulo.logo}
+              alt=""
+              width={20}
+              height={20}
+              loading="lazy"
+              className="h-5 w-5 shrink-0 rounded object-contain"
+            />
+          ) : (
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center text-amber-300">
+              <Icono emoji={titulo.deAntes ? "📜" : "🏆"} />
+            </span>
+          )}
+          <span className="truncate">{titulo.nombre}</span>
+          <span className="shrink-0 text-amber-200/50">{titulo.anio}</span>
+        </li>
+      ))}
+    </ul>
   );
 }

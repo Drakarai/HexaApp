@@ -28,7 +28,9 @@ export function PageHeader({
         <span
           aria-hidden
           className={cx(
-            "pointer-events-none absolute -top-4 right-0 -z-10 h-[calc(100%+2rem)] w-3/5 max-w-sm",
+            // En el móvil va el de dentro del texto (abajo): aquí debajo se
+            // tapaban títulos y subtítulos largos
+            "pointer-events-none absolute -top-4 right-0 -z-10 hidden h-[calc(100%+2rem)] w-3/5 max-w-sm sm:block",
             "bg-contain bg-right bg-no-repeat opacity-45",
             // Se funde hacia la izquierda: el título pasa por encima y tiene
             // que seguir leyéndose
@@ -37,7 +39,23 @@ export function PageHeader({
           style={{ backgroundImage: `url("${fondo}")` }}
         />
       ) : null}
-      <div>
+      <div className={cx(fondo && "w-full flow-root sm:w-auto")}>
+        {fondo ? (
+          /* En el móvil el logo flota a la derecha y el texto salta de línea
+             antes de llegar a él, midiendo lo que ocupa el dibujo de verdad
+             (los hay altos y anchos). Solo puede meterse en su borde
+             izquierdo, que es casi transparente */
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={fondo}
+            alt=""
+            aria-hidden
+            className={cx(
+              "pointer-events-none float-right -my-4 ml-2 h-36 max-w-[60%] object-contain object-right opacity-45 sm:hidden",
+              "[mask-image:linear-gradient(to_left,black_55%,transparent)] [shape-outside:inset(0_0_0_15%)]",
+            )}
+          />
+        ) : null}
         <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
           {title}
         </h1>
