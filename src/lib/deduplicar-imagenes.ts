@@ -33,6 +33,9 @@ const COLUMNAS: [tabla: string, columna: string][] = [
   ["User", "avatarImage"],
   ["Competition", "logo"],
   ["LockeDeAntes", "logo"],
+  // Nacen ya como referencia, pero tienen que estar aquí: si no, la limpieza
+  // de huérfanas las tomaría por sueltas y las tiraría
+  ["Sugerencia", "imagen"],
   // Los objetos no entran: hay un dibujo por objeto del catálogo, no uno por
   // uso, y la bolsa los pinta directamente desde la fila.
 ];

@@ -381,6 +381,18 @@ async function foto(pagina, nombre, ruta, prepara) {
   await contexto.close();
 }
 
+// --- El Buzón: lo que manda un jugador y lo que le contestan (los datos, de
+// datos-buzon.mjs)
+{
+  const { contexto, pagina } = await abrirMovil();
+  await entrar(pagina, "hector");
+  await foto(pagina, "buzon", "/buzon");
+  await foto(pagina, "buzon-respuesta", "/buzon", async (p) => {
+    await arriba(p, p.locator("h2", { hasText: "Lo que has mandado" }), 110);
+  });
+  await contexto.close();
+}
+
 // --- Lo que se maneja desde el ordenador
 {
   const contexto = await navegador.newContext({

@@ -21,6 +21,7 @@ import { apuntarLockesDeAntes } from "./datos-palmares.mjs";
 import { montarSoulLink } from "./datos-soullink.mjs";
 import { montarEquipo } from "./datos-equipo.mjs";
 import { montarMapa } from "./datos-mapa.mjs";
+import { montarBuzon } from "./datos-buzon.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -399,6 +400,9 @@ await montarEquipo(p);
 
 // --- El mapa hecho a mano de Melemele, con su locke de Alola
 await montarMapa(p);
+
+// --- Lo que mandan al Buzón Héctor, Enzo y Rodri, y lo que contesta Draka
+await montarBuzon(navegador);
 
 await navegador.close();
 console.log("\nPartida de ejemplo lista. Ahora: node guia/capturas.mjs");

@@ -25,7 +25,8 @@ import { Avatar } from "@/components/ui";
 import { generacionDelJuego, regionDelJuego } from "@/lib/juegos";
 import { getFormatoFinal, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
-import { APARTADOS_CON_AVISO, getAvisos } from "@/lib/novedades";
+import { APARTADOS_CON_AVISO, getAvisoDelBuzon, getAvisos } from "@/lib/novedades";
+import { RecordarPantalla } from "@/components/recordar-pantalla";
 import { Logo } from "@/components/logo";
 import { Icono } from "@/components/icono";
 import { COMPETITION_STATUS } from "@/lib/constants";
@@ -67,6 +68,7 @@ const S = {
   notas: { href: "/notas", label: "Mis notas", icon: "🗒️" },
   perfil: { href: "/perfil", label: "Mi perfil", icon: "👤" },
   guia: { href: "/guia", label: "Guía de uso", icon: "❓" },
+  buzon: { href: "/buzon", label: "Buzón", icon: "💬" },
   ediciones: { href: "/competiciones", label: "Ediciones", icon: "🗂️" },
   admin: { href: "/admin", label: "Administración", icon: "⚙️" },
 } satisfies Record<string, NavItem>;
@@ -102,7 +104,8 @@ const GRUPOS: NavGroup[] = [
     // entrar sin saber dónde se aprieta
     // Ediciones volvió al menú aquí, en lo tuyo: son tus lockes, y escondida
     // dentro de Mi perfil no la encontraba nadie
-    children: [S.mapa, S.bolsa, S.notas, S.perfil, S.ediciones, S.guia],
+    // El Buzón, al lado de la guía: es de la aplicación y lo ve todo el mundo
+    children: [S.mapa, S.bolsa, S.notas, S.perfil, S.ediciones, S.buzon, S.guia],
   },
 ];
 
@@ -149,7 +152,7 @@ export default async function AppLayout({
         }),
         conCompanero ? companeroDe(active.id, user.id, esPokemonAnil(active)) : null,
       ])
-    : [null, null, false, {} as Record<string, boolean>, null];
+    : [null, null, false, await getAvisoDelBuzon(user.id, esCreador(user)), null];
   // Con «Ver como» espectador no juegas, y entonces tampoco te acompaña nadie
   const companero = yo ? companeroSiJuegas : null;
   /** Sin locke, el palmarés solo sale si hay algún locke de antes con esta persona */
@@ -244,6 +247,7 @@ export default async function AppLayout({
             S.perfil,
             S.ediciones,
             ...(tienePalmares ? [S.palmares] : []),
+            S.buzon,
             S.guia,
           ],
         },
@@ -308,7 +312,7 @@ export default async function AppLayout({
           {
             ...grupo,
             children: !yo
-              ? [S.perfil, S.ediciones, S.guia]
+              ? [S.perfil, S.ediciones, S.buzon, S.guia]
               : // La bolsa es de los premios que se reparten en un locke de
                 // varios: en solitario no la llena nadie. Y el equipo y la
                 // caja van aquí, al lado del mapa, cuando son privados: en
@@ -536,6 +540,8 @@ export default async function AppLayout({
           subtitle: `@${user.username} · ${comoEstoyAqui}`,
         }}
       />
+
+      <RecordarPantalla />
 
       <MarcarVisto
         rutas={rutasDeGrupo}

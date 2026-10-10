@@ -22,6 +22,7 @@ export function ImageInput({
   maxSize,
   hint,
   shape = "square",
+  sinEnlace = false,
 }: {
   name: string;
   label: string;
@@ -29,6 +30,11 @@ export function ImageInput({
   maxSize: number;
   hint?: string;
   shape?: "square" | "circle";
+  /**
+   * Solo subir, sin el campo de pegar un enlace: para lo que tiene que ser una
+   * imagen nuestra (la captura del Buzón), que un enlace de fuera puede morir
+   */
+  sinEnlace?: boolean;
 }) {
   // Vista previa de la que ya había; desaparece en cuanto se elige otra
   const [previa, setPrevia] = useState(defaultValue ?? "");
@@ -119,17 +125,19 @@ export function ImageInput({
             ) : null}
           </div>
 
-          <input
-            type="url"
-            className="input"
-            placeholder="…o pega el enlace de una imagen"
-            value={value.startsWith("data:") ? "" : value}
-            onChange={(event) => {
-              setValue(event.target.value);
-              setPrevia("");
-              setError(null);
-            }}
-          />
+          {sinEnlace ? null : (
+            <input
+              type="url"
+              className="input"
+              placeholder="…o pega el enlace de una imagen"
+              value={value.startsWith("data:") ? "" : value}
+              onChange={(event) => {
+                setValue(event.target.value);
+                setPrevia("");
+                setError(null);
+              }}
+            />
+          )}
           {value.startsWith("data:") ? (
             <p className="text-xs text-slate-500">
               Imagen subida y guardada en la base de datos.

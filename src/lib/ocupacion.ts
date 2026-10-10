@@ -63,6 +63,7 @@ export const COLUMNAS: [
   ["User", "avatarImage", "Fotos de perfil"],
   ["Competition", "logo", "Logos de las ediciones"],
   ["LockeDeAntes", "logo", "Logos de los lockes de antes"],
+  ["Sugerencia", "imagen", "Capturas del Buzón"],
   ["Item", "image", "Objetos", true],
   ["ItemOption", "image", "Objetos · variantes", true],
 ];

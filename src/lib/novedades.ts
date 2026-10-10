@@ -1,7 +1,9 @@
 import "server-only";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { ESTADOS_DE_SOLICITUD } from "@/lib/solicitudes";
+import { ESTADOS_DE_SUGERENCIA } from "@/lib/buzon";
 
 /**
  * El punto de "hay algo nuevo aquí" de las pestañas.
@@ -68,7 +70,7 @@ export async function getAvisos({
    * SQL (ver `lib/wipeos.ts`).
    */
   const [fila] = await prisma.$queryRaw<
-    { combates: boolean; edicion: boolean; lomio: boolean; reglas: boolean; peticiones: boolean }[]
+    { combates: boolean; edicion: boolean; lomio: boolean; reglas: boolean; peticiones: boolean; buzon: boolean }[]
   >`
     WITH yo AS (
       SELECT id,
@@ -151,7 +153,8 @@ export async function getAvisos({
         -- Las peticiones de locke sin responder, solo para el administrador
         ${esAdmin} AND EXISTS (SELECT 1 FROM "LockeRequest"
                                 WHERE estado = ${ESTADOS_DE_SOLICITUD.PENDIENTE})
-      ) AS peticiones
+      ) AS peticiones,
+      (${sqlDelBuzon(userId, esAdmin)}) AS buzon
   `;
 
   /**
@@ -161,14 +164,40 @@ export async function getAvisos({
    * petición se acepta o se rechaza, que es cuando de verdad está resuelta.
    */
   const reglas = Boolean(fila?.reglas);
+  const buzon = Boolean(fila?.buzon);
   return {
     Combates: Boolean(fila?.combates),
     // Reglas vive en "La edición": su punto enciende también el del grupo, o
     // desde fuera no habría forma de enterarse
     "La edición": Boolean(fila?.edicion) || Boolean(fila?.peticiones) || reglas,
-    "Lo mío": Boolean(fila?.lomio),
+    // El Buzón vive en "Lo mío"
+    "Lo mío": Boolean(fila?.lomio) || buzon,
     Reglas: reglas,
+    Buzón: buzon,
   };
+}
+
+/**
+ * El punto del **Buzón** (ver `lib/buzon.ts`). Como el de las peticiones, no
+ * se apaga por mirar la pestaña sino cuando se hace lo que toca: al Creador le
+ * avisa lo que ha llegado sin leer, y a cada uno, lo que le han contestado
+ * desde la última vez que entró.
+ */
+function sqlDelBuzon(userId: string, esAdmin: boolean) {
+  return Prisma.sql`
+    (${esAdmin} AND EXISTS (SELECT 1 FROM "Sugerencia" WHERE estado = ${ESTADOS_DE_SUGERENCIA.NUEVA}))
+    OR EXISTS (SELECT 1 FROM "Sugerencia" WHERE "userId" = ${userId} AND NOT "vistaPorAutor")
+  `;
+}
+
+/**
+ * Sin ningún locke elegido no hay más avisos que el del Buzón, que es de la
+ * aplicación: va solo, en su propia consulta.
+ */
+export async function getAvisoDelBuzon(userId: string, esAdmin: boolean): Promise<Avisos> {
+  const [fila] = await prisma.$queryRaw<{ buzon: boolean }[]>`SELECT (${sqlDelBuzon(userId, esAdmin)}) AS buzon`;
+  const buzon = Boolean(fila?.buzon);
+  return { "Lo mío": buzon, Buzón: buzon };
 }
 
 /** Apunta que alguien acaba de mirar una pestaña. */

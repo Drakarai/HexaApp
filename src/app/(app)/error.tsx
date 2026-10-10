@@ -52,6 +52,13 @@ export default function ErrorDeLaAplicacion({
         <Link href="/" className="btn-ghost">
           Volver al resumen
         </Link>
+        {/* Que contarlo no cueste nada: el Buzón ya sale como error y con el código */}
+        <Link
+          href={error.digest ? `/buzon?fallo=${encodeURIComponent(error.digest)}` : "/buzon?fallo=navegador"}
+          className="btn-ghost"
+        >
+          Contarlo en el Buzón
+        </Link>
       </div>
     </section>
   );

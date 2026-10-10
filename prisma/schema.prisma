@@ -75,6 +75,7 @@ model User {
   espectador             Spectator[]
   solicitudes            LockeRequest[]   @relation("SolicitanteDeLocke")
   solicitudesResueltas   LockeRequest[]   @relation("ResolutorDeLocke")
+  sugerencias            Sugerencia[]
   lockesDeAntesGanados   LockeDeAntes[]   @relation("GanadorDeAntes")
   lockesDeAntesSegundo   LockeDeAntes[]   @relation("SubcampeonDeAntes")
   lockesDeAntesApuntados LockeDeAntes[]   @relation("ApuntadorDeAntes")
@@ -916,6 +917,59 @@ model LockeRequest {
 
   @@index([estado, createdAt])
   @@index([userId])
+}
+
+/**
+ * Lo que la gente le cuenta a quien lleva la aplicación desde el **Buzón**:
+ * un error, una mejora o un cambio que haría. Es de la aplicación y no de un
+ * locke, así que no cuelga de ninguna edición. Cada uno ve solo las suyas; el
+ * Creador, todas. Las reglas (tipos, estados, límites) están en
+ * `lib/buzon.ts`.
+ */
+model Sugerencia {
+  id            String   @id @default(cuid())
+  userId        String
+  /**
+   * "error" | "mejora" | "cambio"
+   */
+  tipo          String
+  /**
+   * La pantalla de la que habla (su dirección: "/equipo"), o null si es de la
+   * aplicación en general
+   */
+  pantalla      String?
+  /**
+   * En una línea, para la lista
+   */
+  titulo        String
+  texto         String
+  /**
+   * Una captura de pantalla, reducida en el navegador. Siempre `ref:` al
+   * almacén de imágenes (ver `lib/almacen-de-imagenes.ts`)
+   */
+  imagen        String?
+  /**
+   * Navegador y tamaño de pantalla de quien la manda, que es lo primero que
+   * hace falta para reproducir un error
+   */
+  dispositivo   String?
+  /**
+   * "NUEVA" | "LEIDA" | "APUNTADA" | "HECHA" | "DESCARTADA"
+   */
+  estado        String   @default("NUEVA")
+  respuesta     String?
+  /**
+   * Si quien la mandó ya ha visto lo último que le contestaron: enciende su
+   * punto de aviso en el menú hasta que entra en el Buzón
+   */
+  vistaPorAutor Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([estado, createdAt])
 }
 
 model GymClear {
