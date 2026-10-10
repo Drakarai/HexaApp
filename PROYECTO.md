@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de octubre de 2026 (el buzón de sugerencias pasa a llamarse **HexaPost**, en `/hexapost`).
+Última actualización: 10 de octubre de 2026 (en la ficha de Equipo y PC, «Mover a la caja…» ya no se aplasta al final de la fila de botones en algunos móviles).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.

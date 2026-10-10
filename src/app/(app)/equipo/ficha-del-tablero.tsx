@@ -505,9 +505,12 @@ export function Ficha({
                       <Icono emoji="👑" /> Hacerlo as
                     </button>
                   )}
-                  {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre */}
+                  {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre.
+                      Con un mínimo de ancho: si no, en los móviles en los que los
+                      botones dejan un hueco pequeño al final de la fila se metía
+                      ahí aplastado («Mo…») en vez de bajar a la suya */}
                   <select
-                    className="input w-auto min-w-0 flex-1 py-1.5 text-sm sm:flex-none"
+                    className="input w-auto min-w-44 flex-1 py-1.5 text-sm sm:flex-none"
                     value=""
                     disabled={pendiente}
                     aria-label="Mover a otra caja"
