@@ -16,6 +16,7 @@ import sharp from "sharp";
 
 import { cargarPlaywright, chromiumDelSistema } from "./navegador.mjs";
 import { aLocke, SOUL_LINK } from "./datos-soullink.mjs";
+import { ALOLA } from "./datos-mapa.mjs";
 
 const { chromium } = await cargarPlaywright();
 
@@ -165,15 +166,18 @@ async function foto(pagina, nombre, ruta, prepara) {
     await p.waitForTimeout(700);
   });
 
+  // Las del mapa, en Melemele: el mapa hecho a mano del usuario (ver
+  // datos-mapa.mjs)
+  await aLocke(pagina, ALOLA);
   await foto(pagina, "mapa-lista", "/mapa");
   await foto(pagina, "mapa-dibujo", "/mapa", async (p) => {
     await p.locator("button", { hasText: "🗺️ Mapa" }).first().click();
     await p.waitForTimeout(900);
   });
   await foto(pagina, "mapa-apuntar", "/mapa", async (p) => {
-    await p.locator('input[placeholder*="Buscar una ruta"]').fill("Ruta 34");
+    await p.locator('input[placeholder*="Buscar una ruta"]').fill("Ruta 2");
     await p.waitForTimeout(600);
-    await p.locator("button", { hasText: "Ruta 34" }).first().click();
+    await p.locator("button", { hasText: "Ruta 2" }).first().click();
     await p.waitForTimeout(900);
     const especie = p.locator('input[name="species"]');
     await especie.click();
@@ -181,6 +185,7 @@ async function foto(pagina, nombre, ruta, prepara) {
     await especie.pressSequentially("Abr", { delay: 130 });
     await p.waitForTimeout(1800);
   });
+  await aLocke(pagina, "Hexalocke 2");
 
   // El equipo y la caja de Draka, privados, y la ficha de uno
   await foto(pagina, "equipo", "/equipo");
@@ -388,10 +393,10 @@ async function foto(pagina, nombre, ruta, prepara) {
   await entrar(pagina, "draka");
   await aLocke(pagina, "Hexalocke 2");
 
-  await pagina.goto(BASE + "/admin/mapas?region=johto", { waitUntil: "domcontentloaded" });
+  await pagina.goto(BASE + "/admin/mapas?region=melemele", { waitUntil: "domcontentloaded" });
   await pagina.waitForTimeout(1600);
   // Con una zona elegida salen sus tiradores: el de estirar y el de girar
-  await pagina.locator("svg rect[fill-opacity]").nth(12).click();
+  await pagina.locator("svg [fill-opacity]").nth(4).click();
   await pagina.waitForTimeout(900);
   await guardar(pagina, "editor-mapa", { clip: { x: 0, y: 0, width: 980, height: 600 } });
   console.log("✓ editor-mapa");

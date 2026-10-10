@@ -61,9 +61,16 @@ están en `datos-palmares.mjs`, que también se puede lanzar suelto) y, desde
 `datos-soullink.mjs`, el equipo de Draka en Equipo y PC y un **Soul Link de
 Johto** con Héctor (vínculos, dos evoluciones y una baja en pareja); y, desde
 `datos-equipo.mjs`, una caja con nombre («Reservas»), la ficha completa de
-Sentret pegada de Showdown y el equipo de ahora en el planificador. Como el Soul
-Link queda como el locke más nuevo, `capturas.mjs` elige a mano el locke de
-cada foto (`aLocke`). Repetirlo
+Sentret pegada de Showdown y el equipo de ahora en el planificador; y, desde
+`datos-mapa.mjs`, **un mapa hecho a mano de verdad**: Isla Melemele con el
+dibujo y las zonas que colocó el usuario (`mapa-melemele.webp` y
+`mapa-melemele.json`, solo el mapa) y un locke de Ultrasol y Ultraluna de Draka,
+el *Hexalocke Alola*, con capturas, un fallo y una baja en la isla, para las
+fotos del mapa y del editor. La isla entra directamente en la base, porque el
+editor no tiene «importar», así que ese paso **pide `DATABASE_URL` en el
+entorno** (la de la guía, como en los pasos de arriba) y no usa la de `.env`.
+Como los últimos lockes creados no son el de casi todas las fotos,
+`capturas.mjs` elige a mano el locke de cada foto (`aLocke`). Repetirlo
 lo duplicaría todo. Si algo
 sale torcido, vuelve a sembrar la base de datos y empieza de nuevo.
 

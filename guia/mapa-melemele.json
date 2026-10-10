@@ -1,0 +1,251 @@
+{
+ "slug": "melemele",
+ "name": "Isla Melemele",
+ "width": 1900,
+ "height": 960,
+ "relleno": 100,
+ "zonas": [
+  {
+   "name": "Ruta 1",
+   "kind": "ruta",
+   "shape": "circle",
+   "x": 918,
+   "y": 292,
+   "w": 65,
+   "h": 60,
+   "color": "#ffffff",
+   "position": 0
+  },
+  {
+   "name": "Ciudad Hauoli",
+   "kind": "ciudad",
+   "shape": "circle",
+   "x": 564,
+   "y": 586,
+   "w": 72,
+   "h": 64,
+   "color": "#ff0000",
+   "position": 1
+  },
+  {
+   "name": "Paseo Marítimo de Ciudad Hauoli",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 2,
+   "padre": 1
+  },
+  {
+   "name": "Zona comercial de Ciudad Hauoli",
+   "kind": "ciudad",
+   "shape": "circle",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 3,
+   "padre": 1
+  },
+  {
+   "name": "Afueras de Hauoli",
+   "kind": "ruta",
+   "shape": "circle",
+   "x": 1256,
+   "y": 326,
+   "w": 63,
+   "h": 62,
+   "color": "#ffffff",
+   "position": 4
+  },
+  {
+   "name": "Escuela de Entrenadores",
+   "kind": "otro",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 5,
+   "padre": 4
+  },
+  {
+   "name": "Afueras de Hauoli",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 6,
+   "padre": 4
+  },
+  {
+   "name": "Colina Dequilate",
+   "kind": "cueva",
+   "shape": "circle",
+   "x": 1175,
+   "y": 507,
+   "w": 72,
+   "h": 64,
+   "color": "#ffffff",
+   "position": 7
+  },
+  {
+   "name": "Mar de Melemele",
+   "kind": "agua",
+   "shape": "circle",
+   "x": 1549,
+   "y": 447,
+   "w": 76,
+   "h": 64,
+   "color": "#0000ff",
+   "position": 8
+  },
+  {
+   "name": "Ruta 3",
+   "kind": "ruta",
+   "shape": "circle",
+   "x": 752,
+   "y": 127,
+   "w": 74,
+   "h": 64,
+   "color": "#ffffff",
+   "position": 9
+  },
+  {
+   "name": "Ruta 3",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 871,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 10,
+   "padre": 9
+  },
+  {
+   "name": "Jardines de Melemele",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 11,
+   "padre": 9
+  },
+  {
+   "name": "Ruta 2",
+   "kind": "ruta",
+   "shape": "circle",
+   "x": 186,
+   "y": 393,
+   "w": 74,
+   "h": 64,
+   "color": "#ffffff",
+   "position": 12
+  },
+  {
+   "name": "Ruta 2",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 13,
+   "padre": 12
+  },
+  {
+   "name": "Cementerio de Hauoli",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 14,
+   "padre": 12
+  },
+  {
+   "name": "Pueblo Lili",
+   "kind": "ciudad",
+   "shape": "circle",
+   "x": 680,
+   "y": 288,
+   "w": 76,
+   "h": 62,
+   "color": "#ff0000",
+   "position": 15
+  },
+  {
+   "name": "Cueva Sotobosque",
+   "kind": "cueva",
+   "shape": "circle",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 16,
+   "padre": 12
+  },
+  {
+   "name": "Gruta Unemar",
+   "kind": "cueva",
+   "shape": "circle",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 17,
+   "padre": 9
+  },
+  {
+   "name": "Huerto de Bayas",
+   "kind": "ruta",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 18,
+   "padre": 12
+  },
+  {
+   "name": "Bahía Kalae",
+   "kind": "agua",
+   "shape": "circle",
+   "x": 1029,
+   "y": 151,
+   "w": 74,
+   "h": 62,
+   "color": "#0000ff",
+   "position": 19
+  },
+  {
+   "name": "Senda Mahalo",
+   "kind": "ruta",
+   "shape": "circle",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 20,
+   "padre": 15
+  },
+  {
+   "name": "Pueblo Lili",
+   "kind": "ciudad",
+   "shape": "rect",
+   "x": 875,
+   "y": 458,
+   "w": 150,
+   "h": 44,
+   "position": 21,
+   "padre": 15
+  }
+ ]
+}

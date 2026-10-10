@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de octubre de 2026 (el Palmarés pasa a ser **una tabla de almanaque** y en el móvil **el logo de la portada ya no pisa el título**).
+Última actualización: 10 de octubre de 2026 (las fotos del mapa de las guías salen con **el Melemele hecho a mano del usuario**, dibujo y zonas).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4277,6 +4277,18 @@ equipo* en lugar de la cobertura de tipos. Los datos de esas fotos salen de
 `guia/datos-equipo.mjs`, y la de los equipos de la repetición necesita el
 servidor arrancado con `guia/showdown-falso.cjs` (ver `guia/README.md`).
 
+**Las fotos de las guías nunca salen de la base de datos del usuario.** Lo dejó
+claro: la base de la guía es la semilla más los `datos*.mjs`, con cuentas de
+ejemplo sin foto. **La única excepción, pedida por él, es el mapa**: las fotos
+del mapa y del editor usan su **Isla Melemele** —el dibujo y las zonas que
+colocó a mano, sin ninguna captura suya—, guardada en `guia/mapa-melemele.webp`
+y `guia/mapa-melemele.json`. `guia/datos-mapa.mjs` la mete directamente en la
+base (el editor no tiene «importar»; por eso exige `DATABASE_URL` en el
+entorno y no lee la de `.env`) y monta el *Hexalocke Alola* de Draka con
+capturas, un fallo y una baja en la isla. Las zonas de fábrica de Johto son un
+esquema sin dibujo y no enseñaban cómo queda un mapa hecho. Si hay que sacar
+otro mapa suyo, se exporta igual: solo `MapRegion` y `MapZone`, nada más.
+
 **Dónde va cada cosa**: si lo hace cualquiera, en la guía de uso; si es de llevar
 un locke —emparejar, anotar resultados, repartir premios—, en la del
 administrador.
@@ -4683,3 +4695,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
      venir plegados y el Mapa en orden natural.
 141. **Deslizar entre cajas** en el móvil y causas largas que se abren al tocarlas.
 142. **Palmarés como almanaque** y el logo de la portada que ya no tapa el texto en el móvil.
+143. **Las fotos del mapa de las guías, con el Melemele del usuario** (dibujo y zonas hechas a mano).
