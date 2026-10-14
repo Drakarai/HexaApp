@@ -17,6 +17,7 @@ import {
 import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
+import { getMapa, type MapaDeRegion } from "@/lib/mapas";
 import { FORMAS, esRedonda } from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
@@ -39,6 +40,18 @@ function refrescarMapa() {
   revalidatePath("/mapa");
   revalidatePath("/admin/mapas");
 }
+
+/**
+ * Lo que devuelve cada cambio del editor: **el mapa como ha quedado**, para
+ * que el editor se repinte él solo.
+ *
+ * Antes cada cambio hacía `revalidatePath`, y eso en una acción de servidor
+ * es pedirle al navegador que refresque la página entera: a cada zona movida
+ * o renombrada la pantalla saltaba de sitio y se volvían a pedir todas las
+ * pestañas. El Mapa de capturas de los jugadores no lo necesita: se pinta de
+ * nuevo cada vez que se entra.
+ */
+export type EstadoDelEditor = (NonNullable<FormState> & { mapa?: MapaDeRegion | null }) | null;
 
 // ---------------------------------------------------------------------------
 // El mapa (administradores)
@@ -108,9 +121,9 @@ export async function rellenarRegionAction(formData: FormData) {
 }
 
 export async function anadirZonaAction(
-  _prev: FormState,
+  _prev: EstadoDelEditor,
   formData: FormData,
-): Promise<FormState> {
+): Promise<EstadoDelEditor> {
   const [, sinPermiso] = await conPermiso(requireCreador());
   if (sinPermiso) return sinPermiso;
 
@@ -142,16 +155,22 @@ export async function anadirZonaAction(
     },
   });
 
-  refrescarMapa();
-  return { success: `"${name}" añadida. Arrástrala a su sitio.` };
+  return { success: `"${name}" añadida. Arrástrala a su sitio.`, mapa: await getMapa(slug) };
 }
 
-export async function editarZonaAction(formData: FormData) {
-  await requireCreador();
+export async function editarZonaAction(
+  _prev: EstadoDelEditor,
+  formData: FormData,
+): Promise<EstadoDelEditor> {
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
+  const slug = String(formData.get("slug") ?? "");
   const id = String(formData.get("zoneId") ?? "");
   const name = String(formData.get("name") ?? "").trim();
-  if (!id || !name) return;
+  if (!id) return { error: "No sé qué zona es." };
+  if (!name) return { error: "La zona necesita un nombre." };
+  if (name.length > 60) return { error: "Ese nombre es demasiado largo." };
 
   const forma = String(formData.get("shape") ?? "");
   const color = String(formData.get("color") ?? "").trim();
@@ -185,19 +204,24 @@ export async function editarZonaAction(formData: FormData) {
       color: /^#[0-9a-fA-F]{6}$/.test(color) ? color : null,
     },
   });
-  refrescarMapa();
+  return { success: "Guardada.", mapa: await getMapa(slug) };
 }
 
 /**
  * Mete una zona dentro de otra, o la saca. Una zona con hijas deja de poder
  * capturarse ella misma: al tocarla salen las de dentro.
  */
-export async function anidarZonaAction(formData: FormData) {
-  await requireCreador();
+export async function anidarZonaAction(
+  _prev: EstadoDelEditor,
+  formData: FormData,
+): Promise<EstadoDelEditor> {
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
 
+  const slug = String(formData.get("slug") ?? "");
   const id = String(formData.get("zoneId") ?? "");
   const parentIdBruto = String(formData.get("parentId") ?? "").trim();
-  if (!id) return;
+  if (!id) return { error: "No sé qué zona es." };
 
   // Ni dentro de sí misma ni dentro de una que ya cuelga de otra: un solo nivel
   let parentId: string | null = null;
@@ -210,7 +234,7 @@ export async function anidarZonaAction(formData: FormData) {
   }
 
   await prisma.mapZone.update({ where: { id }, data: { parentId } });
-  refrescarMapa();
+  return { mapa: await getMapa(slug) };
 }
 
 /**
@@ -221,9 +245,9 @@ export async function anidarZonaAction(formData: FormData) {
  * las nuevas y a otra cosa.
  */
 export async function detectarZonasAction(
-  _prev: FormState,
+  _prev: EstadoDelEditor,
   formData: FormData,
-): Promise<FormState> {
+): Promise<EstadoDelEditor> {
   const [, sinPermiso] = await conPermiso(requireCreador());
   if (sinPermiso) return sinPermiso;
 
@@ -268,17 +292,23 @@ export async function detectarZonasAction(
     })),
   });
 
-  refrescarMapa();
   return {
     success: `${encontradas.length} zonas sacadas de la imagen. Ahora ponles el nombre.`,
+    mapa: await getMapa(slug),
   };
 }
 
-export async function borrarZonaAction(formData: FormData) {
-  await requireCreador();
+export async function borrarZonaAction(
+  _prev: EstadoDelEditor,
+  formData: FormData,
+): Promise<EstadoDelEditor> {
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
+  const slug = String(formData.get("slug") ?? "");
   const id = String(formData.get("zoneId") ?? "");
-  if (id) await prisma.mapZone.delete({ where: { id } });
-  refrescarMapa();
+  // deleteMany: si ya la había borrado otra pestaña, no es un error
+  if (id) await prisma.mapZone.deleteMany({ where: { id } });
+  return { mapa: await getMapa(slug) };
 }
 
 /**
@@ -289,9 +319,9 @@ export async function borrarZonaAction(formData: FormData) {
  * datos por cada pixel soltado.
  */
 export async function moverZonasAction(
-  _prev: FormState,
+  _prev: EstadoDelEditor,
   formData: FormData,
-): Promise<FormState> {
+): Promise<EstadoDelEditor> {
   const [, sinPermiso] = await conPermiso(requireCreador());
   if (sinPermiso) return sinPermiso;
 
@@ -335,15 +365,14 @@ export async function moverZonasAction(
       ),
   );
 
-  refrescarMapa();
-  return { success: "Mapa guardado." };
+  return { success: "Mapa guardado.", mapa: await getMapa(String(formData.get("slug") ?? "")) };
 }
 
 /** La imagen de fondo de una región, y el tamaño del lienzo. */
 export async function guardarFondoAction(
-  _prev: FormState,
+  _prev: EstadoDelEditor,
   formData: FormData,
-): Promise<FormState> {
+): Promise<EstadoDelEditor> {
   const [, sinPermiso] = await conPermiso(requireCreador());
   if (sinPermiso) return sinPermiso;
 
@@ -371,8 +400,7 @@ export async function guardarFondoAction(
     },
   });
 
-  refrescarMapa();
-  return { success: "Guardado." };
+  return { success: "Guardado.", mapa: await getMapa(slug) };
 }
 
 // ---------------------------------------------------------------------------

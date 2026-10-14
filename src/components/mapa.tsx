@@ -138,7 +138,13 @@ export function Mapa({
     movido: boolean;
   } | null>(null);
 
-  useEffect(() => setBorrador({}), [mapa.id, mapa.zones.length]);
+  /**
+   * Cuando llega el mapa como ha quedado en el servidor, el borrador sobra: ya
+   * trae lo que se soltó. Antes solo se soltaba al cambiar el número de zonas,
+   * y un giro con el tirador seguía mandando sobre el que luego se escribía a
+   * mano en el panel.
+   */
+  useEffect(() => setBorrador({}), [mapa.zones]);
 
   const cajaDe = (zona: ZonaDelMapa): Caja =>
     borrador[zona.id] ?? {

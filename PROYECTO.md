@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 10 de octubre de 2026 (en la ficha de Equipo y PC, «Mover a la caja…» ya no se aplasta al final de la fila de botones en algunos móviles).
+Última actualización: 14 de octubre de 2026 (el **editor de mapas** ya no refresca la pantalla a cada cambio: se repinta solo con el mapa que devuelve el servidor).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3764,7 +3764,14 @@ Piezas con truco:
   componente de servidor**: Next devuelve una referencia al cliente en vez del
   array y revienta la página entera (pasó). `components/mapa.tsx` es el mapa en
   SVG, `mapa/mapa-client.tsx` la vista del jugador y `admin/mapas/editor.tsx` el
-  editor. Ojo con este último: **el panel de la zona elegida se pinta en el
+  editor. Ojo con este último: **guarda el mapa en el navegador**
+  (`RegionEnEdicion`) y cada acción del editor devuelve el mapa como ha quedado
+  (`EstadoDelEditor` en `actions/mapas.ts`) en vez de hacer `revalidatePath`,
+  que en una acción de servidor refresca la página entera: a cada zona movida o
+  renombrada la pantalla saltaba de sitio y se volvían a pedir todas las
+  pestañas, y el usuario se quejó. Solo «usar las que traigo escritos», que
+  rellena una región vacía, sigue refrescando. Lo prueba
+  `tests/interfaz/4-mapas.prueba.mjs`. Y **el panel de la zona elegida se pinta en el
   cliente**, no en la página, porque un componente de servidor no puede pasarle
   una función a uno de cliente y la página se quedaba en blanco. El giro de una
   zona es solo un `transform` al dibujar: los tiradores van dentro de él para
@@ -4729,3 +4736,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 142. **Palmarés como almanaque** y el logo de la portada que ya no tapa el texto en el móvil.
 143. **Las fotos del mapa de las guías, con el Melemele del usuario** (dibujo y zonas hechas a mano).
 144. **HexaPost** (nació como «Buzón»): errores, mejoras y cambios que cualquiera le manda a quien lleva la aplicación, con respuesta y aviso.
+145. **El editor de mapas sin refrescos**: cada cambio se repinta solo, sin que la pantalla salte.

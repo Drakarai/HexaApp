@@ -2,18 +2,9 @@ import Link from "next/link";
 import { requireCreadorPage } from "@/lib/auth";
 import { getMapa, getResumenDeMapas } from "@/lib/mapas";
 import { REGIONES_DE_MAPA } from "@/lib/juegos";
-import {
-  rellenarRegionAction,
-} from "@/app/actions/mapas";
 import { PageHeader } from "@/components/page-header";
 import { cx } from "@/lib/utils";
-import {
-  DetectarZonas,
-  EditorDeMapa,
-  FondoDelMapa,
-  NuevaZona,
-} from "./editor";
-import { DibujoVacio } from "@/components/dibujo-vacio";
+import { RegionEnEdicion } from "./editor";
 
 export const metadata = { title: "Mapas de las regiones" };
 
@@ -72,50 +63,12 @@ export default async function MapasPage({
       </div>
 
       {mapa ? (
-        <section className="card space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="section-title">{mapa.name}</h2>
-            <span className="text-xs text-slate-500">
-              {mapa.zones.length} {mapa.zones.length === 1 ? "zona" : "zonas"} ·
-              lienzo {mapa.width}×{mapa.height}
-            </span>
-          </div>
-
-          {mapa.zones.length ? (
-            <EditorDeMapa mapa={mapa} />
-          ) : (
-            <div className="px-4 py-6 text-center">
-              <DibujoVacio dibujo="mapa" />
-              <p className="mt-3 text-sm text-slate-300">Este mapa está vacío.</p>
-              <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
-                Ponle abajo la imagen del mapa y saca las zonas de ella, o ve
-                añadiéndolas a mano y colocándolas encima.
-              </p>
-              {resumen.find((region) => region.slug === elegida)
-                ?.hayDeFabrica ? (
-                <form action={rellenarRegionAction} className="mt-3">
-                  <input type="hidden" name="slug" value={elegida} />
-                  <button type="submit" className="btn-ghost btn-sm">
-                    O usar los nombres de {mapa.name} que traigo escritos
-                  </button>
-                </form>
-              ) : null}
-            </div>
-          )}
-
-          <div className="space-y-3 border-t border-white/5 pt-4">
-            <NuevaZona slug={mapa.slug} />
-            <div className="border-t border-white/5 pt-3">
-              <DetectarZonas
-                slug={mapa.slug}
-                hayImagen={Boolean(mapa.image)}
-              />
-            </div>
-            <div className="border-t border-white/5 pt-3">
-              <FondoDelMapa mapa={mapa} />
-            </div>
-          </div>
-        </section>
+        <RegionEnEdicion
+          // Otra región es otro editor: nada de lo elegido en una pasa a la siguiente
+          key={mapa.slug}
+          mapa={mapa}
+          hayDeFabrica={Boolean(resumen.find((region) => region.slug === elegida)?.hayDeFabrica)}
+        />
       ) : null}
     </>
   );

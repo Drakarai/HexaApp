@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { startTransition, useActionState, useState } from "react";
 import {
   anadirZonaAction,
   anidarZonaAction,
@@ -9,8 +9,9 @@ import {
   editarZonaAction,
   guardarFondoAction,
   moverZonasAction,
+  rellenarRegionAction,
+  type EstadoDelEditor,
 } from "@/app/actions/mapas";
-import type { FormState } from "@/app/actions/auth";
 import { ImageInput } from "@/components/image-input";
 import { Mapa } from "@/components/mapa";
 import { FORMAS, TIPOS_DE_ZONA, colorDeZona } from "@/lib/zonas";
@@ -18,6 +19,92 @@ import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { DibujoVacio } from "@/components/dibujo-vacio";
+
+type AlCambiar = (mapa: MapaDeRegion) => void;
+
+/**
+ * Una acción del editor que, al volver, le pasa al editor el mapa como ha
+ * quedado. Las acciones ya no refrescan la página (ver `EstadoDelEditor`): es
+ * esto lo que repinta lo que se ha tocado, sin saltos ni recargas.
+ */
+function useAccionDelEditor(
+  accion: (antes: EstadoDelEditor, datos: FormData) => Promise<EstadoDelEditor>,
+  alCambiar: AlCambiar,
+) {
+  return useActionState<EstadoDelEditor, FormData>(async (antes, datos) => {
+    const resultado = await accion(antes, datos);
+    if (resultado?.mapa) alCambiar(resultado.mapa);
+    // El mapa ya está guardado arriba: no hace falta tenerlo dos veces
+    return resultado ? { error: resultado.error, success: resultado.success } : resultado;
+  }, null);
+}
+
+/**
+ * La región que se está editando, entera: la cabecera con sus cuentas, el
+ * mapa, y lo de añadir zonas, sacarlas de la imagen y el fondo. **Guarda el
+ * mapa aquí**, en el navegador, y cada cambio lo sustituye por el que devuelve
+ * el servidor.
+ */
+export function RegionEnEdicion({
+  mapa: delServidor,
+  hayDeFabrica,
+}: {
+  mapa: MapaDeRegion;
+  /** Si hay zonas escritas de fábrica para rellenar una región vacía */
+  hayDeFabrica: boolean;
+}) {
+  const [mapa, setMapa] = useState(delServidor);
+  // Al cambiar de región (o rellenarla de fábrica) manda lo que llega del servidor
+  const [anterior, setAnterior] = useState(delServidor);
+  if (delServidor !== anterior) {
+    setAnterior(delServidor);
+    setMapa(delServidor);
+  }
+
+  return (
+    <section className="card space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="section-title">{mapa.name}</h2>
+        <span className="text-xs text-slate-500">
+          {mapa.zones.length} {mapa.zones.length === 1 ? "zona" : "zonas"} ·
+          lienzo {mapa.width}×{mapa.height}
+        </span>
+      </div>
+
+      {mapa.zones.length ? (
+        <EditorDeMapa mapa={mapa} alCambiar={setMapa} />
+      ) : (
+        <div className="px-4 py-6 text-center">
+          <DibujoVacio dibujo="mapa" />
+          <p className="mt-3 text-sm text-slate-300">Este mapa está vacío.</p>
+          <p className="mx-auto mt-1 max-w-md text-xs text-slate-500">
+            Ponle abajo la imagen del mapa y saca las zonas de ella, o ve
+            añadiéndolas a mano y colocándolas encima.
+          </p>
+          {hayDeFabrica ? (
+            <form action={rellenarRegionAction} className="mt-3">
+              <input type="hidden" name="slug" value={mapa.slug} />
+              <button type="submit" className="btn-ghost btn-sm">
+                O usar los nombres de {mapa.name} que traigo escritos
+              </button>
+            </form>
+          ) : null}
+        </div>
+      )}
+
+      <div className="space-y-3 border-t border-white/5 pt-4">
+        <NuevaZona slug={mapa.slug} alCambiar={setMapa} />
+        <div className="border-t border-white/5 pt-3">
+          <DetectarZonas slug={mapa.slug} hayImagen={Boolean(mapa.image)} alCambiar={setMapa} />
+        </div>
+        <div className="border-t border-white/5 pt-3">
+          <FondoDelMapa mapa={mapa} alCambiar={setMapa} />
+        </div>
+      </div>
+    </section>
+  );
+}
 
 /**
  * El editor del mapa de una región.
@@ -27,11 +114,8 @@ import { Icono } from "@/components/icono";
  * otra. Nada de esto se hace bien desde una lista de cincuenta filas, que era
  * como estaba antes.
  */
-export function EditorDeMapa({ mapa }: { mapa: MapaDeRegion }) {
-  const [estadoMover, mover] = useActionState<FormState, FormData>(
-    moverZonasAction,
-    null,
-  );
+function EditorDeMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCambiar }) {
+  const [estadoMover, mover] = useAccionDelEditor(moverZonasAction, alCambiar);
   const [elegidaId, setElegidaId] = useState<string | null>(null);
 
   const elegida =
@@ -58,8 +142,10 @@ export function EditorDeMapa({ mapa }: { mapa: MapaDeRegion }) {
         onZona={(zona) => setElegidaId(zona.id)}
         onMover={(sitios) => {
           const datos = new FormData();
+          datos.set("slug", mapa.slug);
           datos.set("sitios", JSON.stringify(sitios));
-          mover(datos);
+          // Fuera de un formulario, la acción tiene que ir en una transición
+          startTransition(() => mover(datos));
         }}
       />
       {estadoMover?.error ? <FormMessage state={estadoMover} /> : null}
@@ -78,7 +164,7 @@ export function EditorDeMapa({ mapa }: { mapa: MapaDeRegion }) {
               ✕
             </button>
           </div>
-          <PanelDeZona zona={elegida} mapa={mapa} />
+          <PanelDeZona zona={elegida} mapa={mapa} alCambiar={alCambiar} />
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-center text-xs text-slate-500">
@@ -123,11 +209,8 @@ export function EditorDeMapa({ mapa }: { mapa: MapaDeRegion }) {
 }
 
 /** Añadir una zona que falte. Sale en el centro y se coloca arrastrando. */
-export function NuevaZona({ slug }: { slug: string }) {
-  const [estado, anadir] = useActionState<FormState, FormData>(
-    anadirZonaAction,
-    null,
-  );
+function NuevaZona({ slug, alCambiar }: { slug: string; alCambiar: AlCambiar }) {
+  const [estado, anadir] = useAccionDelEditor(anadirZonaAction, alCambiar);
 
   return (
     <form action={anadir} className="space-y-2">
@@ -165,17 +248,16 @@ export function NuevaZona({ slug }: { slug: string }) {
  *
  * Es lo que convierte colocar cincuenta zonas a mano en ponerles el nombre.
  */
-export function DetectarZonas({
+function DetectarZonas({
   slug,
   hayImagen,
+  alCambiar,
 }: {
   slug: string;
   hayImagen: boolean;
+  alCambiar: AlCambiar;
 }) {
-  const [estado, detectar] = useActionState<FormState, FormData>(
-    detectarZonasAction,
-    null,
-  );
+  const [estado, detectar] = useAccionDelEditor(detectarZonasAction, alCambiar);
 
   return (
     <form action={detectar} className="space-y-2">
@@ -199,11 +281,8 @@ export function DetectarZonas({
 }
 
 /** La imagen de fondo y el tamaño del lienzo. */
-export function FondoDelMapa({ mapa }: { mapa: MapaDeRegion }) {
-  const [estado, guardar] = useActionState<FormState, FormData>(
-    guardarFondoAction,
-    null,
-  );
+function FondoDelMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCambiar }) {
+  const [estado, guardar] = useAccionDelEditor(guardarFondoAction, alCambiar);
   const [abierto, setAbierto] = useState(false);
 
   if (!abierto) {
@@ -364,13 +443,20 @@ export function ColorDeZona({
 function PanelDeZona({
   zona,
   mapa,
+  alCambiar,
 }: {
   zona: ZonaDelMapa;
   mapa: MapaDeRegion;
+  alCambiar: AlCambiar;
 }) {
+  const [estadoEditar, editar] = useAccionDelEditor(editarZonaAction, alCambiar);
+  const [estadoAnidar, anidar] = useAccionDelEditor(anidarZonaAction, alCambiar);
+  const [estadoBorrar, borrar] = useAccionDelEditor(borrarZonaAction, alCambiar);
+
   return (
     <div className="space-y-3">
-      <form action={editarZonaAction} className="grid gap-3 sm:grid-cols-2">
+      <form action={editar} className="grid gap-3 sm:grid-cols-2">
+        <input type="hidden" name="slug" value={mapa.slug} />
         <input type="hidden" name="zoneId" value={zona.id} />
         <div className="sm:col-span-2">
           <label className="label">Nombre</label>
@@ -436,15 +522,24 @@ function PanelDeZona({
             </span>
           </div>
         </div>
-        <div className="flex items-end">
+        <div className="flex flex-wrap items-end gap-2">
           <SubmitButton className="btn-primary btn-sm">Guardar</SubmitButton>
+          {estadoEditar?.success ? (
+            <span className="pb-1.5 text-xs text-emerald-300">{estadoEditar.success}</span>
+          ) : null}
         </div>
+        {estadoEditar?.error ? (
+          <div className="sm:col-span-2">
+            <FormMessage state={estadoEditar} />
+          </div>
+        ) : null}
       </form>
 
       <form
-        action={anidarZonaAction}
+        action={anidar}
         className="flex flex-wrap items-end gap-2 border-t border-white/10 pt-3"
       >
+        <input type="hidden" name="slug" value={mapa.slug} />
         <input type="hidden" name="zoneId" value={zona.id} />
         <div className="min-w-48 flex-1">
           <label className="label">Dentro de</label>
@@ -472,10 +567,13 @@ function PanelDeZona({
             ? ` Ahora lleva dentro: ${zona.children.map((hija) => hija.name).join(", ")}.`
             : ""}
         </p>
+        {estadoAnidar?.error ? <FormMessage state={estadoAnidar} /> : null}
       </form>
 
-      <form action={borrarZonaAction} className="border-t border-white/10 pt-3">
+      <form action={borrar} className="border-t border-white/10 pt-3">
+        <input type="hidden" name="slug" value={mapa.slug} />
         <input type="hidden" name="zoneId" value={zona.id} />
+        {estadoBorrar?.error ? <FormMessage state={estadoBorrar} /> : null}
         <ConfirmSubmit
           className="btn-ghost btn-sm text-red-300"
           message={`¿Borrar "${zona.name}" del mapa? Las capturas que hubiera apuntadas ahí pasan a capturas extra.`}
