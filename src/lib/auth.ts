@@ -56,10 +56,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
   if (!session) return null;
 
   const filas = await prisma.$queryRaw<
-    (Omit<CurrentUser, "avatarImage"> & { firma: string | null })[]
+    (Omit<CurrentUser, "avatarImage"> & { firma: string | null; sesionVersion: number })[]
   >`
     select "id", "username", "displayName", "role", "avatarColor", "theme",
-           "puedeCrearLockes",
+           "puedeCrearLockes", "sesionVersion",
            case
              when nullif("avatarImage", '') is null then null
              when "avatarImage" like 'ref:%' then "avatarImage"
@@ -71,8 +71,10 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser | null> => {
 
   const user = filas[0];
   if (!user) return null;
+  // Una sesión de antes de cambiar la contraseña (o de cerrarlas todas) ya no vale
+  if ((session.version ?? 0) !== user.sesionVersion) return null;
 
-  const { firma, ...resto } = user;
+  const { firma, sesionVersion: _version, ...resto } = user;
   const deVerdad = { ...resto, avatarImage: urlDeImagen("avatar", user.id, firma) };
   // Solo el Creador puede ponerse otro papel: a cualquier otro la cookie no le hace nada
   const verComo = (await cookies()).get(VER_COMO)?.value;

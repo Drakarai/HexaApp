@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import {
+  cerrarOtrasSesionesAction,
   changeMyPasswordAction,
   updateMyProfileAction,
   type FormState,
@@ -28,6 +29,10 @@ export function ProfileForms({
   );
   const [passwordState, passwordAction] = useActionState<FormState, FormData>(
     changeMyPasswordAction,
+    null,
+  );
+  const [sesionesState, sesionesAction] = useActionState<FormState, FormData>(
+    cerrarOtrasSesionesAction,
     null,
   );
 
@@ -93,13 +98,25 @@ export function ProfileForms({
               name="newPassword"
               type="password"
               className="input"
-              minLength={6}
+              minLength={8}
               autoComplete="new-password"
               required
             />
           </div>
           <FormMessage state={passwordState} />
           <SubmitButton>Cambiar contraseña</SubmitButton>
+        </form>
+
+        {/* Para el móvil perdido o la sesión que se quedó abierta en otro sitio */}
+        <form action={sesionesAction} className="mt-5 space-y-2 border-t border-white/10 pt-4">
+          <p className="text-sm text-slate-300">
+            ¿Has entrado en un móvil u ordenador que no es tuyo? Echa tu cuenta de todos los
+            demás sitios; aquí sigues dentro.
+          </p>
+          <FormMessage state={sesionesState} />
+          <SubmitButton className="btn-ghost btn-sm" pendingLabel="Cerrando…">
+            Cerrar sesión en los demás dispositivos
+          </SubmitButton>
         </form>
       </section>
     </div>

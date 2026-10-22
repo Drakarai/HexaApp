@@ -48,7 +48,7 @@ export function SetupForm() {
           name="password"
           type="password"
           className="input"
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
           required
         />

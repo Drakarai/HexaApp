@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 14 de octubre de 2026 (el **editor de mapas** ya no refresca la pantalla a cada cambio: se repinta solo con el mapa que devuelve el servidor).
+Última actualización: 22 de octubre de 2026 (**seguridad**: freno a quien prueba contraseñas, sesiones que se pueden cerrar en todos los dispositivos, cabeceras de seguridad y contraseñas de al menos 8 caracteres).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -84,6 +84,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Aspecto** | Sobrio y deportivo —letra condensada de marcador en títulos y cifras, superficies planas en grises neutros, etiquetas cuadradas en vez de píldoras e iconos de línea en el menú en vez de emojis—, con el color del tema en los acentos. **Es el de todo el mundo.** El de antes, el *clásico*, se puede seguir eligiendo en *Mi perfil*, y se guarda por dispositivo. En el móvil, **las fichas suben desde abajo** —la de un pokémon, una baja, una zona del mapa, un objeto, el MVP, el as, los equipos de un combate, los vídeos de un gimnasio— y se cierran **deslizándolas hacia abajo**; en la portada y en Equipo y PC se **tira hacia abajo para refrescar**, con la media ball girando. Lo que está vacío lleva **un dibujo en línea fina** (una ball, una lápida, la mochila, el mapa…) en vez de una caja a rayas. Los dos grises de los textos secundarios (`slate-500` y `slate-600`) van **más claros que los de Tailwind** (en `@theme` y en el aspecto nuevo): el 500 pasa del 4,5:1 sobre las tarjetas y el 600 sube de 2,4:1 a 3,8:1, para que se lean con el móvil al sol. Las **✕ de borrar** sueltas van en gris y se ponen rojas al pasar por encima (`btn-borrar`, lo que pone `ConfirmSubmit` cuando el botón es solo un símbolo); las que llevan texto siguen en rojo. |
 | **Aviso de novedades** | Un punto ámbar en las pestañas cuando hay algo que no has visto: jornada o reto nuevos, un combate resuelto o un MVP por votar en *Combates*; bajas, puntos o gimnasios **de otros** en *La edición*; objetos nuevos en tu bolsa en *Lo mío*. Algún apartado lleva **punto propio** además del de su grupo: *Reglas*, cuando cambia una. |
 | **HexaPost** | En *Lo mío → HexaPost* (también sin ningún locke), cualquiera manda **un error, una mejora o un cambio** a quien lleva la aplicación: una línea de resumen, el texto, **dónde** (la pantalla de la que viene, ya elegida) y una **captura** opcional; va solo con su navegador y tamaño de pantalla. Debajo ve lo suyo y en qué está —*Enviada*, *Leída* (en cuanto el Creador abre HexaPost), *Apuntada*, *Hecha* o *No se hará*— con la respuesta, y un **punto de aviso** en *Lo mío* cuando le contestan. Lo puede retirar mientras nadie lo haya leído; cinco al día. El Creador ve en el mismo sitio **lo de todos**, por resolver primero (filtros por estado y por tipo), cambia el estado, contesta o borra, y le avisa el punto mientras haya algo sin leer. La pantalla de **«Se ha roto algo»** lleva a él con el código del fallo ya escrito. |
+| **Seguridad** | Contraseñas con bcrypt y sesión firmada en una cookie `httpOnly`, como siempre, y además: **tras cinco fallos seguidos** con una cuenta (o veinte desde una misma red) en 15 minutos hay que esperar, exista la cuenta o no; el login **tarda lo mismo** exista o no el usuario; **cambiar la contraseña** —uno mismo o quien administra— **echa las sesiones abiertas** en otros dispositivos, y en *Mi perfil → Cuenta* está **«Cerrar sesión en los demás dispositivos»**; las contraseñas nuevas tienen **al menos 8 caracteres** y no valen las de siempre («12345678», «contraseña»…) ni el propio usuario; y todas las respuestas llevan **cabeceras de seguridad** (no se puede meter la app en un marco de otra web, sin cámara ni micrófono, siempre por https…). |
 
 Papeles: **Creador** (quien lleva la aplicación: lo ve y lo toca todo),
 **administrador de locke** (participante con mando en *esa* edición y en nada
@@ -116,6 +117,26 @@ costaba dinero y no aportaba nada para seis amigos.
 
 **Autenticación propia**, cookie firmada (JWT con `jose`) + bcrypt. No se metió
 un proveedor externo porque son seis usuarios creados a mano y no hacía falta.
+
+**La seguridad que se añadió «por si acaso»** (lo pidió el usuario pensando en
+abrirla a más gente), y por qué así:
+
+- **El freno al login cuenta en la base de datos** (`IntentoDeEntrada`), no en
+  memoria: en Vercel cada petición puede caer en una instancia distinta. Cuenta
+  por usuario escrito —exista o no, para no delatar cuáles hay— y por red, esta
+  resumida con un hash y el `AUTH_SECRET`: sirve para contar, no para saber
+  desde dónde entra nadie. Se borra al entrar bien y lo de más de un día se
+  tira solo. Las reglas están en `lib/seguridad.ts`.
+- **Las sesiones llevan la versión de la cuenta** (`User.sesionVersion`).
+  `getCurrentUser` ya leía la cuenta en cada petición, así que compararla no
+  cuesta un viaje más. Las cookies de antes no la llevan y cuentan como 0, que
+  es con lo que nacen todas: al desplegarlo no salió echado nadie.
+- **Cabeceras sin `script-src`**: Next mete scripts en línea y cerrarlos pide
+  un nonce en cada página; lo que más protege de eso —que nada de lo que
+  escribe la gente se pinte como HTML— ya lo hace React. `frame-ancestors` y
+  `object-src` son `'self'` y no `'none'` porque la guía se ve en un
+  `<object>` de la propia app.
+- **Contraseñas de 8**, solo para las nuevas: las que ya había siguen valiendo.
 
 **Las notas privadas son privadas de verdad.** Todas las consultas filtran por
 `authorId`, y los borrados usan `deleteMany` con ese filtro, de modo que ni un
@@ -4078,6 +4099,12 @@ Piezas con truco:
   acciones con sus permisos; y la página, con la cara del que manda y la
   bandeja del Creador. Su punto de aviso sale de `lib/novedades.ts`
   (`sqlDelBuzon`, y `getAvisoDelBuzon` cuando no hay locke elegido).
+- `lib/seguridad.ts` (las reglas: cuánto esperar tras los fallos y qué
+  contraseñas valen, probadas en `tests/seguridad.test.ts`) y
+  `lib/intentos-de-entrada.ts` (los fallos en la base de datos). Las cabeceras
+  están en `next.config.ts` y la versión de las sesiones en `lib/auth.ts`
+  (`getCurrentUser`) y `lib/sesion-token.ts`. Lo prueba en la app de verdad
+  `tests/interfaz/5-seguridad.prueba.mjs`.
 - `lib/solicitudes.ts` y `app/actions/solicitudes.ts` — pedir, aceptar y
   rechazar un locke en solitario. Los formularios están en
   `competiciones/solitario-forms.tsx` (pedirlo o crearlo) y
@@ -4737,3 +4764,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 143. **Las fotos del mapa de las guías, con el Melemele del usuario** (dibujo y zonas hechas a mano).
 144. **HexaPost** (nació como «Buzón»): errores, mejoras y cambios que cualquiera le manda a quien lleva la aplicación, con respuesta y aviso.
 145. **El editor de mapas sin refrescos**: cada cambio se repinta solo, sin que la pantalla salte.
+146. **Seguridad**: freno al login, sesiones que se cierran en todos los dispositivos, cabeceras y contraseñas de 8.

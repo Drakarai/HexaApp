@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { hashPassword } from "@/lib/auth";
+import { problemaDeContrasena } from "@/lib/seguridad";
 import { createSession } from "@/lib/session";
 import { ROLES, PALETTE } from "@/lib/constants";
 import {
@@ -42,9 +43,8 @@ export async function createFirstAdminAction(
     };
   }
   if (!displayName) return { error: "Escribe tu nombre." };
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
-  }
+  const problema = problemaDeContrasena(password, username);
+  if (problema) return { error: problema };
 
   const admin = await prisma.user.create({
     data: {
@@ -118,6 +118,7 @@ export async function createFirstAdminAction(
     userId: admin.id,
     username: admin.username,
     role: admin.role,
+    version: admin.sesionVersion,
   });
 
   redirect("/");

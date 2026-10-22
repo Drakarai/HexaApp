@@ -11,6 +11,7 @@ import {
   requireOrganizador,
   type CurrentUser,
 } from "@/lib/auth";
+import { problemaDeContrasena } from "@/lib/seguridad";
 import { ROLES } from "@/lib/constants";
 import type { FormState } from "@/app/actions/auth";
 import { conPermiso } from "@/lib/permiso";
@@ -66,9 +67,8 @@ export async function createUserAction(
     };
   }
   if (!displayName) return { error: "Escribe el nombre visible." };
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
-  }
+  const problema = problemaDeContrasena(password, username);
+  if (problema) return { error: problema };
 
   const existing = await prisma.user.findUnique({ where: { username } });
   if (existing) return { error: "Ese usuario ya existe." };
@@ -98,19 +98,19 @@ export async function resetUserPasswordAction(
 
   const userId = String(formData.get("userId") ?? "");
   const password = String(formData.get("password") ?? "");
-  if (password.length < 6) {
-    return { error: "La contraseña debe tener al menos 6 caracteres." };
-  }
   if (!(await puedeTocarLaCuenta(quien, userId))) {
     return { error: "Esa cuenta no es tuya." };
   }
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return { error: "Usuario no encontrado." };
+  const problema = problemaDeContrasena(password, user.username);
+  if (problema) return { error: problema };
 
+  // Una contraseña nueva echa las sesiones abiertas con la vieja, en todos lados
   await prisma.user.update({
     where: { id: userId },
-    data: { passwordHash: await hashPassword(password) },
+    data: { passwordHash: await hashPassword(password), sesionVersion: { increment: 1 } },
   });
 
   revalidatePath("/admin");

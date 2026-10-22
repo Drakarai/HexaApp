@@ -25,6 +25,13 @@ export type SessionPayload = {
   userId: string;
   username: string;
   role: string;
+  /**
+   * La `sesionVersion` de la cuenta al entrar. Si la de la cuenta ha subido
+   * (cambió la contraseña, o cerró la sesión en los demás dispositivos), esta
+   * sesión ya no vale. Las de antes de existir esto no la llevan y cuentan
+   * como 0, que es con lo que nacen todas las cuentas: nadie sale echado.
+   */
+  version?: number;
 };
 
 export const opcionesDeLaCookie = {
@@ -65,6 +72,7 @@ export async function leerSesion(
         userId: payload.userId,
         username: String(payload.username ?? ""),
         role: String(payload.role ?? "PLAYER"),
+        version: typeof payload.version === "number" ? payload.version : 0,
       },
       firmadaEn: typeof payload.iat === "number" ? payload.iat : 0,
     };

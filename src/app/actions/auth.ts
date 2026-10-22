@@ -8,6 +8,15 @@ import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import { getTheme, isThemeId } from "@/lib/themes";
 import { destinoSeguro } from "@/lib/volver";
+import { apuntarFallo, esperaParaEntrar, olvidarFallos } from "@/lib/intentos-de-entrada";
+import { problemaDeContrasena } from "@/lib/seguridad";
+
+/**
+ * Con qué se compara cuando el usuario no existe: así tarda lo mismo que con
+ * uno que sí, y por el tiempo de respuesta no se puede saber qué cuentas hay.
+ * Es el hash de una contraseña al azar, del mismo coste que los de verdad.
+ */
+const HASH_DE_RELLENO = "$2b$10$MG8SBu30wnZ8Cbomc5eZ9uSxJ1fbpkx0BZXOi4pg6tqAbFbVUsCU2";
 
 export type FormState = { error?: string; success?: string } | null;
 
@@ -24,16 +33,29 @@ export async function loginAction(
     return { error: "Escribe usuario y contraseña." };
   }
 
+  // Quien lleva demasiados fallos seguidos espera, aunque ahora acierte
+  const espera = await esperaParaEntrar(username);
+  if (espera > 0) {
+    return {
+      error: `Demasiados intentos fallidos. Espera ${espera} ${espera === 1 ? "minuto" : "minutos"} y vuelve a probar.`,
+    };
+  }
+
   const user = await prisma.user.findUnique({ where: { username } });
+  // Se compara siempre, también sin usuario: si no, contestaría antes y se notaría
+  const valida = await verifyPassword(password, user?.passwordHash ?? HASH_DE_RELLENO);
   // Mismo mensaje en ambos casos para no revelar qué usuarios existen
-  if (!user || !(await verifyPassword(password, user.passwordHash))) {
+  if (!user || !valida) {
+    await apuntarFallo(username);
     return { error: "Usuario o contraseña incorrectos." };
   }
 
+  await olvidarFallos(username);
   await createSession({
     userId: user.id,
     username: user.username,
     role: user.role,
+    version: user.sesionVersion,
   });
   redirect(destinoSeguro(formData.get("volver")));
 }
@@ -51,21 +73,53 @@ export async function changeMyPasswordAction(
   const current = String(formData.get("currentPassword") ?? "");
   const next = String(formData.get("newPassword") ?? "");
 
-  if (next.length < 6) {
-    return { error: "La nueva contraseña debe tener al menos 6 caracteres." };
-  }
+  const problema = problemaDeContrasena(next, me.username);
+  if (problema) return { error: problema };
 
   const user = await prisma.user.findUnique({ where: { id: me.id } });
   if (!user || !(await verifyPassword(current, user.passwordHash))) {
     return { error: "La contraseña actual no es correcta." };
   }
 
-  await prisma.user.update({
+  /**
+   * Cambiar la contraseña **echa a los demás dispositivos**: si se cambia
+   * porque alguien la sabía, que no siga dentro con la sesión que ya tenía.
+   * Este sigue dentro con una sesión nueva.
+   */
+  const actualizado = await prisma.user.update({
     where: { id: me.id },
-    data: { passwordHash: await hashPassword(next) },
+    data: { passwordHash: await hashPassword(next), sesionVersion: { increment: 1 } },
+  });
+  await createSession({
+    userId: actualizado.id,
+    username: actualizado.username,
+    role: actualizado.role,
+    version: actualizado.sesionVersion,
   });
 
-  return { success: "Contraseña actualizada." };
+  return { success: "Contraseña cambiada. Los demás dispositivos tendrán que volver a entrar." };
+}
+
+/**
+ * Para el móvil perdido o la sesión abierta en el ordenador de otro: todas las
+ * sesiones de la cuenta dejan de valer menos esta.
+ */
+export async function cerrarOtrasSesionesAction(
+  _prev: FormState,
+  _formData: FormData,
+): Promise<FormState> {
+  const me = await requireUser();
+  const actualizado = await prisma.user.update({
+    where: { id: me.id },
+    data: { sesionVersion: { increment: 1 } },
+  });
+  await createSession({
+    userId: actualizado.id,
+    username: actualizado.username,
+    role: actualizado.role,
+    version: actualizado.sesionVersion,
+  });
+  return { success: "Hecho: en los demás dispositivos tendrás que volver a entrar." };
 }
 
 export async function updateMyThemeAction(

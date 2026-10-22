@@ -23,7 +23,50 @@ function huella(fichero: string) {
   }
 }
 
+/**
+ * Las cabeceras de seguridad de todas las respuestas. Ninguna cambia lo que se
+ * ve; cierran puertas que la aplicación no usa:
+ *
+ * - **Que nadie la meta en un marco de otra web** (`frame-ancestors`): la
+ *   trampa de poner la app invisible encima de otra página y que se pulse sin
+ *   querer. Ella misma sí puede (la guía se ve en un `<object>` en el
+ *   ordenador), por eso es `'self'` y no `'none'`.
+ * - `object-src 'self'`: el visor de la guía sigue funcionando, y no se cuela
+ *   un `<object>` de fuera. `base-uri` y `form-action`, que los formularios
+ *   solo puedan mandar aquí.
+ * - `nosniff`: el navegador no adivina el tipo de un fichero (una imagen
+ *   subida no se puede hacer pasar por un script).
+ * - El `Referer` sale sin la ruta al ir a otra web: el enlace de la
+ *   clasificación pública no se filtra por un vídeo de YouTube.
+ * - Sin cámara, micrófono, ubicación ni pagos: la app no los usa, y así
+ *   ningún contenido incrustado los puede pedir.
+ * - HSTS: siempre por https, también si alguien escribe la dirección sin él.
+ *
+ * Sin `script-src` a propósito: Next mete scripts en línea, y cerrarlos de
+ * verdad pide un nonce en cada página. Lo que más protege de eso —que nada de
+ * lo que escribe la gente se pinte como HTML— ya lo hace React.
+ */
+const CABECERAS_DE_SEGURIDAD = [
+  {
+    key: "Content-Security-Policy",
+    value: "frame-ancestors 'self'; object-src 'self'; base-uri 'self'; form-action 'self'",
+  },
+  { key: "X-Frame-Options", value: "SAMEORIGIN" },
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
+  },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+];
+
 const nextConfig: NextConfig = {
+  // Que no se anuncie con qué está hecha
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/:path*", headers: CABECERAS_DE_SEGURIDAD }];
+  },
   serverExternalPackages: ["@prisma/client", "bcryptjs"],
   /**
    * Las letras de la imagen del resumen del locke se leen del disco al

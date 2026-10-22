@@ -41,6 +41,13 @@ model User {
    */
   puedeCrearLockes Boolean  @default(false)
   /**
+   * La versión de las sesiones de esta cuenta. Va dentro de cada cookie de
+   * sesión y, si no coincide, la sesión ya no vale: subirla **echa a la cuenta
+   * de todos los dispositivos** a la vez. Sube al cambiar la contraseña y con
+   * «Cerrar sesión en los demás dispositivos» (ver `lib/auth.ts`).
+   */
+  sesionVersion    Int      @default(0)
+  /**
    * Quién dio de alta esta cuenta, si la dio un organizador.
    * Hace falta para que un organizador pueda arreglar lo suyo —cambiarle la
    * contraseña a alguien de su grupo, borrar una cuenta que creó mal— sin poder
@@ -1979,6 +1986,25 @@ model LockeDeAntes {
 // ---------------------------------------------------------------------------
 // Registro de errores
 // ---------------------------------------------------------------------------
+
+/**
+ * Un intento de entrar **que falló**, para frenar a quien prueba contraseñas
+ * sin parar (ver `lib/intentos-de-entrada.ts`). Se apunta el usuario que se
+ * escribió —exista o no— y la red desde la que se intentó, esta **resumida**
+ * (un hash con el secreto de la aplicación): sirve para contar intentos, no
+ * para saber desde dónde entra nadie. Es de paso: se borra al entrar bien y lo
+ * de más de un día se tira solo.
+ */
+model IntentoDeEntrada {
+  id        String   @id @default(cuid())
+  usuario   String
+  red       String
+  createdAt DateTime @default(now())
+
+  @@index([usuario, createdAt])
+  @@index([red, createdAt])
+  @@index([createdAt])
+}
 
 /**
  * Un fallo de la aplicación, del navegador de alguien o del servidor, para

@@ -50,7 +50,7 @@ export function NewUserForm({ puedeElegirRol = true }: { puedeElegirRol?: boolea
           </div>
           <div>
             <label className="label">Contraseña inicial</label>
-            <input name="password" type="text" className="input" required />
+            <input name="password" type="text" className="input" minLength={8} required />
           </div>
           <div className="grid grid-cols-2 gap-3">
             {puedeElegirRol ? (
@@ -114,7 +114,7 @@ export function ResetPasswordForm({
           name="password"
           type="text"
           className="input max-w-xs"
-          minLength={6}
+          minLength={8}
           required
         />
         <SubmitButton>Guardar</SubmitButton>
