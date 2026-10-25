@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 25 de octubre de 2026 (Next 16.4.3 y sharp 0.35.5 por seguridad, avisos de Dependabot y aviso de derechos en `LICENSE`).
+Última actualización: 25 de octubre de 2026 (el aviso de derechos de `LICENSE` va firmado como **Drakarai**).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
