@@ -1,0 +1,24 @@
+# Dependabot: avisa cuando sale un fallo de seguridad en algo que usa la app y
+# propone la actualización. Solo las de seguridad (`open-pull-requests-limit: 0`
+# apaga las de «hay versión nueva»), todas juntas en una sola propuesta y como
+# mucho una vez por semana. Nada llega a la app hasta que se acepta: la rama
+# de producción solo cambia al aceptar la propuesta.
+#
+# Para que abra las propuestas hay que tener activado en GitHub
+# Settings → Code security → «Dependabot security updates».
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "Europe/Madrid"
+    open-pull-requests-limit: 0
+    groups:
+      seguridad:
+        applies-to: security-updates
+        patterns:
+          - "*"
+    commit-message:
+      prefix: "Seguridad"

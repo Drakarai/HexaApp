@@ -2,6 +2,7 @@
   "name": "hexaapp",
   "version": "0.1.0",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "dev": "next dev",
     "build": "node scripts/preparar-build.mjs && prisma generate && npm test && prisma db push --skip-generate && next build",
@@ -27,10 +28,10 @@
     "bcryptjs": "^3.0.2",
     "jose": "^6.1.0",
     "lucide-react": "^1.48.0",
-    "next": "16.3.0",
+    "next": "16.4.3",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "sharp": "^0.35.3"
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

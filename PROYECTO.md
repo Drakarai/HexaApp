@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 22 de octubre de 2026 (**seguridad**: freno a quien prueba contraseñas, sesiones que se pueden cerrar en todos los dispositivos, cabeceras de seguridad y contraseñas de al menos 8 caracteres).
+Última actualización: 25 de octubre de 2026 (Next 16.4.3 y sharp 0.35.5 por seguridad, avisos de Dependabot y aviso de derechos en `LICENSE`).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -137,6 +137,24 @@ abrirla a más gente), y por qué así:
   `object-src` son `'self'` y no `'none'` porque la guía se ve en un
   `<object>` de la propia app.
 - **Contraseñas de 8**, solo para las nuevas: las que ya había siguen valiendo.
+
+**Contra copiar la app, lo que sirve y lo que no.** El usuario preguntó cómo
+evitar que se la clonen. Lo que llega al navegador no se puede esconder, y
+ofuscarlo o bloquear el clic derecho no lo evita y hace la app más lenta, así
+que no se hizo. Lo que sí protege: el **repositorio privado** (sin sesión,
+GitHub da 404), el código del servidor, que no sale de Vercel, la compilación
+**sin mapas del código** (`.map`) y las claves solo en Vercel. Se añadió
+`LICENSE` («todos los derechos reservados», con la nota de que Pokémon es de
+sus dueños) y `"license": "UNLICENSED"` en `package.json`. Se le recomendó al
+usuario la **verificación en dos pasos en GitHub, Vercel y Neon**, que es lo que
+de verdad evita que se lo lleven todo (eso lo hace él en cada web).
+
+**Dependencias al día, con aviso.** `.github/dependabot.yml` solo propone las
+actualizaciones **de seguridad**, juntas y como mucho una vez por semana
+(`open-pull-requests-limit: 0` apaga las de «hay versión nueva»). Abre una
+propuesta en GitHub; a la app no llega nada hasta aceptarla. Hace falta tener
+activado *Settings → Code security → Dependabot security updates*. Next va
+**fijado a una versión exacta** a propósito: se sube a mano y probando.
 
 **Las notas privadas son privadas de verdad.** Todas las consultas filtran por
 `authorId`, y los borrados usan `deleteMany` con ese filtro, de modo que ni un
@@ -4223,6 +4241,14 @@ Piezas con truco:
 
 ## 6. Estado y pendientes
 
+**Seguridad, pendiente o a decidir**: `npm audit` sigue marcando **Prisma**
+(alto): el arreglo es pasar a Prisma 7, que es un cambio grande, y el fallo
+(`deepmerge-ts`, en su herramienta de configuración) no lo puede tocar ningún
+usuario; se deja para cuando se migre con calma. La **verificación en dos
+pasos dentro de la app para la cuenta del Creador** se le ofreció y quedó para
+cuando la pida. Recomendado al usuario: bajar de vez en cuando una copia desde
+Administración y guardarla fuera de Neon.
+
 **Pendiente ahora mismo**: el usuario todavía no ha desplegado. El siguiente
 paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
 Hasta entonces la aplicación solo corre en su ordenador.
@@ -4765,3 +4791,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 144. **HexaPost** (nació como «Buzón»): errores, mejoras y cambios que cualquiera le manda a quien lleva la aplicación, con respuesta y aviso.
 145. **El editor de mapas sin refrescos**: cada cambio se repinta solo, sin que la pantalla salte.
 146. **Seguridad**: freno al login, sesiones que se cierran en todos los dispositivos, cabeceras y contraseñas de 8.
+147. **Dependencias al día**: Next 16.4.3 y sharp 0.35.5 (fallos de seguridad), Dependabot y `LICENSE`.
