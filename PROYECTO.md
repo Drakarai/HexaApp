@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 25 de octubre de 2026 (el aviso de derechos de `LICENSE` va firmado como **Drakarai**).
+Última actualización: 27 de octubre de 2026 (el pixel art de las fichas grandes se amplía **un número entero de veces**: se ve nítido y entero).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4087,7 +4087,16 @@ Piezas con truco:
 - `lib/sprites-de-quinta.ts` (direcciones de Blanco y Negro, `pokemonDeLaImagen`
   y la cookie) y `components/sprite-pokemon.tsx` (`SpritePokemon`, que elige y
   recorta, y el proveedor del estilo que pone el layout). Todo `<img>` de un
-  pokémon pasa por ahí; `perfil/sprites.tsx` es el selector.
+  pokémon pasa por ahí; `perfil/sprites.tsx` es el selector. **En grande, el
+  pixel art se amplía un número entero de veces** (`useHueco` y
+  `vecesEnteras`): mide el hueco y la densidad de la pantalla y elige cuántos
+  píxeles de pantalla da a cada píxel del dibujo. Se vio en la ficha del as: un
+  sprite de 96 a unas 6,3 veces (con el zoom de Windows) sacaba unos píxeles de
+  6 y otros de 7, los bordes se veían rotos, y la tira además se salía del
+  recuadro y cortaba el sombrero de Meowscarada. Se elige el entero más cercano
+  (si no cabe, el de abajo, con un 4 % de holgura); por debajo de 2,5 píxeles
+  por píxel se deja como antes, porque ahí casi no se nota y redondear lo
+  dejaba a la mitad.
 - `equipo/intercambio.tsx` — el formulario plegado de intercambiar, en la
   ficha; lo guarda `intercambiarAction`.
 - `equipo/debilidades.tsx` — las debilidades y resistencias de la pestaña
@@ -4792,3 +4801,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 145. **El editor de mapas sin refrescos**: cada cambio se repinta solo, sin que la pantalla salte.
 146. **Seguridad**: freno al login, sesiones que se cierran en todos los dispositivos, cabeceras y contraseñas de 8.
 147. **Dependencias al día**: Next 16.4.3 y sharp 0.35.5 (fallos de seguridad), Dependabot y `LICENSE`.
+148. **Sprites nítidos en grande**: el pixel art de las fichas se amplía por números enteros.

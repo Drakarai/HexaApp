@@ -102,6 +102,66 @@ function repintar(src: string): Promise<string | null> {
   return pedido;
 }
 
+/**
+ * El hueco donde va un sprite grande, en píxeles de CSS y con la densidad de
+ * la pantalla, para ampliar el pixel art **un número entero de veces**.
+ *
+ * Si no, un sprite de 96 metido en un recuadro de 330 se amplía 3,4 veces (y
+ * con el zoom de Windows, 6,3 píxeles de pantalla por píxel del dibujo): unos
+ * píxeles salen de 6 y otros de 7, y los bordes se ven rotos. Con un entero,
+ * todos miden lo mismo.
+ */
+function useHueco(elemento: HTMLElement | null, activo: boolean) {
+  const [hueco, setHueco] = useState<{ ancho: number; alto: number; densidad: number } | null>(null);
+  useEffect(() => {
+    if (!activo || !elemento) return;
+    // Con su margen interior: es aire, y el sprite ya trae el suyo
+    const leer = () =>
+      setHueco({
+        ancho: elemento.clientWidth,
+        alto: elemento.clientHeight,
+        densidad: window.devicePixelRatio || 1,
+      });
+    leer();
+    const observador = new ResizeObserver(leer);
+    observador.observe(elemento);
+    // El zoom del navegador cambia la densidad sin cambiar el tamaño en CSS
+    const zoom = window.matchMedia?.(`(resolution: ${window.devicePixelRatio || 1}dppx)`);
+    zoom?.addEventListener?.("change", leer);
+    return () => {
+      observador.disconnect();
+      zoom?.removeEventListener?.("change", leer);
+    };
+  }, [elemento, activo]);
+  return hueco;
+}
+
+/**
+ * Cuántos píxeles de pantalla por píxel del dibujo, enteros, para un dibujo de
+ * `ancho`×`alto` en el hueco: **el entero más cercano** a lo que lo llenaría,
+ * para que no encoja ni crezca de más, y si ese no cabe, el de abajo.
+ *
+ * 0 (se deja como siempre, llenando el hueco) cuando se ve pequeño: por debajo
+ * de 2,5 píxeles de pantalla por píxel la diferencia entre uno y otro apenas
+ * se nota, y redondear hacia abajo lo dejaría a la mitad (Geodude en la ficha
+ * de Equipo y PC del ordenador pasaba de 85 a 45 píxeles).
+ */
+function vecesEnteras(
+  hueco: { ancho: number; alto: number; densidad: number } | null,
+  ancho: number,
+  alto: number,
+) {
+  if (!hueco || ancho <= 0 || alto <= 0) return 0;
+  const llenaria = Math.min(hueco.ancho / ancho, hueco.alto / alto) * hueco.densidad;
+  if (llenaria < 2.5) return 0;
+  const cerca = Math.round(llenaria);
+  // Un pelo más que el hueco (un 4 %) vale: es aire y no se nota
+  const cabe = (veces: number) =>
+    (ancho * veces) / hueco.densidad <= hueco.ancho * 1.04 && (alto * veces) / hueco.densidad <= hueco.alto * 1.04;
+  const veces = cerca >= 1 && cabe(cerca) ? cerca : Math.floor(llenaria);
+  return veces >= 1 ? veces : 0;
+}
+
 /** Del #1 al #649, los animados de los juegos; ahí la tira no hace falta */
 const DE_LOS_JUEGOS = 649;
 
@@ -212,6 +272,11 @@ export function SpritePokemon({
       actual?.startsWith("/iconos-de-caja/") ||
       actual?.startsWith("/anil/"),
   );
+  // En grande, el pixel art se amplía un número entero de veces (ver `useHueco`)
+  const entero = ficha && pixelado;
+  const [contenedor, setContenedor] = useState<HTMLSpanElement | null>(null);
+  const hueco = useHueco(contenedor, entero);
+  const [natural, setNatural] = useState<{ de: string; ancho: number; alto: number } | null>(null);
   // Un icono shiny que es el normal repintado: hasta tenerlo, no se enseña el normal
   const aRepintar = actual?.endsWith(REPINTAR) ? actual : null;
   const [repintado, setRepintado] = useState<{ de: string; url: string | null } | null>(null);
@@ -260,6 +325,37 @@ export function SpritePokemon({
         ? { de: aRepintar, url: repintadasYa.get(aRepintar) ?? null }
         : null
     : null;
+  if (entero) {
+    // El dibujo entero cabe en el hueco: se mira el lado que más aprieta
+    const medido = natural?.de === actual ? natural : null;
+    const veces = medido ? vecesEnteras(hueco, medido.ancho, medido.alto) : 0;
+    const tamano =
+      medido && hueco && veces >= 1
+        ? { width: (medido.ancho * veces) / hueco.densidad, height: (medido.alto * veces) / hueco.densidad }
+        : null;
+    return (
+      <span ref={setContenedor} className={cx("inline-flex items-center justify-center", className)}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          key={actual}
+          {...resto}
+          src={listo?.url ?? actual}
+          alt={alt}
+          onLoad={(evento) =>
+            setNatural({ de: actual, ancho: evento.currentTarget.naturalWidth, alto: evento.currentTarget.naturalHeight })
+          }
+          onError={() => setFallidas((antes) => [...antes, actual])}
+          style={tamano ?? undefined}
+          className={cx(
+            // Hasta medirlo, como antes: llenando el hueco
+            tamano ? "max-w-none" : "h-full w-full object-contain",
+            "[image-rendering:pixelated]",
+            aRepintar && !listo && "opacity-0",
+          )}
+        />
+      </span>
+    );
+  }
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
@@ -336,6 +432,13 @@ function TiraAnimada({
    */
   const [fotograma, setFotograma] = useState(0);
   const fotogramas = medida?.fotogramas ?? 1;
+  // Sobre el lienzo de 96 de Blanco y Negro, ampliado un número entero de veces
+  const [contenedor, setContenedor] = useState<HTMLSpanElement | null>(null);
+  const hueco = useHueco(contenedor, true);
+  // La escala la marca el lienzo de 96 (o el fotograma, si es más grande)
+  const lienzo = medida ? Math.max(96, medida.lado) : 0;
+  const veces = medida ? vecesEnteras(hueco, lienzo, lienzo) : 0;
+  const ancho = medida && hueco && veces ? (medida.lado * veces) / hueco.densidad : null;
   useEffect(() => {
     setFotograma(0);
     if (fotogramas < 2 || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
@@ -344,12 +447,18 @@ function TiraAnimada({
   }, [fotogramas, pintada, porFotograma]);
 
   return (
-    <span role="img" aria-label={alt} className={cx("inline-flex items-center justify-center", className)}>
+    <span
+      ref={setContenedor}
+      role="img"
+      aria-label={alt}
+      className={cx("inline-flex items-center justify-center", className)}
+    >
       {medida && pintada ? (
         <span
-          className="block aspect-square [image-rendering:pixelated]"
+          className="block aspect-square shrink-0 [image-rendering:pixelated]"
           style={{
-            width: `${Math.min(100, (medida.lado / 96) * 100)}%`,
+            // En píxeles enteros si cabe; si no (una casilla pequeña), encogido como siempre
+            width: ancho !== null ? `${ancho}px` : `${Math.min(100, (medida.lado / 96) * 100)}%`,
             backgroundImage: `url(${pintada})`,
             backgroundSize: `${fotogramas * 100}% 100%`,
             backgroundRepeat: "no-repeat",
