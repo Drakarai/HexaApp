@@ -83,3 +83,69 @@ export function verticesDeZona(points: string | null): [number, number][] | null
     return null;
   }
 }
+
+type CajaDeZona = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  shape: string;
+  points: [number, number][] | null;
+};
+
+/**
+ * Una zona llevada a un lienzo de otro tamaño. La imagen de fondo se estira al
+ * lienzo entero, así que para que la zona siga **encima del mismo sitio de la
+ * imagen** se escala igual que ella: `sx` a lo ancho y `sy` a lo alto.
+ *
+ * Un círculo no puede quedarse ovalado: se escala con el menor de los dos y
+ * se deja con el mismo centro.
+ */
+export function reescalarZona<Z extends CajaDeZona>(zona: Z, sx: number, sy: number) {
+  const points = zona.points
+    ? zona.points.map(([px, py]) => [Math.round(px * sx), Math.round(py * sy)] as [number, number])
+    : null;
+  if (esRedonda(zona.shape)) {
+    const lado = Math.max(8, Math.round(Math.min(zona.w * sx, zona.h * sy)));
+    const cx = (zona.x + zona.w / 2) * sx;
+    const cy = (zona.y + zona.h / 2) * sy;
+    return { x: Math.round(cx - lado / 2), y: Math.round(cy - lado / 2), w: lado, h: lado, points };
+  }
+  return {
+    x: Math.round(zona.x * sx),
+    y: Math.round(zona.y * sy),
+    w: Math.max(8, Math.round(zona.w * sx)),
+    h: Math.max(8, Math.round(zona.h * sy)),
+    points,
+  };
+}
+
+/**
+ * Las que se han quedado fuera del lienzo: después de encogerlo no se veían y
+ * parecía que se habían borrado. Cuenta su centro, no el borde: una zona que
+ * asoma un poco por el filo del mapa es normal y no hay que avisar.
+ */
+export function zonasQueSeSalen<Z extends { x: number; y: number; w: number; h: number; shape: string }>(
+  zonas: Z[],
+  ancho: number,
+  alto: number,
+) {
+  return zonas.filter((zona) => {
+    if (zona.shape === "none") return false;
+    const cx = zona.x + zona.w / 2;
+    const cy = zona.y + zona.h / 2;
+    return cx < 0 || cy < 0 || cx > ancho || cy > alto;
+  });
+}
+
+/**
+ * El tamaño que seguramente tenía el lienzo cuando se colocaron: lo que
+ * ocupan las zonas, redondeado hacia arriba, y como poco el de siempre.
+ */
+export function lienzoProbable(zonas: { x: number; y: number; w: number; h: number }[]) {
+  const hasta = (n: number) => Math.ceil(n / 10) * 10;
+  return {
+    ancho: Math.max(1900, hasta(Math.max(0, ...zonas.map((z) => z.x + z.w)))),
+    alto: Math.max(960, hasta(Math.max(0, ...zonas.map((z) => z.y + z.h)))),
+  };
+}

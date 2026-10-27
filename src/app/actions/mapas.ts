@@ -18,7 +18,7 @@ import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
 import { getMapa, type MapaDeRegion } from "@/lib/mapas";
-import { FORMAS, esRedonda } from "@/lib/zonas";
+import { FORMAS, esRedonda, reescalarZona, verticesDeZona } from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 import { sitioParaUnaNueva } from "@/lib/equipo-y-caja";
@@ -61,6 +61,43 @@ export type EstadoDelEditor = (NonNullable<FormState> & { mapa?: MapaDeRegion | 
 function gradosValidos(grados: number) {
   if (!Number.isFinite(grados)) return 0;
   return ((Math.round(grados) % 360) + 360) % 360;
+}
+
+/**
+ * Lleva todas las zonas de una región de un tamaño de lienzo a otro, para que
+ * sigan encima del mismo sitio de la imagen (ver `reescalarZona`). Antes se
+ * quedaban en sus números: al encoger el lienzo se salían y parecía que se
+ * habían borrado. Devuelve cuántas ha movido.
+ */
+async function reescalarZonas(
+  regionId: string,
+  de: { ancho: number; alto: number },
+  a: { ancho: number; alto: number },
+) {
+  const sx = a.ancho / de.ancho;
+  const sy = a.alto / de.alto;
+  if (!Number.isFinite(sx) || !Number.isFinite(sy) || (sx === 1 && sy === 1)) return 0;
+  const zonas = await prisma.mapZone.findMany({
+    where: { regionId },
+    select: { id: true, x: true, y: true, w: true, h: true, shape: true, points: true },
+  });
+  if (!zonas.length) return 0;
+  await prisma.$transaction(
+    zonas.map((zona) => {
+      const nueva = reescalarZona({ ...zona, points: verticesDeZona(zona.points) }, sx, sy);
+      return prisma.mapZone.update({
+        where: { id: zona.id },
+        data: {
+          x: nueva.x,
+          y: nueva.y,
+          w: nueva.w,
+          h: nueva.h,
+          ...(nueva.points ? { points: JSON.stringify(nueva.points) } : {}),
+        },
+      });
+    }),
+  );
+  return zonas.length;
 }
 
 /** Crea la fila del mapa si no existe todavía. */
@@ -390,6 +427,13 @@ export async function guardarFondoAction(
 
   const relleno = Number(formData.get("relleno") ?? region.relleno);
 
+  // Si cambia el lienzo, las zonas se estiran con él y siguen en su sitio
+  const movidas = await reescalarZonas(
+    region.id,
+    { ancho: region.width, alto: region.height },
+    { ancho: Math.round(ancho), alto: Math.round(alto) },
+  );
+
   await prisma.mapRegion.update({
     where: { id: region.id },
     data: {
@@ -400,7 +444,42 @@ export async function guardarFondoAction(
     },
   });
 
-  return { success: "Guardado.", mapa: await getMapa(slug) };
+  return {
+    success: movidas
+      ? `Guardado. Las zonas (${movidas}) se han movido con el tamaño nuevo para seguir en su sitio.`
+      : "Guardado.",
+    mapa: await getMapa(slug),
+  };
+}
+
+/**
+ * Para las zonas que se quedaron fuera al cambiar el tamaño **antes** de que
+ * se movieran solas: se dice qué tamaño tenía el lienzo cuando se colocaron y
+ * se llevan de ahí al de ahora.
+ */
+export async function recolocarZonasAction(
+  _prev: EstadoDelEditor,
+  formData: FormData,
+): Promise<EstadoDelEditor> {
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
+
+  const slug = String(formData.get("slug") ?? "");
+  const ancho = Number(formData.get("anchoAntes"));
+  const alto = Number(formData.get("altoAntes"));
+  if (!Number.isFinite(ancho) || ancho < 100 || ancho > 10000 || !Number.isFinite(alto) || alto < 100 || alto > 10000) {
+    return { error: "Pon el ancho y el alto que tenía, entre 100 y 10000." };
+  }
+  const region = await asegurarRegion(slug);
+  const movidas = await reescalarZonas(
+    region.id,
+    { ancho: Math.round(ancho), alto: Math.round(alto) },
+    { ancho: region.width, alto: region.height },
+  );
+  return {
+    success: movidas ? `Recolocadas: ${movidas} zonas.` : "Ese era ya el tamaño: no había nada que mover.",
+    mapa: await getMapa(slug),
+  };
 }
 
 // ---------------------------------------------------------------------------

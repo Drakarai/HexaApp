@@ -64,4 +64,30 @@ describe("el editor de mapas", () => {
       await draka.cerrar();
     }
   });
+
+  test("cambiar el tamaño del lienzo mueve las zonas con él", async () => {
+    const draka = await entrar(navegador, "draka");
+    try {
+      const { pagina, problemas } = draka;
+      await ir(pagina, "/admin/mapas?region=johto");
+      const fondo = async (ancho, alto) => {
+        await pagina.getByRole("button", { name: /mapa de fondo/ }).click();
+        const form = pagina.locator("form", { has: pagina.locator('input[name="width"]') });
+        await form.locator('input[name="width"]').fill(String(ancho));
+        await form.locator('input[name="height"]').fill(String(alto));
+        await form.getByRole("button", { name: "Guardar" }).click();
+        await pagina.getByText(/se han movido con el tamaño nuevo/).waitFor();
+        await form.getByRole("button", { name: "Cerrar" }).click();
+      };
+      // A la mitad: antes se quedaban fuera y salía el aviso de las que se salen
+      await fondo(950, 480);
+      assert.equal(await pagina.locator('input[name="anchoAntes"]').count(), 0, "ninguna zona se sale");
+      // Y vuelta al de siempre, para no dejar el mapa cambiado
+      await fondo(1900, 960);
+      assert.equal(await pagina.locator('input[name="anchoAntes"]').count(), 0);
+      sinProblemas(problemas, "cambiar el tamaño del lienzo");
+    } finally {
+      await draka.cerrar();
+    }
+  });
 });

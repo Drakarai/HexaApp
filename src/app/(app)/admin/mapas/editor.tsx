@@ -9,12 +9,13 @@ import {
   editarZonaAction,
   guardarFondoAction,
   moverZonasAction,
+  recolocarZonasAction,
   rellenarRegionAction,
   type EstadoDelEditor,
 } from "@/app/actions/mapas";
 import { ImageInput } from "@/components/image-input";
 import { Mapa } from "@/components/mapa";
-import { FORMAS, TIPOS_DE_ZONA, colorDeZona } from "@/lib/zonas";
+import { FORMAS, TIPOS_DE_ZONA, colorDeZona, lienzoProbable, zonasQueSeSalen } from "@/lib/zonas";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
@@ -71,6 +72,8 @@ export function RegionEnEdicion({
           lienzo {mapa.width}×{mapa.height}
         </span>
       </div>
+
+      <ZonasFuera mapa={mapa} alCambiar={setMapa} />
 
       {mapa.zones.length ? (
         <EditorDeMapa mapa={mapa} alCambiar={setMapa} />
@@ -208,6 +211,67 @@ function EditorDeMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
   );
 }
 
+/**
+ * Las zonas que se salen del lienzo. Pasaba al cambiar su tamaño antes de que
+ * las zonas se movieran con él: se quedaban en sus números, fuera del dibujo,
+ * y parecía que se habían borrado. Se dice qué tamaño tenía y se recolocan.
+ */
+function ZonasFuera({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCambiar }) {
+  const [estado, recolocar] = useAccionDelEditor(recolocarZonasAction, alCambiar);
+  const todas = mapa.zones.flatMap((zona) => [zona, ...zona.children]);
+  const fuera = zonasQueSeSalen(todas, mapa.width, mapa.height);
+  if (!fuera.length) return estado?.success ? <FormMessage state={estado} /> : null;
+  const probable = lienzoProbable(todas);
+
+  return (
+    <form
+      action={recolocar}
+      className="space-y-3 rounded-xl border border-amber-400/30 bg-amber-400/[0.07] p-3 text-sm"
+    >
+      <input type="hidden" name="slug" value={mapa.slug} />
+      <p className="text-amber-100">
+        <strong>
+          {fuera.length === 1 ? "Una zona se sale" : `${fuera.length} zonas se salen`} del mapa
+        </strong>{" "}
+        ({fuera.slice(0, 4).map((zona) => zona.name).join(", ")}
+        {fuera.length > 4 ? "…" : ""}). No están borradas: siguen en los números del tamaño de
+        lienzo de antes. Pon el tamaño que tenía cuando las colocaste y se recolocan sobre la
+        imagen.
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <div>
+          <label className="label">Ancho de antes</label>
+          <input
+            name="anchoAntes"
+            type="number"
+            className="input w-28"
+            min={100}
+            max={10000}
+            defaultValue={probable.ancho}
+            required
+          />
+        </div>
+        <div>
+          <label className="label">Alto de antes</label>
+          <input
+            name="altoAntes"
+            type="number"
+            className="input w-28"
+            min={100}
+            max={10000}
+            defaultValue={probable.alto}
+            required
+          />
+        </div>
+        <SubmitButton className="btn-primary btn-sm" pendingLabel="Recolocando…">
+          Recolocarlas
+        </SubmitButton>
+      </div>
+      <FormMessage state={estado} />
+    </form>
+  );
+}
+
 /** Añadir una zona que falte. Sale en el centro y se coloca arrastrando. */
 function NuevaZona({ slug, alCambiar }: { slug: string; alCambiar: AlCambiar }) {
   const [estado, anadir] = useAccionDelEditor(anadirZonaAction, alCambiar);
@@ -336,8 +400,8 @@ function FondoDelMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
       </div>
       <Relleno inicial={Math.round(mapa.relleno * 100)} />
       <p className="text-xs text-slate-500">
-        Si cambias el tamaño, las zonas se quedan donde estaban en números, así
-        que tendrás que recolocarlas.
+        Si cambias el tamaño, las zonas se mueven con él y siguen en su sitio
+        sobre la imagen.
       </p>
       <FormMessage state={estado} />
       <div className="flex gap-2">

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de octubre de 2026 (el pixel art de las fichas grandes se amplía **un número entero de veces**: se ve nítido y entero).
+Última actualización: 27 de octubre de 2026 (en el editor de mapas, **cambiar el tamaño del lienzo mueve las zonas con él**, y las que se quedaron fuera se recolocan con un botón).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3810,7 +3810,15 @@ Piezas con truco:
   renombrada la pantalla saltaba de sitio y se volvían a pedir todas las
   pestañas, y el usuario se quejó. Solo «usar las que traigo escritos», que
   rellena una región vacía, sigue refrescando. Lo prueba
-  `tests/interfaz/4-mapas.prueba.mjs`. Y **el panel de la zona elegida se pinta en el
+  `tests/interfaz/4-mapas.prueba.mjs`. **Cambiar el tamaño del lienzo mueve
+  las zonas con él** (`reescalarZonas` en `actions/mapas.ts`, con
+  `reescalarZona` en `lib/zonas.ts`): la imagen se estira al lienzo, así que
+  las zonas se escalan igual para seguir encima del mismo sitio; los círculos
+  siguen redondos. Antes se quedaban en sus números y, al encoger el lienzo,
+  se salían y parecía que se habían borrado (le pasó al usuario). Para las que
+  ya se quedaron fuera, el editor avisa (`zonasQueSeSalen`, por el centro: una
+  que solo asoma por el filo no cuenta) y `recolocarZonasAction` las lleva del
+  tamaño que tenía al de ahora. Y **el panel de la zona elegida se pinta en el
   cliente**, no en la página, porque un componente de servidor no puede pasarle
   una función a uno de cliente y la página se quedaba en blanco. El giro de una
   zona es solo un `transform` al dibujar: los tiradores van dentro de él para
@@ -4802,3 +4810,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 146. **Seguridad**: freno al login, sesiones que se cierran en todos los dispositivos, cabeceras y contraseñas de 8.
 147. **Dependencias al día**: Next 16.4.3 y sharp 0.35.5 (fallos de seguridad), Dependabot y `LICENSE`.
 148. **Sprites nítidos en grande**: el pixel art de las fichas se amplía por números enteros.
+149. **El lienzo de los mapas arrastra sus zonas**: cambiar el tamaño ya no las deja fuera, y las que se quedaron se recolocan.
