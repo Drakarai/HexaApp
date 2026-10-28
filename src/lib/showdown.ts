@@ -521,3 +521,99 @@ export function logDeLaPagina(html: string): string | null {
 export function formatoDelLog(log: string): string | undefined {
   return /^\|tier\|(.+)$/m.exec(log)?.[1].trim() || undefined;
 }
+
+/** Cómo acabó un combate, según su registro */
+export type ResultadoDeLaRepeticion = {
+  /** El lado que ganó ("p1", "p2"); null si fue empate o el registro no lo dice */
+  ganador: string | null;
+  empate: boolean;
+  /** Cuántos pokémon le quedaban en pie a cada lado al acabar */
+  enPie: Record<string, number>;
+  /** Cuándo se jugó: la primera marca de tiempo del registro */
+  jugadoEl: Date | null;
+};
+
+/**
+ * El resultado que se apunta en una jornada, sacado del registro: quién ganó
+ * y con cuántos pokémon en pie se quedó cada uno.
+ *
+ * Los que saca cada uno son los de `|teampreview|N` si se elige (los 4 de 6 de
+ * los dobles) y si no los de `|teamsize|`; a eso se le restan los que se
+ * debilitaron, contados **una vez cada uno**: un pokémon revivido que vuelve a
+ * caer no puede dejar a nadie con menos de cero.
+ */
+export function resultadoDeLaRepeticion(log: string): ResultadoDeLaRepeticion {
+  const nombres = new Map<string, string>();
+  const sacados = new Map<string, number>();
+  const caidos = new Map<string, Set<string>>();
+  let eligen: number | null = null;
+  let ganadorNombre: string | null = null;
+  let empate = false;
+  let jugadoEl: Date | null = null;
+  for (const linea of log.split("\n")) {
+    const partes = linea.split("|");
+    const tipo = partes[1];
+    if (tipo === "player" && partes[3]) nombres.set(partes[2], partes[3]);
+    else if (tipo === "teamsize") sacados.set(partes[2], Number(partes[3]) || 0);
+    else if (tipo === "teampreview" && Number(partes[2]) > 0) eligen = Number(partes[2]);
+    else if (tipo === "faint") {
+      const quien = /^(p\d)[a-z]?: (.*)$/.exec(partes[2] ?? "");
+      if (!quien) continue;
+      if (!caidos.has(quien[1])) caidos.set(quien[1], new Set());
+      caidos.get(quien[1])!.add(quien[2]);
+    } else if (tipo === "win") ganadorNombre = partes[2] ?? null;
+    else if (tipo === "tie") empate = true;
+    else if (tipo === "t:" && !jugadoEl && Number(partes[2]) > 0) jugadoEl = new Date(Number(partes[2]) * 1000);
+  }
+  const lados = [...new Set([...nombres.keys(), ...sacados.keys()])].sort();
+  const enPie: Record<string, number> = {};
+  for (const lado of lados) {
+    const tiene = Math.min(sacados.get(lado) ?? 0, eligen ?? Infinity);
+    enPie[lado] = Math.max(0, tiene - (caidos.get(lado)?.size ?? 0));
+  }
+  const ganador = ganadorNombre ? (lados.find((lado) => nombres.get(lado) === ganadorNombre) ?? null) : null;
+  return { ganador, empate, enPie, jugadoEl };
+}
+
+type ConEquipo = { especie: string; mote: string | null };
+
+/**
+ * Quién es quién entre los dos de la repetición y los dos del combate. El
+ * nombre de Showdown casi nunca es el de aquí, así que se suman pistas: que el
+ * nombre se parezca («Draka Sama» es Draka) y que coincidan sus pokémon —el
+ * equipo apuntado en el combate o lo que lleva capturado—, que **el mote
+ * cuenta mucho más que la especie**: dos pueden llevar un Gyarados, pero no
+ * los dos uno que se llame «Bocazas». Se queda el reparto con más pistas; si
+ * no hay ninguna, el orden, y se dice para que se mire.
+ */
+export function quienEsQuien(
+  jugadores: { nombre: string; equipo: ConEquipo[] }[],
+  lados: { id: string; nombre: string; pokemon: ConEquipo[] }[],
+): { ids: string[]; por: "nombre" | "equipo" | "orden" } {
+  const pistas = (jugador: (typeof jugadores)[number], lado: (typeof lados)[number]) => {
+    const suyo = plano(jugador.nombre);
+    const aqui = plano(lado.nombre);
+    const porNombre = suyo && aqui && (suyo.includes(aqui) || aqui.includes(suyo)) ? 10 : 0;
+    let porEquipo = 0;
+    for (const visto of jugador.equipo) {
+      const especie = plano(visto.especie);
+      if (visto.mote && lado.pokemon.some((p) => p.mote && plano(p.mote) === plano(visto.mote!) && plano(p.especie) === especie)) porEquipo += 3;
+      else if (lado.pokemon.some((p) => plano(p.especie) === especie)) porEquipo += 1;
+    }
+    return { porNombre, porEquipo };
+  };
+  const [a, b] = lados;
+  const [uno, otro] = jugadores;
+  const derecho = [pistas(uno, a), pistas(otro, b)];
+  const cruzado = [pistas(uno, b), pistas(otro, a)];
+  const suma = (p: { porNombre: number; porEquipo: number }[]) =>
+    p.reduce((total, x) => total + x.porNombre + x.porEquipo, 0);
+  const [elegido, ids] =
+    suma(cruzado) > suma(derecho) ? [cruzado, [b.id, a.id]] : [derecho, [a.id, b.id]];
+  const por = elegido.some((x) => x.porNombre)
+    ? "nombre"
+    : elegido.some((x) => x.porEquipo) && suma(cruzado) !== suma(derecho)
+      ? "equipo"
+      : "orden";
+  return { ids, por };
+}

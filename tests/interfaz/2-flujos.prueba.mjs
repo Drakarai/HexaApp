@@ -2,8 +2,8 @@
  * **Lo de todos los días**, de principio a fin y en orden, sobre el Hexalocke
  * 2 recién sembrado: entrar, apuntar una captura, abrir su ficha y llegar a
  * ella con el buscador, exportarla a Showdown, marcar un gimnasio, apuntar un
- * resultado y ver los puntos y su marcador, filtrar la actividad, y las
- * reglas con y sin «Editar reglas».
+ * resultado a mano y otro leído de la repetición, ver los puntos y el
+ * marcador, filtrar la actividad, y las reglas con y sin «Editar reglas».
  *
  * Van en un solo `describe` porque unas dependen de otras: la ficha es la de
  * la captura de antes.
@@ -148,6 +148,30 @@ describe("lo de todos los días", () => {
     const marcador = pagina.getByTitle("Pokémon que le quedaban a cada uno").first();
     assert.match((await marcador.innerText()).replace(/\s+/g, ""), /^(2:0|0:2)$/);
     sinProblemas(problemas, "marcador de la jornada");
+  });
+
+  test("el resultado se lee de la repetición", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/jornadas");
+    // Draka contra Rodri; la repetición de mentira es de «DrakaSD» y gana con cinco en pie
+    const combate = pagina.locator("li", { hasText: "Draka" }).filter({ hasText: "Rodri" }).first();
+    await combate.getByRole("button", { name: "Anotar resultado" }).click();
+    await combate.getByLabel("Enlace del combate").fill("https://replay.pokemonshowdown.com/gen2ou-1");
+    await combate.getByRole("button", { name: "Leer el resultado" }).click();
+    await combate.getByText("«DrakaSD» es Draka").waitFor();
+    assert.equal(
+      (await combate.locator('select[name="winnerId"] option:checked').innerText()).trim(),
+      "Draka",
+    );
+    assert.equal(await combate.locator('input[name="pokemonDiff"]').inputValue(), "5");
+    // Se guarda con el botón de siempre, y el marcador lo enseña
+    await combate.getByRole("button", { name: "Guardar resultado" }).click();
+    await pagina
+      .getByTitle("Pokémon que le quedaban a cada uno")
+      .filter({ hasText: "5" })
+      .first()
+      .waitFor();
+    sinProblemas(problemas, "resultado de la repetición");
   });
 
   test("la actividad se filtra por tipo", async () => {

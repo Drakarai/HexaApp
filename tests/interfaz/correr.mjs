@@ -85,7 +85,12 @@ paso("Los datos de ejemplo", "npx", ["tsx", "prisma/seed.ts"], conLaDePruebas);
 process.stdout.write(`· La aplicación en el puerto ${PUERTO}… `);
 const app = spawn("npx", ["next", "start", "-p", String(PUERTO)], {
   cwd: RAIZ,
-  env: { ...process.env, ...conLaDePruebas },
+  // Con el Showdown de mentira: las repeticiones no salen a internet (ver guia/showdown-falso.cjs)
+  env: {
+    ...process.env,
+    ...conLaDePruebas,
+    NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --require ${JSON.stringify(join(RAIZ, "guia", "showdown-falso.cjs"))}`.trim(),
+  },
   stdio: ["ignore", "pipe", "pipe"],
   detached: true,
 });

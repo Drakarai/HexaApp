@@ -14,6 +14,8 @@ import { ElegirFormato } from "@/components/formato";
 import { crearRoyaleAction } from "@/app/actions/royales";
 import { esRoyale } from "@/lib/formatos-de-combate";
 import { Icono } from "@/components/icono";
+import { leerResultadoDeRepeticionAction, type ResultadoLeido } from "@/app/actions/showdown";
+import { cx } from "@/lib/utils";
 
 type Option = { id: string; displayName: string };
 
@@ -232,22 +234,125 @@ export function MatchResultForm({
     );
   }
 
+  return <FormularioDeResultado match={match} onCerrar={() => setOpen(false)} />;
+}
+
+type ElResultado = Parameters<typeof MatchResultForm>[0]["match"];
+
+/**
+ * El resultado a mano o **leído de la repetición**: con el enlace de Showdown
+ * se rellenan el ganador, la diferencia y el día, y se guarda con el mismo
+ * botón de siempre. Va primero el enlace porque es lo que rellena lo demás.
+ */
+function FormularioDeResultado({ match, onCerrar }: { match: ElResultado; onCerrar: () => void }) {
+  const [ganador, setGanador] = useState(match.winnerId ?? "");
+  const [diferencia, setDiferencia] = useState(match.pokemonDiff === null ? "" : String(match.pokemonDiff));
+  const [fecha, setFecha] = useState("");
+  const [enlace, setEnlace] = useState(match.replayUrl ?? "");
+  const [leyendo, setLeyendo] = useState(false);
+  const [leido, setLeido] = useState<ResultadoLeido | null>(null);
+  const nombre = (id: string) => (id === match.a.id ? match.a.name : match.b.name);
+
+  async function leer() {
+    setLeyendo(true);
+    try {
+      const resultado = await leerResultadoDeRepeticionAction(match.id, enlace);
+      setLeido(resultado);
+      if (resultado.error) return;
+      setGanador(resultado.ganadorId ?? "");
+      setDiferencia(resultado.diferencia === null || resultado.diferencia === undefined ? "" : String(resultado.diferencia));
+      if (resultado.fecha) setFecha(resultado.fecha);
+    } catch {
+      setLeido({ error: "Sin conexión: esto necesita línea. Prueba cuando vuelva." });
+    } finally {
+      setLeyendo(false);
+    }
+  }
+
+  /** Si se ha leído al revés, se da la vuelta a quién es quién, no solo al ganador */
+  function alReves() {
+    if (!leido?.enShowdown || !leido.enPie) return;
+    const otro = (id: string) => (id === match.a.id ? match.b.id : match.a.id);
+    const darLaVuelta = <T,>(mapa: Record<string, T>) =>
+      Object.fromEntries(Object.entries(mapa).map(([id, valor]) => [otro(id), valor]));
+    // Ya no es una suposición: lo ha dicho quien lo apunta
+    setLeido({ ...leido, enShowdown: darLaVuelta(leido.enShowdown), enPie: darLaVuelta(leido.enPie), por: undefined });
+    if (ganador) setGanador(otro(ganador));
+  }
+
   return (
     <form
       action={async (formData) => {
         await setMatchResultAction(formData);
-        setOpen(false);
+        onCerrar();
       }}
       className="mt-3 grid gap-2 border-t border-white/10 pt-3 sm:grid-cols-4"
     >
       <input type="hidden" name="matchId" value={match.id} />
+      <div className="sm:col-span-4">
+        <label className="label" htmlFor={`repeticion-${match.id}`}>Enlace del combate</label>
+        <div className="flex gap-2">
+          <input
+            id={`repeticion-${match.id}`}
+            name="replayUrl"
+            className="input min-w-0 flex-1"
+            inputMode="url"
+            value={enlace}
+            onChange={(evento) => setEnlace(evento.target.value)}
+            placeholder="https://replay.pokemonshowdown.com/..."
+          />
+          <button
+            type="button"
+            className="btn-ghost btn-sm shrink-0"
+            disabled={leyendo || !enlace.trim()}
+            onClick={leer}
+          >
+            {leyendo ? "Leyendo…" : "Leer el resultado"}
+          </button>
+        </div>
+        {leido?.error ? (
+          <p className="mt-1 text-xs text-red-300">{leido.error}</p>
+        ) : leido?.enShowdown && leido.enPie ? (
+          <div
+            className={cx(
+              "mt-2 rounded-lg border px-3 py-2 text-xs",
+              leido.por === "orden"
+                ? "border-amber-500/30 bg-amber-500/[0.06] text-amber-100/90"
+                : "border-emerald-500/25 bg-emerald-500/[0.05] text-slate-300",
+            )}
+          >
+            <p>
+              {[match.a.id, match.b.id]
+                .map((id) => `«${leido.enShowdown![id]}» es ${nombre(id)} (${leido.enPie![id]} en pie)`)
+                .join(" · ")}
+              {leido.ganadorId ? "" : " · Quedaron en empate."}
+            </p>
+            <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span>
+                {leido.por === "orden"
+                  ? "No he sabido quién es quién y lo he puesto por orden: míralo."
+                  : !leido.por
+                    ? "Le has dado la vuelta."
+                    : leido.por === "equipo"
+                    ? "Lo he sacado por sus pokémon."
+                    : "Lo he sacado por el nombre."}{" "}
+                Revísalo y guarda.
+              </span>
+              <button type="button" className="underline decoration-dotted hover:text-white" onClick={alReves}>
+                Están al revés
+              </button>
+            </p>
+          </div>
+        ) : (
+          <p className="mt-1 text-xs text-slate-500">
+            Con la repetición de Showdown, «Leer el resultado» rellena lo de abajo. También vale
+            un vídeo, pero ese no se lee: con él sale el botón de &quot;Ver combate&quot;.
+          </p>
+        )}
+      </div>
       <div>
         <label className="label">Ganador</label>
-        <select
-          name="winnerId"
-          className="input"
-          defaultValue={match.winnerId ?? ""}
-        >
+        <select name="winnerId" className="input" value={ganador} onChange={(evento) => setGanador(evento.target.value)}>
           <option value="">Sin resultado</option>
           <option value={match.a.id}>{match.a.name}</option>
           <option value={match.b.id}>{match.b.name}</option>
@@ -261,34 +366,21 @@ export function MatchResultForm({
           min={0}
           max={6}
           className="input"
-          defaultValue={match.pokemonDiff ?? ""}
+          value={diferencia}
+          onChange={(evento) => setDiferencia(evento.target.value)}
         />
       </div>
       <div>
         <label className="label">Fecha</label>
-        <input name="playedAt" type="date" className="input" />
+        <input name="playedAt" type="date" className="input" value={fecha} onChange={(evento) => setFecha(evento.target.value)} />
       </div>
       <div>
         <label className="label">Notas</label>
         <input name="notes" className="input" defaultValue={match.notes ?? ""} />
       </div>
-      <div className="sm:col-span-4">
-        <label className="label">Enlace del combate</label>
-        <input
-          name="replayUrl"
-          className="input"
-          inputMode="url"
-          defaultValue={match.replayUrl ?? ""}
-          placeholder="https://replay.pokemonshowdown.com/..."
-        />
-        <p className="mt-1 text-xs text-slate-500">
-          Pega aquí la repetición de Showdown o el vídeo. Si lo dejas vacío, no
-          sale el botón de &quot;Ver combate&quot;.
-        </p>
-      </div>
       <div className="flex gap-2 sm:col-span-4">
         <SubmitButton>Guardar resultado</SubmitButton>
-        <button type="button" className="btn-ghost" onClick={() => setOpen(false)}>
+        <button type="button" className="btn-ghost" onClick={onCerrar}>
           Cancelar
         </button>
       </div>

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 28 de octubre de 2026 (remodelaciones: **portada** con tarjeta grande y cartel «VS», **jornadas** como marcador, **actividad** por tramos y con filtros, **mapa** agrupado por clase de zona y **HexaPost** más compacto).
+Última actualización: 28 de octubre de 2026 (**el resultado se lee de la repetición** de Showdown al anotarlo).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -39,7 +39,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Reglas** | Se leen **como un reglamento**: títulos con número romano (las categorías), artículos numerados seguidos y un **índice** (al lado en el ordenador, plegado arriba en el móvil); lo cambiado sin ver sale avisado arriba con enlace a cada artículo. Los botones de mover, borrar y editar solo salen en **«Editar reglas»** (`?editar=1`), no al leer. Secciones por categorías, editables y reordenables por administradores. **Un cambio con el locke en marcha se avisa**: punto ámbar en *Reglas*, la sección marcada como *Cambiada el…* o *Añadida el…* —resaltada para quien no la ha visto— y un desplegable con **qué líneas ganó y perdió**, más cómo estaba entera. Al editar hay una casilla para no avisar, para las erratas. |
 | **Level caps** | Arriba, **el cartel del tope** de quien mira: su **nivel máximo en grande**, «hasta que te pases a X» con su ciudad, quién del grupo lo ha pasado ya (con sus caras), cuántos lleva y, si va por delante, dónde sigue el grupo; la medalla, de fondo. Quien no juega ve el del grupo, y con todo pasado dice «Sin tope». Debajo, **el camino**: los hitos de arriba abajo con su parada, el siguiente destacado y, plegados en una línea, **los que ha pasado todo el mundo y los que aún no tocan** (los de después del de ahora que nadie ha marcado: como nadie sigue hasta que pase el grupo entero, no hay nada que hacer en ellos). Nivel máximo por gimnasio, con una o varias imágenes que se alternan. El administrador marca en un gimnasio **Jornada después** (checkpoint): entre ese gimnasio y el siguiente sale una franja con su jornada —jugada, *toca ahora* o cuándo toca—; cada jugador marca cuándo lo supera y puede enlazar el vídeo de su combate. **El primero en pasárselo lleva una 👑**, y en su perfil sale cuántas veces ha sido el primero. En los lockes **en solitario**, debajo de cada hito se apunta el equipo con el que lo pasaste, como los equipos de un combate. Se pueden **traer de un tirón** los del juego con un botón, y luego cambiarlos solo para ese locke. Marcar **la Liga** suelta **confeti**. |
 | **Cementerio** | Cada caído es **una lápida** (piedra con arco, sprite apagado, mote grabado y la causa debajo, sobre una franja de césped). Las **revividas**, en color, con «Volvió» y una marca verde; cada lápida abre **la misma ficha que el Equipo y PC**: cabecera teñida de su tipo (de los dos, uno a cada lado, si tiene dos) con su sprite animado, mote, especie, nivel y tipos, y pestañas *Resumen* (causa, sitio, notas y editar) e *Historia*. El sitio donde cayó cada uno **se elige de las zonas del mapa** de la región, y de ahí sale el ranking de dónde cae más gente. **Revivir** (un premio que sale poco), desde la ficha de la baja o desde *Caídos* en Equipo y PC: el pokémon vuelve al equipo si hay hueco y si no a la caja; si la baja se apuntó a mano y no tenía captura, se le crea una. La baja **se queda y sigue contando** (desempates, mapa, cifras), marcada *Revivido* con su fecha; en la historia del pokémon salen la caída y la vuelta, y puede caer y revivir más de una vez. Se deshace desde Equipo y PC. Al registrar una baja se puede elegir el pokémon **de la caja** (lo vivo de tu Equipo y PC): la especie, el mote y la ruta salen de él, se quita de la caja, se deshace desde Equipo y PC y, en un Soul Link, **cae también su pareja**. La lista es solo de lo tuyo, salvo en un Soul Link si administras. |
-| **Jornadas** | **Cada combate se lee como un marcador**: un jugador a cada lado y el resultado en medio. El ganador marca la diferencia de pokémon (o una V si no se apuntó), con corona y un aro verde; el perdedor, 0 (o D), atenuado; sin jugar, «VS» en ámbar. Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. En un **dualocke**, cada jornada es **un combate o al mejor de tres con el mismo equipo** (como una llave de la final: cómo va la serie, un equipo por jugador y los combates debajo), a elegir al crearla y cambiable mientras no haya nada apuntado. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. La cabecera de cada jornada dice **quién descansa** (con cinco o con tres, a alguien le toca), y con uno solo en pie ya no deja crear jornadas vacías. **Borrar una jornada la manda a la papelera**: 14 días con sus combates, equipos, royales, votos y puntos, y *Devolver* la deja exactamente como estaba (o *Borrar para siempre*). La papelera sale abajo, solo para quien administra. Al apuntar los equipos de un combate, **«Sacar los equipos de la repetición»**: con el enlace de la repetición de Showdown (ya relleno si el combate lo tiene) salen la especie y el mote de los pokémon de los dos, se adivina quién es quién por el nombre (se cambia a mano) y se añaden de golpe; leerla otra vez no duplica. En un locke de **Añil** vale también el enlace de la web de repeticiones de su servidor de Showdown (`….pages.dev/replays/…`), con sus pokémon y formas; en los demás lockes ese enlace no se acepta. También se puede **pegar el equipo exportado de Showdown** de uno. Solo en ese sentido, de Showdown a la app. |
+| **Jornadas** | **El resultado se lee de la repetición**: en *Anotar resultado*, con el enlace de Showdown, «Leer el resultado» pone el ganador, la diferencia y el día, dice quién es quién y se guarda con el botón de siempre. **Cada combate se lee como un marcador**: un jugador a cada lado y el resultado en medio. El ganador marca la diferencia de pokémon (o una V si no se apuntó), con corona y un aro verde; el perdedor, 0 (o D), atenuado; sin jugar, «VS» en ámbar. Cada jornada puede ser **de un tipo de combate**: Singles, Dobles, Monotipo, VGC, Pokémon de Préstamo o Battle Royale, con su chapa, su color y sus condiciones escritas a mano ("monotipo agua", "nivel 50"). Emparejamientos, que la aplicación **propone sola** siguiendo la liguilla (nadie repite rival hasta jugar contra todos; si sois impares, descansa uno distinto cada vez). Marcar ganador suma el punto automáticamente. En un **dualocke**, cada jornada es **un combate o al mejor de tres con el mismo equipo** (como una llave de la final: cómo va la serie, un equipo por jugador y los combates debajo), a elegir al crearla y cambiable mientras no haya nada apuntado. Si alguien **no se presenta**, un botón da el combate por retirada: se elige quién faltó y con qué fecha, y el otro gana con diferencia de 3. Bajo cada combate, el equipo que sacó cada jugador, y un botón a su repetición si el admin pegó el enlace. El MVP de la jornada se vota entre todos. Una jornada **con todos sus combates jugados se pliega**: deja a la vista su cabecera y un renglón con quién ganó, y se abre de un toque. La cabecera de cada jornada dice **quién descansa** (con cinco o con tres, a alguien le toca), y con uno solo en pie ya no deja crear jornadas vacías. **Borrar una jornada la manda a la papelera**: 14 días con sus combates, equipos, royales, votos y puntos, y *Devolver* la deja exactamente como estaba (o *Borrar para siempre*). La papelera sale abajo, solo para quien administra. Al apuntar los equipos de un combate, **«Sacar los equipos de la repetición»**: con el enlace de la repetición de Showdown (ya relleno si el combate lo tiene) salen la especie y el mote de los pokémon de los dos, se adivina quién es quién por el nombre (se cambia a mano) y se añaden de golpe; leerla otra vez no duplica. En un locke de **Añil** vale también el enlace de la web de repeticiones de su servidor de Showdown (`….pages.dev/replays/…`), con sus pokémon y formas; en los demás lockes ese enlace no se acepta. También se puede **pegar el equipo exportado de Showdown** de uno. Solo en ese sentido, de Showdown a la app. |
 | **Retos** | Cada reto es **un cartel de duelo**: los dos frente a frente con el «VS», el que gana con corona y el que pierde apagado; los objetos del premio, plegados. Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
@@ -3195,6 +3195,20 @@ quiere apuntar en una jornada: especie y mote. Lo lee `leerRepeticion` en
 avisa. Solo se pide a replay.pokemonshowdown.com (`datosDeLaRepeticion`), y
 desde el servidor.
 
+**El resultado, también de la repetición.** El mismo registro dice quién ganó
+(`|win|`) y quién cayó (`|faint|`), así que *Anotar resultado* tiene **Leer el
+resultado**: pone el ganador, la diferencia (los que le quedaban al ganador
+menos los del otro, que es cero salvo rendición) y el día (la primera marca
+`|t:|`, en hora de Madrid). Los que saca cada uno son los de `|teamsize|`, o los
+de `|teampreview|4` si se eligen; un pokémon revivido que vuelve a caer cuenta
+una vez. **No guarda nada**: rellena el formulario y se guarda con el botón de
+siempre, que es el que comprueba retiradas, series y puntos. Lo difícil es
+**quién es quién**, porque el nombre de Showdown casi nunca es el de aquí:
+`quienEsQuien` suma pistas —nombre parecido, y pokémon que coinciden con el
+equipo apuntado en el combate o con lo capturado, **pesando más el mote que la
+especie**— y se queda con el reparto que más tenga. Sin ninguna, va por orden y
+el aviso sale en ámbar para que se mire; «Están al revés» le da la vuelta.
+
 **Las repeticiones de Añil, como plan B.** El servidor de Showdown de Añil
 (`PepeLePew016/AnilShowdown`) no sube sus combates a replay.pokemonshowdown.com:
 los publica como páginas sueltas en Cloudflare Pages
@@ -3948,7 +3962,10 @@ Piezas con truco:
   compilada en el puerto 3100 y pasa los `*.prueba.mjs`: `1-pantallas` abre
   todas las pantallas en móvil y ordenador con quien administra y con un
   jugador; `2-flujos` hace lo de todos los días en orden (apuntar, ficha,
-  buscador, Showdown, gimnasio, resultado, reglas). `comun.mjs` lleva el
+  buscador, Showdown, gimnasio, resultado a mano y leído de la repetición,
+  actividad, reglas). La app de las pruebas arranca con
+  `guia/showdown-falso.cjs`, así que **ninguna repetición sale a internet**.
+  `comun.mjs` lleva el
   **vigía**, que suspende la prueba si hay un error de la página, de la
   consola o un 500 del servidor aunque la pantalla parezca bien.
 - `lib/palmares.ts` — el palmarés: la gente de tus lockes con la cuenta de
@@ -4002,7 +4019,9 @@ Piezas con truco:
   necesita el navegador para la cobertura. Salen de
   `scripts/generate-movimientos.ts`, que hace también `lib/showdown.json`.
 - `lib/showdown.ts` y `actions/showdown.ts` — leer un equipo exportado de
-  Showdown o los equipos de una repetición a partir de su enlace (de
+  Showdown, o los equipos y el resultado de una repetición
+  (`resultadoDeLaRepeticion`, `quienEsQuien`, `leerResultadoDeRepeticionAction`)
+  a partir de su enlace (de
   replay.pokemonshowdown.com o, en Añil, de la web de repeticiones de su servidor),
   y escribirlo (`escribirShowdown`, `especieEnShowdown`). `equipo/exportar-showdown.tsx`
   es la hoja de *Exportar a Showdown* y el botón de copiar de la ficha; el nivel
@@ -4294,9 +4313,9 @@ pasos dentro de la app para la cuenta del Creador** se le ofreció y quedó para
 cuando la pida. Recomendado al usuario: bajar de vez en cuando una copia desde
 Administración y guardarla fuera de Neon.
 
-**Pendiente ahora mismo**: el usuario todavía no ha desplegado. El siguiente
-paso es seguir `DEPLOY.md` (crear Neon, crear Vercel, dos variables de entorno).
-Hasta entonces la aplicación solo corre en su ordenador.
+**Desplegada**: la aplicación está en Vercel con la base de datos en Neon, y
+cada push a la rama de trabajo se publica solo. `DEPLOY.md` sigue valiendo para
+montarla de cero.
 
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
 píxeles y se ve borroso. Basta con subir uno más grande desde Administración →
@@ -4841,3 +4860,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 149. **El lienzo de los mapas arrastra sus zonas**: cambiar el tamaño ya no las deja fuera, y las que se quedaron se recolocan.
 150. **Racha en la clasificación y tarjeta de un pokémon** para compartir.
 151. **Remodelaciones**: portada con tarjeta grande y cartel «VS», jornadas como marcador, actividad por tramos con filtros, mapa agrupado por clase de zona y HexaPost compacto.
+152. **El resultado, leído de la repetición**: ganador, diferencia y día sacados del enlace de Showdown.

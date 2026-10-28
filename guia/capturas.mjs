@@ -290,14 +290,17 @@ async function foto(pagina, nombre, ruta, prepara) {
       await arriba(p, abrir);
     }
   });
+  // El resultado leído de la repetición: el combate de Draka y Pablo, que es el
+  // de la repetición de mentira (guia/showdown-falso.cjs). Solo se lee: no se guarda
   await foto(pagina, "resultado", "/jornadas", async (p) => {
-    const anotar = p.locator("button", { hasText: "Anotar resultado" }).first();
-    if (await anotar.count()) {
-      await anotar.click();
-      await p.waitForTimeout(900);
-      // El formulario sale dentro del combate, que queda a media página
-      await arriba(p, p.locator('select[name="winnerId"]').first(), 220);
-    }
+    const combate = p.locator("li", { hasText: "Draka" }).filter({ hasText: "Pablo" }).first();
+    await combate.getByRole("button", { name: "Anotar resultado" }).click();
+    await p.waitForTimeout(600);
+    await combate.getByLabel("Enlace del combate").fill("https://replay.pokemonshowdown.com/gen2ou-1");
+    await combate.getByRole("button", { name: "Leer el resultado" }).click();
+    await combate.getByText("Revísalo y guarda").waitFor();
+    // El formulario sale dentro del combate, que queda a media página
+    await arriba(p, combate.getByLabel("Enlace del combate"), 160);
   });
   // Los equipos de un combate sacados de su repetición. Showdown lo contesta
   // guia/showdown-falso.cjs, que hay que cargar al arrancar (ver el README)

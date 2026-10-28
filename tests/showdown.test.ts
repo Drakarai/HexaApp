@@ -4,7 +4,15 @@
  */
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { datosDeLaRepeticion, escribirShowdown, especieEnShowdown, leerRepeticion, leerShowdown } from "@/lib/showdown";
+import {
+  datosDeLaRepeticion,
+  escribirShowdown,
+  especieEnShowdown,
+  leerRepeticion,
+  leerShowdown,
+  quienEsQuien,
+  resultadoDeLaRepeticion,
+} from "@/lib/showdown";
 import { POKEDEX } from "@/lib/pokedex";
 import { MOVIMIENTOS } from "@/lib/movimientos";
 import { ataquesDeLosMovimientos, leerMovimientos, movimientoPorNombre } from "@/lib/movimientos";
@@ -151,6 +159,74 @@ describe("leerRepeticion", () => {
     );
     assert.equal(datosDeLaRepeticion("https://www.youtube.com/watch?v=x"), null);
     assert.equal(datosDeLaRepeticion("https://replay.pokemonshowdown.com.malo.com/gen9ou-1"), null);
+  });
+});
+
+describe("El resultado de la repetición", () => {
+  const combate = (...lineas: string[]) =>
+    ["|player|p1|Pablo|1|", "|player|p2|Draka Sama|2|", "|teamsize|p1|3", "|teamsize|p2|3", "|t:|1761674400", ...lineas].join("\n");
+
+  test("quién ganó y con cuántos en pie se quedó cada uno", () => {
+    const resultado = resultadoDeLaRepeticion(
+      combate("|faint|p1a: Chompy", "|faint|p2a: Rotom", "|faint|p1a: Puños", "|faint|p1a: Brasas", "|win|Draka Sama"),
+    );
+    assert.equal(resultado.ganador, "p2");
+    assert.deepEqual(resultado.enPie, { p1: 0, p2: 2 });
+    assert.equal(resultado.jugadoEl?.toISOString(), "2025-10-28T18:00:00.000Z");
+  });
+
+  test("un pokémon que cae dos veces (revivido) cuenta una", () => {
+    const resultado = resultadoDeLaRepeticion(combate("|faint|p2a: Rotom", "|faint|p2a: Rotom", "|win|Pablo"));
+    assert.equal(resultado.enPie.p2, 2);
+  });
+
+  test("si se eligen 4 de 6, se cuentan los 4", () => {
+    const log = ["|player|p1|A|", "|player|p2|B|", "|teamsize|p1|6", "|teamsize|p2|6", "|teampreview|4", "|faint|p1a: X", "|win|A"].join("\n");
+    assert.deepEqual(resultadoDeLaRepeticion(log).enPie, { p1: 3, p2: 4 });
+  });
+
+  test("empate, y combate sin acabar", () => {
+    assert.equal(resultadoDeLaRepeticion(combate("|tie")).empate, true);
+    const sinAcabar = resultadoDeLaRepeticion(combate("|faint|p1a: Chompy"));
+    assert.equal(sinAcabar.ganador, null);
+    assert.equal(sinAcabar.empate, false);
+  });
+});
+
+describe("Quién es quién en la repetición", () => {
+  const lados = [
+    { id: "draka", nombre: "Draka", pokemon: [{ especie: "Gyarados", mote: "Bocazas" }] },
+    { id: "pablo", nombre: "Pablo", pokemon: [{ especie: "Gyarados", mote: null }, { especie: "Onix", mote: "Torre" }] },
+  ];
+
+  test("por el nombre, aunque en Showdown se llame distinto", () => {
+    const { ids, por } = quienEsQuien(
+      [{ nombre: "PabloHexa", equipo: [] }, { nombre: "Draka Sama", equipo: [] }],
+      lados,
+    );
+    assert.deepEqual(ids, ["pablo", "draka"]);
+    assert.equal(por, "nombre");
+  });
+
+  test("por los pokémon: el mote pesa más que la especie", () => {
+    const { ids, por } = quienEsQuien(
+      [
+        { nombre: "xX_uno_Xx", equipo: [{ especie: "Gyarados", mote: "Bocazas" }] },
+        { nombre: "otro123", equipo: [{ especie: "Gyarados", mote: null }] },
+      ],
+      lados,
+    );
+    assert.deepEqual(ids, ["draka", "pablo"]);
+    assert.equal(por, "equipo");
+  });
+
+  test("sin ninguna pista, por orden, y lo dice", () => {
+    const { ids, por } = quienEsQuien(
+      [{ nombre: "uno", equipo: [] }, { nombre: "dos", equipo: [] }],
+      lados,
+    );
+    assert.deepEqual(ids, ["draka", "pablo"]);
+    assert.equal(por, "orden");
   });
 });
 
