@@ -230,7 +230,7 @@ async function Bandeja({ searchParams }: { searchParams: { ver?: string; tipo?: 
       />
       <MarcarBuzonVisto nuevas={nuevas} respuestas={false} />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="fila-de-filtros mb-3">
         {FILTROS.map((f) => (
           <Link
             key={f.valor}
@@ -241,7 +241,7 @@ async function Bandeja({ searchParams }: { searchParams: { ver?: string; tipo?: 
           </Link>
         ))}
       </div>
-      <div className="mb-5 flex flex-wrap gap-2 text-xs">
+      <div className="fila-de-filtros mb-5 text-xs">
         <Link
           href={enlace({ tipo: null })}
           className={cx("chip", !tipo && "border-brand-500/40 bg-brand-600/20 text-white")}

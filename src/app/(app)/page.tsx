@@ -296,6 +296,8 @@ export default async function DashboardPage() {
    * el hito que toca, o el final si ya no hay.
    */
   const porJugarEnLaJornada = abierto?.jornada ? combatesPorJugar(abierto.jornada) : 0;
+  /** Tu combate sale en el cartel de arriba: con la jornada abierta y rival */
+  const combateEnElCartel = Boolean(abierto && rivalDeJornada && myParticipant);
   const tarjetaDelHito = abierto
     ? {
         label: "Toca jornada",
@@ -420,7 +422,7 @@ export default async function DashboardPage() {
           duelo={
             // Solo cuando toca jugarla: la próxima jornada también tiene
             // rival, pero mientras no se abra lo que manda es el level cap
-            abierto && rivalDeJornada && myParticipant
+            combateEnElCartel && rivalDeJornada && myParticipant
               ? {
                   yo: {
                     nombre: myParticipant.displayName,
@@ -613,8 +615,10 @@ export default async function DashboardPage() {
                 </p>
               ) : null}
 
-              {/* Lo tuyo, arriba y en grande: es lo que se viene a mirar */}
-              {rivalDeJornada && myParticipant ? (
+              {/* Lo tuyo, arriba y en grande: es lo que se viene a mirar. Salvo
+                  si ya está en el cartel «VS» de arriba (jornada abierta): ahí
+                  salía dos veces, y aquí va con los demás */}
+              {rivalDeJornada && myParticipant && !combateEnElCartel ? (
                 <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
                   <p className="antetitulo mb-2">
                     Tu combate
@@ -653,6 +657,7 @@ export default async function DashboardPage() {
                 {nextMatchday.matches
                   .filter(
                     (match) =>
+                      combateEnElCartel ||
                       !(
                         miParte?.tipo === "rival" && match.id === miParte.combateId
                       ),
@@ -661,7 +666,11 @@ export default async function DashboardPage() {
                     <li
                       key={match.id}
                       className={cx(
-                        "flex items-center justify-between gap-2 rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2 text-sm",
+                        "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm",
+                        // El tuyo, en la lista con los demás, pero que se distinga
+                        miParte?.tipo === "rival" && match.id === miParte.combateId
+                          ? "border-brand-400/40 bg-brand-600/15 font-semibold text-white"
+                          : "border-white/5 bg-white/[0.03]",
                         match.winnerId && "opacity-50",
                       )}
                     >

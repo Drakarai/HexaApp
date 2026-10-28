@@ -405,13 +405,11 @@ function FilaDeZona({
     <button
       type="button"
       onClick={onAbrir}
-      className="flex w-full items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] p-2.5 text-left transition hover:border-brand-500/40 hover:bg-brand-600/10"
+      className="flex w-full items-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.02] p-2.5 pl-3.5 text-left transition hover:border-brand-500/40 hover:bg-brand-600/10"
+      /* El color de su clase, de filo a la izquierda: el punto de antes
+         repetía lo que ya dice el grupo de arriba */
+      style={{ boxShadow: `inset 3px 0 0 ${color}` }}
     >
-      <span
-        className="h-2.5 w-2.5 shrink-0 rounded-full"
-        style={{ background: color }}
-        aria-hidden
-      />
       <span className="min-w-0 flex-1 truncate text-sm text-slate-100">
         {zona.name}
       </span>

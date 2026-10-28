@@ -184,6 +184,17 @@ body {
   @apply text-xs font-bold uppercase tracking-widest text-brand-400;
 }
 
+/* Una fila de filtros: en el móvil se desliza de lado en vez de saltar de
+   línea, que dejaba uno solo abajo del todo; en pantalla ancha, a lo que quepa */
+@utility fila-de-filtros {
+  @apply -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap;
+
+  & > * {
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+}
+
 @utility chip {
   @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-slate-300;
 

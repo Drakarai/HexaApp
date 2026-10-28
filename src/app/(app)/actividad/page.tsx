@@ -50,7 +50,7 @@ export default async function ActivityPage({ searchParams }: { searchParams: Pro
         subtitle={`Todo lo que ha ido pasando en ${competition.name}, de lo más reciente a lo más antiguo.`}
       />
       {/* Filtrar por lo que ha pasado: «solo las muertes» es lo que más se busca */}
-      <nav aria-label="Filtrar por tipo" className="-mx-1 mb-4 flex gap-1.5 overflow-x-auto px-1 pb-1 sm:flex-wrap">
+      <nav aria-label="Filtrar por tipo" className="fila-de-filtros mb-4">
         <FiltroDeTipo href={conTipo(null)} activo={!tipo}>
           Todo
         </FiltroDeTipo>

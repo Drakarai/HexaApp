@@ -152,14 +152,24 @@ export default async function PointsPage() {
       {grafico && grafico.etapas.length > 2 ? (
         <section className="card mb-4">
           <h2 className="section-title mb-1">Cómo ha ido la cosa</h2>
-          <p className="muted mb-4">
-            El puesto de cada uno jornada a jornada. Dentro de cada bola, sus
-            puntos en ese momento. Los puestos salen con los mismos desempates
-            que la tabla —puntos, luego menos caídos, luego mejor diferencia—,
-            así que dos con los mismos puntos pueden ir uno encima del otro;
-            toca una bola para ver por qué. Cuando van igualados de verdad en
-            las tres cosas, comparten bola.
+          {/* Lo que se ve de un vistazo, y el porqué de los puestos plegado:
+              eran ocho líneas de texto antes del gráfico, en el móvil una
+              pantalla entera */}
+          <p className="muted">
+            El puesto de cada uno jornada a jornada, con sus puntos dentro de cada bola.
           </p>
+          <details className="group mb-4 mt-1">
+            <summary className="cursor-pointer list-none text-xs text-brand-400 marker:hidden hover:underline">
+              <span aria-hidden className="mr-1 inline-block transition group-open:rotate-90">▸</span>
+              ¿Por qué dos con los mismos puntos no comparten puesto?
+            </summary>
+            <p className="muted mt-2">
+              Los puestos salen con los mismos desempates que la tabla —puntos, luego menos
+              caídos, luego mejor diferencia—, así que dos con los mismos puntos pueden ir uno
+              encima del otro; toca una bola para ver por qué. Cuando van igualados de verdad en
+              las tres cosas, comparten bola.
+            </p>
+          </details>
           <PointsChart
             etapas={grafico.etapas}
             etapasDeLosQueSiguen={grafico.etapasDeLosQueSiguen}

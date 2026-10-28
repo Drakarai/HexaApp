@@ -584,7 +584,7 @@ function Cambios({
         gimnasios, jugadores— con quién lo hizo y cuándo. Se guarda medio año.
       </p>
 
-      <div className="mb-2 flex flex-wrap gap-1.5">
+      <div className="fila-de-filtros mb-2">
         <Link href={enlace(null, zonaElegida)} className={chip(!lockeElegido)}>
           Todos los lockes
         </Link>
@@ -598,7 +598,7 @@ function Cambios({
           </Link>
         ))}
       </div>
-      <div className="mb-4 flex flex-wrap gap-1.5">
+      <div className="fila-de-filtros mb-4">
         <Link href={enlace(lockeElegido, null)} className={chip(!zonaElegida)}>
           Todo
         </Link>
