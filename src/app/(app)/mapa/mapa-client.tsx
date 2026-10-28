@@ -7,7 +7,7 @@ import {
 } from "@/app/actions/mapas";
 import type { FormState } from "@/app/actions/auth";
 import { Mapa, type CuentaDeZona } from "@/components/mapa";
-import { colorDeZona } from "@/lib/zonas";
+import { colorDeZona, TIPOS_DE_ZONA } from "@/lib/zonas";
 import { SpeciesPicker } from "@/components/species-picker";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
 import { Pendientes } from "@/components/pendientes";
@@ -177,6 +177,21 @@ export function MapaDeCapturas({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [busqueda, capturables, cuales, porZona]);
 
+  /**
+   * La lista, por clases de sitio: primero las rutas, luego las ciudades… En
+   * una región con setenta zonas, todas revueltas, había que leerlas una a
+   * una; así se va derecho a «las cuevas». Lo de una clase que no exista va
+   * con «Otros sitios».
+   */
+  const porClase = useMemo(() => {
+    const clases = TIPOS_DE_ZONA.map((tipo) => ({ ...tipo, zonas: [] as ZonaDelMapa[] }));
+    const otros = clases.find((clase) => clase.id === "otro")!;
+    for (const zona of filtradas) {
+      (clases.find((clase) => clase.id === zona.kind) ?? otros).zonas.push(zona);
+    }
+    return clases.filter((clase) => clase.zonas.length);
+  }, [filtradas]);
+
   /** Al tocar una zona del mapa: la primera vez dice cuál es, la segunda abre */
   function tocar(zona: ZonaDelMapa) {
     if (avisada?.id !== zona.id) {
@@ -296,18 +311,42 @@ export function MapaDeCapturas({
             ))}
           </div>
           {filtradas.length ? (
-            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {filtradas.map((zona) => (
-                <li key={zona.id}>
-                  <FilaDeZona
-                    zona={zona}
-                    capturas={capturas.filter((c) => c.zoneId === zona.id)}
-                    caidos={bajas[zona.id] ?? 0}
-                    onAbrir={() => setAbierta(zona)}
-                  />
-                </li>
-              ))}
-            </ul>
+            <div className="space-y-5">
+              {porClase.map((clase) => {
+                const color = colorDeZona(clase.id);
+                const usadas = clase.zonas.filter((zona) => !esLibre(zona)).length;
+                return (
+                  <section key={clase.id} aria-label={clase.plural}>
+                    <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                      <span
+                        className="flex h-7 w-7 items-center justify-center rounded-lg"
+                        style={{ background: `${color}26`, color }}
+                        aria-hidden
+                      >
+                        <Icono emoji={clase.icono} sinColor />
+                      </span>
+                      {clase.plural}
+                      <span className="text-xs font-normal text-slate-500">
+                        {usadas}/{clase.zonas.length}
+                      </span>
+                      <span aria-hidden className="h-px flex-1" style={{ background: `${color}33` }} />
+                    </h3>
+                    <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                      {clase.zonas.map((zona) => (
+                        <li key={zona.id}>
+                          <FilaDeZona
+                            zona={zona}
+                            capturas={capturas.filter((c) => c.zoneId === zona.id)}
+                            caidos={bajas[zona.id] ?? 0}
+                            onAbrir={() => setAbierta(zona)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
           ) : (
             <p className="rounded-xl border border-dashed border-white/10 px-4 py-6 text-center text-sm text-slate-500">
               {cuales === "libres" && !busqueda.trim()

@@ -65,15 +65,18 @@ export function FormularioDeSugerencia({
     <form ref={formRef} action={formAction} className="space-y-4">
       <fieldset>
         <legend className="label">¿Qué es?</legend>
-        <div className="grid gap-2 sm:grid-cols-3">
+        {/* Tres botones en una fila, también en el móvil: en tarjetas, una
+            encima de otra, se comían media pantalla antes de poder escribir.
+            La explicación sale debajo, solo la del elegido. */}
+        <div className="grid grid-cols-3 gap-1 rounded-xl border border-white/10 bg-white/[0.02] p-1">
           {TIPOS.map(([valor, datos]) => (
             <label
               key={valor}
               className={cx(
-                "flex cursor-pointer items-start gap-3 rounded-xl border p-3 transition",
+                "flex cursor-pointer flex-col items-center gap-1 rounded-lg px-2 py-2 text-center transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-brand-400 sm:flex-row sm:justify-center sm:gap-2",
                 tipo === valor
-                  ? "border-brand-500/60 bg-brand-600/15"
-                  : "border-white/10 bg-white/[0.02] hover:border-white/20",
+                  ? "bg-brand-600/25 text-white ring-1 ring-brand-500/50"
+                  : "text-slate-400 hover:bg-white/5 hover:text-slate-200",
               )}
             >
               <input
@@ -84,16 +87,14 @@ export function FormularioDeSugerencia({
                 onChange={() => setTipo(valor)}
                 className="sr-only"
               />
-              <span aria-hidden className="mt-0.5 text-lg">
+              <span aria-hidden className="text-lg leading-none">
                 <Icono emoji={datos.icono} />
               </span>
-              <span>
-                <span className="block text-sm font-semibold text-white">{datos.rotulo}</span>
-                <span className="block text-xs text-slate-400">{datos.pista}</span>
-              </span>
+              <span className="text-xs font-semibold sm:text-sm">{datos.rotulo}</span>
             </label>
           ))}
         </div>
+        <p className="mt-1.5 text-xs text-slate-400">{elegido.pista}</p>
       </fieldset>
 
       <div>

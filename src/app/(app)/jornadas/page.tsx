@@ -472,32 +472,26 @@ export default async function MatchdaysPage() {
                           key={match.id}
                           className="rounded-lg border border-white/5 bg-white/[0.03] px-3 py-2.5"
                         >
-                          {/* En móvil los datos del combate bajan a su propia
-                              línea: si comparten fila con los nombres, estos se
-                              quedan sin sitio y se cortan a una letra. */}
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                            {/* En pantallas muy estrechas los dos nombres pasan
-                                a dos líneas antes que recortarse */}
-                            <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1 sm:w-auto sm:flex-1">
-                              <PlayerChip
-                                participantId={match.participantAId}
-                                name={match.participantA.displayName}
-                                color={match.participantA.color}
-                                image={avatarByParticipant.get(match.participantAId) ?? null}
-                                winner={match.winnerId === match.participantAId}
-                              />
-                              <span className="shrink-0 text-xs text-slate-500">
-                                vs
-                              </span>
-                              <PlayerChip
-                                participantId={match.participantBId}
-                                name={match.participantB.displayName}
-                                color={match.participantB.color}
-                                image={avatarByParticipant.get(match.participantBId) ?? null}
-                                winner={match.winnerId === match.participantBId}
-                              />
-                            </div>
-                            <div className="flex w-full flex-wrap items-center gap-2 text-xs text-slate-500 sm:w-auto">
+                          {/* Como un marcador: los dos a los lados y el
+                              resultado en medio, que es lo que se busca */}
+                          <MarcadorDelCombate
+                            a={{
+                              id: match.participantAId,
+                              name: match.participantA.displayName,
+                              color: match.participantA.color,
+                              image: avatarByParticipant.get(match.participantAId) ?? null,
+                            }}
+                            b={{
+                              id: match.participantBId,
+                              name: match.participantB.displayName,
+                              color: match.participantB.color,
+                              image: avatarByParticipant.get(match.participantBId) ?? null,
+                            }}
+                            winnerId={match.winnerId}
+                            diferencia={match.pokemonDiff}
+                          />
+                          <div className="mt-2 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5">
+                            <div className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
                               {/* Solo si este combate se juega distinto al resto
                                   de su jornada; si no, ya lo dice la cabecera */}
                               {match.formato && match.formato !== matchday.formato ? (
@@ -532,11 +526,6 @@ export default async function MatchdaysPage() {
                                   title="Se dará por ganado cuando estén jugados los demás combates de esta jornada"
                                 >
                                   <Icono emoji="🏳️" /> Por retirada, al acabar la jornada
-                                </span>
-                              ) : null}
-                              {match.pokemonDiff !== null ? (
-                                <span className="chip">
-                                  dif. {match.pokemonDiff}
                                 </span>
                               ) : null}
                               {match.playedAt ? (
@@ -890,33 +879,83 @@ function teamSide(
   };
 }
 
-function PlayerChip({
-  participantId,
-  name,
-  color,
-  image,
-  winner,
+type LadoDelMarcador = { id: string; name: string; color: string; image: string | null };
+
+/**
+ * Un combate como un marcador de deportes: cada uno a su lado y en medio el
+ * resultado. Lo que se apunta es la diferencia de pokémon, así que el ganador
+ * marca esa diferencia y el perdedor cero (se quedó sin ninguno); sin
+ * diferencia apuntada, una V y una D. Sin jugar, «VS».
+ */
+function MarcadorDelCombate({
+  a,
+  b,
+  winnerId,
+  diferencia,
 }: {
-  participantId: string;
-  name: string;
-  color: string;
-  image: string | null;
-  winner: boolean;
+  a: LadoDelMarcador;
+  b: LadoDelMarcador;
+  winnerId: string | null;
+  diferencia: number | null;
+}) {
+  const tanto = (lado: LadoDelMarcador) =>
+    lado.id === winnerId ? (diferencia ?? "V") : diferencia !== null ? 0 : "D";
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-3">
+      <LadoDeMarcador lado={a} gana={winnerId === a.id} pierde={Boolean(winnerId) && winnerId !== a.id} />
+      <span
+        className={cx(
+          "flex items-center gap-1.5 rounded-lg border px-3 py-1.5 font-mono text-xl font-black tabular-nums sm:text-2xl",
+          winnerId
+            ? "border-white/10 bg-black/40 text-white"
+            : "border-amber-500/20 bg-amber-500/5 text-sm tracking-widest text-amber-300/80 sm:text-base",
+        )}
+        title={winnerId && diferencia !== null ? "Pokémon que le quedaban a cada uno" : undefined}
+      >
+        {winnerId ? (
+          <>
+            <span className={winnerId === a.id ? "text-emerald-300" : "text-slate-500"}>{tanto(a)}</span>
+            <span className="text-slate-600">:</span>
+            <span className={winnerId === b.id ? "text-emerald-300" : "text-slate-500"}>{tanto(b)}</span>
+          </>
+        ) : (
+          "VS"
+        )}
+      </span>
+      <LadoDeMarcador lado={b} gana={winnerId === b.id} pierde={Boolean(winnerId) && winnerId !== b.id} derecha />
+    </div>
+  );
+}
+
+function LadoDeMarcador({
+  lado,
+  gana,
+  pierde,
+  derecha,
+}: {
+  lado: LadoDelMarcador;
+  gana: boolean;
+  pierde: boolean;
+  derecha?: boolean;
 }) {
   return (
     <EnlaceDeJugador
-      participantId={participantId}
-      name={name}
+      participantId={lado.id}
+      name={lado.name}
       className={cx(
-        "gap-1.5 rounded-lg px-2 py-1 text-sm",
-        winner
-          ? "bg-emerald-500/15 font-semibold text-emerald-200 ring-1 ring-emerald-500/30"
-          : "text-slate-300 hover:bg-white/5",
+        // En móvil, la foto encima del nombre: así el nombre tiene todo el ancho
+        "flex-col gap-1 text-center sm:gap-2",
+        derecha ? "sm:flex-row sm:text-left" : "sm:flex-row-reverse sm:text-right",
+        pierde && "opacity-55",
       )}
     >
-      <Avatar name={name} color={color} image={image} size={20} />
-      <span className="truncate">{name}</span>
-      {winner ? <span aria-hidden><Icono emoji="👑" /></span> : null}
+      <span className={cx("shrink-0 rounded-full", gana && "ring-2 ring-emerald-400/70 ring-offset-2 ring-offset-ink-900")}>
+        <Avatar name={lado.name} color={lado.color} image={lado.image} size={36} />
+      </span>
+      <span className={cx("max-w-full truncate text-sm", gana ? "font-bold text-white" : "text-slate-300")}>
+        {gana ? <Icono emoji="👑" className="mr-1" /> : null}
+        {lado.name}
+      </span>
     </EnlaceDeJugador>
   );
 }

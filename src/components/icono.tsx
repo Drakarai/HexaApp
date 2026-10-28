@@ -78,6 +78,11 @@ import {
   Link2Off,
   Dna,
   ArrowRightLeft,
+  Route,
+  Building2,
+  Mountain,
+  TreePine,
+  Waves,
   type LucideIcon,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -200,6 +205,12 @@ const LINEA: Record<string, Linea> = {
   "🐞": { icono: Bug },
   "💡": { icono: Lightbulb, color: ORO },
   "🔄": { icono: RefreshCw },
+  // Las clases de zona del mapa
+  "🛤️": { icono: Route },
+  "🏘️": { icono: Building2 },
+  "⛰️": { icono: Mountain },
+  "🌲": { icono: TreePine },
+  "🌊": { icono: Waves },
 };
 
 /**

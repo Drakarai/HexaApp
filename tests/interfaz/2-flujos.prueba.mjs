@@ -2,7 +2,8 @@
  * **Lo de todos los días**, de principio a fin y en orden, sobre el Hexalocke
  * 2 recién sembrado: entrar, apuntar una captura, abrir su ficha y llegar a
  * ella con el buscador, exportarla a Showdown, marcar un gimnasio, apuntar un
- * resultado y ver los puntos, y las reglas con y sin «Editar reglas».
+ * resultado y ver los puntos y su marcador, filtrar la actividad, y las
+ * reglas con y sin «Editar reglas».
  *
  * Van en un solo `describe` porque unas dependen de otras: la ficha es la de
  * la captura de antes.
@@ -138,6 +139,30 @@ describe("lo de todos los días", () => {
     await ir(pagina, "/puntos");
     await pagina.getByText(`victoria de ${nombre}`).first().waitFor();
     sinProblemas(problemas, "jornadas y puntos");
+  });
+
+  test("el combate jugado sale como un marcador", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/jornadas");
+    // El de antes: el ganador marca la diferencia (2) y el perdedor, 0
+    const marcador = pagina.getByTitle("Pokémon que le quedaban a cada uno").first();
+    assert.match((await marcador.innerText()).replace(/\s+/g, ""), /^(2:0|0:2)$/);
+    sinProblemas(problemas, "marcador de la jornada");
+  });
+
+  test("la actividad se filtra por tipo", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/actividad");
+    const filtros = pagina.getByRole("navigation", { name: "Filtrar por tipo" });
+    await filtros.getByRole("link", { name: /Combates/ }).click();
+    await pagina.waitForURL(/tipo=combate/);
+    // Solo combates: el del test de antes está, el gimnasio marcado no
+    await pagina.getByText(/gana a/).first().waitFor();
+    assert.equal(await pagina.getByText(/ha superado/).count(), 0, "sin los gimnasios");
+    await filtros.getByRole("link", { name: "Todo", exact: true }).click();
+    await pagina.waitForURL((u) => !u.search.includes("tipo"));
+    await pagina.getByText(/ha superado/).first().waitFor();
+    sinProblemas(problemas, "filtros de la actividad");
   });
 
   test("las reglas: leer sin botones, editar con ellos", async () => {

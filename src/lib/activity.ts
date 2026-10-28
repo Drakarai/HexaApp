@@ -4,9 +4,13 @@ import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { getParticipants } from "@/lib/competition";
 
+/** De qué va cada cosa, para poder filtrar la cronología por ello */
+export type TipoDeActividad = "muerte" | "combate" | "hito" | "puntos" | "ruleta" | "objeto";
+
 export type ActivityEntry = {
   id: string;
   at: Date;
+  tipo: TipoDeActividad;
   icon: string;
   /** Color del jugador implicado, para el punto de la línea de tiempo */
   color: string;
@@ -149,6 +153,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `death-${death.id}`,
       at: death.diedAt,
+      tipo: "muerte",
       icon: "💀",
       color: jugador.color,
       title: `${jugador.displayName} ha perdido a ${death.nickname ?? death.species}`,
@@ -170,6 +175,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `point-${entry.id}`,
       at: entry.createdAt,
+      tipo: "puntos",
       icon: entry.delta > 0 ? "➕" : "➖",
       color: jugador.color,
       title: `${jugador.displayName} ${entry.delta > 0 ? "gana" : "pierde"} ${Math.abs(entry.delta)} ${Math.abs(entry.delta) === 1 ? "punto" : "puntos"}`,
@@ -186,6 +192,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `clear-${clear.id}`,
       at: clear.clearedAt,
+      tipo: "hito",
       icon: "🎯",
       color: jugador.color,
       title: `${jugador.displayName} ha superado ${aQuienSeSupera(clear.levelCap.label)}`,
@@ -201,6 +208,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `spin-${spin.id}`,
       at: spin.createdAt,
+      tipo: "ruleta",
       icon: "🎡",
       color: NEUTRAL,
       title: `La ruleta dice: ${spin.optionLabel}`,
@@ -218,6 +226,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `ticket-${ticket.id}`,
       at: ticket.createdAt,
+      tipo: "ruleta",
       icon: "🎟️",
       color: jugador.color,
       title: `${jugador.displayName} recibe ${ticket.delta} ${ticket.delta === 1 ? "ticket" : "tickets"} de ruleta`,
@@ -239,6 +248,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `match-${match.id}`,
       at: match.playedAt ?? new Date(0),
+      tipo: "combate",
       icon: "⚔️",
       color: ganador.color,
       title: `${ganador.displayName} gana a ${perdedor.displayName}`,
@@ -262,6 +272,7 @@ export async function getActivity(competitionId: string, limit = 60) {
     entries.push({
       id: `uso-${uso.id}`,
       at: uso.usedAt,
+      tipo: "objeto",
       icon: "🎒",
       color: jugador.color,
       title: `${jugador.displayName} ha usado ${uso.itemName}`,

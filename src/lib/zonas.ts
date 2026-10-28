@@ -26,13 +26,14 @@ export const COLOR_DE_ZONA: Record<string, string> = {
   otro: "#64748b",
 };
 
-export const TIPOS_DE_ZONA: { id: TipoDeZona; nombre: string }[] = [
-  { id: "ruta", nombre: "Ruta" },
-  { id: "ciudad", nombre: "Ciudad o pueblo" },
-  { id: "cueva", nombre: "Cueva o montaña" },
-  { id: "bosque", nombre: "Bosque" },
-  { id: "agua", nombre: "Agua" },
-  { id: "otro", nombre: "Otro" },
+/** `plural` e `icono` son para la lista del mapa, que va agrupada por clase */
+export const TIPOS_DE_ZONA: { id: TipoDeZona; nombre: string; plural: string; icono: string }[] = [
+  { id: "ruta", nombre: "Ruta", plural: "Rutas", icono: "🛤️" },
+  { id: "ciudad", nombre: "Ciudad o pueblo", plural: "Ciudades y pueblos", icono: "🏘️" },
+  { id: "cueva", nombre: "Cueva o montaña", plural: "Cuevas y montañas", icono: "⛰️" },
+  { id: "bosque", nombre: "Bosque", plural: "Bosques", icono: "🌲" },
+  { id: "agua", nombre: "Agua", plural: "Agua", icono: "🌊" },
+  { id: "otro", nombre: "Otro", plural: "Otros sitios", icono: "📍" },
 ];
 
 export function colorDeZona(tipo: string) {

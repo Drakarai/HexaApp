@@ -1,5 +1,5 @@
 import { SpritePokemon } from "@/components/sprite-pokemon";
-import type { ActivityEntry } from "@/lib/activity";
+import type { ActivityEntry, TipoDeActividad } from "@/lib/activity";
 import { Avatar, EmptyState } from "@/components/ui";
 import { formatDateTime, relativeTime } from "@/lib/utils";
 import { Icono } from "@/components/icono";
@@ -10,16 +10,50 @@ type Linea = { entrada: ActivityEntry; quienes: ActivityEntry[] };
 
 // El grupo juega en España: el día cambia a medianoche de aquí, no de donde esté el servidor
 const DIA = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", year: "numeric", month: "2-digit", day: "2-digit" });
-const FECHA_LARGA = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", weekday: "long", day: "numeric", month: "long" });
+const FECHA_CORTA = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", weekday: "short", day: "numeric" });
 const diaDe = (fecha: Date) => DIA.format(fecha);
 
-function rotuloDelDia(fecha: Date) {
-  const hoy = new Date();
-  if (diaDe(fecha) === diaDe(hoy)) return "Hoy";
-  if (diaDe(fecha) === diaDe(new Date(hoy.getTime() - 86_400_000))) return "Ayer";
-  const texto = FECHA_LARGA.format(fecha);
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
+const MES = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", month: "long" });
+const MES_Y_ANO = new Intl.DateTimeFormat("es-ES", { timeZone: "Europe/Madrid", month: "long", year: "numeric" });
+const mayuscula = (texto: string) => texto.charAt(0).toUpperCase() + texto.slice(1);
+
+/** El día de Madrid como número de días, para restar dos fechas sin líos de horas */
+function numeroDeDia(fecha: Date) {
+  const [d, m, a] = diaDe(fecha).split("/").map(Number);
+  return Date.UTC(a, m - 1, d) / 86_400_000;
 }
+
+/**
+ * El tramo de la cronología: Hoy, Ayer, Esta semana y luego por meses. Día a
+ * día, una semana tranquila eran siete rótulos para siete cosas; lo que se
+ * busca es «qué ha pasado últimamente», no la fecha exacta, que va al lado.
+ */
+function tramoDe(fecha: Date) {
+  const hoy = new Date();
+  const dias = numeroDeDia(hoy) - numeroDeDia(fecha);
+  if (dias <= 0) return "Hoy";
+  if (dias === 1) return "Ayer";
+  if (dias < 7) return "Esta semana";
+  if (MES_Y_ANO.format(fecha) === MES_Y_ANO.format(hoy)) return "Este mes";
+  return mayuscula(
+    fecha.getFullYear() === hoy.getFullYear() ? MES.format(fecha) : MES_Y_ANO.format(fecha),
+  );
+}
+
+/**
+ * Cada tipo con su icono y su color: el punto de la línea va del color de lo
+ * que pasó, no del jugador, para que se lea la semana de un vistazo (mucho
+ * rojo, muchas muertes). La página los usa también para filtrar.
+ */
+export const TIPOS_DE_ACTIVIDAD: { tipo: TipoDeActividad; nombre: string; icono: string; color: string }[] = [
+  { tipo: "muerte", nombre: "Muertes", icono: "💀", color: "#f43f5e" },
+  { tipo: "combate", nombre: "Combates", icono: "⚔️", color: "#818cf8" },
+  { tipo: "hito", nombre: "Hitos", icono: "🎯", color: "#f59e0b" },
+  { tipo: "puntos", nombre: "Puntos", icono: "➕", color: "#10b981" },
+  { tipo: "ruleta", nombre: "Ruleta", icono: "🎡", color: "#a855f7" },
+  { tipo: "objeto", nombre: "Objetos", icono: "🎒", color: "#0ea5e9" },
+];
+const COLOR_DEL_TIPO = new Map(TIPOS_DE_ACTIVIDAD.map((t) => [t.tipo, t.color]));
 
 /** «Álex, Rodri y Pablo» */
 function enumerar(nombres: string[]) {
@@ -53,7 +87,7 @@ function agrupar(entradas: ActivityEntry[]): Linea[] {
 
 /**
  * Cronología de lo que ha ido pasando, con una línea vertical uniendo todo.
- * Va **por días**, con su rótulo, y lo que le pasa a varios el mismo día (pasarse
+ * Va **por tramos** (hoy, ayer, esta semana, por meses), con su rótulo, y lo que le pasa a varios el mismo día (pasarse
  * el mismo gimnasio) va en una sola línea con todos.
  */
 export function ActivityFeed({
@@ -80,27 +114,48 @@ export function ActivityFeed({
   }
 
   const lineas = agrupar(entries);
-  let diaAnterior = "";
+  // Cuántas hay en cada tramo, para el rótulo
+  const enElTramo = new Map<string, number>();
+  for (const { entrada } of lineas) {
+    const tramo = tramoDe(entrada.at);
+    enElTramo.set(tramo, (enElTramo.get(tramo) ?? 0) + 1);
+  }
+  let tramoAnterior = "";
 
   return (
-    <ol className="relative space-y-3 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-white/10">
+    <ol
+      className={
+        compact
+          ? "relative space-y-3 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-px before:bg-white/10"
+          : "relative space-y-3 before:absolute before:bottom-4 before:left-[15px] before:top-4 before:w-0.5 before:rounded-full before:bg-gradient-to-b before:from-brand-500/50 before:via-white/10 before:to-transparent"
+      }
+    >
       {lineas.flatMap(({ entrada, quienes }) => {
         const elementos = [];
-        const dia = diaDe(entrada.at);
-        if (!compact && dia !== diaAnterior) {
+        const tramo = tramoDe(entrada.at);
+        if (!compact && tramo !== tramoAnterior) {
           elementos.push(
-            <li key={`dia-${dia}`} className="relative pl-11 pt-1 first:pt-0">
-              <span className="rotulo">{rotuloDelDia(entrada.at)}</span>
+            <li key={`tramo-${tramo}`} className="relative flex items-center gap-3 pt-3 first:pt-0">
+              {/* El nudo del tramo, encima de la línea */}
+              <span aria-hidden className="z-10 ml-[9px] h-3.5 w-3.5 rounded-full bg-brand-400 ring-4 ring-ink-900" />
+              <span className="rounded-full border border-white/10 bg-ink-850 px-3 py-1">
+                <span className="rotulo text-slate-200">{tramo}</span>
+                <span className="ml-2 text-xs text-slate-500">{enElTramo.get(tramo)}</span>
+              </span>
             </li>,
           );
         }
-        diaAnterior = dia;
+        tramoAnterior = tramo;
         const varios = quienes.length > 1;
+        const colorDelPunto = compact ? entrada.color : (COLOR_DEL_TIPO.get(entrada.tipo) ?? entrada.color);
         elementos.push(
           <li key={entrada.id} className="relative flex gap-3">
             <span
               className="z-10 mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm ring-2 ring-ink-950"
-              style={{ background: `${entrada.color}33` }}
+              style={{
+                background: `${colorDelPunto}33`,
+                boxShadow: compact ? undefined : `inset 0 0 0 1px ${colorDelPunto}88`,
+              }}
               aria-hidden
             >
               <Icono emoji={entrada.icon} />
@@ -153,7 +208,10 @@ export function ActivityFeed({
                   dateTime={new Date(entrada.at).toISOString()}
                   title={formatDateTime(entrada.at)}
                 >
-                  {relativeTime(entrada.at)}
+                  {compact || tramo === "Hoy" || tramo === "Ayer"
+                    ? relativeTime(entrada.at)
+                    : // Pasado ayer, «hace 12 días» dice menos que la fecha
+                      mayuscula(FECHA_CORTA.format(entrada.at))}
                 </time>
               </div>
             </div>

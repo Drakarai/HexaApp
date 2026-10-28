@@ -413,71 +413,88 @@ export default async function DashboardPage() {
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <StatCard
-          label={tarjetaDelHito.label}
-          value={tarjetaDelHito.value}
-          hint={tarjetaDelHito.hint}
-          href={tarjetaDelHito.href}
-          images={tarjetaDelHito.images}
-        />
-        <StatCard
-          label={perfil.enSolitario ? "Jugando" : "Jugadores"}
-          value={
-            perfil.enSolitario
-              ? (progreso?.displayName ?? "—")
-              : `${activos}/${competition.maxPlayers}`
+      {/* Lo que toca, en grande; lo demás, de un vistazo en una tira al lado */}
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <TarjetaGrande
+          {...tarjetaDelHito}
+          duelo={
+            // Solo cuando toca jugarla: la próxima jornada también tiene
+            // rival, pero mientras no se abra lo que manda es el level cap
+            abierto && rivalDeJornada && myParticipant
+              ? {
+                  yo: {
+                    nombre: myParticipant.displayName,
+                    color: myParticipant.color,
+                    foto: fichaDe.get(myParticipant.id)?.avatarImage ?? null,
+                  },
+                  rival: {
+                    nombre: rivalDeJornada.displayName,
+                    color: rivalDeJornada.color,
+                    foto: rivalDeJornada.avatarImage,
+                  },
+                }
+              : null
           }
-          hint={
-            perfil.enSolitario || perfil.cooperativo
-              ? perfil.nombre
-              : quienesFaltan
-              ? // Con gente fuera, eso es lo que importa: los puntos de salida
-                // ya no le dicen nada a nadie y no cabían en la tarjeta
-                quienesFaltan
-              : `Empiezan con ${competition.startingPoints} puntos`
-          }
-          href="/competiciones"
         />
-        <StatCard
-          label="Pokémon caídos"
-          value={String(totalDeaths)}
-          hint={perfil.enSolitario ? "En tu partida" : "En toda la competición"}
-          href="/muertes"
-        />
-        {equipos ? (
-          <StatCard
-            label="Vínculos"
-            value={String(
-              equipos.vinculos.filter((v) => v.miembros.every((m) => !m.muerta)).length,
-            )}
-            hint={(() => {
-              const rotos = equipos.vinculos.filter((v) => v.miembros.some((m) => m.muerta)).length;
-              return rotos ? `vivos · ${rotos} rotos` : "Parejas vivas";
-            })()}
-            href="/equipo"
-          />
-        ) : progreso ? (
-          <StatCard
-            label="Hitos"
-            value={`${progreso.hitos.hechos}/${progreso.hitos.total}`}
-            hint={
-              progreso.siguiente
-                ? `Te toca ${progreso.siguiente.label}`
-                : progreso.hitos.total
-                ? "No queda ninguno"
-                : "Sin level caps todavía"
+        <div className="card-tight grid grid-cols-3 divide-x divide-white/5 overflow-hidden p-0! lg:grid-cols-1 lg:divide-x-0 lg:divide-y">
+          <DatoDeLaTira
+            label={perfil.enSolitario ? "Jugando" : "Jugadores"}
+            value={
+              perfil.enSolitario
+                ? (progreso?.displayName ?? "—")
+                : `${activos}/${competition.maxPlayers}`
             }
-            href="/level-caps"
+            hint={
+              perfil.enSolitario || perfil.cooperativo
+                ? perfil.nombre
+                : quienesFaltan
+                ? // Con gente fuera, eso es lo que importa: los puntos de salida
+                  // ya no le dicen nada a nadie
+                  quienesFaltan
+                : `Empiezan con ${competition.startingPoints} puntos`
+            }
+            href="/competiciones"
           />
-        ) : (
-          <StatCard
-            label="Líder"
-            value={lider?.displayName ?? (empatadosArriba > 1 ? "Empate" : "—")}
-            hint={pieDelLider}
-            href="/puntos"
+          <DatoDeLaTira
+            label="Caídos"
+            value={String(totalDeaths)}
+            hint={perfil.enSolitario ? "En tu partida" : "En toda la competición"}
+            href="/muertes"
           />
-        )}
+          {equipos ? (
+            <DatoDeLaTira
+              label="Vínculos"
+              value={String(
+                equipos.vinculos.filter((v) => v.miembros.every((m) => !m.muerta)).length,
+              )}
+              hint={(() => {
+                const rotos = equipos.vinculos.filter((v) => v.miembros.some((m) => m.muerta)).length;
+                return rotos ? `vivos · ${rotos} rotos` : "Parejas vivas";
+              })()}
+              href="/equipo"
+            />
+          ) : progreso ? (
+            <DatoDeLaTira
+              label="Hitos"
+              value={`${progreso.hitos.hechos}/${progreso.hitos.total}`}
+              hint={
+                progreso.siguiente
+                  ? `Te toca ${progreso.siguiente.label}`
+                  : progreso.hitos.total
+                  ? "No queda ninguno"
+                  : "Sin level caps todavía"
+              }
+              href="/level-caps"
+            />
+          ) : (
+            <DatoDeLaTira
+              label="Líder"
+              value={lider?.displayName ?? (empatadosArriba > 1 ? "Empate" : "—")}
+              hint={pieDelLider}
+              href="/puntos"
+            />
+          )}
+        </div>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
@@ -801,33 +818,100 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({
+type Luchador = { nombre: string; color: string; foto: string | null };
+
+/**
+ * La tarjeta de lo que toca, a lo grande. Con rival de jornada es un cartel de
+ * combate —tú, «VS» y él—, que es lo que se viene a mirar; si no, el dato en
+ * grande con su imagen (medalla, cartel o campeón) asomando por la derecha.
+ */
+function TarjetaGrande({
   label,
   value,
   hint,
   href,
   images = [],
+  duelo,
 }: {
   label: string;
   value: string;
   hint?: string;
   href: string;
-  /** Ilustraciones opcionales que se asoman al fondo, alternándose */
   images?: string[];
+  duelo: { yo: Luchador; rival: Luchador } | null;
 }) {
   return (
     <Link
       href={href}
-      className="card-tight relative isolate overflow-hidden transition hover:border-brand-500/40 hover:bg-ink-850"
+      className={cx(
+        "card relative isolate flex min-h-36 flex-col justify-center overflow-hidden transition hover:border-brand-500/40",
+        duelo && "border-brand-400/40 bg-gradient-to-br from-brand-600/20 via-ink-900 to-rose-600/15",
+      )}
     >
-      <CarouselBackdrop
-        images={images}
-        /* 35 y no 25: con las fotos de perfil oscuras no se veía casi nada */
-        className="absolute -bottom-3 -right-3 -z-10 h-20 w-20 opacity-35 [mask-image:radial-gradient(circle_at_center,black,transparent_75%)]"
-      />
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className="mt-1 truncate text-2xl font-bold text-white tabular-nums">{value}</p>
-      {hint ? <p className="mt-0.5 truncate text-xs text-slate-500">{hint}</p> : null}
+      <p className="antetitulo">{label}</p>
+      {duelo ? (
+        <>
+          <div className="mt-3 flex items-center justify-between gap-2">
+            <LuchadorDelCartel {...duelo.yo} />
+            {/* El relleno es para la cursiva: el degradado solo pinta dentro de
+                la caja y la punta de la S se sale, así que salía cortada */}
+            <span className="shrink-0 bg-gradient-to-b from-white to-slate-400 bg-clip-text px-2 py-1 text-4xl font-black italic tracking-tighter text-transparent sm:text-5xl">
+              VS
+            </span>
+            <LuchadorDelCartel {...duelo.rival} />
+          </div>
+          {hint ? <p className="mt-3 text-center text-xs text-slate-400">{hint}</p> : null}
+        </>
+      ) : (
+        <>
+          <CarouselBackdrop
+            images={images}
+            /* Apoyada en el borde de abajo, como un retrato que asoma, y
+               difuminándose hacia arriba y los lados: es fondo, no el dato.
+               Cabe en el alto de la tarjeta para que no la corte por arriba */
+            className="absolute bottom-0 right-4 -z-10 h-32 w-32 opacity-50 [mask-image:radial-gradient(circle_at_50%_70%,black_35%,transparent_75%)] sm:right-8 sm:h-48 sm:w-48"
+          />
+          <p className="mt-1 truncate pr-24 text-4xl font-black text-white tabular-nums sm:text-5xl">
+            {value}
+          </p>
+          {hint ? <p className="mt-1 truncate pr-24 text-sm text-slate-400">{hint}</p> : null}
+        </>
+      )}
+    </Link>
+  );
+}
+
+function LuchadorDelCartel({ nombre, color, foto }: Luchador) {
+  return (
+    <span className="flex min-w-0 flex-1 flex-col items-center gap-1.5">
+      <Avatar name={nombre} color={color} image={foto} size={64} />
+      <span className="max-w-full truncate text-sm font-semibold text-white">{nombre}</span>
+    </span>
+  );
+}
+
+/** Un dato pequeño de la tira de al lado de la tarjeta grande */
+function DatoDeLaTira({
+  label,
+  value,
+  hint,
+  href,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+  href: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="min-w-0 px-3 py-3 transition hover:bg-white/[0.03] lg:flex lg:items-baseline lg:justify-between lg:gap-3 lg:px-4"
+    >
+      <span className="block text-[0.65rem] uppercase tracking-wide text-slate-500 lg:text-xs">{label}</span>
+      <span className="block min-w-0 lg:text-right">
+        <span className="block truncate text-lg font-bold text-white tabular-nums lg:text-xl">{value}</span>
+        {hint ? <span className="hidden truncate text-xs text-slate-500 sm:block">{hint}</span> : null}
+      </span>
     </Link>
   );
 }
