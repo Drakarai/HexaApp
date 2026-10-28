@@ -62,6 +62,7 @@ export function StandingsTable(props: Props) {
                 <>
                   <th className="text-right">V-D</th>
                   <th className="text-right">Dif.</th>
+                  <th className="text-right">Racha</th>
                 </>
               )}
             </tr>
@@ -309,7 +310,45 @@ function Ficha({
           </>
         )}
       </dl>
+      {!compact && row.racha.length ? (
+        <div className="mt-2 flex items-center justify-end gap-2 px-1">
+          <span className="text-[11px] uppercase tracking-wide text-slate-500">Últimos</span>
+          <Racha racha={row.racha} />
+        </div>
+      ) : null}
     </li>
+  );
+}
+
+/**
+ * La racha: los últimos resultados en bolitas, verde la victoria y roja la
+ * derrota, como en las tablas de fútbol, con la más reciente a la derecha y un
+ * poco más marcada. Se ve de un vistazo quién viene fuerte.
+ */
+function Racha({ racha, className }: { racha: StandingRow["racha"]; className?: string }) {
+  if (!racha.length) return <span className="text-xs text-slate-600">—</span>;
+  const leida = racha.map((r) => (r === "V" ? "victoria" : "derrota")).join(", ");
+  return (
+    <span
+      role="img"
+      aria-label={`Últimos resultados, del más viejo al más reciente: ${leida}`}
+      title={`Últimos ${racha.length}: ${racha.join(" ")}`}
+      className={cx("inline-flex items-center gap-1", className)}
+    >
+      {racha.map((resultado, i) => (
+        <span
+          key={i}
+          className={cx(
+            "inline-flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold leading-none text-ink-950",
+            resultado === "V" ? "bg-emerald-400" : "bg-rose-400",
+            // La última, con su anillo: es la que más dice de cómo viene
+            i === racha.length - 1 && "ring-2 ring-white/30",
+          )}
+        >
+          {resultado}
+        </span>
+      ))}
+    </span>
   );
 }
 
@@ -414,6 +453,9 @@ function Fila({
           <td className="text-right tabular-nums text-slate-400">
             {row.pokemonDiff > 0 ? "+" : ""}
             {row.pokemonDiff}
+          </td>
+          <td className="text-right">
+            <Racha racha={row.racha} className="justify-end" />
           </td>
         </>
       )}

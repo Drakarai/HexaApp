@@ -72,6 +72,29 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "exportar a Showdown");
   });
 
+  test("compartir su tarjeta hace la imagen, y nadie más la puede pedir", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/equipo");
+    await pagina.locator('[aria-label^="Cacahuete —"]').first().click();
+    const ficha = pagina.getByRole("dialog");
+    const [respuesta] = await Promise.all([
+      pagina.waitForResponse((r) => r.url().includes("/api/pokemon/")),
+      ficha.getByRole("button", { name: /Compartir su tarjeta/ }).click(),
+    ]);
+    assert.equal(respuesta.status(), 200);
+    assert.equal(respuesta.headers()["content-type"], "image/png");
+    await pagina.keyboard.press("Escape");
+    // Su caja es privada: la tarjeta de otro, ni con la dirección a mano
+    const hector = await entrar(navegador, "hector", MOVIL);
+    try {
+      const ajena = await hector.pagina.request.get(respuesta.url());
+      assert.equal(ajena.status(), 404);
+    } finally {
+      await hector.cerrar();
+    }
+    sinProblemas(problemas, "la tarjeta del pokémon");
+  });
+
   test("el buscador lleva a la ficha (Ctrl+K)", async () => {
     const { pagina, problemas } = sesion;
     await ir(pagina, "/");

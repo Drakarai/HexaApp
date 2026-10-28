@@ -80,6 +80,12 @@ const nextConfig: NextConfig = {
       "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff",
       "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff",
     ],
+    "/api/pokemon/[id]": [
+      "./node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff",
+      "./node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff",
+      "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff",
+      "./node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff",
+    ],
   },
   env: {
     HUELLA_GUIA_USO: huella("guia-de-uso.pdf"),

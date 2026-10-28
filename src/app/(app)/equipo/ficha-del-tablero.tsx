@@ -6,6 +6,7 @@ import { Hoja } from "@/components/hoja";
 import { nombreDeCaja } from "@/lib/fondos-de-caja";
 import { AnimacionDeEvolucion, type ResultadoDeEvolucion } from "./evolucion";
 import { cx } from "@/lib/utils";
+import { compartirImagen } from "@/lib/compartir-imagen";
 import { sonarGrito, TONO_DE_CAIDO } from "@/lib/gritos";
 import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 import { Pestanas } from "@/components/pestanas";
@@ -458,6 +459,9 @@ export function Ficha({
               </div>
             ) : null}
 
+            {/* Para presumir de él en el grupo: su tarjeta como imagen (ver `api/pokemon`) */}
+            <CompartirPokemon id={pokemon.id} nombre={pokemon.nickname ?? pokemon.species} />
+
             {editable ? (
               <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
                 <div className="flex flex-wrap gap-2">
@@ -783,6 +787,30 @@ function Fila({ etiqueta, valor }: { etiqueta: string; valor: string }) {
     <div className="flex gap-3">
       <dt className="w-28 shrink-0 text-slate-500">{etiqueta}</dt>
       <dd className="min-w-0 text-slate-200">{valor}</dd>
+    </div>
+  );
+}
+
+/** El botón de mandar la tarjeta del pokémon: el menú de compartir del móvil, o descargarla */
+function CompartirPokemon({ id, nombre }: { id: string; nombre: string }) {
+  const [haciendo, setHaciendo] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fichero = `${nombre.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-") || "pokemon"}.png`;
+  return (
+    <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+      {error ? <span className="text-xs text-rose-300">{error}</span> : null}
+      <button
+        type="button"
+        className="btn-ghost btn-sm"
+        disabled={haciendo}
+        onClick={async () => {
+          setHaciendo(true);
+          setError(await compartirImagen(`/api/pokemon/${id}`, fichero, nombre, "compartir"));
+          setHaciendo(false);
+        }}
+      >
+        <Icono emoji="📤" /> {haciendo ? "Preparando…" : "Compartir su tarjeta"}
+      </button>
     </div>
   );
 }

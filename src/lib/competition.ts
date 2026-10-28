@@ -9,6 +9,7 @@ import { filtroDeLockesVisibles } from "@/lib/acceso";
 import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { COMPETITION_STATUS } from "@/lib/constants";
+import { rachas, type Resultado } from "@/lib/racha";
 
 export const COMPETITION_COOKIE = "hexaapp_competition";
 
@@ -49,6 +50,8 @@ export type StandingRow = {
   retiredAt: Date | null;
   /** El que lleva puesto, si lleva alguno. Es solo adorno. */
   title: TituloPuesto | null;
+  /** Sus últimos resultados, del más viejo al más reciente (ver `lib/racha.ts`) */
+  racha: Resultado[];
 };
 
 /**
@@ -460,6 +463,10 @@ export const getStandings = cache(async (
           participantBId: true,
           winnerId: true,
           pokemonDiff: true,
+          // Para la racha: cuándo fue y en qué orden
+          playedAt: true,
+          position: true,
+          matchday: { select: { playedAt: true, createdAt: true, position: true } },
         },
       }),
       prisma.challengeMatch.findMany({
@@ -469,6 +476,8 @@ export const getStandings = cache(async (
           participantBId: true,
           winnerId: true,
           pokemonDiff: true,
+          playedAt: true,
+          createdAt: true,
         },
       }),
       // Los títulos que lleva puestos cada uno, por el locke: pedidos con los
@@ -493,6 +502,24 @@ export const getStandings = cache(async (
     challenges,
     competition?.challengeDiffCounts ?? false,
   );
+
+  // Los mismos combates que las victorias y derrotas: los de jornada y los retos
+  const lasRachas = rachas([
+    ...matches.map((m) => ({
+      participantAId: m.participantAId,
+      participantBId: m.participantBId,
+      winnerId: m.winnerId,
+      cuando: m.playedAt ?? m.matchday.playedAt ?? m.matchday.createdAt,
+      orden: m.matchday.position * 1000 + m.position,
+    })),
+    ...challenges.map((c) => ({
+      participantAId: c.participantAId,
+      participantBId: c.participantBId,
+      winnerId: c.winnerId,
+      cuando: c.playedAt ?? c.createdAt,
+      orden: 0,
+    })),
+  ]);
 
   const rows = participants.map((participant) => {
     const stat = stats.get(participant.id) ?? {
@@ -528,6 +555,7 @@ export const getStandings = cache(async (
       motivoDeSalida: participant.motivoDeSalida,
       wipeos: wipeosPorParticipante.get(participant.id) ?? 0,
       title: titulos.get(participant.userId) ?? null,
+      racha: lasRachas.get(participant.id) ?? [],
     };
   });
 

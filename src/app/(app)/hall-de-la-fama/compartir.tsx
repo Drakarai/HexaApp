@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Icono } from "@/components/icono";
+import { compartirImagen } from "@/lib/compartir-imagen";
 
 /**
  * La imagen del resumen del locke (ver `api/resumen`), con su botón de
@@ -25,38 +26,11 @@ export function CompartirResumen({
   const [haciendo, setHaciendo] = useState<"compartir" | "descargar" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  async function laImagen() {
-    const respuesta = await fetch(url);
-    if (!respuesta.ok) throw new Error("No se ha podido hacer la imagen.");
-    return new File([await respuesta.blob()], fichero, { type: "image/png" });
-  }
-
-  function descargar(imagen: File) {
-    const enlace = document.createElement("a");
-    enlace.href = URL.createObjectURL(imagen);
-    enlace.download = fichero;
-    enlace.click();
-    setTimeout(() => URL.revokeObjectURL(enlace.href), 10_000);
-  }
-
   async function hacer(que: "compartir" | "descargar") {
     setHaciendo(que);
     setError(null);
-    try {
-      const imagen = await laImagen();
-      if (que === "compartir" && navigator.canShare?.({ files: [imagen] })) {
-        await navigator.share({ files: [imagen], title: titulo });
-      } else {
-        descargar(imagen);
-      }
-    } catch (fallo) {
-      // Cerrar el menú de compartir sin elegir nada no es un error
-      if ((fallo as Error).name !== "AbortError") {
-        setError((fallo as Error).message || "No se ha podido compartir.");
-      }
-    } finally {
-      setHaciendo(null);
-    }
+    setError(await compartirImagen(url, fichero, titulo, que));
+    setHaciendo(null);
   }
 
   return (
