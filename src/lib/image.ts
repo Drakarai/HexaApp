@@ -51,12 +51,19 @@ export async function imageToDataUrl(source: Blob, maxSize: number) {
   return dataUrl;
 }
 
-/** Acepta data URLs generadas por la app y enlaces http(s) normales. */
+/**
+ * Acepta data URLs generadas por la app y enlaces http(s) normales.
+ *
+ * **Sin SVG**: un SVG puede llevar código, y la aplicación sirve las imágenes
+ * desde su propia dirección. Lo que sube la gente pasa siempre por
+ * `imageToDataUrl`, que lo convierte en WebP, así que un SVG aquí solo puede
+ * venir de alguien saltándose el formulario.
+ */
 export function isValidImageValue(value: string) {
   if (!value) return true;
   if (value.length > MAX_IMAGE_CHARS) return false;
-  return /^data:image\/(png|jpeg|webp|gif|svg\+xml);/.test(value) ||
-    /^https?:\/\//.test(value);
+  return /^data:image\/(png|jpeg|webp|gif);base64,/.test(value) ||
+    /^https?:\/\/[^\s"'<>]+$/.test(value);
 }
 
 /**

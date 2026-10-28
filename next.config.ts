@@ -47,10 +47,6 @@ function huella(fichero: string) {
  * lo que escribe la gente se pinte como HTML— ya lo hace React.
  */
 const CABECERAS_DE_SEGURIDAD = [
-  {
-    key: "Content-Security-Policy",
-    value: "frame-ancestors 'self'; object-src 'self'; base-uri 'self'; form-action 'self'",
-  },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -65,7 +61,33 @@ const nextConfig: NextConfig = {
   // Que no se anuncie con qué está hecha
   poweredByHeader: false,
   async headers() {
-    return [{ source: "/:path*", headers: CABECERAS_DE_SEGURIDAD }];
+    return [
+      { source: "/:path*", headers: CABECERAS_DE_SEGURIDAD },
+      {
+        source: "/((?!api/imagen/).*)",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "frame-ancestors 'self'; object-src 'self'; base-uri 'self'; form-action 'self'",
+          },
+        ],
+      },
+      /**
+       * Las imágenes guardadas, con la suya: **nada que ejecutar**. Una imagen
+       * dice ella misma su tipo, y un SVG con código abierto suelto correría
+       * como una página de la aplicación. A una `<img>` no le cambia nada.
+       * Va aquí y no en la ruta porque esta lista pisa lo que ponga la ruta.
+       */
+      {
+        source: "/api/imagen/:path*",
+        headers: [
+          {
+            key: "Content-Security-Policy",
+            value: "default-src 'none'; img-src data:; style-src 'unsafe-inline'; sandbox",
+          },
+        ],
+      },
+    ];
   },
   serverExternalPackages: ["@prisma/client", "bcryptjs"],
   /**

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { readSession } from "@/lib/session";
 import { apuntarError } from "@/lib/errores";
+import { prisma } from "@/lib/db";
+
+const POR_HORA = 30;
 
 /**
  * Donde el navegador de cada uno manda **lo que le falla a él** (ver
@@ -11,6 +14,16 @@ import { apuntarError } from "@/lib/errores";
 export async function POST(request: Request) {
   const sesion = await readSession();
   if (!sesion) return new NextResponse(null, { status: 204 });
+
+  /**
+   * Un tope por persona: el registro guarda como mucho unos miles y tira lo
+   * viejo, así que alguien mandando basura sin parar acabaría tapando los
+   * fallos de verdad de los demás. Un navegador roto de verdad no llega a esto.
+   */
+  const ultimaHora = await prisma.errorDeApp.count({
+    where: { userId: sesion.userId, createdAt: { gt: new Date(Date.now() - 3_600_000) } },
+  });
+  if (ultimaHora >= POR_HORA) return new NextResponse(null, { status: 204 });
 
   const crudo = await request.text();
   if (crudo.length > 12_000) return new NextResponse(null, { status: 204 });

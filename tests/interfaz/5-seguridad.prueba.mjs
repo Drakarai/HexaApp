@@ -1,7 +1,8 @@
 /**
  * La **seguridad** en la aplicación de verdad: las cabeceras que manda, el
- * freno a quien prueba contraseñas y que «Cerrar sesión en los demás
- * dispositivos» eche de verdad a los demás.
+ * freno a quien prueba contraseñas, que «Cerrar sesión en los demás
+ * dispositivos» eche de verdad a los demás y que la captura de una sugerencia
+ * de HexaPost solo la vea quien debe, servida sin poder ejecutar nada.
  */
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -43,6 +44,43 @@ describe("seguridad", () => {
       await pagina.getByText(/Demasiados intentos fallidos/).waitFor();
     } finally {
       await contexto.close();
+    }
+  });
+
+  test("la captura de una sugerencia: su autor sí, otro jugador no", async () => {
+    const enzo = await entrar(navegador, "enzo", MOVIL);
+    const hector = await entrar(navegador, "hector");
+    try {
+      const titulo = `Se ve raro ${Date.now()}`;
+      await ir(enzo.pagina, "/hexapost");
+      await enzo.pagina.fill('input[name="titulo"]', titulo);
+      await enzo.pagina.fill('textarea[name="texto"]', "Mira la captura.");
+      // Un PNG de 1×1: lo reduce el navegador y lo guarda como cualquier otra
+      await enzo.pagina.locator('input[type="file"]').first().setInputFiles({
+        name: "captura.png",
+        mimeType: "image/png",
+        buffer: Buffer.from(
+          "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==",
+          "base64",
+        ),
+      });
+      await enzo.pagina.waitForTimeout(800);
+      await enzo.pagina.getByRole("button", { name: "Mandar" }).click();
+      await enzo.pagina.getByText("¡Recibido!").waitFor();
+      const imagen = enzo.pagina.locator("article", { hasText: titulo }).locator('img[src*="/api/imagen/sugerencia/"]');
+      const direccion = new URL(await imagen.getAttribute("src"), BASE).href;
+
+      const suya = await enzo.pagina.request.get(direccion);
+      assert.equal(suya.status(), 200);
+      assert.match(suya.headers()["content-security-policy"] ?? "", /sandbox/, "abierta sola, no ejecuta nada");
+      assert.equal(suya.headers()["x-content-type-options"], "nosniff");
+      assert.match(suya.headers()["cache-control"] ?? "", /private/, "fuera de la caché de la red");
+
+      const ajena = await hector.pagina.request.get(direccion);
+      assert.equal(ajena.status(), 404);
+    } finally {
+      await enzo.cerrar();
+      await hector.cerrar();
     }
   });
 

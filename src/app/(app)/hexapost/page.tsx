@@ -4,7 +4,6 @@ import { esCreador, requireUser } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { ConfirmSubmit, EmptyState } from "@/components/ui";
 import { Icono } from "@/components/icono";
-import { urlDeContenido } from "@/lib/imagen-url";
 import { borrarSugerenciaAction, retirarSugerenciaAction } from "@/app/actions/buzon";
 import {
   ESTADOS,
@@ -116,8 +115,12 @@ function Tarjeta({
   const tipo = esTipoDeSugerencia(s.tipo) ? TIPOS_DE_SUGERENCIA[s.tipo] : null;
   const estado = ESTADOS[esEstadoDeSugerencia(s.estado) ? s.estado : "NUEVA"];
   const pantalla = rotuloDePantalla(s.pantalla);
-  // Siempre es una referencia al almacén: es lo único que guarda la acción
-  const captura = s.imagen?.startsWith("ref:") ? urlDeContenido(s.imagen) : null;
+  /**
+   * Por su propia dirección, que mira quién la pide, y no por la del almacén,
+   * que vale para cualquiera que la tenga (ver api/imagen). La firma va detrás
+   * para que el navegador no se quede con otra si cambiara.
+   */
+  const captura = s.imagen ? `/api/imagen/sugerencia/${s.id}?v=${encodeURIComponent(s.imagen.slice(-12))}` : null;
 
   return (
     <article className={cx("card", nuevaParaTi && "ring-1 ring-amber-400/40")}>

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 28 de octubre de 2026 (**el resultado se lee de la repetición** de Showdown al anotarlo).
+Última actualización: 28 de octubre de 2026 (**repaso de seguridad**: imágenes blindadas, sin redirecciones abiertas y capturas de HexaPost privadas).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -137,6 +137,26 @@ abrirla a más gente), y por qué así:
   `object-src` son `'self'` y no `'none'` porque la guía se ve en un
   `<object>` de la propia app.
 - **Contraseñas de 8**, solo para las nuevas: las que ya había siguen valiendo.
+- **Las imágenes guardadas no pueden ejecutar nada** (repaso de octubre). Una
+  imagen dice ella misma su tipo (`data:image/…`) y eso lo escribe quien la
+  sube: se aceptaban SVG, y un SVG con código abierto suelto en
+  `/api/imagen/…` corría como una página de la aplicación, con la sesión de
+  quien pinchara el enlace. Ahora, tres capas: **al guardar no se aceptan SVG**
+  (`isValidImageValue`; lo que sube la gente ya llegaba en WebP desde el
+  navegador), **la ruta solo sirve tipos de imagen**, y `/api/imagen` lleva su
+  propia CSP con `sandbox` y sin nada que cargar (en `next.config.ts`: la lista
+  de allí pisa lo que ponga la ruta, por eso no va en la ruta).
+- **Las imágenes por enlace solo se redirigen a quien las pinta**: abiertas
+  como página, `/api/imagen/…` llevaba a cualquier web con la dirección de la
+  app delante. Se mira `Sec-Fetch-Dest`; un navegador que no lo manda es viejo y
+  se le deja pasar.
+- **Las capturas de HexaPost van por su propia dirección**
+  (`/api/imagen/sugerencia/<id>`), que solo abren quien la mandó y el Creador, y
+  **sin la caché de la red**: lo demás va a la caché pública de Vercel (sprites
+  y fotos de perfil), pero una captura de pantalla puede enseñar cualquier cosa.
+- **El registro de errores del navegador, con tope por persona** (30 a la
+  hora): guarda unos miles y tira lo viejo, y alguien mandando basura habría
+  tapado los fallos de verdad.
 
 **Contra copiar la app, lo que sirve y lo que no.** El usuario preguntó cómo
 evitar que se la clonen. Lo que llega al navegador no se puede esconder, y
@@ -4311,7 +4331,11 @@ Piezas con truco:
 usuario; se deja para cuando se migre con calma. La **verificación en dos
 pasos dentro de la app para la cuenta del Creador** se le ofreció y quedó para
 cuando la pida. Recomendado al usuario: bajar de vez en cuando una copia desde
-Administración y guardarla fuera de Neon.
+Administración y guardarla fuera de Neon (las copias viven en la misma base de
+datos, y llevan las contraseñas cifradas y las notas: el archivo hay que
+guardarlo bien). Del repaso de octubre quedan **a propósito sin hacer**: la CSP
+con `script-src` (necesita nonce en cada página; con las imágenes blindadas el
+riesgo es pequeño) y una copia automática fuera de Neon.
 
 **Desplegada**: la aplicación está en Vercel con la base de datos en Neon, y
 cada push a la rama de trabajo se publica solo. `DEPLOY.md` sigue valiendo para
@@ -4861,3 +4885,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 150. **Racha en la clasificación y tarjeta de un pokémon** para compartir.
 151. **Remodelaciones**: portada con tarjeta grande y cartel «VS», jornadas como marcador, actividad por tramos con filtros, mapa agrupado por clase de zona y HexaPost compacto.
 152. **El resultado, leído de la repetición**: ganador, diferencia y día sacados del enlace de Showdown.
+153. **Repaso de seguridad**: imágenes que no pueden ejecutar código, sin redirecciones abiertas, capturas de HexaPost privadas y tope al registro de errores.

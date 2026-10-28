@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth";
+import { esCreador, getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import { resolverImagen } from "@/lib/almacen-de-imagenes";
 import { buscarValor } from "@/lib/imagen-por-tipo";
 
@@ -40,9 +41,32 @@ function sinCache(texto: string, status: number) {
   });
 }
 
-function respuestaDeImagen(valor: string) {
+/**
+ * Lo que se sirve como imagen. Una imagen guardada dice ella misma su tipo
+ * (`data:image/…`), y eso lo manda quien la sube: sin esta lista, un
+ * `data:text/html` o un SVG con código se abrirían como una página **de la
+ * propia aplicación**, con la sesión de quien pinchara el enlace.
+ */
+const TIPOS_DE_IMAGEN = new Set(["image/png", "image/jpeg", "image/webp", "image/gif", "image/avif", "image/svg+xml"]);
+
+/**
+ * Las capturas de pantalla de HexaPost **no van a la caché de la red**: pueden
+ * enseñar cualquier cosa de quien la mandó, y lo de la red lo abre cualquiera
+ * que tenga la dirección, sin sesión. Se guardan solo en su navegador.
+ */
+const CACHE_PRIVADA = "private, max-age=86400";
+
+function respuestaDeImagen(valor: string, request: Request, cache = CACHE) {
   // Enlace a una imagen de fuera: no hay nada que servir, se redirige
   if (/^https?:\/\//.test(valor)) {
+    /**
+     * Pero solo a quien la va a pintar. Abierta como página, esto llevaría a
+     * cualquier web con la dirección de la aplicación delante: un enlace
+     * perfecto para un engaño. Los navegadores dicen para qué piden cada cosa
+     * (`Sec-Fetch-Dest`); el que no lo dice es viejo, y se le deja pasar.
+     */
+    const para = request.headers.get("sec-fetch-dest");
+    if (para && para !== "image") return sinCache("Esto es una imagen: ábrela desde la aplicación.", 400);
     return NextResponse.redirect(valor, 307);
   }
 
@@ -50,19 +74,22 @@ function respuestaDeImagen(valor: string) {
   if (!coincide) return sinCache("Imagen no válida", 415);
 
   const [, tipoMime, base64] = coincide;
+  if (!TIPOS_DE_IMAGEN.has(tipoMime.toLowerCase())) return sinCache("Imagen no válida", 415);
   const bytes = Buffer.from(base64, "base64");
 
+  // Si aun así trae algo que ejecutar (un SVG de los de antes, que se
+  // aceptaban), no corre: lo impide la política de next.config.ts
   return new NextResponse(new Uint8Array(bytes), {
     headers: {
       "Content-Type": tipoMime,
       "Content-Length": String(bytes.length),
-      "Cache-Control": CACHE,
+      "Cache-Control": cache,
     },
   });
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ partes: string[] }> },
 ) {
   // Las imágenes son de una competición privada: hay que tener sesión
@@ -73,9 +100,21 @@ export async function GET(
   const [tipo, id, indice] = partes;
   if (!tipo || !id) return sinCache("No encontrada", 404);
 
+  /**
+   * La captura de una sugerencia de HexaPost: solo para quien la mandó y para
+   * quien lleva la aplicación, que son los únicos que ven la sugerencia.
+   */
+  if (tipo === "sugerencia") {
+    const sugerencia = await prisma.sugerencia.findUnique({ where: { id }, select: { userId: true, imagen: true } });
+    if (!sugerencia || (sugerencia.userId !== usuario.id && !esCreador(usuario))) return sinCache("No encontrada", 404);
+    const captura = await resolverImagen(sugerencia.imagen);
+    if (!captura) return sinCache("No encontrada", 404);
+    return respuestaDeImagen(captura, request, CACHE_PRIVADA);
+  }
+
   // Una fila puede apuntar al almacén en vez de llevar la imagen dentro
   const valor = await resolverImagen(await buscarValor(tipo, id, indice));
   if (!valor) return sinCache("No encontrada", 404);
 
-  return respuestaDeImagen(valor);
+  return respuestaDeImagen(valor, request);
 }

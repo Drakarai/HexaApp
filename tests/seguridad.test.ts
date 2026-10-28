@@ -10,6 +10,7 @@ import {
   minutosDeEspera,
   problemaDeContrasena,
 } from "@/lib/seguridad";
+import { isValidImageValue } from "@/lib/image";
 
 const ahora = new Date("2026-10-22T20:00:00Z");
 const haceMinutos = (m: number) => new Date(ahora.getTime() - m * 60_000);
@@ -67,5 +68,23 @@ describe("Contraseñas", () => {
   test("una normal vale (y la de los datos de ejemplo también)", () => {
     assert.equal(problemaDeContrasena("rutas-y-gimnasios", "hector"), null);
     assert.equal(problemaDeContrasena("hexalocke", "draka"), null);
+  });
+});
+
+describe("Imágenes que se guardan", () => {
+  test("las que hace la aplicación, sí", () => {
+    assert.ok(isValidImageValue("data:image/webp;base64,UklGRg=="));
+    assert.ok(isValidImageValue("data:image/png;base64,iVBORw0KGgo="));
+    assert.ok(isValidImageValue("https://raw.githubusercontent.com/PokeAPI/sprites/master/1.png"));
+  });
+
+  test("un SVG no: puede llevar código, y se serviría desde la propia aplicación", () => {
+    assert.equal(isValidImageValue("data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="), false);
+  });
+
+  test("ni lo que no es una imagen, ni un enlace con trampa", () => {
+    assert.equal(isValidImageValue("data:text/html;base64,PGgxPg=="), false);
+    assert.equal(isValidImageValue("javascript:alert(1)"), false);
+    assert.equal(isValidImageValue('https://a.com/x.png" onerror="alert(1)'), false);
   });
 });
