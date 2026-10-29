@@ -7,8 +7,8 @@ import { NoCompetition } from "@/components/no-competition";
 import { RichText } from "@/components/rich-text";
 import { EmptyState, ConfirmSubmit } from "@/components/ui";
 import { deleteRuleAction, moveRuleAction } from "@/app/actions/rules";
-import { NewRuleForm, EditRuleForm } from "./rule-forms";
-import { lockeEmpezado, queHaCambiado } from "@/lib/reglas";
+import { NewRuleForm, EditRuleForm, NuevoArticulo, RenombrarTitulo } from "./rule-forms";
+import { lockeEmpezado, queHaCambiado, TITULO_POR_DEFECTO } from "@/lib/reglas";
 import { cx, formatDate } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 
@@ -84,14 +84,15 @@ export default async function RulesPage({
 
   // Los artículos se numeran seguidos, de principio a fin, como en un reglamento
   let articulo = 0;
-  const titulos = [...new Set(rules.map((rule) => rule.category ?? "General"))].map((categoria, i) => ({
+  const titulos = [...new Set(rules.map((rule) => rule.category ?? TITULO_POR_DEFECTO))].map((categoria, i) => ({
     categoria,
     numero: romano(i + 1),
     articulos: rules
-      .filter((rule) => (rule.category ?? "General") === categoria)
+      .filter((rule) => (rule.category ?? TITULO_POR_DEFECTO) === categoria)
       .map((rule) => ({ rule, numero: ++articulo, nueva: esNuevaParaMi(rule) })),
   }));
   const sinVer = titulos.flatMap((t) => t.articulos.filter((a) => a.nueva));
+  const nombresDeTitulos = titulos.map((t) => t.categoria);
 
   return (
     <>
@@ -99,7 +100,7 @@ export default async function RulesPage({
         title="Reglas del locke"
         subtitle={
           editando
-            ? "Editando: mueve, cambia o borra cada artículo. Lo que cambies les saldrá marcado a los demás."
+            ? "Editando: cambia el nombre de cada título, añade artículos y mueve, cambia o borra cada uno. Lo que cambies les saldrá marcado a los demás."
             : `La normativa de ${competition.name}${rules.length ? `, en ${articulo} artículos` : ""}.`
         }
         actions={
@@ -117,7 +118,7 @@ export default async function RulesPage({
           title="Todavía no hay reglas cargadas"
           hint={
             canManage
-              ? "Añade la primera sección con el formulario de abajo."
+              ? "Escribe el primer artículo con el formulario de abajo."
               : "Pídele a un administrador que las cargue."
           }
         />
@@ -145,14 +146,17 @@ export default async function RulesPage({
             <div className="space-y-6">
               {titulos.map((titulo) => (
                 <section key={titulo.categoria} aria-labelledby={`titulo-${titulo.numero}`}>
-                  <header className="mb-2 px-1">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-brand-400">Título {titulo.numero}</p>
-                    <h2
-                      id={`titulo-${titulo.numero}`}
-                      className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-wide text-white"
-                    >
-                      {titulo.categoria}
-                    </h2>
+                  <header className="mb-2 flex flex-wrap items-end justify-between gap-x-3 gap-y-1 px-1">
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-brand-400">Título {titulo.numero}</p>
+                      <h2
+                        id={`titulo-${titulo.numero}`}
+                        className="font-[family-name:var(--font-display)] text-xl font-bold uppercase tracking-wide text-white"
+                      >
+                        {titulo.categoria}
+                      </h2>
+                    </div>
+                    {editando ? <RenombrarTitulo competitionId={competition.id} titulo={titulo.categoria} /> : null}
                   </header>
                   {/* Una hoja por título, con los artículos separados por una raya:
                       se lee de corrido, como un documento, y no como tarjetas sueltas */}
@@ -215,11 +219,21 @@ export default async function RulesPage({
                                 category: rule.category,
                               }}
                               empezado={empezado}
+                              titulos={nombresDeTitulos}
                             />
                           ) : null}
                         </div>
                       </article>
                     ))}
+                    {editando ? (
+                      <NuevoArticulo
+                        competitionId={competition.id}
+                        titulo={titulo.categoria}
+                        // El de por defecto se guarda sin título, como estaban sus artículos
+                        categoria={titulo.articulos[0]?.rule.category ?? ""}
+                        despuesDe={titulo.articulos[titulo.articulos.length - 1].rule.id}
+                      />
+                    ) : null}
                   </div>
                 </section>
               ))}
@@ -231,7 +245,7 @@ export default async function RulesPage({
       {/* Sin reglas no hay nada que editar: el formulario sale ya */}
       {canManage && (editando || rules.length === 0) ? (
         <div className="mt-8">
-          <NewRuleForm competitionId={competition.id} />
+          <NewRuleForm competitionId={competition.id} titulos={nombresDeTitulos} />
         </div>
       ) : null}
     </>
@@ -314,7 +328,7 @@ function MoverYBorrar({ id, titulo }: { id: string; titulo: string }) {
       </form>
       <form action={deleteRuleAction}>
         <input type="hidden" name="ruleId" value={id} />
-        <ConfirmSubmit message={`¿Borrar la sección "${titulo}"?`} title="Borrar">
+        <ConfirmSubmit message={`¿Borrar el artículo "${titulo}"?`} title="Borrar">
           ✕
         </ConfirmSubmit>
       </form>

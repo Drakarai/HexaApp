@@ -1,6 +1,9 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 
+/** Cómo se llama el título de los artículos que no tienen ninguno (`category` vacía) */
+export const TITULO_POR_DEFECTO = "General";
+
 /**
  * Si el locke ya se está jugando. Antes de empezar, las reglas se están
  * montando: añadirlas y retocarlas es preparar, no cambiarlas, y avisar de cada

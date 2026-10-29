@@ -201,6 +201,26 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "Reglas");
   });
 
+  test("las reglas: cambiar el nombre de un título y añadirle un artículo", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/reglas?editar=1");
+    const primero = pagina.locator('section[aria-labelledby="titulo-I"]');
+    await primero.getByRole("button", { name: "✎ Nombre" }).click();
+    await primero.getByLabel("Nombre del título").fill("Lo básico del todo");
+    await primero.getByRole("button", { name: "Guardar" }).click();
+    await primero.locator("h2", { hasText: "Lo básico del todo" }).waitFor();
+
+    // El artículo nuevo va dentro de ese título, detrás del último que tenía
+    await primero.getByRole("button", { name: /Añadir un artículo a «Lo básico del todo»/ }).click();
+    await primero.locator('input[name="title"]').last().fill("Artículo de la prueba");
+    await primero.locator('textarea[name="body"]').last().fill("- Una línea cualquiera.");
+    await primero.getByRole("button", { name: "Añadir", exact: true }).click();
+    await primero.locator("article", { hasText: "Artículo de la prueba" }).waitFor();
+    const nombres = await primero.locator("article h3").allInnerTexts();
+    assert.match(nombres.at(-1) ?? "", /Artículo de la prueba/, "el último de su título");
+    sinProblemas(problemas, "títulos de las reglas");
+  });
+
   test("un jugador normal no ve «Editar reglas»", async () => {
     const hector = await entrar(navegador, "hector", MOVIL);
     try {
