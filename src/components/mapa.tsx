@@ -371,13 +371,28 @@ export function Mapa({
         )}
 
         {mapa.zones
-          .filter((zona) => zona.shape !== "none")
-          .map((zona) => {
+          /**
+           * Cada ruta y, detrás, los otros trozos si está partida. Un trozo es
+           * solo dibujo: `zona` es lo que se dibuja (su forma, su sitio, su
+           * id para moverlo) y `ruta` aquello de lo que es, que pone el color,
+           * lo apuntado y el nombre.
+           */
+          .flatMap((ruta) => [
+            { zona: ruta, ruta, esTrozo: false },
+            ...ruta.trozos.map((trozo) => ({
+              zona: { ...ruta, ...trozo, children: [], trozos: [] } as ZonaDelMapa,
+              ruta,
+              esTrozo: true,
+            })),
+          ])
+          .filter(({ zona }) => zona.shape !== "none")
+          .map(({ zona, ruta, esTrozo }) => {
             const caja = cajaDe(zona);
-            const suyo = zona.color ?? colorDeZona(zona.kind);
-            const { hechas = 0, fallos = 0 } = cuentas?.[zona.id] ?? {};
-            const caidos = bajas?.[zona.id] ?? 0;
-            const activa = seleccionada === zona.id;
+            const suyo = ruta.color ?? colorDeZona(ruta.kind);
+            const { hechas = 0, fallos = 0 } = cuentas?.[ruta.id] ?? {};
+            const caidos = bajas?.[ruta.id] ?? 0;
+            // Jugando, al elegir una ruta partida se iluminan todos sus trozos
+            const activa = seleccionada === zona.id || (!editable && seleccionada === ruta.id);
 
             /**
              * Manda la captura buena: si la hay, la zona va de su color con el
@@ -432,7 +447,8 @@ export function Mapa({
               onClick: () => {
                 // Después de arrastrar no cuenta como pulsar
                 if (editable && borrador[zona.id]) return;
-                onZona?.(zona);
+                // En el editor se elige el trozo para moverlo; jugando, se abre su ruta
+                onZona?.(editable ? zona : ruta);
               },
             };
 
@@ -469,11 +485,12 @@ export function Mapa({
                   />
                 )}
 
-                <title>{zona.name}</title>
+                <title>{ruta.name}</title>
 
                 {/* Cuántas llevas ahí, o una ✕ si solo hubo fallos. Va sin
                     girar aunque la zona lo esté: un número torcido no se lee */}
-                {hechas || soloFallos ? (
+                {/* En un trozo, nada: el número y la chapa ya van en su ruta */}
+                {!esTrozo && (hechas || soloFallos) ? (
                   <text
                     x={centroX}
                     y={centroY}
@@ -495,7 +512,7 @@ export function Mapa({
                     región entero cabe en un móvil, así que cada zona mide
                     cuatro píxeles y el dibujo de un emoji ahí no se distingue.
                     Una forma plana de un solo color sí. */}
-                {caidos ? (
+                {!esTrozo && caidos ? (
                   <Chapa
                     caja={caja}
                     centro={{ cx: centroX, cy: centroY }}

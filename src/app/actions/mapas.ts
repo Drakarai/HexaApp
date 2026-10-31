@@ -304,9 +304,25 @@ export async function anidarZonaAction(
   if (parentIdBruto && parentIdBruto !== id) {
     const padre = await prisma.mapZone.findUnique({
       where: { id: parentIdBruto },
-      select: { id: true, parentId: true },
+      select: { id: true, parentId: true, trozoDeId: true },
     });
-    if (padre && !padre.parentId) parentId = padre.id;
+    // Un trozo no es una zona: lo que se metiera dentro no saldría en ningún sitio
+    if (padre && !padre.parentId && !padre.trozoDeId) parentId = padre.id;
+  }
+  if (parentId) {
+    /**
+     * Las zonas de dentro de otra se pintan sin trozos (y el editor no deja
+     * partirlas): una ruta partida que se metiera en un grupo perdería los
+     * suyos de vista, y un trozo suelto no se agrupa.
+     */
+    const zona = await prisma.mapZone.findUnique({
+      where: { id },
+      select: { trozoDeId: true, _count: { select: { trozos: true } } },
+    });
+    if (zona?.trozoDeId) return { error: "Un trozo va con su ruta: no se mete en otra zona." };
+    if (zona?._count.trozos) {
+      return { error: "Esta ruta está partida en trozos: quítaselos antes de meterla en otra zona." };
+    }
   }
 
   await prisma.mapZone.update({ where: { id }, data: { parentId } });
@@ -370,6 +386,56 @@ export async function detectarZonasAction(
 
   return {
     success: `${encontradas.length} zonas sacadas de la imagen. Ahora ponles el nombre.`,
+    mapa: await getMapa(slug),
+  };
+}
+
+/**
+ * Otro trozo para una ruta partida: la ruta empieza, en medio hay algo que
+ * ocupa su sitio, y sigue al otro lado. Nace como un rectángulo del tamaño de
+ * la ruta, un poco más abajo y a la derecha para que se vea, y se arrastra a su
+ * sitio como cualquier zona.
+ */
+export async function anadirTrozoAction(
+  _prev: EstadoDelEditor,
+  formData: FormData,
+): Promise<EstadoDelEditor> {
+  const [, sinPermiso] = await conPermiso(requireCreador());
+  if (sinPermiso) return sinPermiso;
+  const slug = String(formData.get("slug") ?? "");
+  const ruta = await prisma.mapZone.findUnique({
+    where: { id: String(formData.get("zoneId") ?? "") },
+    select: {
+      id: true, name: true, kind: true, x: true, y: true, w: true, h: true, trozoDeId: true, parentId: true,
+      region: { select: { slug: true, width: true, height: true } },
+      _count: { select: { trozos: true } },
+    },
+  });
+  if (!ruta || ruta.region.slug !== slug) return { error: "Esa zona ya no está." };
+  if (ruta.trozoDeId) return { error: "Los trozos se añaden desde la ruta, no desde otro trozo." };
+  if (ruta.parentId) return { error: "Una zona metida dentro de otra no se dibuja: sácala antes de partirla." };
+  if (ruta._count.trozos >= 8) return { error: "Ya tiene ocho trozos: con eso cabe cualquier ruta." };
+
+  // Un rectángulo del tamaño de la ruta, desplazado y dentro del mapa
+  const w = Math.min(ruta.w, ruta.region.width);
+  const h = Math.min(ruta.h, ruta.region.height);
+  const x = Math.max(0, Math.min(ruta.region.width - w, ruta.x + 40));
+  const y = Math.max(0, Math.min(ruta.region.height - h, ruta.y + 40));
+  await prisma.mapZone.create({
+    data: {
+      regionId: (await prisma.mapRegion.findUniqueOrThrow({ where: { slug }, select: { id: true } })).id,
+      name: ruta.name,
+      kind: ruta.kind,
+      shape: "rect",
+      x,
+      y,
+      w,
+      h,
+      trozoDeId: ruta.id,
+    },
+  });
+  return {
+    success: "Trozo añadido. Arrástralo a su sitio; tócalo para cambiarle la forma o quitarlo.",
     mapa: await getMapa(slug),
   };
 }
@@ -594,9 +660,10 @@ export async function apuntarCapturaAction(
     // Que la zona exista de verdad; si no, entra como captura extra
     const zona = await prisma.mapZone.findUnique({
       where: { id: zoneIdBruto },
-      select: { id: true },
+      select: { id: true, trozoDeId: true },
     });
-    zoneId = zona?.id ?? null;
+    // Un trozo de una ruta partida es la misma ruta: se apunta en ella
+    zoneId = zona ? (zona.trozoDeId ?? zona.id) : null;
   }
 
   /**

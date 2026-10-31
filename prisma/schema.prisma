@@ -257,16 +257,27 @@ model MapZone {
    * Si cuelga de otra zona, cuál. Las hijas no se dibujan: viven en su padre.
    */
   parentId String?
+  /**
+   * Si es **otro trozo de una ruta partida**, de cuál: la ruta empieza, en medio
+   * hay algo que ocupa su sitio, y sigue al otro lado. Un trozo solo es dibujo
+   * —su forma y su sitio—: no sale en ninguna lista, no se captura en él y al
+   * tocarlo se abre su ruta, con su color y lo que lleves apuntado en ella. Se
+   * va con ella si se borra.
+   */
+  trozoDeId String?
   position Int     @default(0)
 
   region   MapRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
   parent   MapZone?  @relation("ZonaPadre", fields: [parentId], references: [id], onDelete: SetNull)
   children MapZone[] @relation("ZonaPadre")
+  trozoDe  MapZone?  @relation("Trozos", fields: [trozoDeId], references: [id], onDelete: Cascade)
+  trozos   MapZone[] @relation("Trozos")
   captures Capture[]
   deaths   Death[]
 
   @@index([regionId, position])
   @@index([parentId])
+  @@index([trozoDeId])
 }
 
 /**

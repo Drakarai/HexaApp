@@ -43,7 +43,15 @@ export type ZonaDelMapa = {
    * al tocarla salen estas para elegir.
    */
   children: ZonaDelMapa[];
+  /**
+   * Los otros trozos de una ruta partida (ver `trozoDeId` en el esquema): solo
+   * su dibujo. Se pintan como ella y al tocarlos se abre ella.
+   */
+  trozos: TrozoDeZona[];
 };
+
+/** Un trozo de una ruta partida: su forma y su sitio, nada más */
+export type TrozoDeZona = Pick<ZonaDelMapa, "id" | "shape" | "x" | "y" | "w" | "h" | "angle" | "points">;
 
 export type MapaDeRegion = {
   id: string;
@@ -134,8 +142,20 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     points: verticesDeZona(zona.points),
     color: zona.color,
     parentId: zona.parentId,
+    trozos: fila.zones
+      .filter((trozo) => trozo.trozoDeId === zona.id)
+      .map((trozo) => ({
+        id: trozo.id,
+        shape: trozo.shape,
+        x: trozo.x,
+        y: trozo.y,
+        w: trozo.w,
+        h: trozo.h,
+        angle: trozo.angle,
+        points: verticesDeZona(trozo.points),
+      })),
     children: fila.zones
-      .filter((hija) => hija.parentId === zona.id)
+      .filter((hija) => hija.parentId === zona.id && !hija.trozoDeId)
       .map((hija) => ({
         id: hija.id,
         name: hija.name,
@@ -151,6 +171,8 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
         parentId: hija.parentId,
         // Solo un nivel: una zona dentro de otra dentro de otra no aporta nada
         children: [],
+        // Las de dentro de un grupo no se dibujan, así que tampoco sus trozos
+        trozos: [],
       })),
   });
 
@@ -165,7 +187,8 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
     width: fila.width,
     height: fila.height,
     relleno: fila.relleno / 100,
-    zones: fila.zones.filter((zona) => !zona.parentId).map(aZona),
+    // Los trozos tampoco: van dentro de su ruta
+    zones: fila.zones.filter((zona) => !zona.parentId && !zona.trozoDeId).map(aZona),
   };
 }
 
@@ -173,7 +196,8 @@ export async function getMapa(slug: string): Promise<MapaDeRegion | null> {
 export async function getResumenDeMapas() {
   const filas = await prisma.mapRegion.findMany({
     omit: { image: true },
-    include: { _count: { select: { zones: true } } },
+    // Los trozos de las rutas partidas no son zonas aparte
+    include: { _count: { select: { zones: { where: { trozoDeId: null } } } } },
   });
   const porSlug = new Map(filas.map((fila) => [fila.slug, fila]));
 
@@ -220,7 +244,8 @@ export async function getZonasParaElegir(
   const regiones = await prisma.mapRegion.findMany({
     where: { slug: { in: slugs } },
     omit: { image: true },
-    include: { zones: { select: { id: true, name: true, kind: true, parentId: true } } },
+    // Sin los trozos de las rutas partidas: lo que pasa en uno, pasa en su ruta
+    include: { zones: { where: { trozoDeId: null }, select: { id: true, name: true, kind: true, parentId: true } } },
   });
   if (!regiones.length) return [];
 
@@ -266,9 +291,10 @@ export async function zonaValidaParaCompeticion(
   if (!slugs.length) return false;
   const zona = await prisma.mapZone.findUnique({
     where: { id: zoneId },
-    select: { region: { select: { slug: true } } },
+    select: { trozoDeId: true, region: { select: { slug: true } } },
   });
-  return Boolean(zona && slugs.includes(zona.region.slug as Region));
+  // Un trozo no es un sitio aparte: lo que pase ahí se apunta en su ruta
+  return Boolean(zona && !zona.trozoDeId && slugs.includes(zona.region.slug as Region));
 }
 
 /**

@@ -3,6 +3,7 @@
 import { startTransition, useActionState, useState } from "react";
 import {
   anadirZonaAction,
+  anadirTrozoAction,
   anidarZonaAction,
   borrarZonaAction,
   detectarZonasAction,
@@ -17,7 +18,7 @@ import { ImageInput } from "@/components/image-input";
 import { Mapa } from "@/components/mapa";
 import { FORMAS, TIPOS_DE_ZONA, colorDeZona, lienzoProbable, zonasQueSeSalen } from "@/lib/zonas";
 import { ConfirmSubmit, FormMessage, SubmitButton } from "@/components/ui";
-import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
+import type { MapaDeRegion, TrozoDeZona, ZonaDelMapa } from "@/lib/mapas";
 import { cx } from "@/lib/utils";
 import { Icono } from "@/components/icono";
 import { DibujoVacio } from "@/components/dibujo-vacio";
@@ -125,6 +126,9 @@ function EditorDeMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
     mapa.zones.find((zona) => zona.id === elegidaId) ??
     mapa.zones.flatMap((zona) => zona.children).find((h) => h.id === elegidaId) ??
     null;
+  // O un trozo de una ruta partida, con la ruta de la que es
+  const rutaDelTrozo = elegida ? null : (mapa.zones.find((zona) => zona.trozos.some((t) => t.id === elegidaId)) ?? null);
+  const trozo = rutaDelTrozo?.trozos.find((t) => t.id === elegidaId) ?? null;
 
   /** Las que no acaban dibujadas: las de dentro de un grupo y las sin forma. */
   const sueltas = [
@@ -153,7 +157,23 @@ function EditorDeMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
       />
       {estadoMover?.error ? <FormMessage state={estadoMover} /> : null}
 
-      {elegida ? (
+      {trozo && rutaDelTrozo ? (
+        <div className="rounded-xl border border-brand-500/30 bg-brand-600/[0.07] p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-100">Otro trozo de «{rutaDelTrozo.name}»</p>
+            <button type="button" className="btn-ghost btn-sm" onClick={() => setElegidaId(null)}>
+              ✕
+            </button>
+          </div>
+          <PanelDeTrozo
+            trozo={trozo}
+            ruta={rutaDelTrozo}
+            mapa={mapa}
+            alCambiar={alCambiar}
+            alVolver={() => setElegidaId(rutaDelTrozo.id)}
+          />
+        </div>
+      ) : elegida ? (
         <div className="rounded-xl border border-brand-500/30 bg-brand-600/[0.07] p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
             <p className="text-sm font-semibold text-slate-100">
@@ -527,6 +547,7 @@ function PanelDeZona({
   const [estadoEditar, editar] = useAccionDelEditor(editarZonaAction, alCambiar);
   const [estadoAnidar, anidar] = useAccionDelEditor(anidarZonaAction, alCambiar);
   const [estadoBorrar, borrar] = useAccionDelEditor(borrarZonaAction, alCambiar);
+  const [estadoTrozo, anadirTrozo] = useAccionDelEditor(anadirTrozoAction, alCambiar);
 
   /**
    * Cómo está guardada la zona ahora mismo. Los formularios van con ella de
@@ -615,6 +636,27 @@ function PanelDeZona({
         ) : null}
       </form>
 
+      {/* Una ruta partida: empieza, en medio hay algo que ocupa su sitio, y
+          sigue al otro lado. Los trozos se pintan como ella y al tocarlos se
+          abre ella; no tiene sentido en una zona que no se dibuja */}
+      {!zona.parentId ? (
+        <form action={anadirTrozo} className="border-t border-white/10 pt-3">
+          <input type="hidden" name="slug" value={mapa.slug} />
+          <input type="hidden" name="zoneId" value={zona.id} />
+          <p className="label">Ruta partida</p>
+          <p className="mb-2 text-xs text-slate-500">
+            Si la ruta sigue al otro lado de algo que ocupa su sitio, añádele otro trozo: se pinta
+            como ella, lo apuntado es lo mismo y al tocarlo se abre ella.
+            {zona.trozos.length
+              ? ` Ahora tiene ${zona.trozos.length + 1} trozos: toca cualquiera en el mapa para moverlo, cambiarle la forma o quitarlo.`
+              : ""}
+          </p>
+          <SubmitButton className="btn-ghost btn-sm">＋ Añadir otro trozo</SubmitButton>
+          {estadoTrozo?.success ? <p className="mt-1 text-xs text-emerald-300">{estadoTrozo.success}</p> : null}
+          {estadoTrozo?.error ? <FormMessage state={estadoTrozo} /> : null}
+        </form>
+      ) : null}
+
       <form
         key={`anidar-${zona.id}-${zona.parentId ?? ""}`}
         action={anidar}
@@ -659,6 +701,85 @@ function PanelDeZona({
           message={`¿Borrar "${zona.name}" del mapa? Las capturas que hubiera apuntadas ahí pasan a capturas extra.`}
         >
           Borrar la zona
+        </ConfirmSubmit>
+      </form>
+    </div>
+  );
+}
+
+/**
+ * Lo que se le puede hacer a un trozo de una ruta partida: su forma, su giro y
+ * quitarlo. El nombre, el tipo y el color son los de su ruta, así que aquí no
+ * salen; para eso se vuelve a ella.
+ */
+function PanelDeTrozo({
+  trozo,
+  ruta,
+  mapa,
+  alCambiar,
+  alVolver,
+}: {
+  trozo: TrozoDeZona;
+  ruta: ZonaDelMapa;
+  mapa: MapaDeRegion;
+  alCambiar: AlCambiar;
+  alVolver: () => void;
+}) {
+  const [estadoEditar, editar] = useAccionDelEditor(editarZonaAction, alCambiar);
+  const [estadoBorrar, borrar] = useAccionDelEditor(borrarZonaAction, alCambiar);
+
+  return (
+    <div className="space-y-3">
+      {trozo.shape === "poly" ? (
+        <p className="text-xs text-slate-400">
+          Arrastra los puntos blancos de las esquinas para darle forma; el «+» de cada lado añade
+          una esquina, y dos toques en una la quitan.
+        </p>
+      ) : null}
+      {/* Con lo guardado de key, como el panel de la zona: si no, el
+          desplegable volvía a la forma de antes al guardar */}
+      <form key={`trozo-${trozo.id}-${trozo.shape}-${trozo.angle}`} action={editar} className="grid gap-3 sm:grid-cols-2">
+        <input type="hidden" name="slug" value={mapa.slug} />
+        <input type="hidden" name="zoneId" value={trozo.id} />
+        <input type="hidden" name="name" value={ruta.name} />
+        <input type="hidden" name="kind" value={ruta.kind} />
+        <div>
+          <label className="label">Forma</label>
+          <select name="shape" className="input" defaultValue={trozo.shape}>
+            {FORMAS.filter((forma) => forma.id !== "none").map((forma) => (
+              <option key={forma.id} value={forma.id}>
+                {forma.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label">Giro</label>
+          <input name="angle" type="number" className="input" min={0} max={359} step={5} defaultValue={trozo.angle} />
+        </div>
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <SubmitButton className="btn-primary btn-sm">Guardar</SubmitButton>
+          <button type="button" className="btn-ghost btn-sm" onClick={alVolver}>
+            Ir a «{ruta.name}»
+          </button>
+          {estadoEditar?.success ? <span className="text-xs text-emerald-300">{estadoEditar.success}</span> : null}
+        </div>
+        {estadoEditar?.error ? (
+          <div className="sm:col-span-2">
+            <FormMessage state={estadoEditar} />
+          </div>
+        ) : null}
+      </form>
+
+      <form action={borrar} className="border-t border-white/10 pt-3">
+        <input type="hidden" name="slug" value={mapa.slug} />
+        <input type="hidden" name="zoneId" value={trozo.id} />
+        {estadoBorrar?.error ? <FormMessage state={estadoBorrar} /> : null}
+        <ConfirmSubmit
+          className="btn-ghost btn-sm text-red-300"
+          message={`¿Quitar este trozo de «${ruta.name}»? La ruta y lo apuntado en ella se quedan.`}
+        >
+          Quitar este trozo
         </ConfirmSubmit>
       </form>
     </div>

@@ -59,6 +59,8 @@ export async function getProgresoEnSolitario(
     // Las zonas de las regiones que se juegan en esta edición
     prisma.mapZone.count({
       where: {
+        // Los trozos de una ruta partida son la misma ruta: no cuentan aparte
+        trozoDeId: null,
         region: {
           zones: { some: { captures: { some: { participantId: jugador.id } } } },
         },

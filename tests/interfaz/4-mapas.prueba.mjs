@@ -151,6 +151,55 @@ describe("el editor de mapas", () => {
     }
   });
 
+  test("una ruta partida: otro trozo que se pinta como ella y no cuenta como zona", async () => {
+    const draka = await entrar(navegador, "draka");
+    try {
+      const { pagina, problemas } = draka;
+      // Cuántas zonas ve el jugador antes
+      const zonasDelJugador = async () => {
+        await ir(pagina, "/mapa");
+        return Number(/de (\d+) zonas/.exec(await pagina.locator("body").innerText())?.[1]);
+      };
+      const antes = await zonasDelJugador();
+
+      await ir(pagina, "/admin/mapas?region=johto");
+      const mapa = pagina.locator("svg.touch-none");
+      const formas = mapa.locator("[fill-opacity]");
+      const cuantas = await formas.count();
+      await formas.nth(6).click({ force: true });
+      await pagina.getByRole("button", { name: "＋ Añadir otro trozo" }).click();
+      await pagina.getByText(/Trozo añadido/).waitFor();
+      assert.equal(await formas.count(), cuantas + 1, "un dibujo más en el mapa");
+
+      // El trozo nuevo es el último dibujado de su ruta: elegirlo abre su panel
+      const panelDelTrozo = pagina.getByText(/^Otro trozo de «/);
+      for (let i = 0; i < (await formas.count()) && !(await panelDelTrozo.count()); i++) {
+        await formas.nth(i).click({ force: true });
+      }
+      await panelDelTrozo.waitFor();
+      const panel = pagina.locator("div.rounded-xl", { has: panelDelTrozo }).first();
+      await panel.locator('select[name="shape"]').selectOption("circle");
+      await panel.getByRole("button", { name: "Guardar", exact: true }).click();
+      await panel.getByText("Guardada.").waitFor();
+      assert.equal(await panel.locator('select[name="shape"]').inputValue(), "circle");
+
+      // Para el jugador sigue siendo la misma ruta: no hay una zona más
+      assert.equal(await zonasDelJugador(), antes, "el trozo no cuenta como zona");
+
+      // Y se quita
+      await ir(pagina, "/admin/mapas?region=johto");
+      for (let i = 0; i < (await formas.count()) && !(await panelDelTrozo.count()); i++) {
+        await formas.nth(i).click({ force: true });
+      }
+      await pagina.getByRole("button", { name: "Quitar este trozo" }).click();
+      await pagina.waitForTimeout(1500);
+      assert.equal(await formas.count(), cuantas, "vuelve a tener los dibujos de antes");
+      sinProblemas(problemas, "ruta partida");
+    } finally {
+      await draka.cerrar();
+    }
+  });
+
   test("cambiar el tamaño del lienzo mueve las zonas con él", async () => {
     const draka = await entrar(navegador, "draka");
     try {
