@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 31 de octubre de 2026 (**zonas a medida** en el editor de mapas: esquinas que se arrastran, se añaden y se quitan, para las rutas en L).
+Última actualización: 31 de octubre de 2026 (**desplegables que volvían atrás al guardar**: el tipo, la forma y el giro de las zonas del mapa ya se guardan y se ven).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4365,6 +4365,17 @@ Piezas con truco:
 
 ---
 
+**Los desplegables vuelven atrás si no se les pone `key`** (salió al ver que
+el panel de una zona del mapa «solo guardaba el nombre y el color»). Un
+formulario que **sigue abierto** después de guardar lo devuelve React a sus
+valores del principio, y un `<select defaultValue>` no se pone al día con lo
+guardado (un campo de texto sí): enseñaba el valor viejo y, al volver a
+guardar, lo mandaba de vuelta y deshacía el cambio. Por eso cada desplegable
+con valor inicial sacado de los datos lleva `key={String(ese valor)}`, que lo
+vuelve a montar con lo guardado; y el panel de la zona y el del fondo del mapa
+llevan la `key` en el formulario entero, con lo guardado de la zona o del mapa.
+**Un desplegable nuevo con `defaultValue` de los datos, con su `key`.**
+
 **Dos trampas que salieron en la revisión de octubre**:
 - `revalidatePath(ruta, "layout")` solo sirve en una carpeta **con su
   `layout.tsx`**. El perfil de un jugador se revalida como
@@ -4951,3 +4962,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 155. **Reglas por títulos de verdad**: cambiar el nombre de un título y añadir artículos dentro de él.
 156. **Revisión entera del código**: restos sin usar fuera, el perfil se revalida por su ruta de verdad y la ruleta ya pinta igual en el servidor y el navegador.
 157. **Zonas a medida editables** en el editor de mapas: rutas en L y formas raras.
+158. **Desplegables que ya no vuelven atrás al guardar**: el panel de las zonas del mapa, las plantillas de level caps y el resto de formularios que se quedan abiertos.

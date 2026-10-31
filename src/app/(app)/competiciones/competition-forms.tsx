@@ -721,7 +721,7 @@ function CampoDeEdicion({ versiones, actual }: { versiones: string[]; actual?: s
   }
   const opciones = actual && !versiones.includes(actual) ? [...versiones, actual] : versiones;
   return (
-    <select name="gameVersion" className="input" defaultValue={actual ?? ""}>
+    <select name="gameVersion" className="input" key={String(actual ?? "")} defaultValue={actual ?? ""}>
       <option value="">Sin elegir</option>
       {opciones.map((version) => (
         <option key={version} value={version}>

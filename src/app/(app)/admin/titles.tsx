@@ -310,7 +310,7 @@ function Titulo({
       {candidatos.length ? (
         <form action={conceder} className="mt-2 grid gap-2 sm:grid-cols-[10rem_1fr_auto]">
           <input type="hidden" name="titleId" value={titulo.id} />
-          <select name="userId" className="input" defaultValue={candidatos[0].id}>
+          <select name="userId" className="input" key={String(candidatos[0].id)} defaultValue={candidatos[0].id}>
             {candidatos.map((usuario) => (
               <option key={usuario.id} value={usuario.id}>
                 {usuario.displayName}

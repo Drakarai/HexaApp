@@ -371,6 +371,9 @@ function FondoDelMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
 
   return (
     <form
+      // Con lo guardado de `key`, por lo mismo que el panel de la zona (ver
+      // allí): si no, tras guardar volvían el ancho y el alto de antes
+      key={`fondo-${mapa.width}-${mapa.height}-${mapa.relleno}-${mapa.image ?? ""}`}
       action={guardar}
       className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3"
     >
@@ -525,15 +528,24 @@ function PanelDeZona({
   const [estadoAnidar, anidar] = useAccionDelEditor(anidarZonaAction, alCambiar);
   const [estadoBorrar, borrar] = useAccionDelEditor(borrarZonaAction, alCambiar);
 
+  /**
+   * Cómo está guardada la zona ahora mismo. Los formularios van con ella de
+   * `key` para **volver a montarse con lo guardado** cada vez que cambia: al
+   * terminar una acción, React devuelve los campos a sus valores del principio,
+   * así que tras guardar el tipo o la forma volvían a salir los de antes —y al
+   * guardar otra cosa se mandaban esos y se deshacía el cambio—. Solo el nombre
+   * y el color parecían guardarse.
+   */
+  const guardada = [zona.id, zona.name, zona.kind, zona.shape, zona.angle, zona.color ?? ""].join("|");
+
   return (
     <div className="space-y-3">
-      <form action={editar} className="grid gap-3 sm:grid-cols-2">
+      <form key={`editar-${guardada}`} action={editar} className="grid gap-3 sm:grid-cols-2">
         <input type="hidden" name="slug" value={mapa.slug} />
         <input type="hidden" name="zoneId" value={zona.id} />
         <div className="sm:col-span-2">
           <label className="label">Nombre</label>
           <input
-            key={`n-${zona.id}`}
             name="name"
             className="input"
             maxLength={60}
@@ -543,7 +555,6 @@ function PanelDeZona({
         <div>
           <label className="label">Tipo</label>
           <select
-            key={`k-${zona.id}`}
             name="kind"
             className="input"
             defaultValue={zona.kind}
@@ -558,7 +569,6 @@ function PanelDeZona({
         <div>
           <label className="label">Forma</label>
           <select
-            key={`s-${zona.id}`}
             name="shape"
             className="input"
             defaultValue={zona.shape}
@@ -571,7 +581,6 @@ function PanelDeZona({
           </select>
         </div>
         <ColorDeZona
-          key={`c-${zona.id}`}
           nombre="color"
           valor={zona.color}
           tipo={zona.kind}
@@ -580,7 +589,6 @@ function PanelDeZona({
           <label className="label">Giro</label>
           <div className="flex items-center gap-2">
             <input
-              key={`a-${zona.id}`}
               name="angle"
               type="number"
               className="input w-24"
@@ -608,6 +616,7 @@ function PanelDeZona({
       </form>
 
       <form
+        key={`anidar-${zona.id}-${zona.parentId ?? ""}`}
         action={anidar}
         className="flex flex-wrap items-end gap-2 border-t border-white/10 pt-3"
       >
@@ -616,7 +625,6 @@ function PanelDeZona({
         <div className="min-w-48 flex-1">
           <label className="label">Dentro de</label>
           <select
-            key={`p-${zona.id}`}
             name="parentId"
             className="input"
             defaultValue={zona.parentId ?? ""}

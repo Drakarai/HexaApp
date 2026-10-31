@@ -182,7 +182,7 @@ function Combate({
             <select
               name="winnerId"
               className="input"
-              defaultValue={combate.winnerId ?? ""}
+              key={String(combate.winnerId ?? "")} defaultValue={combate.winnerId ?? ""}
             >
               <option value="">Sin resultado</option>
               {llave.a ? (

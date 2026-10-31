@@ -54,7 +54,7 @@ export function ItemDeLaPlantilla({
         </div>
         <div className="sm:col-span-3">
           <label className="label">Tipo</label>
-          <select name="kind" className="input" defaultValue={item.kind}>
+          <select name="kind" className="input" key={String(item.kind)} defaultValue={item.kind}>
             {TIPOS.map((tipo) => (
               <option key={tipo} value={tipo}>
                 {LEVEL_CAP_KIND_LABELS[tipo] ?? tipo}

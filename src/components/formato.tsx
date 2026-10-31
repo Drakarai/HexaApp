@@ -92,7 +92,7 @@ export function ElegirFormato({
       <select
         name={name}
         className="input"
-        defaultValue={valor ?? "singles"}
+        key={String(valor ?? "singles")} defaultValue={valor ?? "singles"}
         onChange={(evento) => onCambio?.(evento.target.value)}
       >
         {lista.map((formato) => (

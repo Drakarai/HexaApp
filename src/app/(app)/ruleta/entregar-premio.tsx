@@ -55,7 +55,7 @@ export function EntregarPremio({
       <select
         name="participantId"
         className="input h-8 w-auto flex-1 py-0 text-xs"
-        defaultValue={actual ?? ""}
+        key={String(actual ?? "")} defaultValue={actual ?? ""}
         aria-label={`A quién se le da ${premio}`}
       >
         <option value="" disabled>

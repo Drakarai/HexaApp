@@ -145,7 +145,7 @@ export function EditLevelCapForm({
         </div>
         <div>
           <label className="label">Tipo</label>
-          <select name="kind" className="input" defaultValue={levelCap.kind}>
+          <select name="kind" className="input" key={String(levelCap.kind)} defaultValue={levelCap.kind}>
             {KINDS.map(([value, label]) => (
               <option key={value} value={value}>
                 {label}

@@ -66,6 +66,38 @@ describe("el editor de mapas", () => {
     }
   });
 
+  test("el panel de la zona guarda el tipo, la forma y el giro, y no los deshace", async () => {
+    const draka = await entrar(navegador, "draka");
+    try {
+      const { pagina, problemas } = draka;
+      await ir(pagina, "/admin/mapas?region=johto");
+      await pagina.locator("svg.touch-none [fill-opacity]").nth(5).click({ force: true });
+      const panel = pagina.locator("div.rounded-xl", { has: pagina.locator('input[name="name"]') }).first();
+      const guardar = async () => {
+        await panel.getByRole("button", { name: "Guardar", exact: true }).click();
+        await pagina.waitForTimeout(1500);
+      };
+      await panel.locator('select[name="kind"]').selectOption("cueva");
+      await panel.locator('select[name="shape"]').selectOption("circle");
+      await panel.locator('input[name="angle"]').fill("30");
+      await guardar();
+      // Antes el panel volvía a enseñar lo de antes y al guardar otra cosa lo mandaba de vuelta
+      assert.equal(await panel.locator('select[name="kind"]').inputValue(), "cueva");
+      const nombre = await panel.locator('input[name="name"]').inputValue();
+      await panel.locator('input[name="name"]').fill(`${nombre} Sur`);
+      await guardar();
+      await pagina.reload({ waitUntil: "networkidle" });
+      await pagina.locator("svg.touch-none [fill-opacity]").nth(5).click({ force: true });
+      assert.equal(await panel.locator('input[name="name"]').inputValue(), `${nombre} Sur`);
+      assert.equal(await panel.locator('select[name="kind"]').inputValue(), "cueva");
+      assert.equal(await panel.locator('select[name="shape"]').inputValue(), "circle");
+      assert.equal(await panel.locator('input[name="angle"]').inputValue(), "30");
+      sinProblemas(problemas, "el panel de la zona");
+    } finally {
+      await draka.cerrar();
+    }
+  });
+
   test("una zona a medida: añadir, mover y quitar esquinas, y moverla entera", async () => {
     const draka = await entrar(navegador, "draka");
     try {

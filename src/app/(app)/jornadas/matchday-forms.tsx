@@ -165,7 +165,7 @@ export function AddMatchForm({
       <input type="hidden" name="matchdayId" value={matchdayId} />
       <div className="min-w-32 flex-1">
         <label className="label">Jugador A</label>
-        <select name="participantAId" className="input" defaultValue={participants[0]?.id}>
+        <select name="participantAId" className="input" key={String(participants[0]?.id)} defaultValue={participants[0]?.id}>
           {participants.map((participant) => (
             <option key={participant.id} value={participant.id}>
               {participant.displayName}
@@ -175,7 +175,7 @@ export function AddMatchForm({
       </div>
       <div className="min-w-32 flex-1">
         <label className="label">Jugador B</label>
-        <select name="participantBId" className="input" defaultValue={participants[1]?.id}>
+        <select name="participantBId" className="input" key={String(participants[1]?.id)} defaultValue={participants[1]?.id}>
           {participants.map((participant) => (
             <option key={participant.id} value={participant.id}>
               {participant.displayName}

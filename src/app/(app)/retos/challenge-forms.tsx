@@ -44,7 +44,7 @@ export function NewChallengeForm({
             <select
               name="participantAId"
               className="input"
-              defaultValue={participants[0]?.id}
+              key={String(participants[0]?.id)} defaultValue={participants[0]?.id}
             >
               {participants.map((jugador) => (
                 <option key={jugador.id} value={jugador.id}>
@@ -58,7 +58,7 @@ export function NewChallengeForm({
             <select
               name="participantBId"
               className="input"
-              defaultValue={participants[1]?.id}
+              key={String(participants[1]?.id)} defaultValue={participants[1]?.id}
             >
               {participants.map((jugador) => (
                 <option key={jugador.id} value={jugador.id}>
@@ -139,7 +139,7 @@ export function ChallengeResultForm({
         <select
           name="winnerId"
           className="input"
-          defaultValue={reto.winnerId ?? ""}
+          key={String(reto.winnerId ?? "")} defaultValue={reto.winnerId ?? ""}
         >
           <option value="">Sin resultado</option>
           <option value={reto.a.id}>{reto.a.name}</option>
