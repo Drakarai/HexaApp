@@ -150,7 +150,6 @@ export function MatchTeams({
           finalFourId={finalFourId}
           rotulo={rotulo}
           maximo={maximo}
-          aLaVez={aLaVez}
           sides={sides}
           repeticion={repeticion}
           onClose={() => setEditing(false)}
@@ -320,7 +319,6 @@ function TeamEditor({
   finalFourId,
   rotulo,
   maximo,
-  aLaVez,
   sides,
   repeticion,
   onClose,
@@ -332,7 +330,6 @@ function TeamEditor({
   finalFourId?: string;
   rotulo?: string;
   maximo: number;
-  aLaVez: number;
   sides: TeamSide[];
   repeticion?: string | null;
   onClose: () => void;

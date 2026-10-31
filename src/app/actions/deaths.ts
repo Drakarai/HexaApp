@@ -57,7 +57,7 @@ function refrescarBajas() {
   revalidatePath("/hall-de-la-fama");
   revalidatePath("/actividad");
   // Los perfiles son una ruta con identificador: hay que refrescarlos todos
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }
 

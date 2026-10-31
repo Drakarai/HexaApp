@@ -48,7 +48,7 @@ export async function addFavoriteAction(
   });
 
   revalidatePath("/perfil");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   return { success: `${species} añadido a tus favoritos.` };
 }
 
@@ -61,5 +61,5 @@ export async function removeFavoriteAction(formData: FormData) {
   await prisma.favoritePokemon.delete({ where: { id } });
 
   revalidatePath("/perfil");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }

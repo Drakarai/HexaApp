@@ -108,7 +108,7 @@ export async function setChallengeResultAction(formData: FormData) {
   revalidatePath("/puntos");
   revalidatePath("/bolsa");
   revalidatePath("/");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }
 
 /** Añade un objeto del catálogo a lo que se lleva quien gane el reto. */
@@ -214,7 +214,7 @@ export async function deleteChallengeAction(formData: FormData) {
   revalidatePath("/retos");
   revalidatePath("/bolsa");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }
 
 /**

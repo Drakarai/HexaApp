@@ -31,11 +31,6 @@ export const PESTANAS_CON_AVISO = ["Combates", "La edición", "Lo mío"] as cons
  */
 export const APARTADOS_CON_AVISO = { "/reglas": "Reglas" } as const;
 
-type ApartadoConAviso = (typeof APARTADOS_CON_AVISO)[keyof typeof APARTADOS_CON_AVISO];
-export type PestanaConAviso =
-  | (typeof PESTANAS_CON_AVISO)[number]
-  | ApartadoConAviso;
-
 export type Avisos = Record<string, boolean>;
 
 /**

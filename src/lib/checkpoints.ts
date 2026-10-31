@@ -193,5 +193,3 @@ export async function getJornadasParaCheckpoints(competitionId: string) {
     })),
   }));
 }
-
-export type JornadaDelLocke = Awaited<ReturnType<typeof getJornadasParaCheckpoints>>[number];

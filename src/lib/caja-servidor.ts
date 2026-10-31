@@ -106,7 +106,7 @@ export function refrescarCaja(conBajas = false) {
     revalidatePath("/mapa");
     revalidatePath("/hall-de-la-fama");
     revalidatePath("/actividad");
-    revalidatePath("/jugador", "layout");
+    revalidatePath("/jugador/[id]", "page");
   }
 }
 

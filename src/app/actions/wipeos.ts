@@ -30,7 +30,7 @@ import type { FormState } from "@/app/actions/auth";
 
 /** Un wipeo sale en su perfil, en la clasificación y en el muro. */
 function refrescarWipeos() {
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/puntos");
   revalidatePath("/actividad");
   revalidatePath("/");

@@ -224,7 +224,7 @@ export function MobileTabBar({
           })}
           {/* El hueco: un hermano vacío, para que caiga justo en el medio */}
           {hayBoton && mitad === primary.length ? <span aria-hidden /> : null}
-          {groups.map((grupo, posicion) => {
+          {groups.map((grupo) => {
             const encendida = abierto ? abierto === grupo.label : dentroDe(grupo);
             return (
               <button

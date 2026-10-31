@@ -13,9 +13,6 @@ export const MOTIVOS_DE_SALIDA = {
   WIPEO: "wipeo",
 } as const;
 
-export type MotivoDeSalida =
-  (typeof MOTIVOS_DE_SALIDA)[keyof typeof MOTIVOS_DE_SALIDA];
-
 /**
  * Cómo se cuenta cada salida. El de retirada es el de siempre; el de wipeo se
  * enseña en rojo porque no es lo mismo dejarlo que perderlo.

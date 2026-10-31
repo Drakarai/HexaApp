@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { mover, type Lugar } from "@/lib/equipo-y-caja";
+import type { Lugar } from "@/lib/equipo-y-caja";
 import type { PokemonDelTablero } from "@/lib/soul-link";
 import { Sprite } from "./casilla";
 import type { Destino } from "./tablero";

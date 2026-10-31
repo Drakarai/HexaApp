@@ -194,7 +194,7 @@ export async function deleteMatchdayAction(formData: FormData) {
   await registrar(matchday.competitionId, "jornadas", `Borra la ${matchday.label} (a la papelera)`);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }
 
 /** Devolver una jornada de la papelera, con todo lo que tenía */
@@ -219,7 +219,7 @@ export async function restaurarJornadaAction(
   await registrar(borrada.competitionId, "jornadas", `Recupera de la papelera la ${resultado.label}`);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   return { success: `${resultado.label} ha vuelto, con todo lo que tenía.` };
 }
 
@@ -409,7 +409,7 @@ export async function setMatchResultAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }
 
@@ -494,7 +494,7 @@ export async function darPorRetiradaAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }
 
@@ -556,7 +556,7 @@ export async function permitirCombateAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }
 
@@ -670,5 +670,5 @@ export async function deleteMatchAction(formData: FormData) {
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }

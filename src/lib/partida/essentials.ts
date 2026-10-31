@@ -25,7 +25,7 @@ export type PokemonDeLaPartida = {
   shiny: boolean;
   naturaleza: string | null;
   /**
-   * Lo que hace falta para saber su habilidad (ver `habilidadDe` en
+   * Lo que hace falta para saber su habilidad (ver `habilidadInterna` en
    * traducir.ts): la guardada si el juego ya la calculó, la forzada del modo
    * Random, la de la cápsula, o su índice para buscarla en su especie.
    */

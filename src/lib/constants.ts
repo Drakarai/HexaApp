@@ -20,14 +20,11 @@ export const ROLES = {
    */
   ADMIN_ANTIGUO: "ADMIN",
 } as const;
-export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export const COMPETITION_STATUS = {
   ACTIVE: "ACTIVE",
   ARCHIVED: "ARCHIVED",
 } as const;
-export type CompetitionStatus =
-  (typeof COMPETITION_STATUS)[keyof typeof COMPETITION_STATUS];
 
 export const LEVEL_CAP_KINDS = {
   GYM: "GYM",

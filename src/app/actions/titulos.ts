@@ -17,7 +17,7 @@ import { conPermiso } from "@/lib/permiso";
 function refrescar() {
   revalidatePath("/admin");
   revalidatePath("/perfil");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
 }
 
 export async function crearTituloAction(

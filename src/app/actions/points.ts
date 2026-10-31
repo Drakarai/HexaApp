@@ -50,7 +50,7 @@ export async function adjustPointsAction(
   );
 
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
   return {
     success: `${Math.trunc(delta) > 0 ? "+" : ""}${Math.trunc(delta)} a ${participant.displayName}.`,
@@ -87,7 +87,7 @@ export async function quickAdjustPointsAction(formData: FormData) {
   );
 
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }
 
@@ -133,7 +133,7 @@ export async function adjustAllPointsAction(
   );
 
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
   return {
     success: `Aplicado a los ${participants.length} jugadores.`,
@@ -154,6 +154,6 @@ export async function deletePointEntryAction(formData: FormData) {
     `Borra la entrada de puntos de ${nombre(entry.participantId)} (${entry.delta > 0 ? "+" : ""}${entry.delta}: ${entry.reason})`,
   );
   revalidatePath("/puntos");
-  revalidatePath("/jugador", "layout");
+  revalidatePath("/jugador/[id]", "page");
   revalidatePath("/");
 }

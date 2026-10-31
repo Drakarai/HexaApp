@@ -19,7 +19,16 @@ const RADIUS = 100;
 function polar(angleDeg: number, radius: number) {
   const rad = (angleDeg * Math.PI) / 180;
   // 0º = arriba, sentido horario
-  return { x: radius * Math.sin(rad), y: -radius * Math.cos(rad) };
+  return { x: redondear(radius * Math.sin(rad)), y: redondear(-radius * Math.cos(rad)) };
+}
+
+/**
+ * Con tres decimales sobra en un lienzo de 200: el servidor y el navegador no
+ * calculan los senos igual en el último decimal (…385 frente a …383), y React
+ * daba la ruleta por distinta al montarla y dejaba los gajos sin reconciliar.
+ */
+function redondear(n: number) {
+  return Math.round(n * 1000) / 1000;
 }
 
 export function RouletteWheel({

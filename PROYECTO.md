@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 29 de octubre de 2026 (**reglas**: cambiar el nombre de un título y añadirle artículos desde la propia página).
+Última actualización: 31 de octubre de 2026 (**revisión entera del código**: restos fuera, revalidación del perfil y la ruleta sin avisos al montar).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4346,6 +4346,16 @@ Piezas con truco:
 
 ---
 
+**Dos trampas que salieron en la revisión de octubre**:
+- `revalidatePath(ruta, "layout")` solo sirve en una carpeta **con su
+  `layout.tsx`**. El perfil de un jugador se revalida como
+  `revalidatePath("/jugador/[id]", "page")`; con `"/jugador", "layout"`
+  funcionaba de rebote, porque Next refresca de momento todo lo visitado tras
+  una acción, pero no es lo que dice su documentación.
+- **Lo que se dibuja con senos y cosenos en el servidor** (la ruleta) hay que
+  redondearlo: el servidor y el navegador no dan el mismo último decimal y
+  React lo daba por distinto al montarlo.
+
 ## 6. Estado y pendientes
 
 **Seguridad, pendiente o a decidir**: `npm audit` sigue marcando **Prisma**
@@ -4588,6 +4598,15 @@ no hay otra (ni `main`), así que cada push a esa rama es lo que publica Vercel.
 `tests/`: si alguna falla, se para antes de tocar la base de datos y de
 compilar, Vercel no publica y se queda la versión anterior. Al cambiar una regla
 del locke, se cambia o se añade su caso; al añadir una, se le escribe el suyo.
+
+**Buscar restos** (se hizo una revisión entera en octubre). El proyecto no
+tiene ESLint; lo que hace sus veces es el compilador con lo de no usar
+encendido: `npx tsc --noEmit -p . --noUnusedLocals --noUnusedParameters` saca
+las importaciones, variables y funciones que ya nadie usa. Y para lo que solo
+falla al pintar (claves repetidas, HTML mal anidado, servidor y navegador que no
+pintan lo mismo), **arrancar con `next dev` y recorrer las pantallas**: la
+versión compilada calla esos avisos. Ese recorrido se hace contra la base de la
+guía, con `pg_dump` antes, porque entrar en cada pestaña apunta la visita.
 
 **Pruebas de la interfaz (`npm run test:interfaz`).** Después de `npm run
 build` y con PostgreSQL en marcha. Tardan minuto y medio y no tocan la base de
@@ -4911,3 +4930,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 153. **Repaso de seguridad**: imágenes que no pueden ejecutar código, sin redirecciones abiertas, capturas de HexaPost privadas y tope al registro de errores.
 154. **Retoques del repaso de diseño**: filtros que se deslizan, Puntos más corto, filo de color en el mapa y tu combate una sola vez en la portada.
 155. **Reglas por títulos de verdad**: cambiar el nombre de un título y añadir artículos dentro de él.
+156. **Revisión entera del código**: restos sin usar fuera, el perfil se revalida por su ruta de verdad y la ruleta ya pinta igual en el servidor y el navegador.
