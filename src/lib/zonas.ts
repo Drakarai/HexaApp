@@ -150,3 +150,107 @@ export function lienzoProbable(zonas: { x: number; y: number; w: number; h: numb
     alto: Math.max(960, hasta(Math.max(0, ...zonas.map((z) => z.y + z.h)))),
   };
 }
+
+/* ── Zonas a medida ─────────────────────────────────────────────────────────
+ * Una zona "A medida" es un polígono: sus vértices, en unidades del lienzo.
+ * Es la forma para las rutas en L, en zigzag o con cualquier silueta que no
+ * sea un rectángulo ni un óvalo.
+ */
+
+/** Más vértices no hacen falta para ninguna ruta, y así nadie llena la base de datos */
+export const MAXIMO_DE_VERTICES = 60;
+
+type Vertice = [number, number];
+
+/** Las cuatro esquinas de una caja: así nace una zona a medida desde un rectángulo */
+export function verticesDeCaja(x: number, y: number, w: number, h: number): Vertice[] {
+  return [
+    [x, y],
+    [x + w, y],
+    [x + w, y + h],
+    [x, y + h],
+  ].map(([px, py]) => [Math.round(px), Math.round(py)] as Vertice);
+}
+
+/** Un óvalo pasado a polígono, con `lados` vértices (8 parece un óvalo y se edita bien) */
+export function verticesDeOvalo(x: number, y: number, w: number, h: number, lados = 8): Vertice[] {
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  return Array.from({ length: lados }, (_, i) => {
+    const a = (i / lados) * Math.PI * 2 - Math.PI / 2;
+    return [Math.round(cx + (w / 2) * Math.cos(a)), Math.round(cy + (h / 2) * Math.sin(a))] as Vertice;
+  });
+}
+
+/**
+ * La caja que envuelve los vértices. Se guarda junto a ellos: con ella se
+ * colocan el número de capturas y la chapa de bajas, se reescala y se mira si
+ * la zona se ha salido del lienzo, igual que en las demás formas.
+ */
+export function cajaDeVertices(vertices: Vertice[]) {
+  const xs = vertices.map(([x]) => x);
+  const ys = vertices.map(([, y]) => y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return {
+    x: Math.round(x),
+    y: Math.round(y),
+    w: Math.max(8, Math.round(Math.max(...xs) - x)),
+    h: Math.max(8, Math.round(Math.max(...ys) - y)),
+  };
+}
+
+/**
+ * Los vértices con el giro de la zona ya aplicado, alrededor del centro de su
+ * caja. Se hace al empezar a mover un vértice de una zona girada: si no, el
+ * centro del giro cambia con cada vértice que se mueve y la forma entera
+ * pega un salto al soltar.
+ */
+export function girarVertices(vertices: Vertice[], grados: number): Vertice[] {
+  if (!grados) return vertices;
+  const { x, y, w, h } = cajaDeVertices(vertices);
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const r = (grados * Math.PI) / 180;
+  return vertices.map(([px, py]) => {
+    const dx = px - cx;
+    const dy = py - cy;
+    return [Math.round(cx + dx * Math.cos(r) - dy * Math.sin(r)), Math.round(cy + dx * Math.sin(r) + dy * Math.cos(r))] as Vertice;
+  });
+}
+
+/**
+ * Un vértice que se está arrastrando, **pegado en línea recta** con sus dos
+ * vecinos cuando pasa cerca: si está casi a la misma altura que uno, se pone
+ * exactamente a su altura (y lo mismo a lo ancho). Con el dedo es imposible
+ * dejar a pulso los lados de una L rectos, y rectos es como se quieren casi
+ * siempre. `margen` va en unidades del lienzo.
+ */
+export function pegarARecta(vertices: Vertice[], indice: number, punto: Vertice, margen: number): Vertice {
+  const n = vertices.length;
+  const vecinos = [vertices[(indice - 1 + n) % n], vertices[(indice + 1) % n]];
+  let [x, y] = punto;
+  const cercaX = vecinos.map(([vx]) => vx).filter((vx) => Math.abs(vx - x) <= margen).sort((a, b) => Math.abs(a - x) - Math.abs(b - x))[0];
+  const cercaY = vecinos.map(([, vy]) => vy).filter((vy) => Math.abs(vy - y) <= margen).sort((a, b) => Math.abs(a - y) - Math.abs(b - y))[0];
+  if (cercaX !== undefined) x = cercaX;
+  if (cercaY !== undefined) y = cercaY;
+  return [Math.round(x), Math.round(y)];
+}
+
+/**
+ * Los vértices que llegan del navegador, comprobados: una lista de 3 a
+ * `MAXIMO_DE_VERTICES` pares de números, dentro del lienzo. Si no es eso, null
+ * y no se guarda: lo que llega se puede haber falseado.
+ */
+export function verticesValidos(entrada: unknown, ancho: number, alto: number): Vertice[] | null {
+  if (!Array.isArray(entrada) || entrada.length < 3 || entrada.length > MAXIMO_DE_VERTICES) return null;
+  const limpios: Vertice[] = [];
+  for (const p of entrada) {
+    if (!Array.isArray(p) || p.length !== 2 || !Number.isFinite(p[0]) || !Number.isFinite(p[1])) return null;
+    limpios.push([
+      Math.round(Math.min(ancho, Math.max(0, p[0]))),
+      Math.round(Math.min(alto, Math.max(0, p[1]))),
+    ]);
+  }
+  return limpios;
+}

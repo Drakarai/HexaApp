@@ -18,7 +18,16 @@ import { REGIONES_DE_MAPA, type Region } from "@/lib/juegos";
 import { LIENZO, MAPAS_DE_FABRICA } from "@/lib/mapas-de-fabrica";
 import { detectarZonas } from "@/lib/detectar-zonas";
 import { getMapa, type MapaDeRegion } from "@/lib/mapas";
-import { FORMAS, esRedonda, reescalarZona, verticesDeZona } from "@/lib/zonas";
+import {
+  FORMAS,
+  cajaDeVertices,
+  esRedonda,
+  reescalarZona,
+  verticesDeCaja,
+  verticesDeOvalo,
+  verticesDeZona,
+  verticesValidos,
+} from "@/lib/zonas";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 import { sitioParaUnaNueva } from "@/lib/equipo-y-caja";
@@ -172,10 +181,15 @@ export async function anadirZonaAction(
   const region = await asegurarRegion(slug);
   const cuantas = await prisma.mapZone.count({ where: { regionId: region.id } });
 
-  const forma = String(formData.get("shape") ?? "rect");
-  // Un círculo nace cuadrado; con el ancho de una ruta saldría un punto diminuto
-  const ancho = esRedonda(forma) ? 90 : 150;
-  const alto = esRedonda(forma) ? 90 : 44;
+  const pedida = String(formData.get("shape") ?? "rect");
+  const forma = FORMAS.some((f) => f.id === pedida) ? pedida : "rect";
+  // Un círculo nace cuadrado; con el ancho de una ruta saldría un punto diminuto.
+  // Una a medida, más alta que una ruta: se le van a mover las esquinas
+  const ancho = esRedonda(forma) ? 90 : forma === "poly" ? 240 : 150;
+  const alto = esRedonda(forma) ? 90 : forma === "poly" ? 160 : 44;
+  // En el centro del lienzo: se arrastra y se estira a donde toque
+  const x = Math.round(region.width / 2) - Math.round(ancho / 2);
+  const y = Math.round(region.height / 2) - Math.round(alto / 2);
 
   await prisma.mapZone.create({
     data: {
@@ -183,16 +197,23 @@ export async function anadirZonaAction(
       name,
       kind: String(formData.get("kind") ?? "ruta"),
       shape: forma,
-      // En el centro del lienzo: se arrastra y se estira a donde toque
-      x: Math.round(region.width / 2) - Math.round(ancho / 2),
-      y: Math.round(region.height / 2) - Math.round(alto / 2),
+      x,
+      y,
       w: ancho,
       h: alto,
+      // Una a medida empieza siendo un rectángulo de cuatro esquinas
+      ...(forma === "poly" ? { points: JSON.stringify(verticesDeCaja(x, y, ancho, alto)) } : {}),
       position: cuantas,
     },
   });
 
-  return { success: `"${name}" añadida. Arrástrala a su sitio.`, mapa: await getMapa(slug) };
+  return {
+    success:
+      forma === "poly"
+        ? `"${name}" añadida. Arrastra sus esquinas para darle forma; con el «+» de cada lado le añades otra.`
+        : `"${name}" añadida. Arrástrala a su sitio.`,
+    mapa: await getMapa(slug),
+  };
 }
 
 export async function editarZonaAction(
@@ -217,16 +238,33 @@ export async function editarZonaAction(
    * el lado más corto, y si la caja se quedara alargada el tirador de estirar
    * aparecería en una esquina que ya no toca el dibujo.
    */
+  const antes = await prisma.mapZone.findUnique({
+    where: { id },
+    select: { x: true, y: true, w: true, h: true, shape: true, points: true },
+  });
+  if (!antes) return { error: "Esa zona ya no está." };
   let cuadrada: { w: number; h: number } | null = null;
-  if (esRedonda(forma)) {
-    const antes = await prisma.mapZone.findUnique({
-      where: { id },
-      select: { w: true, h: true },
-    });
-    if (antes && antes.w !== antes.h) {
-      const lado = Math.max(12, Math.min(antes.w, antes.h));
-      cuadrada = { w: lado, h: lado };
-    }
+  if (esRedonda(forma) && antes.w !== antes.h) {
+    const lado = Math.max(12, Math.min(antes.w, antes.h));
+    cuadrada = { w: lado, h: lado };
+  }
+
+  /**
+   * Cambiar a «A medida» o salir de ella **sin que la zona se mueva**: pasa a
+   * polígono con las esquinas de lo que era (cuatro de un rectángulo, ocho de
+   * un óvalo), y al volver a otra forma se queda con la caja que ocupaban sus
+   * vértices. Antes elegir «A medida» en una zona sin vértices no hacía nada.
+   */
+  const vertices = verticesDeZona(antes.points);
+  let deForma: { points?: string | null; x?: number; y?: number; w?: number; h?: number } = {};
+  if (forma === "poly" && (antes.shape !== "poly" || !vertices)) {
+    const nuevos =
+      antes.shape === "circle" || esRedonda(antes.shape)
+        ? verticesDeOvalo(antes.x, antes.y, antes.w, antes.h)
+        : verticesDeCaja(antes.x, antes.y, antes.w, antes.h);
+    deForma = { points: JSON.stringify(nuevos), ...cajaDeVertices(nuevos) };
+  } else if (forma && forma !== "poly" && antes.shape === "poly") {
+    deForma = { points: null, ...(vertices ? cajaDeVertices(vertices) : {}) };
   }
 
   await prisma.mapZone.update({
@@ -235,6 +273,7 @@ export async function editarZonaAction(
       name,
       kind: String(formData.get("kind") ?? "ruta"),
       angle: gradosValidos(Number(formData.get("angle") ?? 0)),
+      ...deForma,
       ...(cuadrada ?? {}),
       ...(FORMAS.some((f) => f.id === forma) ? { shape: forma } : {}),
       // Un color vacío significa "el de su tipo", no "negro"
@@ -379,6 +418,22 @@ export async function moverZonasAction(
   if (!Array.isArray(sitios) || !sitios.length) {
     return { error: "No has movido nada." };
   }
+  const region = await prisma.mapRegion.findUnique({
+    where: { slug: String(formData.get("slug") ?? "") },
+    select: { id: true, width: true, height: true },
+  });
+  if (!region) return { error: "No encuentro ese mapa." };
+
+  /**
+   * Los vértices se comprueban (ver `verticesValidos`) y, si vienen, mandan:
+   * la caja se saca de ellos para que el número de capturas, la chapa de bajas
+   * y el aviso de zonas fuera del lienzo sigan donde está el dibujo.
+   */
+  const conVertices = (sitio: (typeof sitios)[number]) =>
+    sitio.points === undefined ? undefined : verticesValidos(sitio.points, region.width, region.height);
+  if (sitios.some((sitio) => sitio?.points !== undefined && !conVertices(sitio))) {
+    return { error: "Esa forma no vale: necesita entre 3 y 60 esquinas dentro del mapa." };
+  }
 
   await prisma.$transaction(
     sitios
@@ -386,20 +441,27 @@ export async function moverZonasAction(
         (sitio) =>
           sitio?.id && Number.isFinite(sitio.x) && Number.isFinite(sitio.y),
       )
-      .map((sitio) =>
-        prisma.mapZone.update({
-          where: { id: sitio.id },
-          data: {
-            x: Math.round(sitio.x),
-            y: Math.round(sitio.y),
-            // El tamaño y los vértices solo si vienen: mover no es redimensionar
-            ...(Number.isFinite(sitio.w) ? { w: Math.max(8, Math.round(sitio.w!)) } : {}),
-            ...(Number.isFinite(sitio.h) ? { h: Math.max(8, Math.round(sitio.h!)) } : {}),
-            ...(Number.isFinite(sitio.angle) ? { angle: gradosValidos(sitio.angle!) } : {}),
-            ...(sitio.points ? { points: JSON.stringify(sitio.points) } : {}),
-          },
-        }),
-      ),
+      .map((sitio) => {
+        const vertices = conVertices(sitio);
+        return prisma.mapZone.update({
+          // Solo zonas de este mapa: el id llega del navegador
+          where: { id: sitio.id, regionId: region.id },
+          data: vertices
+            ? {
+                points: JSON.stringify(vertices),
+                ...cajaDeVertices(vertices),
+                ...(Number.isFinite(sitio.angle) ? { angle: gradosValidos(sitio.angle!) } : {}),
+              }
+            : {
+                x: Math.round(sitio.x),
+                y: Math.round(sitio.y),
+                // El tamaño solo si viene: mover no es redimensionar
+                ...(Number.isFinite(sitio.w) ? { w: Math.max(8, Math.round(sitio.w!)) } : {}),
+                ...(Number.isFinite(sitio.h) ? { h: Math.max(8, Math.round(sitio.h!)) } : {}),
+                ...(Number.isFinite(sitio.angle) ? { angle: gradosValidos(sitio.angle!) } : {}),
+              },
+        });
+      }),
   );
 
   return { success: "Mapa guardado.", mapa: await getMapa(String(formData.get("slug") ?? "")) };

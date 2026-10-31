@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { MapaDeRegion, ZonaDelMapa } from "@/lib/mapas";
-import { colorDeZona, esRedonda } from "@/lib/zonas";
+import { MAXIMO_DE_VERTICES, colorDeZona, esRedonda, girarVertices, pegarARecta } from "@/lib/zonas";
 import { cx } from "@/lib/utils";
 
 /**
@@ -35,8 +35,16 @@ const COLOR_FALLADO = "#ef4444";
 /** Lo apuntado en una zona: capturas buenas y encuentros fallados */
 export type CuentaDeZona = { hechas: number; fallos: number };
 
-/** La caja de una zona mientras se la mueve, se la estira o se la gira. */
-type Caja = { x: number; y: number; w: number; h: number; angle: number };
+type Vertice = [number, number];
+
+/**
+ * La caja de una zona mientras se la mueve, se la estira o se la gira. Las
+ * zonas a medida llevan además sus vértices, que son los que se dibujan.
+ */
+type Caja = { x: number; y: number; w: number; h: number; angle: number; points?: Vertice[] };
+
+/** Dos toques en el mismo vértice en menos de esto lo quitan */
+const DOBLE_TOQUE_MS = 350;
 
 /**
  * Deja el giro en grados enteros de 0 a 359, y **se pega a los múltiplos de
@@ -57,9 +65,10 @@ function redondearGiro(grados: number) {
  * propios vértices o girarían alrededor de un punto que no se ve.
  */
 function centroDeZona(zona: ZonaDelMapa, caja: Caja) {
-  if (zona.shape === "poly" && zona.points?.length) {
-    const xs = zona.points.map(([x]) => x);
-    const ys = zona.points.map(([, y]) => y);
+  const vertices = caja.points ?? zona.points;
+  if (zona.shape === "poly" && vertices?.length) {
+    const xs = vertices.map(([x]) => x);
+    const ys = vertices.map(([, y]) => y);
     return {
       cx: (Math.min(...xs) + Math.max(...xs)) / 2,
       cy: (Math.min(...ys) + Math.max(...ys)) / 2,
@@ -127,7 +136,9 @@ export function Mapa({
   const [borrador, setBorrador] = useState<Record<string, Caja>>({});
   const gesto = useRef<{
     id: string;
-    modo: "mover" | "estirar" | "girar";
+    modo: "mover" | "estirar" | "girar" | "vertice";
+    /** Solo al mover un vértice: cuál */
+    indice?: number;
     desdeX: number;
     desdeY: number;
     inicial: Caja;
@@ -146,6 +157,9 @@ export function Mapa({
    */
   useEffect(() => setBorrador({}), [mapa.zones]);
 
+  /** El último toque en un vértice, para saber si el siguiente es el segundo de un doble toque */
+  const ultimoToque = useRef<{ id: string; indice: number; cuando: number } | null>(null);
+
   const cajaDe = (zona: ZonaDelMapa): Caja =>
     borrador[zona.id] ?? {
       x: zona.x,
@@ -153,7 +167,17 @@ export function Mapa({
       w: zona.w,
       h: zona.h,
       angle: zona.angle,
+      ...(zona.shape === "poly" && zona.points ? { points: zona.points } : {}),
     };
+
+  /**
+   * Los tiradores, a la escala del lienzo: van en sus unidades, y un mapa de
+   * 1900 de ancho los dejaba en un par de píxeles. Así miden lo mismo en
+   * pantalla sea cual sea el tamaño del mapa.
+   */
+  const escala = Math.max(1, Math.max(mapa.width, mapa.height) / 1000);
+  /** Lo cerca que tiene que pasar un vértice de la recta de su vecino para pegarse */
+  const margenDePegado = Math.max(mapa.width, mapa.height) * 0.012;
 
   /** De píxeles de pantalla a unidades del lienzo. */
   function aLienzo(evento: { clientX: number; clientY: number }) {
@@ -177,7 +201,32 @@ export function Mapa({
     const { inicial } = activo;
     let nueva: Caja;
 
-    if (activo.modo === "girar" && activo.centro) {
+    if (activo.modo === "vertice" && inicial.points && activo.indice !== undefined) {
+      // Un vértice: dentro del lienzo y pegado en recta con sus vecinos si pasa cerca
+      const dentro: Vertice = [
+        Math.max(0, Math.min(mapa.width, punto.x)),
+        Math.max(0, Math.min(mapa.height, punto.y)),
+      ];
+      const puntos = [...inicial.points];
+      puntos[activo.indice] = pegarARecta(puntos, activo.indice, dentro, margenDePegado);
+      nueva = { ...inicial, points: puntos };
+    } else if (activo.modo === "mover" && inicial.points) {
+      /**
+       * Una zona a medida se mueve moviendo sus vértices: se dibuja con ellos,
+       * y antes solo cambiaba su caja, así que al arrastrarla no se movía. Se
+       * frena en el borde para que no se salga ninguna esquina.
+       */
+      const xs = inicial.points.map(([x]) => x);
+      const ys = inicial.points.map(([, y]) => y);
+      const mx = Math.round(Math.max(-Math.min(...xs), Math.min(mapa.width - Math.max(...xs), dx)));
+      const my = Math.round(Math.max(-Math.min(...ys), Math.min(mapa.height - Math.max(...ys), dy)));
+      nueva = {
+        ...inicial,
+        x: inicial.x + mx,
+        y: inicial.y + my,
+        points: inicial.points.map(([x, y]) => [x + mx, y + my] as Vertice),
+      };
+    } else if (activo.modo === "girar" && activo.centro) {
       /**
        * El ángulo va del centro de la zona al dedo, y se le resta el que había
        * al empezar: así la forma no pega un salto al agarrar el tirador, se
@@ -235,6 +284,56 @@ export function Mapa({
     if (!activo?.movido) return;
     const caja = borrador[activo.id];
     if (caja) onMover?.([{ id: activo.id, ...caja }]);
+  }
+
+  /**
+   * Empezar a mover un vértice (o uno recién añadido con el «+»). Si la zona
+   * está girada, primero se le aplica el giro a los vértices y se deja derecha:
+   * el centro del giro sale de los vértices, y moviendo uno con la zona girada
+   * el centro cambiaba y la forma entera saltaba al soltar.
+   */
+  function agarrarVertice(
+    evento: React.PointerEvent,
+    zona: ZonaDelMapa,
+    caja: Caja,
+    puntos: Vertice[],
+    indice: number,
+    nuevo: boolean,
+  ) {
+    evento.stopPropagation();
+    const derechos = caja.angle ? girarVertices(puntos, caja.angle) : puntos;
+    const inicial: Caja = { ...caja, angle: 0, points: derechos };
+    const punto = aLienzo(evento);
+    gesto.current = {
+      id: zona.id,
+      modo: "vertice",
+      indice,
+      desdeX: punto.x,
+      desdeY: punto.y,
+      inicial,
+      // Uno nuevo ya es un cambio aunque no se arrastre: se ha añadido
+      movido: nuevo || Boolean(caja.angle),
+    };
+    setBorrador((antes) => ({ ...antes, [zona.id]: inicial }));
+    (evento.target as Element).setPointerCapture(evento.pointerId);
+  }
+
+  /** Dos toques seguidos en un vértice lo quitan, si quedan más de tres */
+  function quizaQuitarVertice(zona: ZonaDelMapa, caja: Caja, puntos: Vertice[], indice: number) {
+    const ahora = Date.now();
+    const antes = ultimoToque.current;
+    ultimoToque.current = { id: zona.id, indice, cuando: ahora };
+    if (!antes || antes.id !== zona.id || antes.indice !== indice || ahora - antes.cuando > DOBLE_TOQUE_MS) {
+      return false;
+    }
+    ultimoToque.current = null;
+    if (puntos.length <= 3) return true;
+    const derechos = caja.angle ? girarVertices(puntos, caja.angle) : puntos;
+    const sin = derechos.filter((_, i) => i !== indice);
+    const nueva: Caja = { ...caja, angle: 0, points: sin };
+    setBorrador((previo) => ({ ...previo, [zona.id]: nueva }));
+    onMover?.([{ id: zona.id, ...nueva }]);
+    return true;
   }
 
   return (
@@ -354,10 +453,10 @@ export function Mapa({
                     rx={caja.w / 2}
                     ry={caja.h / 2}
                   />
-                ) : zona.shape === "poly" && zona.points ? (
+                ) : zona.shape === "poly" && caja.points ? (
                   <polygon
                     {...comun}
-                    points={zona.points.map(([x, y]) => `${x},${y}`).join(" ")}
+                    points={caja.points.map(([x, y]) => `${x},${y}`).join(" ")}
                   />
                 ) : (
                   <rect
@@ -440,6 +539,83 @@ export function Mapa({
                         <title>Estirar</title>
                       </rect>
                     ) : null}
+
+                    {/* A medida: un punto en cada esquina para arrastrarla (dos
+                        toques la quitan) y un «+» en medio de cada lado que
+                        añade una esquina ahí */}
+                    {zona.shape === "poly" && caja.points
+                      ? (() => {
+                          const puntos = caja.points;
+                          return (
+                            <>
+                              {puntos.length < MAXIMO_DE_VERTICES
+                                ? puntos.map(([x, y], i) => {
+                                    const [x2, y2] = puntos[(i + 1) % puntos.length];
+                                    const mx = (x + x2) / 2;
+                                    const my = (y + y2) / 2;
+                                    return (
+                                      <g
+                                        key={`mas-${i}`}
+                                        className="cursor-copy"
+                                        data-anadir-vertice={i}
+                                        onPointerDown={(evento) => {
+                                          const con = [...puntos];
+                                          con.splice(i + 1, 0, [Math.round(mx), Math.round(my)]);
+                                          agarrarVertice(evento, zona, caja, con, i + 1, true);
+                                        }}
+                                      >
+                                        <circle
+                                          cx={mx}
+                                          cy={my}
+                                          r={5.5 * escala}
+                                          fill="var(--color-ink-900, #0b1020)"
+                                          fillOpacity={0.75}
+                                          stroke="#ffffff"
+                                          strokeWidth={1.5 * escala}
+                                          strokeDasharray={`${2 * escala} ${2 * escala}`}
+                                        />
+                                        <text
+                                          x={mx}
+                                          y={my}
+                                          textAnchor="middle"
+                                          dominantBaseline="central"
+                                          fontSize={9 * escala}
+                                          fill="#ffffff"
+                                          pointerEvents="none"
+                                        >
+                                          +
+                                        </text>
+                                        <title>Añadir una esquina aquí</title>
+                                      </g>
+                                    );
+                                  })
+                                : null}
+                              {puntos.map(([x, y], i) => (
+                                <circle
+                                  key={`v-${i}`}
+                                  cx={x}
+                                  cy={y}
+                                  r={7 * escala}
+                                  fill="#ffffff"
+                                  stroke="var(--color-ink-900, #0b1020)"
+                                  strokeWidth={2 * escala}
+                                  className="cursor-grab"
+                                  data-vertice={i}
+                                  onPointerDown={(evento) => {
+                                    if (quizaQuitarVertice(zona, caja, puntos, i)) {
+                                      evento.stopPropagation();
+                                      return;
+                                    }
+                                    agarrarVertice(evento, zona, caja, puntos, i, false);
+                                  }}
+                                >
+                                  <title>Arrastra esta esquina; dos toques la quitan</title>
+                                </circle>
+                              ))}
+                            </>
+                          );
+                        })()
+                      : null}
 
                     <line
                       x1={centroX}

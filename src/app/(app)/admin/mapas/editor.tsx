@@ -167,12 +167,20 @@ function EditorDeMapa({ mapa, alCambiar }: { mapa: MapaDeRegion; alCambiar: AlCa
               ✕
             </button>
           </div>
+          {elegida.shape === "poly" ? (
+            <p className="mb-3 text-xs text-slate-400">
+              Arrastra los puntos blancos de las esquinas para darle forma; el «+» de en medio de
+              cada lado añade una esquina, y dos toques en una la quitan. Las esquinas se pegan en
+              línea recta con las de al lado cuando pasan cerca.
+            </p>
+          ) : null}
           <PanelDeZona zona={elegida} mapa={mapa} alCambiar={alCambiar} />
         </div>
       ) : (
         <p className="rounded-xl border border-dashed border-white/10 px-3 py-3 text-center text-xs text-slate-500">
           Toca una zona del mapa para moverla, estirarla por su esquina,
           girarla con el tirador ↻ o cambiarle el nombre, la forma y el color.
+          Para una ruta en L o con forma rara, ponle la forma «A medida».
         </p>
       )}
 
@@ -294,7 +302,7 @@ function NuevaZona({ slug, alCambiar }: { slug: string; alCambiar: AlCambiar }) 
           ))}
         </select>
         <select name="shape" className="input w-36" defaultValue="rect">
-          {FORMAS.filter((forma) => forma.id !== "poly").map((forma) => (
+          {FORMAS.map((forma) => (
             <option key={forma.id} value={forma.id}>
               {forma.nombre}
             </option>

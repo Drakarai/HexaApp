@@ -2,7 +2,8 @@
  * El **editor de mapas**: tocar una zona no puede refrescar la pantalla. Cada
  * cambio vuelve con el mapa como ha quedado y el editor se repinta solo, sin
  * recargar la página, sin moverse de sitio y sin cerrar la zona elegida (ver
- * `EstadoDelEditor` en `actions/mapas.ts`).
+ * `EstadoDelEditor` en `actions/mapas.ts`). Y las zonas **a medida**, para las
+ * rutas en L: esquinas que se arrastran, se añaden y se quitan.
  */
 import { after, before, describe, test } from "node:test";
 import assert from "node:assert/strict";
@@ -60,6 +61,59 @@ describe("el editor de mapas", () => {
       await pagina.reload({ waitUntil: "networkidle" });
       assert.ok((await pagina.content()).includes(`${antes} Norte`));
       sinProblemas(problemas, "el editor de mapas");
+    } finally {
+      await draka.cerrar();
+    }
+  });
+
+  test("una zona a medida: añadir, mover y quitar esquinas, y moverla entera", async () => {
+    const draka = await entrar(navegador, "draka");
+    try {
+      const { pagina, problemas } = draka;
+      await ir(pagina, "/admin/mapas?region=johto");
+      const nueva = pagina.locator("form", { has: pagina.locator('select[name="shape"]') }).first();
+      await nueva.locator('input[name="name"]').fill("Ruta en L");
+      await nueva.locator('select[name="shape"]').selectOption("poly");
+      await nueva.getByRole("button", { name: "Añadir zona" }).click();
+      await pagina.getByText(/Arrastra sus esquinas/).waitFor();
+
+      // Se elige tocándola: es la última que se ha dibujado (en el mapa: el logo también es un polígono)
+      const mapa = pagina.locator("svg.touch-none");
+      const forma = mapa.locator("polygon").last();
+      await forma.click({ force: true });
+      const esquinas = mapa.locator("[data-vertice]");
+      await esquinas.first().waitFor();
+      assert.equal(await esquinas.count(), 4, "nace con cuatro esquinas");
+
+      // El «+» de un lado añade una esquina, y se guarda
+      const mas = mapa.locator("[data-anadir-vertice]").first();
+      const caja = await mas.boundingBox();
+      await pagina.mouse.move(caja.x + caja.width / 2, caja.y + caja.height / 2);
+      await pagina.mouse.down();
+      await pagina.mouse.move(caja.x + caja.width / 2 + 10, caja.y + caja.height / 2 - 25, { steps: 5 });
+      await pagina.mouse.up();
+      await pagina.waitForTimeout(1200);
+      assert.equal(await esquinas.count(), 5, "una esquina más");
+
+      // Dos toques en una esquina la quitan
+      const quinta = await esquinas.nth(1).boundingBox();
+      await pagina.mouse.click(quinta.x + quinta.width / 2, quinta.y + quinta.height / 2);
+      await pagina.mouse.click(quinta.x + quinta.width / 2, quinta.y + quinta.height / 2);
+      await pagina.waitForTimeout(1200);
+      assert.equal(await esquinas.count(), 4, "vuelve a tener cuatro");
+
+      // Arrastrarla entera la mueve de verdad (antes solo cambiaba su caja)
+      const antes = await forma.getAttribute("points");
+      const sitio = await forma.boundingBox();
+      await pagina.mouse.move(sitio.x + sitio.width / 2, sitio.y + sitio.height / 2);
+      await pagina.mouse.down();
+      await pagina.mouse.move(sitio.x + sitio.width / 2 - 40, sitio.y + sitio.height / 2 + 20, { steps: 6 });
+      await pagina.mouse.up();
+      await pagina.waitForTimeout(1500);
+      await pagina.reload({ waitUntil: "networkidle" });
+      const despues = await pagina.locator("svg.touch-none polygon").last().getAttribute("points");
+      assert.notEqual(despues, antes, "se ha movido y está guardada");
+      sinProblemas(problemas, "zonas a medida");
     } finally {
       await draka.cerrar();
     }

@@ -5,7 +5,17 @@
  */
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
-import { lienzoProbable, reescalarZona, zonasQueSeSalen } from "@/lib/zonas";
+import {
+  cajaDeVertices,
+  girarVertices,
+  lienzoProbable,
+  pegarARecta,
+  reescalarZona,
+  verticesDeCaja,
+  verticesDeOvalo,
+  verticesValidos,
+  zonasQueSeSalen,
+} from "@/lib/zonas";
 
 const rect = { x: 1000, y: 400, w: 150, h: 44, shape: "rect", points: null };
 
@@ -46,5 +56,42 @@ describe("Zonas al cambiar el lienzo", () => {
   test("el tamaño probable de antes: lo que ocupan, y como poco el de siempre", () => {
     assert.deepEqual(lienzoProbable([rect]), { ancho: 1900, alto: 960 });
     assert.deepEqual(lienzoProbable([{ x: 1800, y: 1700, w: 90, h: 95 }]), { ancho: 1900, alto: 1800 });
+  });
+});
+
+describe("Zonas a medida", () => {
+  test("de un rectángulo salen sus cuatro esquinas, y de ellas la misma caja", () => {
+    const esquinas = verticesDeCaja(100, 50, 200, 80);
+    assert.deepEqual(esquinas, [[100, 50], [300, 50], [300, 130], [100, 130]]);
+    assert.deepEqual(cajaDeVertices(esquinas), { x: 100, y: 50, w: 200, h: 80 });
+  });
+
+  test("de un óvalo, ocho esquinas dentro de su caja", () => {
+    const ocho = verticesDeOvalo(0, 0, 100, 60);
+    assert.equal(ocho.length, 8);
+    assert.deepEqual(cajaDeVertices(ocho), { x: 0, y: 0, w: 100, h: 60 });
+  });
+
+  test("girar los vértices 90° alrededor de su centro", () => {
+    const girados = girarVertices([[0, 0], [100, 0], [100, 20], [0, 20]], 90);
+    // Un tumbado de 100×20 pasa a uno de pie de 20×100 con el mismo centro (50, 10)
+    assert.deepEqual(cajaDeVertices(girados), { x: 40, y: -40, w: 20, h: 100 });
+    assert.deepEqual(girarVertices([[1, 2], [3, 4], [5, 6]], 0), [[1, 2], [3, 4], [5, 6]]);
+  });
+
+  test("una esquina que pasa cerca de la recta de su vecina se pega a ella", () => {
+    const l: [number, number][] = [[0, 0], [100, 0], [100, 50], [40, 50], [40, 120], [0, 120]];
+    // La 3 (40, 50) movida a (43, 47): se pega a la altura de la 2 y al ancho de la 4
+    assert.deepEqual(pegarARecta(l, 3, [43, 47], 10), [40, 50]);
+    // Lejos de todo, se queda donde se suelta
+    assert.deepEqual(pegarARecta(l, 3, [70, 80], 10), [70, 80]);
+  });
+
+  test("lo que llega del navegador: entre 3 y 60 esquinas, números, dentro del lienzo", () => {
+    assert.deepEqual(verticesValidos([[-5, 10], [50, 2000], [30.6, 40]], 1900, 960), [[0, 10], [50, 960], [31, 40]]);
+    assert.equal(verticesValidos([[0, 0], [1, 1]], 100, 100), null);
+    assert.equal(verticesValidos("[[0,0]]", 100, 100), null);
+    assert.equal(verticesValidos([[0, 0], [1, "a"], [2, 2]], 100, 100), null);
+    assert.equal(verticesValidos(Array.from({ length: 61 }, (_, i) => [i, i]), 100, 100), null);
   });
 });
