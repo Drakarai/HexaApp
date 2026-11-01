@@ -14,7 +14,6 @@ import {
   deleteCompetitionAction,
   quitarEspectadorAction,
   removeParticipantAction,
-  repartirVersionesAction,
   retirarParticipanteAction,
   selectCompetitionAction,
   setCompetitionStatusAction,
@@ -42,6 +41,7 @@ import {
 } from "./competition-forms";
 import { AccionesDeJugador } from "./acciones-de-jugador";
 import { EnlacePublico } from "./enlace-publico";
+import { RepartoDeJuegos } from "./reparto-de-juegos";
 import { Icono } from "@/components/icono";
 import { seccionActiva } from "@/components/menu-de-secciones";
 import {
@@ -357,6 +357,21 @@ export default async function CompetitionsPage({
             <h2 className="section-title mb-4">
               Jugadores ({participants.length}/{active.maxPlayers})
             </h2>
+            {versiones.length ? (
+              <RepartoDeJuegos
+                competitionId={active.id}
+                versiones={versiones}
+                jugadores={participants
+                  .filter((participant) => !participant.retiredAt)
+                  .map((participant) => ({
+                    id: participant.id,
+                    nombre: participant.displayName,
+                    color: participant.color,
+                    version: participant.gameVersion,
+                  }))}
+                puedeRepartir={canManageActive}
+              />
+            ) : null}
             {participants.length === 0 ? (
               <EmptyState title="Todavía no hay jugadores apuntados" />
             ) : (
@@ -534,23 +549,6 @@ export default async function CompetitionsPage({
                   </p>
                 )}
 
-                {versiones.length && participants.length > 1 ? (
-                  <form
-                    action={repartirVersionesAction}
-                    className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-white/[0.02] p-3"
-                  >
-                    <input type="hidden" name="competitionId" value={active.id} />
-                    <p className="min-w-0 flex-1 text-sm text-slate-300">
-                      {versiones.join(" y ")}: a partes iguales entre los que siguen jugando.
-                    </p>
-                    <ConfirmSubmit
-                      className="btn-ghost btn-sm"
-                      message={`¿Repartir ${versiones.join(" y ")} al azar? Cambia la edición de todos los que siguen jugando.`}
-                    >
-                      <Icono emoji="🎲" /> Repartir al azar
-                    </ConfirmSubmit>
-                  </form>
-                ) : null}
 
               </div>
             ) : null}
