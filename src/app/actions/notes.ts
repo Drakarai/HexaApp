@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { assertPuedeTocarLocke } from "@/lib/acceso";
@@ -21,7 +22,7 @@ export async function createNoteAction(
   try {
     await assertPuedeTocarLocke(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const title = String(formData.get("title") ?? "").trim();

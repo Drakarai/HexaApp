@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { lockeTerminado } from "@/lib/campeon";
@@ -25,7 +26,7 @@ export async function addHallPokemonAction(
   try {
     ({ participant } = await assertCanActForParticipant(participantId));
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   if (!(await lockeTerminado(participant.competitionId))) {
@@ -76,7 +77,7 @@ export async function traerUltimoEquipoAction(
   try {
     ({ participant } = await assertCanActForParticipant(participantId));
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   if (!(await lockeTerminado(participant.competitionId))) {

@@ -13,7 +13,7 @@ import { imagenEditada, sanitizeImageValue } from "@/lib/image";
 import { objetoPorSlug } from "@/lib/objetos";
 import { descargarSpriteDeObjeto } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 
 /**
  * La bolsa.
@@ -195,7 +195,7 @@ export async function darObjetoAction(
   try {
     await requireCompetitionManager(deQuien.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const cantidad = Number(String(formData.get("quantity") ?? "1"));

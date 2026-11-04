@@ -4,6 +4,7 @@
 import { describe, test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  capParaCombatir,
   checkpointAbierto,
   checkpointsDelLocke,
   jornadaJugada,
@@ -59,5 +60,38 @@ describe("lo que le toca a cada uno en la jornada", () => {
   test("en un royale", () => {
     const r = miParteDeLaJornada(jornada("J4", [], [{ participantes: ["a", "b", "c"], ganado: false }]), "b");
     assert.equal(r.tipo, "royale");
+  });
+});
+
+describe("el nivel para combatir (exportar a Showdown)", () => {
+  // Brock al 12 con jornada detrás, Misty al 16
+  const caps = (superados: number) =>
+    [hito("Brock", true), hito("Misty"), hito("Surge", true)].map((h, i) => ({
+      ...h,
+      cap: [12, 16, 20][i],
+      superado: i < superados,
+    }));
+
+  test("sin nada pasado, el primero", () => {
+    assert.equal(capParaCombatir(caps(0), [], "a"), 12);
+  });
+  test("pasado el del 12 y con jornada por jugar, sigue al 12", () => {
+    assert.equal(capParaCombatir(caps(1), [jornada("J1", [combate("a", "b")])], "a"), 12);
+  });
+  test("también si la jornada aún no está creada", () => {
+    assert.equal(capParaCombatir(caps(1), [], "a"), 12);
+  });
+  test("jugado su combate, ya el siguiente, aunque a otros les quede el suyo", () => {
+    const j = jornada("J1", [{ ...combate("a", "b"), winnerId: "a" }, combate("c", "d")]);
+    assert.equal(capParaCombatir(caps(1), [j], "a"), 16);
+    assert.equal(capParaCombatir(caps(1), [j], "c"), 12);
+  });
+  test("pasados todos, el último", () => {
+    const j1 = jornada("J1", [{ ...combate("a", "b"), winnerId: "a" }]);
+    const j2 = jornada("J2", [{ ...combate("a", "b"), winnerId: "b" }]);
+    assert.equal(capParaCombatir(caps(3), [j1, j2], "a"), 20);
+  });
+  test("sin level caps, ninguno", () => {
+    assert.equal(capParaCombatir([], [], "a"), null);
   });
 });

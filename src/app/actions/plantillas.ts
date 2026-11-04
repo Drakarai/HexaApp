@@ -17,7 +17,7 @@ import {
 import { LEVEL_CAP_KINDS } from "@/lib/constants";
 import { IMAGEN_SIN_CAMBIOS, sanitizeImageValue } from "@/lib/image";
 import type { FormState } from "@/app/actions/auth";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 
 /**
  * La plantilla de level caps de cada juego, que es de dónde salen los hitos al
@@ -224,7 +224,7 @@ export async function traerPlantillaAlLockeAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const competition = await prisma.competition.findUnique({

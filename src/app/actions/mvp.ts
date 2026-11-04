@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import {
@@ -82,7 +83,7 @@ export async function setMvpReasonAction(
   try {
     await requireCompetitionManager(matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   await prisma.matchday.update({

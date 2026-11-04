@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
@@ -45,7 +46,7 @@ export async function apuntarWipeoAction(
   try {
     deQuien = await assertCanActForParticipant(participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const cuando = String(formData.get("ocurridoAt") ?? "").trim();

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { mensajeDeError } from "@/lib/permiso";
 import { requireUser } from "@/lib/auth";
 import { getActiveCompetition, getMyParticipant } from "@/lib/competition";
 import { zonaValidaParaCompeticion } from "@/lib/mapas";
@@ -59,7 +60,7 @@ async function conError(accion: () => Promise<Resultado | void>): Promise<Result
   try {
     return (await accion()) ?? {};
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 }
 
@@ -98,7 +99,7 @@ export async function apuntarEnCajaAction(
       return { error: "Ese jugador no es de este locke." };
     }
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const species = String(formData.get("species") ?? "").trim();

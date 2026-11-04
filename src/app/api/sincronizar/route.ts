@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { apuntarCapturaAction } from "@/app/actions/mapas";
@@ -65,7 +66,8 @@ export async function POST(request: Request) {
   // En orden y de uno en uno: un apunte puede depender del anterior (una baja
   // de un pokémon que se capturó hace dos minutos sin línea)
   for (const bruto of apuntes) {
-    const id = typeof bruto?.id === "string" ? bruto.id : "";
+    // El móvil manda un UUID: algo mucho más largo no es suyo, y se guardaría tal cual
+    const id = typeof bruto?.id === "string" && bruto.id.length <= 100 ? bruto.id : "";
     const tipo = typeof bruto?.tipo === "string" ? bruto.tipo : "";
     const datos =
       bruto?.datos && typeof bruto.datos === "object"
@@ -115,7 +117,7 @@ async function aplicar({
     return { id, estado: "hecho" };
   } catch (error) {
     await prisma.apunteSincronizado.delete({ where: { id } }).catch(() => {});
-    return { id, estado: "error", mensaje: (error as Error).message };
+    return { id, estado: "error", mensaje: mensajeDeError(error) };
   }
 }
 

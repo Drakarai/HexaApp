@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import {
   assertCanActForParticipant,
@@ -70,7 +71,7 @@ export async function addMatchPokemonAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantId = String(formData.get("participantId") ?? "");
@@ -140,7 +141,7 @@ async function anadirAlEquipoDelGimnasio(
   try {
     await requireCompetitionManager(levelCap.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantId = String(formData.get("participantId") ?? "");
@@ -200,7 +201,7 @@ async function anadirAlEquipoDelRoyale(
   try {
     await requireCompetitionManager(royale.matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantId = String(formData.get("participantId") ?? "");
@@ -266,7 +267,7 @@ async function anadirAlEquipoDelFinal(
   try {
     await assertCanActForParticipant(participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const species = String(formData.get("species") ?? "").trim();

@@ -30,7 +30,7 @@ import { slugify } from "@/lib/utils";
 import { imagenEditada } from "@/lib/image";
 import { guardarPorContenido } from "@/lib/almacen-de-imagenes";
 import type { FormState } from "@/app/actions/auth";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 import { randomBytes } from "node:crypto";
 
 /** Un número entero de un formulario, o null si viene vacío o mal. */
@@ -675,7 +675,7 @@ export async function darEspectadorAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   // El usuario escrito a mano manda sobre la lista (ver AddParticipantForm)

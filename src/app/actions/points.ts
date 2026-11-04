@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
@@ -16,7 +17,7 @@ export async function adjustPointsAction(
   try {
     manager = await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantId = String(formData.get("participantId") ?? "");
@@ -101,7 +102,7 @@ export async function adjustAllPointsAction(
   try {
     manager = await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const delta = Number(formData.get("delta") ?? 0);

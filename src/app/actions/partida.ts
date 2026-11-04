@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
+import { mensajeDeError } from "@/lib/permiso";
 import { getZonasParaElegir } from "@/lib/mapas";
 import { regionesDelJuego } from "@/lib/juegos";
 import { leerMovimientos } from "@/lib/movimientos";
@@ -244,7 +245,7 @@ export async function verPartidaAction(entrada: Entrada): Promise<{ error?: stri
     const { partida, cajaDeCaidos, plan, desconocidos, anil } = await prepararPlan(entrada);
     return { vista: vista(partida, cajaDeCaidos, plan, desconocidos, anil) };
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 }
 
@@ -465,6 +466,6 @@ export async function aplicarPartidaAction(
     refrescarCaja(true);
     return { aviso: `Partida leída: ${partes.join(", ")}. Si algo no te cuadra, «Deshacer» lo deja como estaba.` };
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 }

@@ -10,7 +10,7 @@ import {
   restaurarVolcado,
 } from "@/lib/copias";
 import type { FormState } from "@/app/actions/auth";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 
 /** Lo que hay que escribir para restaurar. Sin esto, un clic sin querer borra. */
 const PALABRA = "RESTAURAR";
@@ -67,7 +67,7 @@ export async function restaurarCopiaAction(
     };
   } catch (error) {
     return {
-      error: `No se ha restaurado nada: ${(error as Error).message}`,
+      error: `No se ha restaurado nada: ${mensajeDeError(error)}`,
     };
   }
 }
@@ -113,6 +113,6 @@ export async function restaurarFicheroAction(
       success: `Restaurado desde el fichero: ${hecho.filas} filas en ${hecho.tablas} tablas.`,
     };
   } catch (error) {
-    return { error: `No se ha restaurado nada: ${(error as Error).message}` };
+    return { error: `No se ha restaurado nada: ${mensajeDeError(error)}` };
   }
 }

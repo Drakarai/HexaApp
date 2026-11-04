@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import {
@@ -57,7 +58,7 @@ export async function crearRoyaleAction(
   try {
     await requireCompetitionManager(matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const jugadores = await prisma.participant.findMany({
@@ -201,7 +202,7 @@ export async function guardarCronicaAction(
   try {
     await requireCompetitionManager(royale.matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   await prisma.royale.update({
@@ -239,7 +240,7 @@ export async function guardarMiCronicaAction(
   try {
     await assertCanActForParticipant(fila.participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const vivosRaw = String(formData.get("vivos") ?? "").trim();

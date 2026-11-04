@@ -1,6 +1,7 @@
 "use server";
 
 import { requireUser } from "@/lib/auth";
+import { mensajeDeError } from "@/lib/permiso";
 import { getActiveCompetition, requireCompetitionManager } from "@/lib/competition";
 import { prisma } from "@/lib/db";
 import { esPokemonAnil } from "@/lib/anil";
@@ -103,10 +104,23 @@ async function registroDeLaRepeticion(texto: string, conAnil: boolean): Promise<
 async function leerPaginaDeAnil(pagina: string): Promise<RegistroLeido> {
   let html: string;
   try {
-    const respuesta = await fetch(pagina, { cache: "no-store", signal: AbortSignal.timeout(TIEMPO_LIMITE) });
-    // Pages redirige el «.html» a sin él; si acabara en otro sitio, no es lo que se pidió
-    if (new URL(respuesta.url || pagina).hostname !== new URL(pagina).hostname) {
-      return { error: "Ese enlace lleva a otro sitio, no a una repetición." };
+    /**
+     * Las redirecciones se siguen **a mano y solo dentro del mismo sitio**:
+     * Pages redirige el «.html» a sin él, pero la página es de quien la
+     * publica, y dejando que fetch las siguiera solo, una preparada podía
+     * mandar al servidor a pedir cualquier otra dirección antes de que se
+     * comprobara adónde había llegado.
+     */
+    const sitio = new URL(pagina).hostname;
+    let direccion = pagina;
+    let respuesta = await fetch(direccion, { cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(TIEMPO_LIMITE) });
+    for (let saltos = 0; respuesta.status >= 300 && respuesta.status < 400 && saltos < 3; saltos++) {
+      const destino = new URL(respuesta.headers.get("location") ?? "", direccion);
+      if (destino.hostname !== sitio || destino.protocol !== "https:") {
+        return { error: "Ese enlace lleva a otro sitio, no a una repetición." };
+      }
+      direccion = destino.href;
+      respuesta = await fetch(direccion, { cache: "no-store", redirect: "manual", signal: AbortSignal.timeout(TIEMPO_LIMITE) });
     }
     if (respuesta.status === 404) return { error: "No hay ninguna repetición en ese enlace." };
     if (!respuesta.ok) return { error: `La web de las repeticiones no ha contestado bien (${respuesta.status}). Prueba en un rato.` };
@@ -158,7 +172,7 @@ export async function leerResultadoDeRepeticionAction(matchId: string, enlace: s
   try {
     await requireCompetitionManager(match.matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   const conAnil = esPokemonAnil(match.matchday.competition);
   const leido = await registroDeLaRepeticion(String(enlace ?? ""), conAnil);

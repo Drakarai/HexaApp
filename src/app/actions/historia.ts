@@ -1,6 +1,7 @@
 "use server";
 
 import { getHistoria, type DeQuienEsLaHistoria, type Historia } from "@/lib/historia-servidor";
+import { mensajeDeError } from "@/lib/permiso";
 
 /**
  * La historia de un pokémon, para la ficha que se acaba de abrir. Va aparte y
@@ -17,6 +18,6 @@ export async function historiaAction(
   try {
     return { historia: await getHistoria({ tipo: de.tipo, id: de.id }) };
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 }

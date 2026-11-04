@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { assertPuedeTocarLaCaja } from "@/lib/caja-servidor";
@@ -38,7 +39,7 @@ export async function candidatosAAsAction(
   try {
     await assertPuedeTocarLaCaja(String(participantId ?? ""));
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   const [jugador, vivos] = await Promise.all([
     prisma.participant.findUniqueOrThrow({
@@ -83,7 +84,7 @@ export async function elegirAsAction(entrada: {
   try {
     await assertPuedeTocarLaCaja(participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   const reason = String(entrada.reason ?? "").trim().slice(0, 500) || null;
 

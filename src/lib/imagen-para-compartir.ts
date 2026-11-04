@@ -32,6 +32,29 @@ export function cargarFuentes() {
   return fuentes;
 }
 
+const MAXIMO_DE_BYTES = 8 * 1024 * 1024;
+
+/**
+ * Que un enlace de imagen guardado (una foto puesta como dirección en vez de
+ * subida) apunte a internet y no a la propia máquina o a su red: el servidor
+ * lo baja para pintar la tarjeta, y si no, cualquiera podía hacerle pedir
+ * direcciones internas poniéndolas como foto.
+ */
+function direccionDeFuera(enlace: string) {
+  let url: URL;
+  try {
+    url = new URL(enlace);
+  } catch {
+    return false;
+  }
+  const host = url.hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+  if (host === "localhost" || host.endsWith(".localhost") || host.endsWith(".internal") || host.endsWith(".local")) return false;
+  // Ninguna IP escrita a mano: las imágenes de verdad van por nombre
+  if (/^[\d.]+$/.test(host) || host.includes(":")) return false;
+  return true;
+}
+
 /**
  * Una imagen guardada, lista para satori: en PNG y pequeña. Las de la
  * aplicación van en WebP, que satori no sabe pintar.
@@ -42,9 +65,13 @@ export async function paraLaImagen(valor: string | null, lado: number) {
   try {
     let bytes: Buffer;
     if (/^https?:\/\//.test(resuelta)) {
-      const respuesta = await fetch(resuelta);
+      if (!direccionDeFuera(resuelta)) return null;
+      const respuesta = await fetch(resuelta, { signal: AbortSignal.timeout(8000), redirect: "error" });
       if (!respuesta.ok) return null;
+      // Una foto de perfil no pesa más que esto; un enlace a algo enorme llenaba la memoria
+      if (Number(respuesta.headers.get("content-length") ?? 0) > MAXIMO_DE_BYTES) return null;
       bytes = Buffer.from(await respuesta.arrayBuffer());
+      if (bytes.length > MAXIMO_DE_BYTES) return null;
     } else {
       const coincide = /^data:[^;,]+;base64,(.*)$/s.exec(resuelta);
       if (!coincide) return null;

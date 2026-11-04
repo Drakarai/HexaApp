@@ -188,6 +188,11 @@ export async function toggleGymClearAction(formData: FormData) {
 
   const participant = await puedoTocarLoDe(participantId);
   if (!participant) return;
+  // El gimnasio, de su misma edición: si no, se le colaba uno de otro locke
+  const delLocke = await prisma.levelCap.count({
+    where: { id: levelCapId, competitionId: participant.competitionId },
+  });
+  if (!delLocke) return;
 
   const existing = await prisma.gymClear.findUnique({
     where: { participantId_levelCapId: { participantId, levelCapId } },

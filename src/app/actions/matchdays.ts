@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
@@ -28,7 +29,7 @@ export async function createMatchdayAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const label = String(formData.get("label") ?? "").trim();
@@ -211,7 +212,7 @@ export async function restaurarJornadaAction(
   try {
     await requireCompetitionManager(borrada.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const resultado = await restaurarJornada(id);
@@ -251,7 +252,7 @@ export async function addMatchAction(
   try {
     await requireCompetitionManager(matchday.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantAId = String(formData.get("participantAId") ?? "");
@@ -598,7 +599,7 @@ export async function cambiarSerieDeJornadaAction(formData: FormData): Promise<F
   try {
     await requireCompetitionManager(jornada.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   const perfil = perfilDeLocke(jornada.competition.maxPlayers);
   if (!perfil.serieAlMejorDe) return { error: "Solo las jornadas de un dualocke pueden ser al mejor de tres." };

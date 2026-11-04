@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import {
   assertEdicionAbierta,
@@ -49,7 +50,7 @@ export async function crearSorteoAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   /**
@@ -106,7 +107,7 @@ export async function anadirAlBoteAction(
     // Un jugador no echa nada al bote de una edición archivada
     if (acceso === "JUGADOR") await assertEdicionAbierta(sorteo.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const species = String(formData.get("species") ?? "").trim();
@@ -215,7 +216,7 @@ export async function repartirAction(
   try {
     await requireCompetitionManager(sorteo.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const gente = sorteo.participantes.map((fila) => fila.participantId);

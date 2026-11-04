@@ -12,6 +12,7 @@ import { getZonasParaElegir } from "@/lib/mapas";
 import { regionesDelJuego } from "@/lib/juegos";
 import { getEquiposDelLocke } from "@/lib/soul-link";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
+import { capParaCombatir, getJornadasParaCheckpoints } from "@/lib/checkpoints";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
@@ -61,7 +62,7 @@ export default async function EquipoYPcPage({
     gestiona: perfil.cooperativo ? gestiona : false,
     soloLectura: soloLectura(competition, gestiona),
   }));
-  const [yo, gestiona, datos, zonas, caps] = await Promise.all([
+  const [yo, gestiona, datos, zonas, caps, jornadas] = await Promise.all([
     getMyParticipant(competition.id, user.id),
     gestionaPedido,
     perfil.cooperativo
@@ -73,8 +74,16 @@ export default async function EquipoYPcPage({
     prisma.levelCap.findMany({
       where: { competitionId: competition.id },
       orderBy: { position: "asc" },
-      select: { cap: true, clears: { select: { participantId: true } } },
+      select: {
+        id: true,
+        label: true,
+        cap: true,
+        jornadaDespues: true,
+        clears: { select: { participantId: true } },
+      },
     }),
+    // Para saber si alguien debe una jornada: entonces combate al cap de antes
+    getJornadasParaCheckpoints(competition.id),
   ]);
 
   // Fuera del Soul Link la caja es de cada uno: sin ficha, no hay nada tuyo
@@ -101,14 +110,18 @@ export default async function EquipoYPcPage({
   );
   const numeros = Object.fromEntries(datos.vinculos.map((v, i) => [v.clave, i + 1]));
   /**
-   * El level cap de cada uno: el primero que no ha superado, o el último si ya
-   * los ha pasado todos. Es el nivel al que se juegan los combates, y con el
-   * que sale el equipo exportado a Showdown. Sin level caps, ninguno.
+   * El nivel al que combate ahora cada uno, que es con el que sale su equipo
+   * exportado a Showdown: su level cap, o el de antes si debe una jornada
+   * (ver `capParaCombatir`). Sin level caps, ninguno.
    */
   const niveles = Object.fromEntries(
     datos.tableros.map((t) => [
       t.participantId,
-      (caps.find((c) => !c.clears.some((s) => s.participantId === t.participantId)) ?? caps.at(-1))?.cap ?? null,
+      capParaCombatir(
+        caps.map((c) => ({ ...c, superado: c.clears.some((s) => s.participantId === t.participantId) })),
+        jornadas,
+        t.participantId,
+      ),
     ]),
   );
   const puedenApuntar = cerrada

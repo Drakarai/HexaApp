@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import {
@@ -23,7 +24,7 @@ export async function createRouletteAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const name = String(formData.get("name") ?? "").trim();
@@ -108,7 +109,7 @@ export async function addOptionAction(
   try {
     await requireCompetitionManager(roulette.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const clase = String(formData.get("clase") ?? "texto");

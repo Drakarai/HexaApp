@@ -1,6 +1,7 @@
 "use server";
 
 import { getFichaRapida, type FichaRapida } from "@/lib/ficha-rapida";
+import { mensajeDeError } from "@/lib/permiso";
 
 /** La ficha rápida de un jugador de la clasificación. Los permisos, dentro. */
 export async function fichaRapidaAction(
@@ -10,6 +11,6 @@ export async function fichaRapidaAction(
   try {
     return { ficha: await getFichaRapida(participantId) };
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getStandings, requireCompetitionManager } from "@/lib/competition";
@@ -28,7 +29,7 @@ export async function generateBracketAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const existing = await prisma.finalFour.findUnique({
@@ -187,7 +188,7 @@ export async function guardarCartelDelFinalAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const actuales = await prisma.competition.findUnique({

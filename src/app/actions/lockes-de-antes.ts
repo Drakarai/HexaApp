@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { esCreador, puedeCrearLockes, requireUser } from "@/lib/auth";
 import type { FormState } from "@/app/actions/auth";
@@ -45,7 +46,7 @@ export async function guardarLockeDeAntesAction(
   try {
     user = await quienPuedeApuntar();
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const id = String(formData.get("id") ?? "").trim();

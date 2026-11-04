@@ -32,7 +32,7 @@ import { spritesDelFormulario } from "@/lib/sprites-servidor";
 import type { FormState } from "@/app/actions/auth";
 import { sitioParaUnaNueva } from "@/lib/equipo-y-caja";
 import { vincularCapturaNueva } from "@/lib/soul-link";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 
 /**
  * Los mapas y las capturas.
@@ -645,7 +645,7 @@ export async function apuntarCapturaAction(
   try {
     participante = await miParticipante(String(formData.get("competitionId") ?? "").trim());
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   if (!participante) {
     return { error: "No juegas esta edición, así que no tienes mapa." };

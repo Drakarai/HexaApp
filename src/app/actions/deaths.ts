@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
@@ -74,7 +75,7 @@ export async function createDeathAction(
   try {
     await assertCanActForParticipant(participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   /**
@@ -96,7 +97,7 @@ export async function createDeathAction(
       refrescarBajas();
       return { success: aviso };
     } catch (error) {
-      return { error: (error as Error).message };
+      return { error: mensajeDeError(error) };
     }
   }
 
@@ -139,7 +140,7 @@ export async function updateDeathAction(
   try {
     await assertCanActForParticipant(death.participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const species = String(formData.get("species") ?? "").trim();

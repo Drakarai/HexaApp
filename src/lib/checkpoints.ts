@@ -193,3 +193,32 @@ export async function getJornadasParaCheckpoints(competitionId: string) {
     })),
   }));
 }
+
+/**
+ * **El nivel al que combate ahora un jugador**, que es con el que sale su
+ * equipo exportado a Showdown: el primer level cap que no ha superado (o el
+ * último, si ya los tiene todos)… **salvo que le deba una jornada**. Si ha
+ * pasado un level cap con checkpoint y no ha jugado su parte de esa jornada,
+ * lo siguiente que juega es la jornada, y se juega al nivel de ese level cap:
+ * pasado el gimnasio del 12, con jornada antes del del 16, el equipo sale al
+ * 12. Antes salía al 16, el del gimnasio que aún no tocaba (lo avisó el
+ * usuario).
+ *
+ * Que la jornada no esté creada todavía no cambia nada: se debe igual. Sí lo
+ * cambia haber jugado ya su combate, aunque a otros les quede el suyo.
+ */
+export function capParaCombatir(
+  hitos: (HitoParaCheckpoint & { cap: number; superado: boolean })[],
+  jornadas: JornadaParaCheckpoint[],
+  participantId: string,
+): number | null {
+  if (!hitos.length) return null;
+  const debida = checkpointsDelLocke(hitos, jornadas).find((checkpoint) => {
+    if (!hitos[checkpoint.indiceDelHito].superado || checkpoint.jugada) return false;
+    if (!checkpoint.jornada) return true;
+    const suParte = miParteDeLaJornada(checkpoint.jornada, participantId).tipo;
+    return suParte !== "hecho" && suParte !== "fuera";
+  });
+  if (debida) return hitos[debida.indiceDelHito].cap;
+  return (hitos.find((hito) => !hito.superado) ?? hitos.at(-1))!.cap;
+}

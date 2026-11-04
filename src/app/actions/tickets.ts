@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
@@ -28,7 +29,7 @@ export async function grantTicketsAction(
   try {
     manager = await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const rouletteId = String(formData.get("rouletteId") ?? "");

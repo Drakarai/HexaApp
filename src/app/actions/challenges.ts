@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { formatoDeCombate } from "@/lib/formatos-de-combate";
@@ -22,7 +23,7 @@ export async function createChallengeAction(
   try {
     await requireCompetitionManager(competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const participantAId = String(formData.get("participantAId") ?? "");
@@ -124,7 +125,7 @@ export async function anadirPremioAction(
   try {
     await requireCompetitionManager(reto.competitionId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const itemId = String(formData.get("itemId") ?? "");

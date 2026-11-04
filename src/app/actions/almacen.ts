@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { requireCreador } from "@/lib/auth";
 import {
   deduplicarImagenes,
@@ -22,7 +23,7 @@ export async function deduplicarAction(): Promise<FormState> {
   try {
     await requireCreador();
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const hecho = await deduplicarImagenes();
@@ -50,7 +51,7 @@ export async function aligerarCopiasAction(): Promise<FormState> {
   try {
     await requireCreador();
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const hecho = await aligerarUnaCopia();
@@ -73,7 +74,7 @@ export async function limpiarHuerfanasAction(): Promise<FormState> {
   try {
     await requireCreador();
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const tiradas = await tirarImagenesHuerfanas();

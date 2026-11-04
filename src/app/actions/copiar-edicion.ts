@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { puedeVerLocke } from "@/lib/acceso";
@@ -34,7 +35,7 @@ export async function copiarDeOtraEdicionAction(
   try {
     await requireCompetitionManager(destinoId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
   /**
    * Del origen basta con poder abrirlo: copiarse las reglas de un locke que ya

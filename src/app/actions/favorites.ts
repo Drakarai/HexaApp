@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { assertCanActForParticipant } from "@/lib/competition";
 import { spritesDelFormulario } from "@/lib/sprites-servidor";
@@ -23,7 +24,7 @@ export async function addFavoriteAction(
   try {
     await assertCanActForParticipant(participantId);
   } catch (error) {
-    return { error: (error as Error).message };
+    return { error: mensajeDeError(error) };
   }
 
   const species = String(formData.get("species") ?? "").trim();

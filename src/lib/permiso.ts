@@ -20,6 +20,28 @@ export async function conPermiso<T>(
     return [await comprobacion, null] as const;
   } catch (error) {
     unstable_rethrow(error);
-    return [null, { error: (error as Error).message }] as const;
+    return [null, { error: mensajeDeError(error) }] as const;
   }
+}
+
+/**
+ * El texto que se le puede enseñar al usuario de un error atrapado en una
+ * acción. Los nuestros («No puedes modificar los datos de otro jugador.») van
+ * tal cual, pero **los de la base de datos y los fallos de programación no**:
+ * llevaban al navegador el nombre de las tablas y los campos («Invalid
+ * `prisma.capture.findUnique()` invocation…»), que no le dicen nada a nadie y
+ * sí le dan pistas a quien esté probando a colarse. Salió en el repaso de
+ * noviembre, llamando a todas las acciones con datos falseados.
+ */
+export function mensajeDeError(error: unknown): string {
+  const interno =
+    !(error instanceof Error) ||
+    error.name.startsWith("PrismaClient") ||
+    error instanceof TypeError ||
+    error instanceof ReferenceError ||
+    error instanceof RangeError ||
+    error instanceof SyntaxError;
+  if (!interno) return error.message;
+  console.error(error);
+  return "Algo ha fallado por dentro. Recarga la página y vuelve a probar.";
 }
