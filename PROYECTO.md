@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 4 de noviembre de 2026 (**repaso de seguridad con ataques de verdad** y el equipo exportado a Showdown al nivel de la jornada que se debe).
+Última actualización: 4 de noviembre de 2026 (**borrar un locke, solo quien lo creó o el Creador**, y Next 16.4.5).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -2048,8 +2048,11 @@ los dos, y no hace falta tocar ninguna fila al publicar.
   viven en la misma pantalla, así que la de *Bolsas de todos* se abre a los
   administradores del locke y **la parte del catálogo se enseña solo al
   Creador**.
-- **Archivar y borrar un locke** pasa a quien lo administra: es su edición y
-  decide él cuándo se acaba.
+- **Archivar un locke** pasa a quien lo administra: es su edición y decide él
+  cuándo se acaba. **Borrarlo, no** (desde noviembre): solo quien lo creó o el
+  Creador. «Puede administrar esta competición» se da para echar una mano, y
+  borrar se lleva lo de todos sin vuelta atrás; el botón no le sale a nadie más
+  y `deleteCompetitionAction` lo comprueba otra vez.
 - **Los ajustes de la edición** se fueron de Administración —que es del
   Creador— a *Competiciones*, que es donde llega quien lleva el locke.
 
@@ -3774,8 +3777,9 @@ tocar ni ver nada ajeno.** Lo que salió y se arregló:
 - **El identificador de cada apunte sin conexión** (`/api/sincronizar`) no
   tenía largo máximo y se guarda en la base: ahora, 100.
 
-Se dejó como estaba, a propósito: que **el administrador de un locke pueda
-borrarlo** (se decidió así, ver más arriba), y que la imagen de una captura
+Después del repaso, y con el visto bueno del usuario: **borrar un locke pasó
+a ser solo de quien lo creó o del Creador** y se subió Next a la 16.4.5. Se
+dejó como estaba, a propósito, que la imagen de una captura
 se pueda pedir con su identificador sin jugar ese locke (es un id imposible
 de adivinar y la imagen es la del dibujo de la especie).
 
@@ -5022,3 +5026,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 159. **Rutas partidas**: una zona del mapa puede llevar más trozos dibujados que cuentan como la misma ruta.
 160. **Repartir los juegos de una pareja**, a la vista arriba de Jugadores.
 161. **Repaso de seguridad atacando de verdad**: errores internos tapados, redirecciones y enlaces de fotos con límites, y el equipo a Showdown al nivel de la jornada debida.
+162. **Borrar un locke, solo quien lo creó o el Creador**; Next a la 16.4.5.

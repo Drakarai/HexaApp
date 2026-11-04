@@ -447,9 +447,19 @@ export async function cambiarArranqueAction(formData: FormData) {
 }
 
 /** Y borrarlo, igual: es suyo. Se lleva por delante todo lo que tenga dentro. */
+/**
+ * Borrar un locke entero es **de quien lo creó o del Creador**, no de cualquier
+ * administrador: con «Puede administrar esta competición» se le da a alguien
+ * para echar una mano, y borrar se lleva lo de todos sin vuelta atrás.
+ * Archivar sí lo puede cualquiera que lo lleve.
+ */
 export async function deleteCompetitionAction(formData: FormData) {
   const competitionId = String(formData.get("competitionId") ?? "");
-  await requireCompetitionManager(competitionId);
+  const quien = await requireCompetitionManager(competitionId);
+  const suyo = await prisma.competition.count({ where: { id: competitionId, createdById: quien.id } });
+  if (!suyo && !esCreador(quien)) {
+    throw new Error("Borrar el locke es de quien lo creó: archívalo si ya no se juega.");
+  }
   const borrado = await prisma.competition.delete({ where: { id: competitionId }, select: { name: true } });
   await registrar(competitionId, "locke", `Borra el locke «${borrado.name}» con todo lo que tenía`, borrado.name);
   revalidatePath("/", "layout");

@@ -281,18 +281,21 @@ export default async function CompetitionsPage({
                   : "Reactivar"}
               </button>
             </form>
-            <form action={deleteCompetitionAction}>
-              <input
-                type="hidden"
-                name="competitionId"
-                value={competition.id}
-              />
-              <ConfirmSubmit
-                message={`¿Borrar "${competition.name}" para siempre? Se pierden reglas, muertes, puntos y notas de esa edición.`}
-              >
-                Borrar
-              </ConfirmSubmit>
-            </form>
+            {/* Borrar, solo quien lo creó o el Creador (ver deleteCompetitionAction) */}
+            {admin || (competition.createdById === user.id && !user.verComo) ? (
+              <form action={deleteCompetitionAction}>
+                <input
+                  type="hidden"
+                  name="competitionId"
+                  value={competition.id}
+                />
+                <ConfirmSubmit
+                  message={`¿Borrar "${competition.name}" para siempre? Se pierden reglas, muertes, puntos y notas de esa edición.`}
+                >
+                  Borrar
+                </ConfirmSubmit>
+              </form>
+            ) : null}
           </>
         ) : null}
     </CartuchoPequeno>
