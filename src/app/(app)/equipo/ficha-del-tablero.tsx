@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useState, useSyncExternalStore, useTransition } from "react";
+import { Avatar } from "@/components/ui";
+import { ChapaDeTipo } from "@/components/chapa-de-tipo";
+import { COLOR_DE_TIPO } from "@/lib/colores-de-tipo";
 import { Icono } from "@/components/icono";
 import { Hoja } from "@/components/hoja";
 import { nombreDeCaja } from "@/lib/fondos-de-caja";
@@ -265,14 +268,505 @@ export function Ficha({
   const enEquipo = pokemon.lugar === "equipo";
   /** Resumen, Combate o Historia: la ficha entera seguida no cabía en un móvil */
   const [pestana, setPestana] = useState<"resumen" | "combate" | "historia">("resumen");
+  /**
+   * En el ordenador la ficha va a dos columnas (ver `FichaAncha`): lo de
+   * «Resumen» se queda fijo a la izquierda y a la derecha van las pestañas,
+   * con «Gestionar» —lo que en el móvil está debajo del resumen— la primera.
+   */
+  const ancho = useEsAncho();
+  const [pestanaAncha, setPestanaAncha] = useState<"gestionar" | "combate" | "historia">(
+    editable ? "gestionar" : "combate",
+  );
+  const pestanaVisible = ancho ? pestanaAncha : pestana;
+  // Sin nada que gestionar (de otro, o caído), esa pestaña no existe
+  useEffect(() => {
+    if (!editable && pestanaAncha === "gestionar") setPestanaAncha("combate");
+  }, [editable, pestanaAncha]);
 
   // Al abrir la ficha, su grito; el de un caído, grave, como al debilitarse
   useEffect(() => {
     sonarGrito(pokemon.pokemonId, { tono: pokemon.muerta ? TONO_DE_CAIDO : 1 });
   }, [pokemon.id, pokemon.pokemonId, pokemon.muerta]);
 
+  /*
+   * Las piezas de la ficha, para colocarlas según la pantalla: en el móvil,
+   * todo seguido dentro de «Resumen»; en el ordenador, a dos columnas (ver
+   * abajo).
+   */
+  const spriteGrande = (
+    <>
+      <SpriteAnimado
+        key={`${pokemon.mega?.pokemonId ?? pokemon.pokemonId}-${pokemon.shiny}`}
+        pokemon={pokemon}
+        // Al tamaño de la ficha del móvil y ampliado justo al doble: el pixel
+        // art se escala en enteros, y a 160 px de hueco no llegaba al siguiente
+        // y se quedaba pequeño en medio de la carta
+        className={cx("h-24 w-24 scale-200", pokemon.muerta && "opacity-50 grayscale")}
+      />
+      {rafaga
+        ? RAFAGA.map(([x, y, retraso, tam], i) => (
+            <span
+              key={`${rafaga}-${i}`}
+              aria-hidden
+              className="pointer-events-none absolute animate-[evo-destellito_900ms_ease-out_both] bg-amber-200 [clip-path:polygon(50%_0,62%_38%,100%_50%,62%_62%,50%_100%,38%_62%,0_50%,38%_38%)]"
+              style={{ left: `${x}%`, top: `${y}%`, width: tam * 1.4, height: tam * 1.4, animationDelay: `${retraso}ms` }}
+            />
+          ))
+        : null}
+    </>
+  );
+  const datos = (
+    <>
+      <dl className="mt-1 space-y-1.5 text-sm">
+        {pokemon.llegoPorIntercambio ? (
+          <Fila etiqueta="Llegó" valor={`Por intercambio, a cambio de ${pokemon.llegoPorIntercambio}`} />
+        ) : null}
+        {pokemon.sitio ? (
+          // Si llegó por intercambio, la ruta es la del que se fue: el encuentro que se gastó
+          <Fila etiqueta={pokemon.llegoPorIntercambio ? "Encuentro" : "Capturado en"} valor={pokemon.sitio} />
+        ) : null}
+        {/* El día, que es lo que se recuerda («lo pillé el primer día»); la hora no aporta */}
+        <Fila
+          etiqueta={pokemon.llegoPorIntercambio ? "Encuentro el" : "Capturado el"}
+          valor={FECHA_DE_CAPTURA.format(new Date(pokemon.creado))}
+        />
+        {pokemon.apunte ? <Fila etiqueta="Apunte" valor={pokemon.apunte} /> : null}
+        <Fila
+          etiqueta="Ahora"
+          valor={pokemon.muerta ? "En el cementerio" : enEquipo ? "En el equipo" : "En la caja"}
+        />
+        {pokemon.muerta && pokemon.causa ? <Fila etiqueta="Causa" valor={pokemon.causa} /> : null}
+      </dl>
+
+      {/* Un premio que sale poco: devolverlo a la caja. Su baja se queda en el cementerio */}
+      {pokemon.muerta && pokemon.bajaId && dueno.editable ? (
+        <button
+          type="button"
+          className="btn-ghost btn-sm mt-3 border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/10"
+          disabled={pendiente}
+          onClick={revivir}
+        >
+          <Icono emoji="💊" sinColor /> Revivir
+        </button>
+      ) : null}
+
+      {esSoulLink ? (
+        <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
+          <p className="rotulo mb-2 flex items-center gap-1.5">
+            <Icono emoji="🔗" /> Vínculo {numero ? `#${numero}` : ""}
+          </p>
+          {companeras.length ? (
+            <ul className="space-y-1.5">
+              {companeras.map((otra) => {
+                const entera = todos.find((p) => p.id === otra.id)!;
+                return (
+                  <li key={otra.id} className="flex items-center gap-2 text-sm">
+                    <Sprite
+                      pokemon={entera}
+                      className={cx("h-8 w-8", entera.muerta && "opacity-50 grayscale")}
+                    />
+                    <span className="min-w-0 truncate text-slate-200">
+                      {entera.nickname ?? entera.species}
+                      <span className="text-slate-500"> · de {nombreDe(entera.participantId)}</span>
+                    </span>
+                    {entera.muerta ? <span className="chip ml-auto text-[10px]">Caído</span> : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : (
+            <p className="text-sm text-slate-400">
+              Va suelto: nadie más ha capturado en esa ruta todavía.
+            </p>
+          )}
+
+          {editable ? (
+            <div className="mt-3 space-y-2">
+              {candidatas.length ? (
+                <div className="flex gap-2">
+                  <select
+                    className="input min-w-0 flex-1"
+                    value={conId}
+                    onChange={(evento) => setConId(evento.target.value)}
+                  >
+                    <option value="">Vincular a mano con…</option>
+                    {candidatas.map((otra) => (
+                      <option key={otra.id} value={otra.id}>
+                        {otra.nickname ?? otra.species}
+                        {otra.sitio ? ` (${otra.sitio})` : ""} · de {nombreDe(otra.participantId)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn-ghost btn-sm"
+                    disabled={!conId || pendiente}
+                    onClick={() =>
+                      lanzar(() => vincularAction({ captureId: pokemon.id, conId }), {
+                        ok: "Vinculados.",
+                      })
+                    }
+                  >
+                    <Icono emoji="🔗" /> Vincular
+                  </button>
+                </div>
+              ) : null}
+              {pokemon.vinculo && companeras.length ? (
+                <button
+                  type="button"
+                  className="btn-ghost btn-sm"
+                  disabled={pendiente}
+                  onClick={() =>
+                    lanzar(() => desvincularAction({ captureId: pokemon.id }), {
+                      ok: "Desvinculado: ahora va suelto.",
+                    })
+                  }
+                >
+                  <Icono emoji="⛓️‍💥" /> Desvincular
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </>
+  );
+  // Para presumir de él en el grupo: su tarjeta como imagen (ver `api/pokemon`)
+  const compartir = (
+    <CompartirPokemon id={pokemon.id} nombre={pokemon.nickname ?? pokemon.species} />
+  );
+  const rapidos = (
+    <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        className="btn-ghost btn-sm"
+        disabled={pendiente}
+        onClick={() =>
+          lanzar(
+            () =>
+              directaConCola(
+                () =>
+                  moverPokemonAction({
+                    captureId: pokemon.id,
+                    lugar: enEquipo ? "caja" : "equipo",
+                    hueco: null,
+                  }),
+                "movimiento",
+                { captureId: pokemon.id, lugar: enEquipo ? "caja" : "equipo", hueco: "" },
+                `${(pokemon.nickname ?? pokemon.species)} → ${enEquipo ? "caja" : "equipo"}`,
+              ),
+            { ok: enEquipo ? "A la caja." : "Al equipo." },
+          )
+        }
+      >
+        <Icono emoji="🔁" /> {enEquipo ? "A la caja" : "Al equipo"}
+      </button>
+      {/* Uno de los premios: volver shiny a un pokémon a elección */}
+      {!pokemon.shiny ? (
+        <button
+          type="button"
+          className="btn-ghost btn-sm border-amber-300/30 text-amber-200 hover:bg-amber-300/10"
+          disabled={pendiente}
+          onClick={() => cambiarShiny(true)}
+        >
+          <Icono emoji="✨" sinColor /> Hacer shiny
+        </button>
+      ) : null}
+      {dueno.asId === pokemon.id ? (
+        <span className="chip border-amber-300/30 text-amber-200">
+          <Icono emoji="👑" sinColor /> Es el as
+        </span>
+      ) : (
+        <button type="button" className="btn-ghost btn-sm" disabled={pendiente} onClick={hacerAs}>
+          <Icono emoji="👑" /> Hacerlo as
+        </button>
+      )}
+      {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre.
+          Con un mínimo de ancho: si no, en los móviles en los que los
+          botones dejan un hueco pequeño al final de la fila se metía
+          ahí aplastado («Mo…») en vez de bajar a la suya */}
+      <select
+        className="input w-auto min-w-44 flex-1 py-1.5 text-sm sm:flex-none"
+        value=""
+        disabled={pendiente}
+        aria-label="Mover a otra caja"
+        onChange={(evento) => {
+          const caja = Number(evento.target.value);
+          if (evento.target.value === "" || Number.isNaN(caja)) return;
+          lanzar(
+            () =>
+              directaConCola(
+                () =>
+                  moverPokemonAction({
+                    captureId: pokemon.id,
+                    lugar: "caja",
+                    hueco: null,
+                    caja,
+                  }),
+                "movimiento",
+                { captureId: pokemon.id, lugar: "caja", hueco: "", caja: String(caja) },
+                `${pokemon.nickname ?? pokemon.species} → caja ${caja + 1}`,
+              ),
+            { ok: `A ${nombreDeCaja(dueno.nombres, caja)}.` },
+          );
+        }}
+      >
+        <option value="">Mover a la caja…</option>
+        {Array.from({ length: cajasDelDueno }, (_, caja) => (
+          <option key={caja} value={caja} disabled={caja === cajaActual}>
+            {nombreDeCaja(dueno.nombres, caja)}
+            {caja === cajaActual ? " (está aquí)" : ""}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+  const gestion = (
+    <>
+      {/* En dos pasos, y con su deshacer al lado: evolucionar sin querer
+          cambia la especie, el sprite y los tipos de golpe */}
+      <div>
+        <p className="label">Evolucionar</p>
+        {evolucionado ? (
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
+            <span className="min-w-0 flex-1">
+              ¡Ha evolucionado en <strong>{evolucionado.rotulo}</strong>!
+            </span>
+            <button
+              type="button"
+              className="btn-ghost btn-sm"
+              disabled={pendiente}
+              onClick={deshacerEvolucion}
+            >
+              <Icono emoji="↩️" /> Deshacer
+            </button>
+          </div>
+        ) : aEvolucionar ? (
+          // Como en los juegos: «¡Está evolucionando!», y la B lo corta
+          <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
+            <p className="text-sm font-semibold text-white">
+              ¡{pokemon.nickname ?? pokemon.species} está evolucionando!
+            </p>
+            <p className="text-xs text-slate-400">En {aEvolucionar.rotulo}</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                type="button"
+                className="btn-primary btn-sm"
+                disabled={pendiente}
+                onClick={evolucionar}
+              >
+                <Icono emoji="🧬" /> Confirmar
+              </button>
+              <button
+                type="button"
+                className="btn-ghost btn-sm"
+                disabled={pendiente}
+                onClick={() => setAEvolucionar(null)}
+              >
+                Darle a la B
+              </button>
+            </div>
+          </div>
+        ) : pokemon.evoluciones.length ? (
+          <div className="flex flex-wrap gap-2">
+            {pokemon.evoluciones.map((opcion) => (
+              <button
+                key={opcion.pokemonId}
+                type="button"
+                className="btn-ghost btn-sm"
+                disabled={pendiente}
+                onClick={() => setAEvolucionar(opcion)}
+              >
+                <Icono emoji="🧬" /> {opcion.rotulo}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-500">No evoluciona más.</p>
+        )}
+      </div>
+
+      {/* Los entrenadores del juego que te dan uno a cambio de otro */}
+      <Intercambio
+        key={pokemon.id}
+        nombre={pokemon.nickname ?? pokemon.species}
+        ocupado={pendiente}
+        onIntercambiar={intercambiar}
+      />
+
+      <div>
+        <label className="label" htmlFor="mote-ficha">
+          Mote
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="mote-ficha"
+            className="input min-w-0 flex-1"
+            value={mote}
+            maxLength={40}
+            onChange={(evento) => setMote(evento.target.value)}
+            placeholder={pokemon.species}
+          />
+          <button
+            type="button"
+            className="btn-primary btn-sm"
+            disabled={pendiente || mote === (pokemon.nickname ?? "")}
+            onClick={() =>
+              lanzar(() => cambiarMoteAction({ captureId: pokemon.id, mote }), {
+                ok: "Mote cambiado.",
+              })
+            }
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-3">
+        <label className="label" htmlFor="causa-ficha">
+          Ha caído
+        </label>
+        <input
+          id="causa-ficha"
+          className="input"
+          value={causa}
+          maxLength={200}
+          onChange={(evento) => setCausa(evento.target.value)}
+          placeholder="Qué lo mató (opcional)"
+        />
+        <div className="mt-2">
+          <SitioPicker
+            zonas={zonas}
+            label="Dónde cayó (opcional)"
+            placeholder="Gimnasio de Fausto, combate contra el rival…"
+            onCambiar={setSitio}
+          />
+        </div>
+        {companerasVivas.length ? (
+          <p className="mt-1.5 text-xs text-red-200/80">
+            Se lleva con él a{" "}
+            {companerasVivas
+              .map((c) => `${c.nickname ?? c.species} de ${nombreDe(c.participantId)}`)
+              .join(" y ")}
+            .
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="btn-danger btn-sm mt-2"
+          disabled={pendiente}
+          onClick={() => {
+            const pregunta = companerasVivas.length
+              ? `¿${pokemon.nickname ?? pokemon.species} ha caído? Por el vínculo cae también ${companerasVivas
+                  .map((c) => c.nickname ?? c.species)
+                  .join(" y ")}. Se puede deshacer.`
+              : `¿${pokemon.nickname ?? pokemon.species} ha caído? Se puede deshacer.`;
+            if (!window.confirm(pregunta)) return;
+            sonarGrito(pokemon.pokemonId, { tono: TONO_DE_CAIDO });
+            lanzar(
+              () =>
+                directaConCola(
+                  () => darPorMuertoAction({ captureId: pokemon.id, causa, ...sitio }),
+                  "caida",
+                  {
+                    captureId: pokemon.id,
+                    causa,
+                    zoneId: sitio.zoneId ?? "",
+                    location: sitio.location ?? "",
+                  },
+                  [
+                    pokemon.nickname ?? pokemon.species,
+                    causa,
+                    sitio.zoneId ? zonas.find((z) => z.id === sitio.zoneId)?.label : sitio.location,
+                  ]
+                    .filter(Boolean)
+                    .join(" · "),
+                ),
+              { cerrar: true },
+            );
+          }}
+        >
+          <Icono emoji="💀" /> Dar por muerto
+        </button>
+      </div>
+
+      {pokemon.shiny ? (
+        <button
+          type="button"
+          className="mr-4 text-xs text-slate-500 underline-offset-2 hover:text-amber-200 hover:underline"
+          disabled={pendiente}
+          onClick={() => cambiarShiny(false)}
+        >
+          Quitar lo shiny (marcado sin querer)
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="text-xs text-slate-500 underline-offset-2 hover:text-red-300 hover:underline"
+        disabled={pendiente}
+        onClick={() => {
+          if (
+            !window.confirm(
+              `¿Borrar ${pokemon.nickname ?? pokemon.species}? Es para lo apuntado por error y no se puede deshacer.`,
+            )
+          ) {
+            return;
+          }
+          lanzar(() => borrarDeLaCajaAction({ captureId: pokemon.id }), {
+            cerrar: true,
+            ok: "Borrado.",
+          });
+        }}
+      >
+        Borrar (apuntado por error)
+      </button>
+    </>
+  );
+  const combateEHistoria = (
+    <>
+      {pestanaVisible === "combate" ? (
+        <FichaDeCombate
+          key={JSON.stringify(pokemon.combate)}
+          captureId={pokemon.id}
+          especie={pokemon.species}
+          ficha={pokemon.combate}
+          editable={editable}
+          onAviso={onAviso}
+          // Los caídos ya no combaten
+          extra={pokemon.muerta ? null : <CopiarParaShowdown pokemon={pokemon} nivel={nivel} />}
+        />
+      ) : null}
+      {pestanaVisible === "combate" ? <Debilidades pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
+
+      {pestanaVisible === "historia" ? (
+        <HistoriaDelPokemon
+          // Se vuelve a pedir si evoluciona o se vuelve shiny con la ficha abierta
+          key={`${pokemon.species}-${pokemon.shiny}`}
+          de={{ tipo: "captura", id: pokemon.id }}
+          nombre={pokemon.nickname ?? pokemon.species}
+        />
+      ) : null}
+    </>
+  );
+
   return (
     <>
+      {ancho ? (
+        <FichaAncha
+          pokemon={pokemon}
+          dueno={dueno}
+          onCerrar={onCerrar}
+          sprite={spriteGrande}
+          pestana={pestanaAncha}
+          onPestana={setPestanaAncha}
+          editable={editable}
+          datos={datos}
+          rapidos={editable ? rapidos : null}
+          compartir={compartir}
+          gestion={gestion}
+          combateEHistoria={combateEHistoria}
+        />
+      ) : (
       <Hoja onCerrar={onCerrar} className="p-5 pt-3" etiqueta={pokemon.nickname ?? pokemon.species}>
         <CabeceraDeFicha
           dueno={{ nombre: dueno.displayName, color: dueno.color, imagen: dueno.avatarImage }}
@@ -321,437 +815,22 @@ export function Ficha({
 
         {/* Con un alto mínimo: si no, la ficha subía y bajaba al cambiar de pestaña */}
         <div className="min-h-[50dvh] sm:min-h-[22rem]">
-          {pestana === "combate" ? (
-            <FichaDeCombate
-              key={JSON.stringify(pokemon.combate)}
-              captureId={pokemon.id}
-              especie={pokemon.species}
-              ficha={pokemon.combate}
-              editable={editable}
-              onAviso={onAviso}
-              // Los caídos ya no combaten
-              extra={pokemon.muerta ? null : <CopiarParaShowdown pokemon={pokemon} nivel={nivel} />}
-            />
-          ) : null}
-          {pestana === "combate" ? <Debilidades pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
-
-          {pestana === "historia" ? (
-            <HistoriaDelPokemon
-              // Se vuelve a pedir si evoluciona o se vuelve shiny con la ficha abierta
-              key={`${pokemon.species}-${pokemon.shiny}`}
-              de={{ tipo: "captura", id: pokemon.id }}
-              nombre={pokemon.nickname ?? pokemon.species}
-            />
-          ) : null}
-
+          {combateEHistoria}
           {pestana === "resumen" ? (
             <>
-            <dl className="mt-1 space-y-1.5 text-sm">
-              {pokemon.llegoPorIntercambio ? (
-                <Fila etiqueta="Llegó" valor={`Por intercambio, a cambio de ${pokemon.llegoPorIntercambio}`} />
+              {datos}
+              {compartir}
+              {editable ? (
+                <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
+                  {rapidos}
+                  {gestion}
+                </div>
               ) : null}
-              {pokemon.sitio ? (
-                // Si llegó por intercambio, la ruta es la del que se fue: el encuentro que se gastó
-                <Fila etiqueta={pokemon.llegoPorIntercambio ? "Encuentro" : "Capturado en"} valor={pokemon.sitio} />
-              ) : null}
-              {/* El día, que es lo que se recuerda («lo pillé el primer día»); la hora no aporta */}
-              <Fila
-                etiqueta={pokemon.llegoPorIntercambio ? "Encuentro el" : "Capturado el"}
-                valor={FECHA_DE_CAPTURA.format(new Date(pokemon.creado))}
-              />
-              {pokemon.apunte ? <Fila etiqueta="Apunte" valor={pokemon.apunte} /> : null}
-              <Fila
-                etiqueta="Ahora"
-                valor={pokemon.muerta ? "En el cementerio" : enEquipo ? "En el equipo" : "En la caja"}
-              />
-              {pokemon.muerta && pokemon.causa ? <Fila etiqueta="Causa" valor={pokemon.causa} /> : null}
-            </dl>
-
-            {/* Un premio que sale poco: devolverlo a la caja. Su baja se queda en el cementerio */}
-            {pokemon.muerta && pokemon.bajaId && dueno.editable ? (
-              <button
-                type="button"
-                className="btn-ghost btn-sm mt-3 border-emerald-400/30 text-emerald-200 hover:bg-emerald-400/10"
-                disabled={pendiente}
-                onClick={revivir}
-              >
-                <Icono emoji="💊" sinColor /> Revivir
-              </button>
-            ) : null}
-
-            {esSoulLink ? (
-              <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                <p className="rotulo mb-2 flex items-center gap-1.5">
-                  <Icono emoji="🔗" /> Vínculo {numero ? `#${numero}` : ""}
-                </p>
-                {companeras.length ? (
-                  <ul className="space-y-1.5">
-                    {companeras.map((otra) => {
-                      const entera = todos.find((p) => p.id === otra.id)!;
-                      return (
-                        <li key={otra.id} className="flex items-center gap-2 text-sm">
-                          <Sprite
-                            pokemon={entera}
-                            className={cx("h-8 w-8", entera.muerta && "opacity-50 grayscale")}
-                          />
-                          <span className="min-w-0 truncate text-slate-200">
-                            {entera.nickname ?? entera.species}
-                            <span className="text-slate-500"> · de {nombreDe(entera.participantId)}</span>
-                          </span>
-                          {entera.muerta ? <span className="chip ml-auto text-[10px]">Caído</span> : null}
-                        </li>
-                      );
-                    })}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-slate-400">
-                    Va suelto: nadie más ha capturado en esa ruta todavía.
-                  </p>
-                )}
-
-                {editable ? (
-                  <div className="mt-3 space-y-2">
-                    {candidatas.length ? (
-                      <div className="flex gap-2">
-                        <select
-                          className="input min-w-0 flex-1"
-                          value={conId}
-                          onChange={(evento) => setConId(evento.target.value)}
-                        >
-                          <option value="">Vincular a mano con…</option>
-                          {candidatas.map((otra) => (
-                            <option key={otra.id} value={otra.id}>
-                              {otra.nickname ?? otra.species}
-                              {otra.sitio ? ` (${otra.sitio})` : ""} · de {nombreDe(otra.participantId)}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm"
-                          disabled={!conId || pendiente}
-                          onClick={() =>
-                            lanzar(() => vincularAction({ captureId: pokemon.id, conId }), {
-                              ok: "Vinculados.",
-                            })
-                          }
-                        >
-                          <Icono emoji="🔗" /> Vincular
-                        </button>
-                      </div>
-                    ) : null}
-                    {pokemon.vinculo && companeras.length ? (
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        disabled={pendiente}
-                        onClick={() =>
-                          lanzar(() => desvincularAction({ captureId: pokemon.id }), {
-                            ok: "Desvinculado: ahora va suelto.",
-                          })
-                        }
-                      >
-                        <Icono emoji="⛓️‍💥" /> Desvincular
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
-            {/* Para presumir de él en el grupo: su tarjeta como imagen (ver `api/pokemon`) */}
-            <CompartirPokemon id={pokemon.id} nombre={pokemon.nickname ?? pokemon.species} />
-
-            {editable ? (
-              <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    className="btn-ghost btn-sm"
-                    disabled={pendiente}
-                    onClick={() =>
-                      lanzar(
-                        () =>
-                          directaConCola(
-                            () =>
-                              moverPokemonAction({
-                                captureId: pokemon.id,
-                                lugar: enEquipo ? "caja" : "equipo",
-                                hueco: null,
-                              }),
-                            "movimiento",
-                            { captureId: pokemon.id, lugar: enEquipo ? "caja" : "equipo", hueco: "" },
-                            `${(pokemon.nickname ?? pokemon.species)} → ${enEquipo ? "caja" : "equipo"}`,
-                          ),
-                        { ok: enEquipo ? "A la caja." : "Al equipo." },
-                      )
-                    }
-                  >
-                    <Icono emoji="🔁" /> {enEquipo ? "A la caja" : "Al equipo"}
-                  </button>
-                  {/* Uno de los premios: volver shiny a un pokémon a elección */}
-                  {!pokemon.shiny ? (
-                    <button
-                      type="button"
-                      className="btn-ghost btn-sm border-amber-300/30 text-amber-200 hover:bg-amber-300/10"
-                      disabled={pendiente}
-                      onClick={() => cambiarShiny(true)}
-                    >
-                      <Icono emoji="✨" sinColor /> Hacer shiny
-                    </button>
-                  ) : null}
-                  {dueno.asId === pokemon.id ? (
-                    <span className="chip border-amber-300/30 text-amber-200">
-                      <Icono emoji="👑" sinColor /> Es el as
-                    </span>
-                  ) : (
-                    <button type="button" className="btn-ghost btn-sm" disabled={pendiente} onClick={hacerAs}>
-                      <Icono emoji="👑" /> Hacerlo as
-                    </button>
-                  )}
-                  {/* Sin arrastrar: directo a la caja que se diga, al primer hueco libre.
-                      Con un mínimo de ancho: si no, en los móviles en los que los
-                      botones dejan un hueco pequeño al final de la fila se metía
-                      ahí aplastado («Mo…») en vez de bajar a la suya */}
-                  <select
-                    className="input w-auto min-w-44 flex-1 py-1.5 text-sm sm:flex-none"
-                    value=""
-                    disabled={pendiente}
-                    aria-label="Mover a otra caja"
-                    onChange={(evento) => {
-                      const caja = Number(evento.target.value);
-                      if (evento.target.value === "" || Number.isNaN(caja)) return;
-                      lanzar(
-                        () =>
-                          directaConCola(
-                            () =>
-                              moverPokemonAction({
-                                captureId: pokemon.id,
-                                lugar: "caja",
-                                hueco: null,
-                                caja,
-                              }),
-                            "movimiento",
-                            { captureId: pokemon.id, lugar: "caja", hueco: "", caja: String(caja) },
-                            `${pokemon.nickname ?? pokemon.species} → caja ${caja + 1}`,
-                          ),
-                        { ok: `A ${nombreDeCaja(dueno.nombres, caja)}.` },
-                      );
-                    }}
-                  >
-                    <option value="">Mover a la caja…</option>
-                    {Array.from({ length: cajasDelDueno }, (_, caja) => (
-                      <option key={caja} value={caja} disabled={caja === cajaActual}>
-                        {nombreDeCaja(dueno.nombres, caja)}
-                        {caja === cajaActual ? " (está aquí)" : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* En dos pasos, y con su deshacer al lado: evolucionar sin querer
-                    cambia la especie, el sprite y los tipos de golpe */}
-                <div>
-                  <p className="label">Evolucionar</p>
-                  {evolucionado ? (
-                    <div className="flex flex-wrap items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-100">
-                      <span className="min-w-0 flex-1">
-                        ¡Ha evolucionado en <strong>{evolucionado.rotulo}</strong>!
-                      </span>
-                      <button
-                        type="button"
-                        className="btn-ghost btn-sm"
-                        disabled={pendiente}
-                        onClick={deshacerEvolucion}
-                      >
-                        <Icono emoji="↩️" /> Deshacer
-                      </button>
-                    </div>
-                  ) : aEvolucionar ? (
-                    // Como en los juegos: «¡Está evolucionando!», y la B lo corta
-                    <div className="rounded-xl border border-brand-400/30 bg-brand-600/10 p-3">
-                      <p className="text-sm font-semibold text-white">
-                        ¡{pokemon.nickname ?? pokemon.species} está evolucionando!
-                      </p>
-                      <p className="text-xs text-slate-400">En {aEvolucionar.rotulo}</p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          className="btn-primary btn-sm"
-                          disabled={pendiente}
-                          onClick={evolucionar}
-                        >
-                          <Icono emoji="🧬" /> Confirmar
-                        </button>
-                        <button
-                          type="button"
-                          className="btn-ghost btn-sm"
-                          disabled={pendiente}
-                          onClick={() => setAEvolucionar(null)}
-                        >
-                          Darle a la B
-                        </button>
-                      </div>
-                    </div>
-                  ) : pokemon.evoluciones.length ? (
-                    <div className="flex flex-wrap gap-2">
-                      {pokemon.evoluciones.map((opcion) => (
-                        <button
-                          key={opcion.pokemonId}
-                          type="button"
-                          className="btn-ghost btn-sm"
-                          disabled={pendiente}
-                          onClick={() => setAEvolucionar(opcion)}
-                        >
-                          <Icono emoji="🧬" /> {opcion.rotulo}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-500">No evoluciona más.</p>
-                  )}
-                </div>
-
-                {/* Los entrenadores del juego que te dan uno a cambio de otro */}
-                <Intercambio
-                  key={pokemon.id}
-                  nombre={pokemon.nickname ?? pokemon.species}
-                  ocupado={pendiente}
-                  onIntercambiar={intercambiar}
-                />
-
-                <div>
-                  <label className="label" htmlFor="mote-ficha">
-                    Mote
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      id="mote-ficha"
-                      className="input min-w-0 flex-1"
-                      value={mote}
-                      maxLength={40}
-                      onChange={(evento) => setMote(evento.target.value)}
-                      placeholder={pokemon.species}
-                    />
-                    <button
-                      type="button"
-                      className="btn-primary btn-sm"
-                      disabled={pendiente || mote === (pokemon.nickname ?? "")}
-                      onClick={() =>
-                        lanzar(() => cambiarMoteAction({ captureId: pokemon.id, mote }), {
-                          ok: "Mote cambiado.",
-                        })
-                      }
-                    >
-                      Guardar
-                    </button>
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-3">
-                  <label className="label" htmlFor="causa-ficha">
-                    Ha caído
-                  </label>
-                  <input
-                    id="causa-ficha"
-                    className="input"
-                    value={causa}
-                    maxLength={200}
-                    onChange={(evento) => setCausa(evento.target.value)}
-                    placeholder="Qué lo mató (opcional)"
-                  />
-                  <div className="mt-2">
-                    <SitioPicker
-                      zonas={zonas}
-                      label="Dónde cayó (opcional)"
-                      placeholder="Gimnasio de Fausto, combate contra el rival…"
-                      onCambiar={setSitio}
-                    />
-                  </div>
-                  {companerasVivas.length ? (
-                    <p className="mt-1.5 text-xs text-red-200/80">
-                      Se lleva con él a{" "}
-                      {companerasVivas
-                        .map((c) => `${c.nickname ?? c.species} de ${nombreDe(c.participantId)}`)
-                        .join(" y ")}
-                      .
-                    </p>
-                  ) : null}
-                  <button
-                    type="button"
-                    className="btn-danger btn-sm mt-2"
-                    disabled={pendiente}
-                    onClick={() => {
-                      const pregunta = companerasVivas.length
-                        ? `¿${pokemon.nickname ?? pokemon.species} ha caído? Por el vínculo cae también ${companerasVivas
-                            .map((c) => c.nickname ?? c.species)
-                            .join(" y ")}. Se puede deshacer.`
-                        : `¿${pokemon.nickname ?? pokemon.species} ha caído? Se puede deshacer.`;
-                      if (!window.confirm(pregunta)) return;
-                      sonarGrito(pokemon.pokemonId, { tono: TONO_DE_CAIDO });
-                      lanzar(
-                        () =>
-                          directaConCola(
-                            () => darPorMuertoAction({ captureId: pokemon.id, causa, ...sitio }),
-                            "caida",
-                            {
-                              captureId: pokemon.id,
-                              causa,
-                              zoneId: sitio.zoneId ?? "",
-                              location: sitio.location ?? "",
-                            },
-                            [
-                              pokemon.nickname ?? pokemon.species,
-                              causa,
-                              sitio.zoneId ? zonas.find((z) => z.id === sitio.zoneId)?.label : sitio.location,
-                            ]
-                              .filter(Boolean)
-                              .join(" · "),
-                          ),
-                        { cerrar: true },
-                      );
-                    }}
-                  >
-                    <Icono emoji="💀" /> Dar por muerto
-                  </button>
-                </div>
-
-                {pokemon.shiny ? (
-                  <button
-                    type="button"
-                    className="mr-4 text-xs text-slate-500 underline-offset-2 hover:text-amber-200 hover:underline"
-                    disabled={pendiente}
-                    onClick={() => cambiarShiny(false)}
-                  >
-                    Quitar lo shiny (marcado sin querer)
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  className="text-xs text-slate-500 underline-offset-2 hover:text-red-300 hover:underline"
-                  disabled={pendiente}
-                  onClick={() => {
-                    if (
-                      !window.confirm(
-                        `¿Borrar ${pokemon.nickname ?? pokemon.species}? Es para lo apuntado por error y no se puede deshacer.`,
-                      )
-                    ) {
-                      return;
-                    }
-                    lanzar(() => borrarDeLaCajaAction({ captureId: pokemon.id }), {
-                      cerrar: true,
-                      ok: "Borrado.",
-                    });
-                  }}
-                >
-                  Borrar (apuntado por error)
-                </button>
-              </div>
-            ) : null}
             </>
           ) : null}
         </div>
       </Hoja>
+      )}
       {animacion ? (
         <AnimacionDeEvolucion
           {...animacion}
@@ -812,5 +891,150 @@ function CompartirPokemon({ id, nombre }: { id: string; nombre: string }) {
         <Icono emoji="📤" /> {haciendo ? "Preparando…" : "Compartir su tarjeta"}
       </button>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// La ficha en el ordenador
+// ---------------------------------------------------------------------------
+
+/** Desde aquí la ficha va a dos columnas: el `lg` de Tailwind */
+const ANCHA = "(min-width: 1024px)";
+
+/**
+ * Si la pantalla es de ordenador. Con `useSyncExternalStore` y no con un
+ * estado que se pone al montar: la ficha se abre ya con su forma, sin pintar
+ * primero la del móvil y saltar.
+ */
+function useEsAncho() {
+  return useSyncExternalStore(
+    (avisar) => {
+      const consulta = window.matchMedia(ANCHA);
+      consulta.addEventListener("change", avisar);
+      return () => consulta.removeEventListener("change", avisar);
+    },
+    () => window.matchMedia(ANCHA).matches,
+    () => false,
+  );
+}
+
+/**
+ * **La ficha en una pantalla ancha.** La del móvil, estirada, dejaba media
+ * ventana vacía a los lados y obligaba a bajar para todo (lo dijo el usuario).
+ * Aquí va como la carta de un pokémon: a la izquierda, fijo, él en grande
+ * sobre el color de sus tipos, con sus datos y lo que se hace de un toque; a
+ * la derecha, las pestañas, con «Gestionar» —evolucionar, el mote, darlo por
+ * muerto…— en vez de «Resumen», que ya está a la vista. El móvil no cambia.
+ */
+function FichaAncha({
+  pokemon,
+  dueno,
+  onCerrar,
+  sprite,
+  pestana,
+  onPestana,
+  editable,
+  datos,
+  rapidos,
+  compartir,
+  gestion,
+  combateEHistoria,
+}: {
+  pokemon: PokemonDelTablero;
+  dueno: TableroDeJugador;
+  onCerrar: () => void;
+  sprite: React.ReactNode;
+  pestana: "gestionar" | "combate" | "historia";
+  onPestana: (valor: "gestionar" | "combate" | "historia") => void;
+  editable: boolean;
+  datos: React.ReactNode;
+  rapidos: React.ReactNode;
+  compartir: React.ReactNode;
+  gestion: React.ReactNode;
+  combateEHistoria: React.ReactNode;
+}) {
+  const nombre = pokemon.nickname ?? pokemon.species;
+  const especie = pokemon.mega ? `${pokemon.species} · ${pokemon.mega.rotulo}` : pokemon.species;
+  const color = COLOR_DE_TIPO[pokemon.tipos[0]?.slug ?? ""] ?? "#6366f1";
+  const segundo = pokemon.tipos[1] ? COLOR_DE_TIPO[pokemon.tipos[1].slug] : color;
+  const fuerte = pokemon.muerta ? "22" : "40";
+
+  return (
+    <Hoja onCerrar={onCerrar} ancho="max-w-5xl" className="overflow-hidden p-0 sm:pb-0!" etiqueta={nombre}>
+      <div className="grid grid-cols-[21rem_minmax(0,1fr)]">
+        <aside
+          className="flex flex-col border-r border-white/10 p-6"
+          style={{
+            // De arriba abajo, del primer tipo al segundo, y fundido al fondo
+            background: `linear-gradient(180deg, ${color}${fuerte}, ${segundo}1a 55%, transparent 90%)`,
+          }}
+        >
+          <div className="flex items-center gap-2.5">
+            <Avatar name={dueno.displayName} color={dueno.color} image={dueno.avatarImage} size={28} />
+            <p className="text-sm text-slate-300">{dueno.displayName}</p>
+            {dueno.asId === pokemon.id ? (
+              <span className="chip ml-auto border-amber-300/30 text-[11px] text-amber-200">
+                <Icono emoji="👑" sinColor tamano={12} /> As
+              </span>
+            ) : null}
+          </div>
+
+          <div
+            className={cx(
+              "relative mx-auto mt-5 flex h-52 w-52 items-center justify-center rounded-3xl border bg-ink-900/50 shadow-inner",
+              pokemon.shiny ? "border-amber-300/40" : "border-white/10",
+            )}
+          >
+            {sprite}
+          </div>
+
+          <div className="mt-4 text-center">
+            <h3 className="font-display text-3xl font-bold uppercase tracking-wide text-white">{nombre}</h3>
+            <p className="muted mt-0.5 flex flex-wrap items-center justify-center gap-x-1.5">
+              {especie !== nombre ? <span>{especie}</span> : null}
+              {pokemon.shiny ? (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/40 bg-amber-300/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+                  <Icono emoji="✨" tamano={12} sinColor /> Shiny
+                </span>
+              ) : null}
+            </p>
+            {pokemon.tipos.length ? (
+              <div className="mt-2 flex flex-wrap items-center justify-center gap-1">
+                {pokemon.tipos.map((tipo) => (
+                  <ChapaDeTipo key={tipo.slug} slug={tipo.slug} nombre={tipo.nombre} alto={24} />
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-5 rounded-xl border border-white/10 bg-ink-900/60 p-3">{datos}</div>
+          {rapidos ? <div className="mt-4">{rapidos}</div> : null}
+          <div className="mt-auto">{compartir}</div>
+        </aside>
+
+        <section className="flex min-h-[36rem] flex-col p-6">
+          <div className="flex items-center gap-3">
+            <Pestanas
+              className="flex-1"
+              ancha
+              etiqueta="Partes de la ficha"
+              valor={pestana}
+              onCambiar={onPestana}
+              opciones={[
+                ...(editable ? [{ valor: "gestionar" as const, rotulo: "Gestionar" }] : []),
+                { valor: "combate" as const, rotulo: "Combate", cuenta: pokemon.combate.movimientos.length || undefined },
+                { valor: "historia" as const, rotulo: "Historia" },
+              ]}
+            />
+            <button type="button" onClick={onCerrar} className="btn-ghost btn-sm" aria-label="Cerrar">
+              ✕
+            </button>
+          </div>
+          <div className="mt-4">
+            {pestana === "gestionar" ? <div className="space-y-5">{gestion}</div> : combateEHistoria}
+          </div>
+        </section>
+      </div>
+    </Hoja>
   );
 }
