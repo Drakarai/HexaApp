@@ -16,6 +16,14 @@ export const ORIGEN_BW =
   "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white";
 export const ORIGEN_ICONOS =
   "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-viii/icons";
+/**
+ * Los de Ultrasol y Ultraluna, del mismo estilo. En noviembre de 2026 PokéAPI
+ * quitó la carpeta de Espada y Escudo y todos los iconos nuevos daban «no
+ * existe» (el compañero de arriba salía roto): se prueba primero aquel por si
+ * vuelve, y si no, este.
+ */
+export const ORIGEN_ICONOS_DE_SEPTIMA =
+  "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-vii/icons";
 
 /**
  * Los sprites de PokéAPI **no se piden a GitHub desde el navegador**: van por
@@ -26,7 +34,11 @@ export const CLASES_DE_SPRITE = ["bw", "bw-recorte", "bw-animado", "icono", "hom
 export type ClaseDeSprite = (typeof CLASES_DE_SPRITE)[number];
 
 export function urlDeSprite(clase: ClaseDeSprite, id: number | string, shiny = false) {
-  return `/api/sprite/v1/${clase}/${shiny ? "shiny/" : ""}${id}`;
+  /*
+   * Los iconos van por la v2 desde que se arregló de dónde se bajan: la red de
+   * Vercel guarda un día el «no existe» de la v1, y si no, seguirían rotos.
+   */
+  return `/api/sprite/${clase === "icono" ? "v2" : "v1"}/${clase}/${shiny ? "shiny/" : ""}${id}`;
 }
 
 /**
@@ -97,6 +109,16 @@ const ALIAS: Record<string, number> = iconos.alias;
 
 /** Lo que va detrás de `#` en una imagen que hay que repintar de shiny (ver `SpritePokemon`) */
 export const REPINTAR = "#colores";
+
+/**
+ * El icono que lleva la propia aplicación (`public/iconos-de-caja`), o null si
+ * no está. Va detrás del de PokéAPI por si ese no carga: mejor un icono de
+ * otro estilo que el dibujo grande donde se espera uno pequeño.
+ */
+export function iconoDelPaquete(pokemonId: number): string | null {
+  const id = ALIAS[pokemonId] ?? pokemonId;
+  return DEL_PAQUETE.todos.has(id) ? `/iconos-de-caja/${id}.png` : null;
+}
 
 export function iconoDeCaja(pokemonId: number, shiny = false, todosIguales = false): string {
   const id = ALIAS[pokemonId] ?? pokemonId;

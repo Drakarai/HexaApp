@@ -28,7 +28,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ par
   const [version, clase, ...resto] = partes;
   const shiny = resto[0] === "shiny";
   const id = (shiny ? resto[1] : resto[0])?.replace(/\.(png|gif)$/, "") ?? "";
-  if (version !== "v1" || resto.length !== (shiny ? 2 : 1) || !esPeticionValida(clase, id)) return noHay(404);
+  // v2 solo la llevan los iconos (ver `urlDeSprite`)
+  if ((version !== "v1" && !(version === "v2" && clase === "icono")) || resto.length !== (shiny ? 2 : 1) || !esPeticionValida(clase, id)) return noHay(404);
 
   const dataUrl = await spriteGuardado(clase, id, shiny);
   const partido = dataUrl && /^data:([^;,]+);base64,(.*)$/s.exec(dataUrl);

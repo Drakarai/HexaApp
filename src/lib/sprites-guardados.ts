@@ -4,7 +4,7 @@ import { guardar, referenciaA, resolverImagen, yaGuardada } from "@/lib/almacen-
 import { objetoPorSlug, origenDeObjeto } from "@/lib/objetos";
 import { spriteCandidates } from "@/lib/pokedex";
 import { spriteDeEspecie } from "@/lib/sprites-servidor";
-import { CLASES_DE_SPRITE, ORIGEN_BW, ORIGEN_ICONOS, type ClaseDeSprite } from "@/lib/sprites-de-quinta";
+import { CLASES_DE_SPRITE, ORIGEN_BW, ORIGEN_ICONOS, ORIGEN_ICONOS_DE_SEPTIMA, type ClaseDeSprite } from "@/lib/sprites-de-quinta";
 
 /**
  * Los sprites de PokéAPI que se ven por toda la app (los de Blanco y Negro,
@@ -100,7 +100,7 @@ async function preparar(clase: ClaseDeSprite, id: string, shiny: boolean): Promi
       return gif ? aDataUrl(gif, "image/gif") : null;
     }
     case "icono": {
-      const png = await bajar(`${ORIGEN_ICONOS}/${n}.png`);
+      const png = (await bajar(`${ORIGEN_ICONOS}/${n}.png`)) ?? (await bajar(`${ORIGEN_ICONOS_DE_SEPTIMA}/${n}.png`));
       const hecho = png ? await recortado(png, LADO_MINIMO_DE_ICONO) : null;
       return hecho ? aDataUrl(hecho, "image/png") : null;
     }

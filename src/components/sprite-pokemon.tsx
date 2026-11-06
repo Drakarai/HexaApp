@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import {
   iconoDeCaja,
+  iconoDelPaquete,
   pokemonDeLaImagen,
   REPINTAR,
   spriteDeHome,
@@ -241,7 +242,7 @@ export function SpritePokemon({
     ...(id && ficha && !quieto && id > DE_LOS_JUEGOS ? [tiraAnimada(id, variocolor)].filter((c) => c !== null) : []),
     ...(id && ficha ? (quieto ? [spriteQuietoDeQuinta(id, variocolor)] : spritesDeQuinta(id, variocolor)) : []),
     ...(id && !ficha && !sinIconos && (estilo === "iconos" || estilo === "iconos-todos")
-      ? [iconoDeCaja(id, variocolor, estilo === "iconos-todos")]
+      ? [iconoDeCaja(id, variocolor, estilo === "iconos-todos"), iconoDelPaquete(id)].filter((c): c is string => Boolean(c))
       : []),
     // También detrás del icono, por si no carga
     ...(id && !ficha && estilo !== "home" ? [spriteQuietoDeQuinta(id, variocolor, true)] : []),
@@ -345,6 +346,7 @@ export function SpritePokemon({
             setNatural({ de: actual, ancho: evento.currentTarget.naturalWidth, alto: evento.currentTarget.naturalHeight })
           }
           onError={() => setFallidas((antes) => [...antes, actual])}
+          ref={siYaFallo(() => setFallidas((antes) => [...antes, actual]))}
           style={tamano ?? undefined}
           className={cx(
             // Hasta medirlo, como antes: llenando el hueco
@@ -364,6 +366,7 @@ export function SpritePokemon({
       src={listo?.url ?? actual}
       alt={alt}
       onError={() => setFallidas((antes) => [...antes, actual])}
+      ref={siYaFallo(() => setFallidas((antes) => [...antes, actual]))}
       className={cx(
         className,
         pixelado && "[image-rendering:pixelated]",
@@ -469,4 +472,16 @@ function TiraAnimada({
       ) : null}
     </span>
   );
+}
+
+/**
+ * Para el `ref` de una imagen: si ya ha fallado al montarse, avisa. Una imagen
+ * que viene pintada del servidor puede fallar **antes de que React esté
+ * escuchando**, y entonces su `onError` no llega nunca: al recargar la página
+ * se quedaba el icono roto (lo vio el usuario con el compañero de arriba).
+ */
+export function siYaFallo(alFallar: () => void) {
+  return (imagen: HTMLImageElement | null) => {
+    if (imagen?.complete && imagen.naturalWidth === 0 && imagen.getAttribute("src")) alFallar();
+  };
 }

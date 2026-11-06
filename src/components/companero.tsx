@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { useEstiloDeSprites } from "@/components/sprite-pokemon";
-import { iconoDeCaja, REPINTAR, spriteQuietoDeQuinta, type EstiloDeSprites } from "@/lib/sprites-de-quinta";
+import { siYaFallo, useEstiloDeSprites } from "@/components/sprite-pokemon";
+import { iconoDeCaja, iconoDelPaquete, REPINTAR, spriteQuietoDeQuinta, type EstiloDeSprites } from "@/lib/sprites-de-quinta";
 import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil";
 import { precargarGrito, sonarGrito } from "@/lib/gritos";
 import type { Companero as DatosDelCompanero } from "@/lib/companero";
@@ -171,7 +171,12 @@ function iconosDe(pokemonId: number, shiny: boolean, estilo: EstiloDeSprites) {
     const suyos = spritesDeAnil(pokemonId, shiny);
     return [suyos.icono, suyos.quieto];
   }
-  return [iconoDeCaja(pokemonId, shiny, estilo === "iconos-todos"), spriteQuietoDeQuinta(pokemonId, shiny, true)].map(
+  return [
+    iconoDeCaja(pokemonId, shiny, estilo === "iconos-todos"),
+    // Si el de PokéAPI no carga, el que va en la app: el compañero es un icono, no un dibujo
+    iconoDelPaquete(pokemonId),
+    spriteQuietoDeQuinta(pokemonId, shiny, true),
+  ].filter((src): src is string => Boolean(src)).map(
     // Un icono shiny repintado necesita el lienzo de SpritePokemon: aquí, el normal
     (src) => (src.endsWith(REPINTAR) ? src.slice(0, -REPINTAR.length) : src),
   );
@@ -191,6 +196,7 @@ function Icono({ pokemonId, shiny, className }: { pokemonId: number; shiny: bool
       alt=""
       draggable={false}
       onError={() => setFallidas((n) => n + 1)}
+      ref={siYaFallo(() => setFallidas((n) => n + 1))}
       className={cx("h-full w-full object-contain [image-rendering:pixelated]", className)}
     />
   );
