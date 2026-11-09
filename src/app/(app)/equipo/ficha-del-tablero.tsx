@@ -162,16 +162,25 @@ export function Ficha({
   /**
    * Nombrarlo as de su entrenador, desde su propia ficha: el as se elige de la
    * caja, y este es el sitio donde se tiene delante. El que lo era deja de
-   * serlo, y queda en la historia de los dos.
+   * serlo, y queda en la historia de los dos. **Con su porqué**, como al
+   * elegirlo desde la clasificación: antes era un «¿seguro?» y el porqué se
+   * quedaba vacío. Si ya es el as, lo mismo sirve para cambiar el porqué.
    */
-  function hacerAs() {
-    const nombre = pokemon.nickname ?? pokemon.species;
-    if (!window.confirm(`¿${nombre} pasa a ser el pokémon as? Sale en la clasificación y te acompaña arriba.`)) return;
+  const [porqueDelAs, setPorqueDelAs] = useState<string | null>(null);
+  function guardarAs() {
+    const yaLoEra = dueno.asId === pokemon.id;
     empezar(async () => {
       try {
-        const respuesta = await elegirAsAction({ participantId: pokemon.participantId, captureId: pokemon.id, reason: "" });
+        const respuesta = await elegirAsAction({
+          participantId: pokemon.participantId,
+          captureId: pokemon.id,
+          reason: porqueDelAs ?? "",
+        });
         onAviso(respuesta.error ? { tipo: "error", texto: respuesta.error } : { tipo: "ok", texto: respuesta.success ?? "Hecho." });
-        if (!respuesta.error) sonarGrito(pokemon.pokemonId);
+        if (!respuesta.error) {
+          setPorqueDelAs(null);
+          if (!yaLoEra) sonarGrito(pokemon.pokemonId);
+        }
       } catch {
         onAviso({ tipo: "error", texto: "Sin conexión: el as se cambia con línea." });
       }
@@ -473,11 +482,21 @@ export function Ficha({
         </button>
       ) : null}
       {dueno.asId === pokemon.id ? (
-        <span className="chip border-amber-300/30 text-amber-200">
-          <Icono emoji="👑" sinColor /> Es el as
-        </span>
+        <button
+          type="button"
+          className="chip border-amber-300/30 text-amber-200 hover:bg-amber-300/10"
+          title="Cambiar por qué es el as"
+          onClick={() => setPorqueDelAs(porqueDelAs === null ? (dueno.asPorque ?? "") : null)}
+        >
+          <Icono emoji="👑" sinColor /> Es el as · ✎
+        </button>
       ) : (
-        <button type="button" className="btn-ghost btn-sm" disabled={pendiente} onClick={hacerAs}>
+        <button
+          type="button"
+          className="btn-ghost btn-sm"
+          disabled={pendiente}
+          onClick={() => setPorqueDelAs(porqueDelAs === null ? "" : null)}
+        >
           <Icono emoji="👑" /> Hacerlo as
         </button>
       )}
@@ -519,6 +538,38 @@ export function Ficha({
           </option>
         ))}
       </select>
+      {porqueDelAs !== null ? (
+        <form
+          className="w-full rounded-xl border border-amber-300/30 bg-amber-300/[0.05] p-3"
+          onSubmit={(evento) => {
+            evento.preventDefault();
+            guardarAs();
+          }}
+        >
+          <label className="label" htmlFor="porque-del-as">
+            {dueno.asId === pokemon.id
+              ? "Por qué es tu as"
+              : `Por qué ${pokemon.nickname ?? pokemon.species} va a ser tu as`}
+          </label>
+          <textarea
+            id="porque-del-as"
+            className="input min-h-16"
+            value={porqueDelAs}
+            maxLength={500}
+            autoFocus
+            onChange={(evento) => setPorqueDelAs(evento.target.value)}
+            placeholder="Lleva conmigo desde la Ruta 1… (opcional)"
+          />
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button type="submit" className="btn-primary btn-sm" disabled={pendiente}>
+              <Icono emoji="👑" /> {dueno.asId === pokemon.id ? "Guardar" : "Hacerlo as"}
+            </button>
+            <button type="button" className="btn-ghost btn-sm" onClick={() => setPorqueDelAs(null)}>
+              Cancelar
+            </button>
+          </div>
+        </form>
+      ) : null}
     </div>
   );
   const gestion = (

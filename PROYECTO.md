@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 6 de noviembre de 2026 (**la ficha del pokémon a dos columnas en el ordenador** y **los iconos de caja otra vez en pie**: el compañero de arriba salía roto).
+Última actualización: 9 de noviembre de 2026 (**el porqué del as** se escribe también al hacerlo desde la ficha del Equipo y PC).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -326,7 +326,9 @@ vacía, la aplicación lleva a una pantalla que crea la cuenta de administrador.
 participante y no en el usuario, para que cada edición conserve el suyo al
 archivarse. **Se elige de su caja**: uno vivo de su Equipo y PC, desde Mi perfil
 (su caja en cuadrícula, con buscador) o con «Hacerlo as» en la ficha del
-pokémon. Antes era una especie escrita con el buscador del cementerio; el
+pokémon, que **abre un recuadro para escribir su porqué** (antes era un
+«¿seguro?» y el porqué se quedaba vacío); en el que ya es el as, «Es el as ·
+✎» abre el mismo recuadro para cambiarlo (`asPorque` en el tablero). Antes era una especie escrita con el buscador del cementerio; el
 grupo pidió que fuera de verdad uno de los suyos y que **se pusiera al día
 solo**. Por eso el participante guarda la captura (`aceCaptureId`) y además
 **una copia** de su especie, mote e imágenes en las columnas de siempre: así la
@@ -5050,3 +5052,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 161. **Repaso de seguridad atacando de verdad**: errores internos tapados, redirecciones y enlaces de fotos con límites, y el equipo a Showdown al nivel de la jornada debida.
 162. **Borrar un locke, solo quien lo creó o el Creador**; Next a la 16.4.5.
 163. **La ficha del pokémon a dos columnas en el ordenador**, y los iconos de caja de vuelta (PokéAPI quitó los de Espada y Escudo).
+164. **El porqué del as desde la ficha**: hacerlo as o cambiar su porqué sin salir del Equipo y PC.

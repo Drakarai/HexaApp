@@ -73,6 +73,26 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "exportar a Showdown");
   });
 
+  test("hacerlo as desde su ficha, con su porqué", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/equipo");
+    await pagina.locator('[aria-label^="Cacahuete —"]').first().click();
+    const ficha = pagina.getByRole("dialog");
+    // En el ordenador, los botones rápidos van en la columna de la izquierda
+    await ficha.getByRole("button", { name: /Hacerlo as/ }).first().click();
+    await ficha.getByLabel(/va a ser tu as/).fill("Fue el primero de todos.");
+    await ficha.locator("form").getByRole("button", { name: /Hacerlo as/ }).click();
+    await ficha.getByRole("button", { name: /Es el as/ }).waitFor();
+    // El porqué se guarda: al abrirlo para cambiarlo, ahí está
+    await ficha.getByRole("button", { name: /Es el as/ }).click();
+    assert.equal(await ficha.getByLabel("Por qué es tu as").inputValue(), "Fue el primero de todos.");
+    await ficha.getByLabel("Por qué es tu as").fill("El primero, y el más pesado.");
+    await ficha.locator("form", { has: pagina.getByLabel("Por qué es tu as") }).getByRole("button", { name: /Guardar/ }).click();
+    await pagina.getByText("As guardado.").waitFor();
+    await pagina.keyboard.press("Escape");
+    sinProblemas(problemas, "el as desde la ficha");
+  });
+
   test("compartir su tarjeta hace la imagen, y nadie más la puede pedir", async () => {
     const { pagina, problemas } = sesion;
     await ir(pagina, "/equipo");
