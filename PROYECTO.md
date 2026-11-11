@@ -26,6 +26,7 @@ por gimnasio, jornadas cada dos medallas, sistema de puntos empezando en 5 y una
 Final Four. La aplicación **no es solo para esa edición**: es una base genérica,
 y los datos de ese PDF están cargados como ejemplo editable.
 
+Web publicada: `https://hexa-app-taupe.vercel.app`
 Repositorio: `github.com/Drakarai/HexaApp`
 Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 

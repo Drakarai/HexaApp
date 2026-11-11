@@ -4,7 +4,8 @@
 puntos**: jornadas de combates, clasificación, level caps, cementerio, mapa de
 capturas, el equipo y la caja de cada uno, ruletas, sorteos, final a cuatro y un
 palmarés de todas las ediciones. Web instalable en el móvil (PWA), en
-producción y en uso de verdad.
+producción y en uso de verdad: **[hexa-app-taupe.vercel.app](https://hexa-app-taupe.vercel.app)**
+(con cuenta; las capturas de abajo son de una partida de ejemplo).
 
 <p align="center">
   <img src="docs/capturas/resumen.jpg" width="200" alt="Portada de una edición: toca jornada, rival y clasificación">
