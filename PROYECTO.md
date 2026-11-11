@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de noviembre de 2026 (**el repositorio, listo para hacerse público**: sin datos personales, nombres de ejemplo inventados y README de presentación).
+Última actualización: 11 de noviembre de 2026 (**el repositorio, listo para hacerse público**: sin datos personales, nombres de ejemplo inventados, README de presentación y las direcciones con el usuario de GitHub **Drakarai**).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -26,7 +26,7 @@ por gimnasio, jornadas cada dos medallas, sistema de puntos empezando en 5 y una
 Final Four. La aplicación **no es solo para esa edición**: es una base genérica,
 y los datos de ese PDF están cargados como ejemplo editable.
 
-Repositorio: `github.com/PepeLePew016/HexaApp`
+Repositorio: `github.com/Drakarai/HexaApp`
 Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 
 ---
@@ -3235,7 +3235,7 @@ especie**— y se queda con el reparto que más tenga. Sin ninguna, va por orden
 el aviso sale en ámbar para que se mire; «Están al revés» le da la vuelta.
 
 **Las repeticiones de Añil, como plan B.** El servidor de Showdown de Añil
-(`PepeLePew016/AnilShowdown`) no sube sus combates a replay.pokemonshowdown.com:
+(`Drakarai/AnilShowdown`) no sube sus combates a replay.pokemonshowdown.com:
 los publica como páginas sueltas en Cloudflare Pages
 (`https://<proyecto>.pages.dev/replays/<fecha>_<p1>-vs-<p2>_<id>`), en el mismo
 formato que «Download replay» de Showdown, con el registro dentro de un
@@ -3426,7 +3426,7 @@ una o dos líneas en el móvil, no tres.
 Añil y quería todo lo suyo —pokémon, formas, megas, tipos, habilidades,
 movimientos y objetos—, pero sin que apareciera en otros juegos. Los datos
 salen de los ficheros del juego (`pbs/` del repositorio de su servidor de
-Showdown, `PepeLePew016/AnilShowdown`, que son los mismos que pasó el usuario)
+Showdown, `Drakarai/AnilShowdown`, que son los mismos que pasó el usuario)
 con `scripts/anil.py`, que compara con los de la app y guarda **solo lo que
 cambia** en `lib/anil.json` (28 KB) y `lib/habilidades-anil.json` (61 KB, que
 el navegador solo carga al editar una ficha). Lo que entra:

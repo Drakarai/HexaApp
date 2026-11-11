@@ -23,7 +23,7 @@ la tecnología con la que está hecha HexaApp, y también tiene plan gratis.
 
 Los dos se conectan a tu repositorio de GitHub, donde ya está el código subido.
 Tú no tienes que subir nada: **ya está ahí**, en
-`github.com/PepeLePew016/HexaApp`.
+`github.com/Drakarai/HexaApp`.
 
 El orden importa: primero Neon (porque Vercel necesita saber dónde está la base
 de datos), después Vercel.

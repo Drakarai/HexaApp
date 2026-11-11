@@ -2,7 +2,7 @@
 Saca de los datos de Pokémon Añil lo que la app usa en los lockes de Añil.
 
 Uso:
-    git clone https://github.com/PepeLePew016/AnilShowdown
+    git clone https://github.com/Drakarai/AnilShowdown
     python scripts/anil.py AnilShowdown/pbs <carpeta con los CSV de PokéAPI> <pokemon_forms.txt de Essentials estándar>
 
 Los PBS son los ficheros de datos del juego (Pokémon Essentials), copiados en
