@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 9 de noviembre de 2026 (**el porqué del as** se escribe también al hacerlo desde la ficha del Equipo y PC).
+Última actualización: 11 de noviembre de 2026 (**el repositorio, listo para hacerse público**: sin datos personales, nombres de ejemplo inventados y README de presentación).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3540,7 +3540,7 @@ no son Añil no, porque cada uno guarda a su manera. Lo que el juego no guarda
 (naturaleza en la 1ª y 2ª, sitio en la 1ª, Oro y Plata, fecha hasta la 3ª) no
 se inventa. El mote: de la 4ª en adelante el juego dice si se le puso; antes
 no, y uno igual que la especie («PIKACHU») cuenta como sin mote. Probado con
-las partidas reales de X, SoulSilver y Blanco (68 y 57 pokémon,
+partidas reales de X, SoulSilver y Blanco (68 y 57 pokémon,
 con la copia buena de las dos que guarda la 4ª y los shiny bien sacados) y,
 para el resto, con **partidas montadas**
 con la forma de cada juego y **pokémon de verdad** de las pruebas de PKHeX
@@ -3806,6 +3806,17 @@ Los iconos pasaron a `/api/sprite/v2/…` porque la red de Vercel guarda un día
 el «no existe» de la v1. Y **una imagen que falla antes de que React esté
 escuchando no avisa nunca**: `siYaFallo` (en `sprite-pokemon.tsx`) mira al
 montarla si ya llegó rota y pasa a la siguiente.
+
+**El repositorio es público, y por eso no lleva nada personal.** El dueño
+lo abrió para enseñarlo junto a su CV. Antes se quitó todo lo que hablaba de
+personas reales, también del historial (se reescribió entero): los jugadores
+de ejemplo tienen nombres inventados con las mismas iniciales que los de
+antes —Pablo, Héctor, Enzo, Rodri, Álex y Lara; Draka es el apodo del autor y
+se queda—, porque la clasificación desempata por nombre y las pruebas cuentan
+con ese orden. **Nada personal en el repositorio**: ni nombres de amigos, ni
+datos de quien lo dirige, ni copias de la base de datos de producción, ni
+claves (esas viven en Vercel). El README es la presentación del proyecto y
+dice que el código se escribe con un asistente de IA, como es.
 
 **Una ruta partida son trozos, no zonas.** Un trozo es una `MapZone` con
 `trozoDeId` apuntando a su ruta (con `onDelete: Cascade`: borrar la ruta se
@@ -4688,7 +4699,7 @@ prueba cada cambio en el móvil; el código se escribe con un asistente de IA.
 Conviene:
 
 - Escribir en español, tanto la interfaz como los comentarios del código.
-- Explicar los pasos con detalle, sin jerga, diciendo qué verá en pantalla.
+- Explicar los pasos con detalle, sin jerga, diciendo qué se verá en pantalla.
 - Evitar que dependa de la terminal cuando haya alternativa por navegador.
 
 Una vez montado Vercel, **cada push a la rama principal se publica solo**. Los
@@ -5053,3 +5064,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 162. **Borrar un locke, solo quien lo creó o el Creador**; Next a la 16.4.5.
 163. **La ficha del pokémon a dos columnas en el ordenador**, y los iconos de caja de vuelta (PokéAPI quitó los de Espada y Escudo).
 164. **El porqué del as desde la ficha**: hacerlo as o cambiar su porqué sin salir del Equipo y PC.
+165. **Repositorio listo para ser público**: nombres de ejemplo inventados, nada personal en el código ni en el historial, guías rehechas y README de presentación.

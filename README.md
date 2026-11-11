@@ -1,195 +1,116 @@
 # HexaApp
 
-Aplicación para gestionar competiciones tipo **Hexalocke**: un nuzlocke por
-puntos entre varios jugadores, con reglas propias, level caps, jornadas y
-clasificación.
+**La aplicación con la que un grupo de amigos juega sus nuzlockes de Pokémon por
+puntos**: jornadas de combates, clasificación, level caps, cementerio, mapa de
+capturas, el equipo y la caja de cada uno, ruletas, sorteos, final a cuatro y un
+palmarés de todas las ediciones. Web instalable en el móvil (PWA), en
+producción y en uso de verdad.
 
-> ¿Retomando el proyecto? **[PROYECTO.md](PROYECTO.md)** guarda el contexto
-> completo: decisiones tomadas, por qué, y qué queda pendiente.
+<p align="center">
+  <img src="docs/capturas/resumen.jpg" width="200" alt="Portada de una edición: toca jornada, rival y clasificación">
+  <img src="docs/capturas/equipo-ficha.jpg" width="200" alt="Ficha de un pokémon del equipo">
+  <img src="docs/capturas/mapa-dibujo.jpg" width="200" alt="Mapa de capturas de Isla Melemele">
+  <img src="docs/capturas/jornadas.jpg" width="200" alt="Jornadas con su marcador">
+</p>
 
-Cada edición (Hexalocke 1, 2, 3…) es una **competición independiente**. Al crear
-una nueva, la anterior se archiva con todos sus datos intactos: reglas, muertes,
-puntos, jornadas y ruletas quedan guardados como recuerdo y se pueden consultar
-en cualquier momento desde el selector de la barra lateral.
+## Qué es un Hexalocke
 
-## Qué incluye
+Un *nuzlocke* es un reto de Pokémon con normas propias: solo se captura el
+primer pokémon de cada ruta y el que cae se da por muerto. El **Hexalocke** lo
+convierte en una competición: varios jugadores avanzan a la vez, cada pocos
+gimnasios hay una **jornada de combates** entre ellos, se suman puntos y al final
+los mejores se juegan el título. Llevarlo en notas y grupos de mensajería era un
+caos; HexaApp lo junta todo en un sitio.
 
-| Sección | Qué hace |
-| --- | --- |
-| **Resumen** | Level cap actual, clasificación, próxima jornada, últimas bajas y últimos giros de ruleta. |
-| **Reglas** | Normativa del locke por secciones y categorías. Editable por administradores, con orden configurable. |
-| **Level caps** | Nivel máximo de cada gimnasio / Alto Mando / Liga. Cada jugador marca cuándo lo supera, así se ve quién frena al grupo. |
-| **Cementerio** | Caja estilo PC de Pokémon: una casilla con sprite por cada caído. Al pinchar se abre su ficha, con una imagen grande independiente del sprite. Filtrable por jugador. |
-| **Jornadas** | Emparejamientos por jornada, ganador y diferencia de pokémon. Marcar el ganador **suma automáticamente** el punto de la victoria. |
-| **Puntos** | Clasificación con desempates, ajuste rápido ±1, ajustes con motivo, ajuste masivo a todos e historial completo de movimientos. |
-| **Ruleta** | Ruletas totalmente personalizables: opciones, pesos, colores, duración del giro y modo sin repetición. El sorteo se decide en el servidor. |
-| **Mis notas** | Cuaderno **privado** con un sub-apartado por jugador (incluido uno mismo) más notas generales. Nadie más las ve, tampoco los administradores. |
-| **Competiciones** | Crear ediciones nuevas copiando reglas/level caps/jugadores/ruletas, archivar, reactivar y gestionar participantes. |
-| **Administración** | Alta de usuarios, roles y contraseñas. |
+## Lo que hace
 
-### Imágenes
+- **Competición**: jornadas con emparejamientos automáticos tipo liguilla (o al
+  mejor de tres), resultados que suman puntos solos, clasificación con
+  desempates, final a cuatro con su cuadro, MVP votado y Battle Royale.
+- **El juego de cada uno**: equipo y caja como el PC de los juegos (arrastrar,
+  evolucionar con su animación, shiny, intercambios, deshacer), cementerio de
+  lápidas y un **mapa de capturas** sobre el dibujo de cada región, con un editor
+  de zonas a medida (polígonos, rutas partidas en trozos).
+- **Lee las partidas de verdad**: el archivo de guardado de los juegos oficiales
+  de la 1ª a la 7ª generación (y de un fangame) se interpreta en el navegador y
+  pone al día el equipo; y de una repetición de Pokémon Showdown se saca el
+  resultado y los equipos del combate.
+- **Organización**: varias ediciones a la vez con su archivo histórico,
+  permisos por edición, espectadores, reglamento con avisos de cambios, ruletas
+  y sorteos, bolsa de objetos, copias de seguridad automáticas y un buzón de
+  sugerencias.
+- **Funciona sin conexión**: lo que se apunta sin línea se guarda en una cola y
+  se sube solo al volver, sin duplicarse.
 
-En el cementerio y en el perfil puedes **subir una imagen del ordenador** o
-**pegar el enlace** de una imagen de internet. Las que subes se reducen de
-tamaño en el navegador y se guardan dentro de la propia base de datos, así que
-el fichero `.db` se lleva todo consigo: copiarlo es copiar la aplicación entera
-con sus fotos.
+## Por dentro
 
-Cada baja tiene dos imágenes distintas y opcionales: el **sprite de la caja**
-(el cuadradito de la cuadrícula) y la **imagen de la ficha** (la grande que se
-ve al pincharla). Si falta la de la ficha, se usa el sprite; si falta el
-sprite, sale una pokéball de relleno.
+- **Next.js 16** (App Router y Server Actions), **React 19**, **TypeScript**,
+  **Tailwind CSS 4** y **Prisma** sobre **PostgreSQL** (Neon). Desplegada en
+  **Vercel**: cada cambio en la rama principal se publica solo.
+- **Permisos en el servidor**, dentro de cada acción: ocultar un botón nunca se
+  da por comprobación. Se ha probado atacándola de verdad —llamando a las ~200
+  acciones con identificadores ajenos, sin sesión y con cada tipo de cuenta— y
+  comparando la base de datos fila a fila.
+- **Seguridad**: contraseñas con bcrypt, sesión firmada en cookie `httpOnly`
+  revocable, freno a los intentos de entrada, cabeceras y CSP, imágenes servidas
+  sin poder ejecutar nada y descargas externas con límites.
+- **Pruebas**: 290 pruebas de las reglas del juego (puntos, desempates,
+  emparejamientos, lectura de partidas…) que paran el despliegue si fallan, y
+  122 pruebas de interfaz con Playwright que recorren la app como un usuario.
+- **Imágenes ligeras**: se reducen en el navegador antes de subirlas y los
+  sprites se preparan una vez en el servidor y se sirven con caché.
 
-Lo normal es no tener que buscarlas: al escribir la especie en el buscador
-salen las dos solas, el **render de Pokémon HOME** para la caja y la
-**ilustración oficial** para la ficha, con selector de **forma alterna** (Alola,
-Galar, Rotom, megas…) y casilla de **shiny**. Se descargan una vez, se reducen
-en el navegador y se guardan como copia propia, así que después no dependen de
-ningún servidor ajeno. La lista de especies vive en `src/lib/pokedex.json` y se
-regenera con `npm run pokedex` cuando salgan pokémon nuevos.
+## Cómo se ha hecho
 
-La foto de perfil aparece en la clasificación, el cementerio, las jornadas y la
-cabecera. Si no pones ninguna, se usa la inicial sobre tu color.
+El proyecto lo ha diseñado y dirigido **Drakarai**: qué se construye, cómo
+funciona cada regla y cómo se ve, probándolo con el grupo que lo usa. El código
+se ha escrito con **Claude Code**, un asistente de programación con IA.
+[`PROYECTO.md`](PROYECTO.md) recoge cada decisión con su porqué, y
+[`CLAUDE.md`](CLAUDE.md), las normas de trabajo del repositorio.
 
-### Clasificación y desempates
+## Ponerla en marcha
 
-El orden sigue las reglas del locke: **puntos** → **menos pokémon muertos** →
-**mejor diferencia de pokémon** en los combates de jornada. Los dos primeros
-aparecen marcados como clasificados directos para la Final Four.
-
-### App de móvil
-
-La aplicación es una **PWA**: desde el navegador del móvil se instala en la
-pantalla de inicio y se abre a pantalla completa, con su icono, como una app
-nativa. La misma dirección sirve para el PC. Cómo publicarla gratis y cómo
-instalarla en cada teléfono está en **[DEPLOY.md](DEPLOY.md)**.
-
-## Puesta en marcha
-
-Necesitas una base de datos PostgreSQL. Lo más rápido es crear una gratis en
-[neon.com](https://neon.com) (2 minutos, sin tarjeta) y pegar su cadena de
-conexión en el `.env`.
+Hace falta Node 20+ y una base de datos PostgreSQL (vale una gratuita de
+[Neon](https://neon.com)).
 
 ```bash
 npm install
-cp .env.example .env      # pon tu DATABASE_URL y cambia AUTH_SECRET
-npm run db:push           # crea las tablas
+cp .env.example .env      # pon tu DATABASE_URL y un AUTH_SECRET largo
+npm run setup             # crea las tablas y carga una edición de ejemplo
 npm run dev               # http://localhost:3000
 ```
 
-La primera vez que abras la aplicación con la base de datos vacía te saldrá una
-**pantalla de instalación** para crear tu cuenta de administrador, con la opción
-de cargar la competición de ejemplo. No hace falta nada más.
+La edición de ejemplo trae las cuentas `admin`, `draka`, `pablo`, `hector`,
+`rodri`, `enzo` y `alex`, con la contraseña de `SEED_PASSWORD` (`hexalocke` por
+defecto). Con una base de datos vacía y `npm run db:push`, la primera visita
+abre una pantalla de instalación para crear la cuenta principal.
 
-Si prefieres los datos de ejemplo completos (los seis jugadores del Hexalocke 2
-con sus jornadas ya emparejadas), usa `npm run setup` en lugar de `db:push`: crea
-las cuentas `admin`, `draka`, `pablo`, `hector`, `rodri`, `enzo` y `alex`, todas
-con la contraseña de `SEED_PASSWORD` (`hexalocke` por defecto).
+| Orden | Para qué |
+| --- | --- |
+| `npm test` | Las pruebas de las reglas (van dentro del build) |
+| `npm run test:interfaz` | Las pruebas de interfaz, tras `npm run build` |
+| `npm run build` | Pruebas, tablas al día y compilación |
+| `npm run users` | Ver usuarios o cambiar una contraseña desde la terminal |
 
-El seed crea la competición de ejemplo *Hexalocke 2* (reglas, 10 level caps,
-5 jornadas con sus parejas y 2 ruletas) más siete cuentas: `admin`, `draka`,
-`pablo`, `hector`, `rodri`, `enzo` y `alex`. La contraseña de todas es la de
-`SEED_PASSWORD` (por defecto `hexalocke`).
-
-> Cambia las contraseñas desde **Administración** antes de usarlo en serio, y
-> pon un `AUTH_SECRET` largo y aleatorio:
-> `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"`
-
-Para arrancar de cero sin datos de ejemplo, ejecuta `npm run db:push` en lugar de
-`npm run setup` y crea el primer usuario administrador a mano:
-
-```bash
-npx tsx -e "
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
-const prisma = new PrismaClient();
-await prisma.user.create({ data: {
-  username: 'admin', displayName: 'Admin', role: 'ADMIN',
-  passwordHash: await bcrypt.hash('CAMBIAME', 10),
-}});
-"
-```
-
-### Actualizar a una versión nueva
-
-Los datos viven en el servidor, así que actualizar el código no toca nada:
-
-```bash
-git pull
-npm install
-npm run db:push   # aplica los cambios del modelo de datos, sin borrar nada
-npm run dev
-```
-
-### Si no puedes entrar
-
-```bash
-npm run users                             # lista los usuarios que hay
-npx tsx scripts/users.ts admin nuevaclave # cambia una contraseña
-```
-
-### Venías de la versión con SQLite
-
-Hasta hace poco los datos vivían en un fichero `prisma/dev.db`. Para llevártelos
-a la base de datos nueva:
-
-```bash
-npx tsx scripts/export-sqlite.ts   # en la carpeta antigua → hexaapp-export.json
-npx tsx scripts/import-json.ts     # en la nueva, con DATABASE_URL ya configurada
-```
-
-Repetir la importación no duplica nada.
-
-### Producción
-
-Ver **[DEPLOY.md](DEPLOY.md)**. En resumen: `DATABASE_URL` y `AUTH_SECRET` como
-variables de entorno, y `npm run build` / `npm start` (o directamente Vercel,
-que lo hace solo).
-
-## Roles
-
-- **Administrador global**: crea competiciones y usuarios, y puede gestionar
-  cualquier competición.
-- **Administrador de competición**: un participante marcado como admin dentro de
-  una edición concreta. Puede editar reglas, level caps, jornadas, puntos y
-  ruletas de *esa* competición.
-- **Jugador**: registra sus propias muertes, marca sus gimnasios superados y
-  escribe sus notas privadas.
-
-## Stack
-
-Next.js 16 (App Router y Server Actions) · React 19 · TypeScript · Tailwind CSS 4 ·
-Prisma 6 sobre PostgreSQL · PWA instalable · sesiones propias con cookie firmada
-(JWT) y bcrypt.
+Cómo publicarla en Vercel e instalarla en el móvil: [`DEPLOY.md`](DEPLOY.md).
+Las guías de uso en PDF salen de [`guia/`](guia/README.md).
 
 ```
 src/
-  app/
-    (app)/          páginas con sesión iniciada (una carpeta por sección)
-    actions/        server actions, agrupadas por dominio
-    login/          pantalla de acceso
-  components/       UI compartida (ruleta, clasificación, navegación, formularios)
-  lib/              db, auth, sesión, permisos y cálculo de la clasificación
-prisma/
-  schema.prisma     modelo de datos
-  seed.ts           datos de ejemplo del Hexalocke 2
-scripts/
-  users.ts          listar usuarios y cambiar contraseñas desde la terminal
-  generate-pokedex.ts  regenera la lista de especies y formas (PokéAPI)
-  export-sqlite.ts  migración desde la versión antigua con SQLite
-  import-json.ts    carga ese volcado en la base de datos actual
-public/
-  sw.js, icons/     piezas de la PWA (service worker e iconos)
+  app/(app)/     una carpeta por pantalla
+  app/actions/   server actions, con sus permisos
+  app/api/       imágenes, sprites, sincronización sin conexión
+  components/    piezas de interfaz compartidas
+  lib/           reglas del juego, permisos, lectura de partidas…
+prisma/          modelo de datos y datos de ejemplo
+tests/           pruebas de las reglas e interfaz/ con Playwright
+guia/            las guías en PDF y cómo se rehacen
 ```
 
-## Ideas para más adelante
+## Licencia
 
-Cosas que encajan con el modelo de datos actual y quedan pendientes:
-
-- **Equipos**: fichar los 6 pokémon vivos de cada jugador, no solo los muertos.
-- **Encuentros por ruta**: registrar qué salió en cada zona y si se capturó.
-- **Final Four**: bracket del torneo con los 4 clasificados.
-- **Apuestas entre jornadas**: proponer una apuesta y votarla, como en las reglas.
-- **Subida de vídeos** o enlaces a las grabaciones de cada combate de gimnasio.
-- **Notificaciones** cuando todos superan un gimnasio y se desbloquea seguir.
-- **Exportar** una edición archivada a PDF o imagen como resumen final.
+© 2026 Drakarai. **Todos los derechos reservados**: el código se puede leer,
+pero no copiar, modificar ni usar sin permiso (ver [`LICENSE`](LICENSE)).
+Pokémon y sus nombres, imágenes y sonidos son de Nintendo, Creatures Inc. y
+GAME FREAK inc.; HexaApp es un proyecto de fans sin ánimo de lucro y sin relación
+con ellos.
