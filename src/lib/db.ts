@@ -60,8 +60,50 @@ const SIN_IMAGENES = {
 const esperar = (ms: number) =>
   new Promise((suelta) => setTimeout(suelta, ms));
 
+/**
+ * **Neon apaga la base de datos cuando nadie la usa** (el plan gratis, a los
+ * cinco minutos) y el primer acceso la despierta, lo que puede tardar unos
+ * segundos. Prisma esperaba 5 para conectar y, si no llegaba, la página caía
+ * con «Can't reach database server»: pasó varias veces seguidas un mediodía de
+ * noviembre de 2026, a la primera visita. Dos remedios:
+ *
+ * - **15 segundos para conectar** (`connect_timeout`), lo que Neon recomienda
+ *   para despertar, salvo que la dirección ya diga otra cosa.
+ * - **Reintentar**, hasta dos veces más con una pausa, la consulta que no ha
+ *   podido conectar, y la que leía cuando se cortó la conexión (ver
+ *   `sePuedeRepetir`).
+ */
+const SEGUNDOS_PARA_CONECTAR = 15;
+const REINTENTOS = 2;
+
+function conTiempoParaConectar(url: string | undefined) {
+  if (!url || /[?&]connect_timeout=/.test(url)) return url;
+  return `${url}${url.includes("?") ? "&" : "?"}connect_timeout=${SEGUNDOS_PARA_CONECTAR}`;
+}
+
+/** Las que solo leen: repetirlas nunca hace nada dos veces */
+const LECTURAS = new Set([
+  "findUnique", "findUniqueOrThrow", "findFirst", "findFirstOrThrow", "findMany",
+  "count", "aggregate", "groupBy", "$queryRaw", "$queryRawUnsafe",
+]);
+
+/**
+ * Si vale la pena repetirla. **No pudo ni conectar** (P1001): se repite
+ * siempre, que no llegó a hacerse nada. **Se cortó la conexión** (P1017), que
+ * es lo que pasa cuando Neon se duerme con conexiones abiertas: solo si leía,
+ * porque una que guardaba podría haberse hecho justo antes del corte.
+ */
+function sePuedeRepetir(error: unknown, operacion: string) {
+  const e = error as { name?: string; errorCode?: string; code?: string } | null;
+  if (!e) return false;
+  if (e.errorCode === "P1001" || e.code === "P1001" || e.name === "PrismaClientInitializationError") return true;
+  return e.code === "P1017" && LECTURAS.has(operacion);
+}
+
 const crearCliente = () => {
+  const url = conTiempoParaConectar(process.env.DATABASE_URL);
   const cliente = new PrismaClient({
+    ...(url ? { datasources: { db: { url } } } : {}),
     log: process.env.CONTAR_CONSULTAS
       ? ["query"]
       : process.env.NODE_ENV === "development"
@@ -71,19 +113,27 @@ const crearCliente = () => {
   });
 
   const latencia = Number(process.env.LATENCIA_FALSA ?? 0);
-  if (!latencia) return cliente;
 
   return cliente.$extends({
     query: {
       async $allOperations({ model, operation, args, query }) {
-        // Con las dos encendidas sale también **cuándo** empieza cada una, que
-        // es lo que enseña las tandas: las de la misma tanda salen seguidas con
-        // el mismo momento, y una tanda nueva empieza 30 ms después
-        if (process.env.CONTAR_CONSULTAS) {
-          console.log(`tanda ${Date.now() % 100000} ${model}.${operation}`);
+        if (latencia) {
+          // Con las dos encendidas sale también **cuándo** empieza cada una, que
+          // es lo que enseña las tandas: las de la misma tanda salen seguidas con
+          // el mismo momento, y una tanda nueva empieza 30 ms después
+          if (process.env.CONTAR_CONSULTAS) {
+            console.log(`tanda ${Date.now() % 100000} ${model}.${operation}`);
+          }
+          await esperar(latencia);
         }
-        await esperar(latencia);
-        return query(args);
+        for (let intento = 0; ; intento++) {
+          try {
+            return await query(args);
+          } catch (error) {
+            if (intento >= REINTENTOS || !sePuedeRepetir(error, operation)) throw error;
+            await esperar(1500 * (intento + 1));
+          }
+        }
       },
     },
   }) as unknown as typeof cliente;

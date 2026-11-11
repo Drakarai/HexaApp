@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de noviembre de 2026 (**el repositorio, listo para hacerse público**: sin datos personales, nombres de ejemplo inventados, README de presentación y las direcciones con el usuario de GitHub **Drakarai**).
+Última actualización: 11 de noviembre de 2026 (**la base de datos dormida ya no tumba la página**: más espera al conectar y reintento).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3819,6 +3819,17 @@ datos de quien lo dirige, ni copias de la base de datos de producción, ni
 claves (esas viven en Vercel). El README es la presentación del proyecto y
 dice que el código se escribe con un asistente de IA, como es.
 
+**Cuando Neon está dormido, se espera y se reintenta.** En el plan gratis
+Neon apaga la base a los cinco minutos sin uso; el primer acceso la despierta
+y puede tardar unos segundos. Prisma esperaba 5 para conectar y la página
+caía con «Can't reach database server» (P1001), o con «Server has closed the
+connection» (P1017) si la conexión se había quedado abierta. Ahora
+`lib/db.ts` añade `connect_timeout=15` a la dirección si no lo trae y repite
+hasta dos veces, con pausa, la consulta que **no pudo conectar** (siempre: no
+llegó a hacerse nada) o la que **leía** cuando se cortó (una que guardaba no,
+que podría haberse hecho). Probado apagando Postgres a mitad de una visita: la
+página espera unos segundos y sale bien.
+
 **Una ruta partida son trozos, no zonas.** Un trozo es una `MapZone` con
 `trozoDeId` apuntando a su ruta (con `onDelete: Cascade`: borrar la ruta se
 lleva sus trozos). Se pensó en dejar que una zona tuviera varias formas en un
@@ -5066,3 +5077,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 163. **La ficha del pokémon a dos columnas en el ordenador**, y los iconos de caja de vuelta (PokéAPI quitó los de Espada y Escudo).
 164. **El porqué del as desde la ficha**: hacerlo as o cambiar su porqué sin salir del Equipo y PC.
 165. **Repositorio listo para ser público**: nombres de ejemplo inventados, nada personal en el código ni en el historial, guías rehechas y README de presentación.
+166. **La base dormida ya no tumba la página**: más espera al conectar con Neon y reintento de lo que no llegó a hacerse.
