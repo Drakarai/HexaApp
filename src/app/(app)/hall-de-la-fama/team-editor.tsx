@@ -4,7 +4,9 @@ import { SpritePokemon } from "@/components/sprite-pokemon";
 import { useActionState, useEffect, useState } from "react";
 import {
   addHallPokemonAction,
+  anadirDelPcAction,
   removeHallPokemonAction,
+  traerEquipoDelPcAction,
   traerUltimoEquipoAction,
 } from "@/app/actions/hall";
 import type { FormState } from "@/app/actions/auth";
@@ -253,7 +255,7 @@ function TraerUltimoEquipo({
   );
 
   return (
-    <form action={formAction} className="mt-3">
+    <form action={formAction}>
       <input type="hidden" name="participantId" value={participantId} />
       <SubmitButton className="btn-ghost btn-sm">
         ⤵ Traer el equipo de {deDonde}
@@ -263,17 +265,96 @@ function TraerUltimoEquipo({
   );
 }
 
+/** Un pokémon de su Equipo y PC, para elegirlo */
+export type DelPc = {
+  id: string;
+  species: string;
+  nickname: string | null;
+  enEquipo: boolean;
+  imagen: string | null;
+};
+
+/** Traerse de golpe los que lleva en el equipo de Equipo y PC */
+function TraerDelPc({ participantId }: { participantId: string }) {
+  const [state, formAction] = useActionState<FormState, FormData>(traerEquipoDelPcAction, null);
+  return (
+    <form action={formAction}>
+      <input type="hidden" name="participantId" value={participantId} />
+      <SubmitButton className="btn-ghost btn-sm">⤵ Traer mi equipo de Equipo y PC</SubmitButton>
+      <FormMessage state={state} />
+    </form>
+  );
+}
+
+/**
+ * Elegir de su PC, de uno en uno: los del equipo primero y luego los de la
+ * caja, con un buscador si son muchos. Un toque y entra.
+ */
+function ElegirDelPc({ participantId, pokemon }: { participantId: string; pokemon: DelPc[] }) {
+  const [state, formAction] = useActionState<FormState, FormData>(anadirDelPcAction, null);
+  const [busqueda, setBusqueda] = useState("");
+  const texto = busqueda.trim().toLowerCase();
+  const visibles = texto
+    ? pokemon.filter((p) => `${p.nickname ?? ""} ${p.species}`.toLowerCase().includes(texto))
+    : pokemon;
+  return (
+    <div className="mt-3 space-y-3">
+      {pokemon.length > 12 ? (
+        <input
+          className="input"
+          value={busqueda}
+          onChange={(evento) => setBusqueda(evento.target.value)}
+          placeholder="Buscar por mote o especie…"
+          aria-label="Buscar en tu PC"
+        />
+      ) : null}
+      <form action={formAction}>
+        <input type="hidden" name="participantId" value={participantId} />
+        <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto sm:grid-cols-6">
+          {visibles.map((p) => (
+            <button
+              key={p.id}
+              type="submit"
+              name="captureId"
+              value={p.id}
+              title={`Añadir a ${p.nickname ?? p.species}`}
+              className="rounded-lg border border-white/10 bg-white/[0.03] p-1.5 text-center transition hover:border-brand-500/50"
+            >
+              <span className="flex aspect-square items-center justify-center">
+                {p.imagen ? (
+                  <SpritePokemon src={p.imagen} alt={p.species} loading="lazy" className="h-full w-full object-contain" />
+                ) : null}
+              </span>
+              <span className="block truncate text-xs font-semibold text-slate-100">{p.nickname ?? p.species}</span>
+              <span className="block truncate text-[10px] text-slate-500">{p.enEquipo ? "Equipo" : "Caja"}</span>
+            </button>
+          ))}
+        </div>
+      </form>
+      {!visibles.length ? <p className="muted text-sm">Nadie con ese nombre.</p> : null}
+      <FormMessage state={state} />
+    </div>
+  );
+}
+
 /** Formulario para ir metiendo los pokémon del equipo. */
 export function AddPokemonForm({
   participantId,
   remaining,
   ultimoEquipoDe,
+  vacia = false,
+  delPc = null,
 }: {
   participantId: string;
   remaining: number;
   /** De qué jornada se puede traer el equipo, si hay alguno y está vacío */
   ultimoEquipoDe?: string | null;
+  /** Si el equipo del hall está vacío: los atajos de traerlo entero solo salen así */
+  vacia?: boolean;
+  /** Sus pokémon vivos de Equipo y PC, si quien mira puede ver esa caja */
+  delPc?: DelPc[] | null;
 }) {
+  const [modo, setModo] = useState<"pc" | "mano">(delPc?.length ? "pc" : "mano");
   const [state, formAction] = useActionState<FormState, FormData>(
     addHallPokemonAction,
     null,
@@ -292,18 +373,37 @@ export function AddPokemonForm({
     );
   }
 
+  const conEquipoEnElPc = Boolean(delPc?.some((p) => p.enEquipo));
   return (
     <>
-    {ultimoEquipoDe ? (
-      <TraerUltimoEquipo
-        participantId={participantId}
-        deDonde={ultimoEquipoDe}
-      />
+    {/* Los dos atajos para no teclear: el último combate y el equipo que lleva en el PC */}
+    {ultimoEquipoDe || (vacia && conEquipoEnElPc) ? (
+      <div className="mt-3 flex flex-wrap items-start gap-2">
+        {ultimoEquipoDe ? (
+          <TraerUltimoEquipo participantId={participantId} deDonde={ultimoEquipoDe} />
+        ) : null}
+        {vacia && conEquipoEnElPc ? <TraerDelPc participantId={participantId} /> : null}
+      </div>
     ) : null}
     <details className="mt-4 rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <summary className="cursor-pointer list-none text-sm font-semibold text-slate-200">
         ▸ Añadir pokémon ({remaining} {remaining === 1 ? "hueco" : "huecos"})
       </summary>
+      {delPc?.length ? (
+        <Pestanas
+          className="mt-3"
+          etiqueta="Cómo añadirlo"
+          valor={modo}
+          onCambiar={setModo}
+          opciones={[
+            { valor: "pc", rotulo: "De tu PC" },
+            { valor: "mano", rotulo: "Escribirlo" },
+          ]}
+        />
+      ) : null}
+      {modo === "pc" && delPc?.length ? (
+        <ElegirDelPc participantId={participantId} pokemon={delPc} />
+      ) : (
       <form key={resetKey} action={formAction} className="mt-3 space-y-3">
         <input type="hidden" name="participantId" value={participantId} />
         <SpeciesPicker />
@@ -314,6 +414,7 @@ export function AddPokemonForm({
         <FormMessage state={state} />
         <SubmitButton>Añadir al equipo</SubmitButton>
       </form>
+      )}
     </details>
     </>
   );

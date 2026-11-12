@@ -10,7 +10,7 @@ import {
 } from "@/lib/competition";
 import { getFinalFourState, NOMBRE_POR_DEFECTO } from "@/lib/final-four";
 import { getCampeonDelLocke } from "@/lib/campeon";
-import { firmaDeColumna } from "@/lib/imagenes";
+import { firmaDeColumna, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -191,6 +191,50 @@ export default async function HallOfFamePage() {
       }),
     ),
   );
+
+  /**
+   * **Los pokémon del PC de cada uno**, para elegirlos o traerse el equipo de
+   * golpe. Solo de quien puede tocar esa caja —el dueño; en un Soul Link
+   * también quien administra—, como en Equipo y PC: el hall es público y la
+   * caja no. Y solo si le quedan huecos.
+   */
+  const cajasQueSeVen = soloLectura(competition, canManage)
+    ? []
+    : standings
+        .filter((row) => row.userId === user.id || (perfil.cooperativo && canManage))
+        .filter((row) => entries.filter((e) => e.participantId === row.participantId).length < TEAM_SIZE)
+        .map((row) => row.participantId);
+  const delPcFilas = cajasQueSeVen.length
+    ? await prisma.capture.findMany({
+        where: { participantId: { in: cajasQueSeVen }, failed: false, deathId: null },
+        // El equipo primero (lugar «equipo» va detrás de «caja» en el abecedario)
+        orderBy: [{ lugar: "desc" }, { hueco: "asc" }],
+        select: { id: true, participantId: true, species: true, nickname: true, lugar: true },
+      })
+    : [];
+  const imagenDeCaptura = await urlsDeImagen("captura", delPcFilas.map((c) => c.id));
+  const delPc = (participantId: string) =>
+    cajasQueSeVen.includes(participantId)
+      ? delPcFilas
+          .filter((c) => c.participantId === participantId)
+          // Los que ya están en su hall no se ofrecen otra vez
+          .filter(
+            (c) =>
+              !entries.some(
+                (e) =>
+                  e.participantId === participantId &&
+                  e.species === c.species &&
+                  (e.nickname ?? "") === (c.nickname ?? ""),
+              ),
+          )
+          .map((c) => ({
+            id: c.id,
+            species: c.species,
+            nickname: c.nickname,
+            enEquipo: c.lugar === "equipo",
+            imagen: imagenDeCaptura(c.id),
+          }))
+      : null;
 
   // La forma exacta la dice la imagen, si es del almacén; si no, la especie
   const pokemonDeLaEntrada = (id: string, especie: string) =>
@@ -382,8 +426,13 @@ export default async function HallOfFamePage() {
                   participantId={row.participantId}
                   remaining={TEAM_SIZE - team.length}
                   ultimoEquipoDe={
-                    vacia ? ultimosEquipos.get(row.participantId) : null
+                    // El de la caja ya tiene su botón, y solo para quien puede verla
+                    vacia && ultimosEquipos.get(row.participantId) !== "Equipo y PC"
+                      ? ultimosEquipos.get(row.participantId)
+                      : null
                   }
+                  vacia={vacia}
+                  delPc={delPc(row.participantId)}
                 />
               ) : null}
             </section>

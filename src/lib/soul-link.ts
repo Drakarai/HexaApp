@@ -316,6 +316,9 @@ export async function getEquipoActual(participantId: string) {
       createdAt: true,
       // La imagen hace falta aquí: se copia la referencia al equipo del hall
       image: true,
+      // Y con su número y si es shiny se le pone al hall la ilustración grande
+      pokemonId: true,
+      shiny: true,
     },
   });
   const { equipo } = colocar(capturas.map((c) => ({ ...c, creado: c.createdAt.getTime() })));
