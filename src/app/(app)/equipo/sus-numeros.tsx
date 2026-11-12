@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Icono } from "@/components/icono";
 import { numerosDelPokemonAction } from "@/app/actions/estadisticas";
 import type { Numeros } from "@/lib/estadisticas";
 
@@ -35,13 +36,18 @@ export function SusNumeros({ captureId }: { captureId: string }) {
     ["Daño hecho", `${Math.round(n.danoHecho)} %`],
     ["Críticos", String(n.criticosHechos)],
     ["Muy eficaces", String(n.supereficaces)],
+    ["Mejor barrida", `${n.mejorBarrida} KO${n.mejorBarrida === 1 ? "" : "s"}`],
+    ["Aguantado", `${Math.round(n.aguantado)} %`],
     ["Críticos recibidos", String(n.criticosRecibidos)],
+    ["Último en pie", String(n.ultimoEnPie)],
   ];
 
   return (
     <section className="mt-4 rounded-xl border border-white/5 bg-white/[0.02] p-3" data-sus-numeros>
       <div className="mb-2 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-200">📈 Sus números</h3>
+        <h3 className="flex items-center gap-1.5 text-sm font-semibold text-slate-200">
+          <Icono emoji="📈" /> Sus números
+        </h3>
         <Link href="/estadisticas" className="text-xs text-brand-300 hover:underline">
           Ver todos
         </Link>
@@ -49,8 +55,11 @@ export function SusNumeros({ captureId }: { captureId: string }) {
       {leido.galardones?.length ? (
         <p className="mb-2 flex flex-wrap gap-1.5">
           {leido.galardones.map((g) => (
-            <span key={g.titulo} className="rounded-full bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200">
-              {g.icono} {g.titulo}
+            <span
+              key={g.titulo}
+              className="flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-xs text-amber-200"
+            >
+              <Icono emoji={g.icono} tamano={12} /> {g.titulo}
             </span>
           ))}
         </p>

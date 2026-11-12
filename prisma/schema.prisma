@@ -926,6 +926,7 @@ model LockeRequest {
    * de alta a sus amigos.
    */
   /**
+   * /**
    * /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero
    */
   estilo         String    @default("competitivo")
@@ -1440,6 +1441,11 @@ model ChallengeMatch {
    * Qué tipo de combate es. Cada reto lleva el suyo, sin depender de nada
    */
   formato        String    @default("singles")
+  /**
+   * Lo que hizo cada pokémon, leído de la repetición, como en `Match`.
+   */
+  estadisticas   Json?
+  estadisticasDe String?
 
   competition  Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   participantA Participant      @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
@@ -1683,22 +1689,27 @@ model FinalFour {
  * SEMI_B (2º-ganador B) y FINAL.
  */
 model FinalMatch {
-  id          String    @id @default(cuid())
-  finalFourId String
+  id             String    @id @default(cuid())
+  finalFourId    String
   /**
    * Qué combate es, en `LLAVE#n`: "SEMI_A#2" es el segundo de esa llave.
    * Todas las llaves del cuadro se juegan al mejor de tres, así que cada una
    * tiene sus tres filas desde que se siembra (ver `lib/formatos-finales.ts`).
    */
-  key         String
-  winnerId    String?
-  pokemonDiff Int?
-  playedAt    DateTime?
-  notes       String?
+  key            String
+  winnerId       String?
+  pokemonDiff    Int?
+  playedAt       DateTime?
+  notes          String?
   /**
    * Enlace a la repetición, igual que en los combates de jornada
    */
-  replayUrl   String?
+  replayUrl      String?
+  /**
+   * Lo que hizo cada pokémon, leído de la repetición, como en `Match`.
+   */
+  estadisticas   Json?
+  estadisticasDe String?
 
   finalFour FinalFour    @relation(fields: [finalFourId], references: [id], onDelete: Cascade)
   winner    Participant? @relation("FinalMatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)

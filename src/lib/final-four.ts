@@ -35,6 +35,8 @@ export type BracketPlayer = {
 
 /** Uno de los tres combates de una llave. */
 export type CombateDeLaLlave = {
+  /** El de la base de datos; null si aún no se ha guardado nada de él */
+  id: string | null;
   /** "SEMI_A#2" */
   key: string;
   /** 1, 2 o 3 */
@@ -117,7 +119,12 @@ export async function getFinalFourState(
     }),
     prisma.finalFour.findUnique({
       where: { competitionId },
-      include: { matches: true },
+      // Sin las estadísticas guardadas, que pesan y aquí no hacen falta
+      include: {
+        matches: {
+          select: { id: true, key: true, winnerId: true, pokemonDiff: true, playedAt: true, notes: true, replayUrl: true },
+        },
+      },
     }),
     prisma.participant.count({ where: { competitionId, retiredAt: null } }),
     prisma.competition.findUnique({
@@ -156,6 +163,8 @@ export function calcularEstadoDeLaFinal({
     jugadores: number;
     seeds: string[];
     matches: {
+      /** Opcional: las pruebas no lo necesitan */
+      id?: string;
       key: string;
       winnerId: string | null;
       pokemonDiff: number | null;
@@ -266,6 +275,7 @@ export function calcularEstadoDeLaFinal({
       combates: combatesDeLaLlave(plantilla.key).map((clave, indice) => {
         const guardado = guardados.get(clave);
         return {
+          id: guardado?.id ?? null,
           key: clave,
           numero: indice + 1,
           winnerId: guardado?.winnerId ?? null,

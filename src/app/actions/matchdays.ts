@@ -359,7 +359,7 @@ export async function setMatchResultAction(formData: FormData) {
    * guardar el resultado no espera a Showdown, y quien abra luego los números
    * del combate los tiene sin esperar. Si falla, se leen al mirarlas.
    */
-  after(() => estadisticasDeUnCombate(matchId).catch(() => {}));
+  after(() => estadisticasDeUnCombate({ tipo: "jornada", id: matchId }).catch(() => {}));
 
   const existing = await prisma.pointEntry.findUnique({
     where: { sourceMatchId: matchId },

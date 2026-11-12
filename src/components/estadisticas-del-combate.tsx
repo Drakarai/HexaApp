@@ -5,10 +5,12 @@ import { Hoja } from "@/components/hoja";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import {
   elegirCapturaDelCombateAction,
-  estadisticasDelCombateAction,
+  estadisticasDeCombatesAction,
   type EstadisticasDelCombateLeidas,
   type PokemonDelCombate,
 } from "@/app/actions/estadisticas";
+import type { RefCombate } from "@/lib/estadisticas";
+import { Icono } from "@/components/icono";
 import { cx } from "@/lib/utils";
 
 /**
@@ -20,14 +22,14 @@ import { cx } from "@/lib/utils";
  * pero tampoco hace falta.
  */
 const yaLeidas = new Map<string, Promise<EstadisticasDelCombateLeidas>>();
-function leer(matchId: string) {
-  let promesa = yaLeidas.get(matchId);
-  if (!promesa) {
-    promesa = estadisticasDelCombateAction(matchId);
-    yaLeidas.set(matchId, promesa);
-    // Si falla, que se pueda volver a intentar al abrirla otra vez
-    promesa.then((r) => r.error && yaLeidas.delete(matchId)).catch(() => yaLeidas.delete(matchId));
-  }
+function leer(refs: RefCombate[]) {
+  const clave = refs.map((r) => `${r.tipo}:${r.id}`).join(",");
+  const guardada = yaLeidas.get(clave);
+  if (guardada) return guardada;
+  const promesa = estadisticasDeCombatesAction(refs);
+  yaLeidas.set(clave, promesa);
+  // Si falla, que se pueda volver a intentar al abrirla otra vez
+  promesa.then((r) => r.error && yaLeidas.delete(clave)).catch(() => yaLeidas.delete(clave));
   return promesa;
 }
 
@@ -46,7 +48,25 @@ const FILAS: { campo: keyof PokemonDelCombate; rotulo: string; corto: string }[]
   { campo: "fallos", rotulo: "Ataques fallados", corto: "Fallos" },
   { campo: "esquivados", rotulo: "Ataques esquivados", corto: "Esquiv." },
   { campo: "turnos", rotulo: "Turnos en el campo", corto: "Turnos" },
+  { campo: "turnosPerdidos", rotulo: "Turnos sin poder moverse", corto: "Sin mov." },
 ];
+
+type Sumable = Exclude<(typeof FILAS)[number]["campo"], "cayo">;
+
+/** Lo de un pokémon en varios combates, sumado: lo que se enseña al tocarlo en una serie */
+function sumarDe(datos: EstadisticasDelCombateLeidas, teamId: string) {
+  const suyos = (datos.combates ?? []).flatMap((c) =>
+    (c.lados ?? []).flatMap((l) => l.pokemon).filter((p) => p.teamId === teamId),
+  );
+  if (!suyos.length) return null;
+  const total = { ...suyos[0] };
+  for (const p of suyos.slice(1)) {
+    for (const f of FILAS) (total[f.campo as Sumable] as number) += Number(p[f.campo]);
+    total.cayo = total.cayo || p.cayo;
+    total.ultimoEnPie = total.ultimoEnPie || p.ultimoEnPie;
+  }
+  return { total, combates: suyos.length, caidas: suyos.filter((p) => p.cayo).length };
+}
 
 /** El daño va en % de una vida, sumado: 230 es «dos vidas y pico» */
 function valor(p: PokemonDelCombate, campo: keyof PokemonDelCombate) {
@@ -55,26 +75,47 @@ function valor(p: PokemonDelCombate, campo: keyof PokemonDelCombate) {
   return String(n);
 }
 
+/** Un botón que abre las tablas de uno o varios combates (los de una llave de la final) */
+export function BotonDeEstadisticas({ refs, titulo }: { refs: RefCombate[]; titulo: string }) {
+  const [abierta, setAbierta] = useState(false);
+  if (!refs.length) return null;
+  return (
+    <>
+      <button type="button" className="btn-ghost btn-sm" onClick={() => setAbierta(true)}>
+        <Icono emoji="📊" /> {titulo}
+      </button>
+      {abierta ? (
+        <EstadisticasDelCombate refs={refs} titulo={titulo} mira={{ tipo: "combate" }} onCerrar={() => setAbierta(false)} />
+      ) : null}
+    </>
+  );
+}
+
 export function EstadisticasDelCombate({
-  matchId,
+  refs,
   mira,
   onCerrar,
+  titulo = "Estadísticas del combate",
 }: {
-  matchId: string;
+  /** Uno, o los de una serie o una final: al tocar un pokémon se suma lo suyo en todos */
+  refs: RefCombate[];
   mira: QueSeMira;
   onCerrar: () => void;
+  titulo?: string;
 }) {
   const [datos, setDatos] = useState<EstadisticasDelCombateLeidas | null>(null);
 
   useEffect(() => {
     let vivo = true;
-    leer(matchId)
+    leer(refs)
       .then((r) => vivo && setDatos(r))
       .catch(() => vivo && setDatos({ error: "No se han podido leer las estadísticas. Prueba otra vez." }));
     return () => {
       vivo = false;
     };
-  }, [matchId]);
+    // Las refs llegan nuevas en cada render; lo que cuenta es a qué combates apuntan
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refs.map((r) => `${r.tipo}:${r.id}`).join(",")]);
 
   return (
     <Hoja onCerrar={onCerrar} ancho={mira.tipo === "combate" ? "max-w-3xl" : "max-w-sm"} className="p-5">
@@ -85,7 +126,13 @@ export function EstadisticasDelCombate({
           </span>
         ) : null}
         <h2 className="min-w-0 flex-1 truncate text-lg font-semibold">
-          {mira.tipo === "pokemon" ? mira.nombre : "📊 Estadísticas del combate"}
+          {mira.tipo === "pokemon" ? (
+            mira.nombre
+          ) : (
+            <>
+              <Icono emoji="📊" /> {titulo}
+            </>
+          )}
         </h2>
         <button type="button" className="btn-ghost btn-sm" onClick={onCerrar} aria-label="Cerrar">
           ✕
@@ -94,22 +141,30 @@ export function EstadisticasDelCombate({
 
       {!datos ? (
         <p className="py-6 text-center text-sm text-slate-400">Leyendo la repetición…</p>
-      ) : datos.error || !datos.lados ? (
+      ) : datos.error || !datos.combates ? (
         <p className="py-6 text-center text-sm text-rose-300">{datos.error}</p>
       ) : mira.tipo === "pokemon" ? (
         <DeUnPokemon datos={datos} teamId={mira.teamId} />
       ) : (
-        <DelCombate datos={datos} />
+        <DelCombate datos={datos} varios={refs.length > 1} />
       )}
     </Hoja>
   );
 }
 
 function DeUnPokemon({ datos, teamId }: { datos: EstadisticasDelCombateLeidas; teamId: string }) {
-  const este = datos.lados?.flatMap((l) => l.pokemon).find((p) => p.teamId === teamId);
+  const suma = sumarDe(datos, teamId);
+  const este = suma?.total;
   const eleccion = datos.elegir?.[teamId];
+  const conRepeticion = datos.combates?.filter((c) => c.lados).length ?? 0;
   return (
     <>
+      {suma && (datos.combates?.length ?? 0) > 1 ? (
+        <p className="mb-2 text-xs text-slate-400">
+          Sumado de {suma.combates === 1 ? "el combate" : `los ${suma.combates} combates`} en que salió
+          {conRepeticion < (datos.combates?.length ?? 0) ? " (de los que tienen repetición)" : ""}.
+        </p>
+      ) : null}
       {este ? (
         <dl className="divide-y divide-white/5 text-sm" data-estadisticas-pokemon>
           {FILAS.map((f) => (
@@ -119,13 +174,27 @@ function DeUnPokemon({ datos, teamId }: { datos: EstadisticasDelCombateLeidas; t
             </div>
           ))}
           <div className="flex items-center justify-between py-1.5">
-            <dt className="text-slate-400">¿Acabó en pie?</dt>
-            <dd className="font-semibold">{este.cayo ? "💀 Cayó" : "Sí"}</dd>
+            <dt className="text-slate-400">{suma.combates > 1 ? "Veces que cayó" : "¿Acabó en pie?"}</dt>
+            <dd className="font-semibold">
+              {suma.combates > 1 ? (
+                suma.caidas
+              ) : este.cayo ? (
+                <>
+                  <Icono emoji="💀" /> Cayó
+                </>
+              ) : este.ultimoEnPie ? (
+                "El último en pie"
+              ) : (
+                "Sí"
+              )}
+            </dd>
           </div>
         </dl>
       ) : (
         <p className="py-4 text-center text-sm text-slate-400">
-          En la repetición no sale: o no llegó a salir al campo, o se apuntó con otro nombre.
+          {conRepeticion
+            ? "En la repetición no sale: o no llegó a salir al campo, o se apuntó con otro nombre."
+            : (datos.combates?.find((c) => c.error)?.error ?? "Aún no hay repetición de la que sacarlo.")}
         </p>
       )}
       <p className="mt-3 text-xs text-slate-500">
@@ -195,50 +264,63 @@ function CualDeTuCaja({
   );
 }
 
-function DelCombate({ datos }: { datos: EstadisticasDelCombateLeidas }) {
+function DelCombate({ datos, varios }: { datos: EstadisticasDelCombateLeidas; varios: boolean }) {
   return (
-    <div className="space-y-4" data-estadisticas-combate>
-      {datos.lados!.map((lado) => (
-        <div key={lado.participantId}>
-          <h3 className="mb-1 text-sm font-semibold text-slate-300">{lado.nombre}</h3>
-          {lado.pokemon.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[34rem] text-xs">
-                <thead>
-                  <tr className="text-slate-500">
-                    <th className="py-1 pr-2 text-left font-medium">Pokémon</th>
-                    {FILAS.map((f) => (
-                      <th key={f.campo} className="px-1 py-1 text-right font-medium" title={f.rotulo}>
-                        {f.corto}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/5">
-                  {lado.pokemon.map((p) => (
-                    <tr key={p.nombre} className={cx(p.cayo && "text-slate-500")}>
-                      <td className="max-w-[9rem] truncate py-1.5 pr-2">
-                        {p.cayo ? "💀 " : ""}
-                        {p.mote ?? p.especie}
-                      </td>
-                      {FILAS.map((f) => (
-                        <td key={f.campo} className="px-1 py-1.5 text-right tabular-nums">
-                          {valor(p, f.campo)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+    <div className="space-y-5" data-estadisticas-combate>
+      {datos.combates!.map((combate, indice) => (
+        <div key={indice} className="space-y-3">
+          {varios ? <h3 className="rotulo">Combate {indice + 1}</h3> : null}
+          {combate.lados ? (
+            combate.lados.map((lado) => <TablaDeUnLado key={lado.participantId} lado={lado} />)
           ) : (
-            <p className="text-xs text-slate-500">No se ha podido saber qué lado de la repetición era.</p>
+            <p className="text-xs text-slate-500">{combate.error}</p>
           )}
         </div>
       ))}
       <p className="text-xs text-slate-500">
         El daño va en % de la vida del rival, sumado: 200 % son dos pokémon enteros.
       </p>
+    </div>
+  );
+}
+
+function TablaDeUnLado({ lado }: { lado: NonNullable<NonNullable<EstadisticasDelCombateLeidas["combates"]>[number]["lados"]>[number] }) {
+  return (
+    <div>
+      <h4 className="mb-1 text-sm font-semibold text-slate-300">{lado.nombre}</h4>
+      {lado.pokemon.length ? (
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[36rem] text-xs">
+            <thead>
+              <tr className="text-slate-500">
+                <th className="py-1 pr-2 text-left font-medium">Pokémon</th>
+                {FILAS.map((f) => (
+                  <th key={f.campo} className="px-1 py-1 text-right font-medium" title={f.rotulo}>
+                    {f.corto}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/5">
+              {lado.pokemon.map((p) => (
+                <tr key={p.nombre} className={cx(p.cayo && "text-slate-500")}>
+                  <td className="max-w-[9rem] truncate py-1.5 pr-2">
+                    {p.cayo ? <Icono emoji="💀" className="mr-1 inline" /> : null}
+                    {p.mote ?? p.especie}
+                  </td>
+                  {FILAS.map((f) => (
+                    <td key={f.campo} className="px-1 py-1.5 text-right tabular-nums">
+                      {valor(p, f.campo)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="text-xs text-slate-500">No se ha podido saber qué lado de la repetición era.</p>
+      )}
     </div>
   );
 }

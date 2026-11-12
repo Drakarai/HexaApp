@@ -17,6 +17,8 @@ import { Hoja } from "@/components/hoja";
 import { Pestanas } from "@/components/pestanas";
 import { useEsAnil } from "@/components/juego-del-locke";
 import { EstadisticasDelCombate, type QueSeMira } from "@/components/estadisticas-del-combate";
+import type { RefCombate } from "@/lib/estadisticas";
+import { Icono } from "@/components/icono";
 
 export type TeamPokemon = {
   id: string;
@@ -50,7 +52,7 @@ export function MatchTeams({
   maximo = 6,
   aLaVez = 1,
   repeticion,
-  conEstadisticas = false,
+  estadisticas,
 }: {
   matchId: string;
   /**
@@ -77,14 +79,20 @@ export function MatchTeams({
   repeticion?: string | null;
   /**
    * Que se puedan mirar sus números: tocar un pokémon enseña lo que hizo en
-   * este combate, y sale el botón de las del combate entero. Solo en los de
-   * jornada con repetición, que es de donde salen.
+   * estos combates (uno, o los de una serie o una final, sumados), y sale el
+   * botón con las tablas. Solo los que tienen repetición, que es de donde salen.
    */
-  conEstadisticas?: boolean;
+  estadisticas?: {
+    refs: RefCombate[];
+    /** «Estadísticas del combate», «… de la serie» */
+    titulo?: string;
+    /** Sin el botón: cuando cada combate ya lleva el suyo (la final) */
+    sinBoton?: boolean;
+  };
 }) {
   const [editing, setEditing] = useState(false);
   const [mira, setMira] = useState<QueSeMira | null>(null);
-  const verNumeros = conEstadisticas && Boolean(repeticion);
+  const verNumeros = Boolean(estadisticas?.refs.length);
   const alTocar = verNumeros
     ? (pokemon: TeamPokemon) =>
         setMira({ tipo: "pokemon", teamId: pokemon.id, nombre: pokemon.nickname ?? pokemon.species, imagen: pokemon.boxImage })
@@ -137,17 +145,24 @@ export function MatchTeams({
         </>
       ) : null}
 
-      {verNumeros ? (
+      {verNumeros && !estadisticas?.sinBoton ? (
         <button
           type="button"
           className="btn-ghost btn-sm mt-2 mr-2"
           onClick={() => setMira({ tipo: "combate" })}
         >
-          📊 Estadísticas del combate
+          <Icono emoji="📊" /> {estadisticas?.titulo ?? "Estadísticas del combate"}
         </button>
       ) : null}
 
-      {mira ? <EstadisticasDelCombate matchId={matchId} mira={mira} onCerrar={() => setMira(null)} /> : null}
+      {mira && estadisticas ? (
+        <EstadisticasDelCombate
+          refs={estadisticas.refs}
+          titulo={estadisticas.titulo}
+          mira={mira}
+          onCerrar={() => setMira(null)}
+        />
+      ) : null}
 
       {canManage ? (
         <button

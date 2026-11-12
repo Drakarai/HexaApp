@@ -29,7 +29,8 @@ export async function borrarJornadaALaPapelera(matchdayId: string, quien: string
   if (!jornada) return null;
 
   const [combates, royales] = await Promise.all([
-    prisma.match.findMany({ where: { matchdayId } }),
+    // Con lo leído de las repeticiones, para no tener que volver a pedirlas
+    prisma.match.findMany({ where: { matchdayId }, omit: { estadisticas: false } }),
     prisma.royale.findMany({ where: { matchdayId } }),
   ]);
   const idsCombates = combates.map((c) => c.id);

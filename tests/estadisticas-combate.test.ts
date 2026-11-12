@@ -127,4 +127,46 @@ describe("estadísticas de un combate", () => {
     assert.equal(de(r, "Brasa").fallos, 1);
     assert.equal(de(r, "Pikachu").esquivados, 1);
   });
+
+  test("turnos perdidos: parálisis, sueño o retroceso sí; recargar no", () => {
+    const r = estadisticasDeLaRepeticion(
+      log(
+        "|switch|p1a: Brasa|Quilava, M|100/100",
+        "|switch|p2a: Pikachu|Pikachu, F|100/100",
+        "|cant|p1a: Brasa|par",
+        "|cant|p1a: Brasa|slp",
+        "|cant|p1a: Brasa|flinch",
+        "|cant|p2a: Pikachu|recharge",
+      ),
+    );
+    assert.equal(de(r, "Brasa").turnosPerdidos, 3);
+    assert.equal(de(r, "Pikachu").turnosPerdidos, 0);
+  });
+
+  test("el último en pie: gana su lado y es lo único que le queda", () => {
+    const r = estadisticasDeLaRepeticion(
+      log(
+        "|teamsize|p1|2",
+        "|teamsize|p2|1",
+        "|switch|p1a: Rocoso|Graveler, M|100/100",
+        "|switch|p2a: Pikachu|Pikachu, F|100/100",
+        "|move|p2a: Pikachu|Thunderbolt|p1a: Rocoso",
+        "|-damage|p1a: Rocoso|0 fnt",
+        "|faint|p1a: Rocoso",
+        "|switch|p1a: Brasa|Quilava, M|100/100",
+        "|move|p1a: Brasa|Flamethrower|p2a: Pikachu",
+        "|-damage|p2a: Pikachu|0 fnt",
+        "|faint|p2a: Pikachu",
+        "|win|DrakaSD",
+      ),
+    );
+    assert.equal(de(r, "Brasa").ultimoEnPie, true);
+    assert.equal(de(r, "Rocoso").ultimoEnPie, false);
+  });
+
+  test("en un locke de Añil, sus pokémon propios se reconocen", () => {
+    const registro = log("|switch|p1a: Corona|Royaleon, F|100/100", "|switch|p2a: Pikachu|Pikachu, F|100/100");
+    assert.equal(de(estadisticasDeLaRepeticion(registro, true), "Corona").pokemonId, 20001);
+    assert.notEqual(de(estadisticasDeLaRepeticion(registro), "Corona").pokemonId, 20001);
+  });
 });

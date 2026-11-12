@@ -8,6 +8,7 @@ import { Avatar, SubmitButton } from "@/components/ui";
 import { ReplayLink } from "@/components/replay-link";
 import { cx, formatDate } from "@/lib/utils";
 import { Icono } from "@/components/icono";
+import { BotonDeEstadisticas } from "@/components/estadisticas-del-combate";
 
 /**
  * Una llave del cuadro: los dos contendientes, cómo va la serie y sus tres
@@ -74,6 +75,17 @@ export function BracketCard({
             />
           ))}
         </ol>
+      ) : null}
+
+      {llave.ready ? (
+        <div className="mt-2">
+          <BotonDeEstadisticas
+            titulo="Estadísticas de la serie"
+            refs={llave.combates
+              .filter((c) => c.id && c.replayUrl && !c.sobra)
+              .map((c) => ({ tipo: "final" as const, id: c.id! }))}
+          />
+        </div>
       ) : null}
     </article>
   );

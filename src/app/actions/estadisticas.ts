@@ -9,10 +9,14 @@ import { mensajeDeError } from "@/lib/permiso";
 import { esElMismo } from "@/lib/historia";
 import { findSpecies } from "@/lib/pokedex";
 import {
+  cargarCombates,
+  claveDeRef,
+  combatesDelLocke,
   estadisticasDeUnCombate,
   galardonesDe,
   getEstadisticasDelLocke,
   type Numeros,
+  type RefCombate,
 } from "@/lib/estadisticas";
 import type { EstadisticasDePokemon } from "@/lib/showdown";
 
@@ -26,10 +30,11 @@ export type LadoDelCombate = {
 };
 
 /** Los de tu caja que podrían ser uno del equipo, cuando no se sabe cuál */
-export type OpcionDeLaCaja = { captureId: string; especie: string; mote: string | null; lugar: string };
+export type OpcionDeLaCaja = { captureId: string; especie: string; mote: string | null };
 
 export type EstadisticasDelCombateLeidas = {
-  lados?: LadoDelCombate[];
+  /** Uno por combate pedido, en el mismo orden */
+  combates?: { lados?: LadoDelCombate[]; error?: string }[];
   /** teamId → los de la caja entre los que elegir, y el elegido si ya lo hay */
   elegir?: Record<string, { opciones: OpcionDeLaCaja[]; elegido: string | null }>;
   error?: string;
@@ -46,82 +51,86 @@ async function tocaLaCaja(participantId: string) {
 }
 
 const dexDe = (especie: string) => findSpecies(especie, true)?.dex ?? null;
+const TIPOS = new Set(["jornada", "reto", "final"]);
 
 /**
- * Lo que hizo cada pokémon en un combate de jornada, para mirarlo antes de
- * votar al MVP. La repetición es pública, así que lo ve cualquiera que pueda
- * mirar el locke; lo que **no** es público es la caja, y por eso las opciones
- * de «¿cuál de tu caja es?» solo le llegan a quien puede tocarla.
+ * Lo que hizo cada pokémon en uno o varios combates (los de una serie al mejor
+ * de tres, o los de la final), para mirarlo antes de votar al MVP. La
+ * repetición es pública, así que lo ve cualquiera que pueda mirar el locke; lo
+ * que **no** es público es la caja, y por eso las opciones de «¿cuál de tu caja
+ * es?» solo le llegan a quien puede tocarla.
  */
-export async function estadisticasDelCombateAction(matchId: string): Promise<EstadisticasDelCombateLeidas> {
+export async function estadisticasDeCombatesAction(refs: RefCombate[]): Promise<EstadisticasDelCombateLeidas> {
   await requireUser();
-  const combate = await prisma.match.findUnique({
-    where: { id: String(matchId ?? "") },
-    select: {
-      id: true,
-      matchday: { select: { competitionId: true } },
-      participantA: { select: { id: true, displayName: true } },
-      participantB: { select: { id: true, displayName: true } },
-      team: {
-        orderBy: { position: "asc" },
-        select: { id: true, participantId: true, species: true, nickname: true, captureId: true },
-      },
-    },
-  });
-  if (!combate || !(await puedeVerLocke(combate.matchday.competitionId))) {
+  const pedidos = (Array.isArray(refs) ? refs : [])
+    .filter((r) => r && TIPOS.has(r.tipo) && typeof r.id === "string")
+    .slice(0, 12);
+  if (!pedidos.length) return { error: "No hay ningún combate que mirar." };
+
+  const cargados = await cargarCombates(pedidos);
+  const locke = cargados.find(Boolean)?.competitionId;
+  if (!locke || cargados.some((c) => c && c.competitionId !== locke) || !(await puedeVerLocke(locke))) {
     return { error: "Ese combate no existe o no es de un locke que puedas ver." };
   }
 
-  const { guardado, error } = await estadisticasDeUnCombate(combate.id);
-  if (!guardado) return { error: error ?? "Este combate no tiene repetición." };
-
-  const usados = new Set<string>();
-  const lados: LadoDelCombate[] = [combate.participantA, combate.participantB].map((p) => {
-    const lado = Object.entries(guardado.lados).find(([, id]) => id === p.id)?.[0];
-    const delEquipo = combate.team.filter((t) => t.participantId === p.id);
-    return {
-      participantId: p.id,
-      nombre: p.displayName,
-      pokemon: guardado.pokemon
-        .filter((e) => e.lado === lado)
-        .map(({ lado: _lado, ...e }) => {
-          // El del equipo apuntado que es, para que al tocar su sprite salga lo suyo
-          const t = delEquipo.find(
-            (t) =>
-              !usados.has(t.id) &&
-              esElMismo(
-                { species: t.species, nickname: t.nickname, pokemonId: dexDe(t.species) },
-                { species: e.especie, nickname: e.mote, pokemonId: e.pokemonId },
-              ),
-          );
-          if (t) usados.add(t.id);
-          return { ...e, teamId: t?.id ?? null };
-        }),
-    };
+  const leidos = await Promise.all(
+    pedidos.map((r, i) => (cargados[i] ? estadisticasDeUnCombate(r, cargados[i]) : null)),
+  );
+  const combates = leidos.map((leido) => {
+    if (!leido?.combate) return { error: "Ese combate ya no existe." };
+    const { guardado, combate, error } = leido;
+    if (!guardado) return { error: error ?? "Este combate no tiene repetición." };
+    const usados = new Set<string>();
+    const lados: LadoDelCombate[] = combate.lados.map((p) => {
+      const lado = Object.entries(guardado.lados).find(([, id]) => id === p.id)?.[0];
+      const delEquipo = combate.equipo.filter((t) => t.participantId === p.id);
+      return {
+        participantId: p.id,
+        nombre: p.nombre,
+        pokemon: guardado.pokemon
+          .filter((e) => e.lado === lado)
+          .map(({ lado: _lado, ...e }) => {
+            // El del equipo apuntado que es, para que al tocar su sprite salga lo suyo
+            const t = delEquipo.find(
+              (t) =>
+                !usados.has(t.id) &&
+                esElMismo(
+                  { species: t.species, nickname: t.nickname, pokemonId: dexDe(t.species) },
+                  { species: e.especie, nickname: e.mote, pokemonId: e.pokemonId },
+                ),
+            );
+            if (t) usados.add(t.id);
+            return { ...e, teamId: t?.id ?? null };
+          }),
+      };
+    });
+    return { lados };
   });
 
   // Los que no se sabe de cuál de la caja son: dos iguales sin mote, sobre todo
   const elegir: NonNullable<EstadisticasDelCombateLeidas["elegir"]> = {};
-  for (const p of [combate.participantA, combate.participantB]) {
-    if (!(await tocaLaCaja(p.id))) continue;
+  const equipo = new Map(cargados.flatMap((c) => c?.equipo ?? []).map((t) => [t.id, t]));
+  const duenos = [...new Set([...equipo.values()].map((t) => t.participantId))];
+  for (const participantId of duenos) {
+    if (!(await tocaLaCaja(participantId))) continue;
     const capturas = await prisma.capture.findMany({
-      where: { participantId: p.id, failed: false },
+      where: { participantId, failed: false },
       orderBy: { createdAt: "asc" },
-      select: { id: true, species: true, nickname: true, pokemonId: true, lugar: true },
+      select: { id: true, species: true, nickname: true, pokemonId: true },
     });
-    for (const t of combate.team.filter((t) => t.participantId === p.id)) {
+    for (const t of [...equipo.values()].filter((t) => t.participantId === participantId)) {
       const opciones = capturas.filter((c) =>
         esElMismo(c, { species: t.species, nickname: t.nickname, pokemonId: dexDe(t.species) }),
       );
       if (opciones.length < 2) continue;
       elegir[t.id] = {
         elegido: t.captureId,
-        opciones: opciones.map((c) => ({ captureId: c.id, especie: c.species, mote: c.nickname, lugar: c.lugar })),
+        opciones: opciones.map((c) => ({ captureId: c.id, especie: c.species, mote: c.nickname })),
       };
     }
   }
 
-  return { lados, elegir };
+  return { combates, elegir };
 }
 
 /**
@@ -178,20 +187,18 @@ export async function leerRepeticionesPendientesAction(
   const id = String(competitionId ?? "");
   if (!(await puedeVerLocke(id))) return { quedan: 0, fallidas: [], error: "No puedes ver este locke." };
 
-  const pendientes = await prisma.match.findMany({
-    where: { matchday: { competitionId: id }, replayUrl: { not: null } },
-    select: { id: true, replayUrl: true, estadisticasDe: true },
-  });
   const yaFallaron = new Set(Array.isArray(saltar) ? saltar.map(String) : []);
-  const sinLeer = pendientes.filter((m) => m.estadisticasDe !== m.replayUrl && !yaFallaron.has(m.id));
+  const sinLeer = (await combatesDelLocke(id)).filter(
+    (c) => c.replayUrl && !c.guardado && c.lados.length === 2 && !yaFallaron.has(claveDeRef(c.ref)),
+  );
   const tanda = sinLeer.slice(0, 6);
   const leidas = await Promise.all(
-    tanda.map((m) => estadisticasDeUnCombate(m.id).catch(() => ({ guardado: null }))),
+    tanda.map((c) => estadisticasDeUnCombate(c.ref, c).catch(() => ({ guardado: null }))),
   );
   if (tanda.length) revalidatePath("/estadisticas");
   return {
     quedan: sinLeer.length - tanda.length,
-    fallidas: tanda.filter((_, i) => !leidas[i].guardado).map((m) => m.id),
+    fallidas: tanda.filter((_, i) => !leidas[i].guardado).map((c) => claveDeRef(c.ref)),
   };
 }
 

@@ -588,7 +588,9 @@ export default async function MatchdaysPage() {
                             matchId={match.id}
                             canManage={canManage}
                             repeticion={match.replayUrl}
-                            conEstadisticas
+                            estadisticas={
+                              match.replayUrl ? { refs: [{ tipo: "jornada", id: match.id }] } : undefined
+                            }
                             maximo={formatoDeCombate(match.formato ?? matchday.formato).equipo}
                             aLaVez={formatoDeCombate(match.formato ?? matchday.formato).aLaVez}
                             sides={[
@@ -766,6 +768,15 @@ function SerieDeJornada({
         matchId={primero.id}
         canManage={canManage}
         repeticion={repeticion}
+        // Al tocar un pokémon, lo suyo en toda la serie; el botón, combate a combate
+        estadisticas={
+          repeticion
+            ? {
+                refs: combates.filter((c) => c.replayUrl).map((c) => ({ tipo: "jornada" as const, id: c.id })),
+                titulo: "Estadísticas de la serie",
+              }
+            : undefined
+        }
         maximo={deFormato.equipo}
         aLaVez={deFormato.aLaVez}
         sides={[

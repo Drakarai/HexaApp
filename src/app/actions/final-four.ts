@@ -1,5 +1,8 @@
 "use server";
 
+import { after } from "next/server";
+import { estadisticasDeUnCombate } from "@/lib/estadisticas";
+
 import { revalidatePath } from "next/cache";
 import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
@@ -107,8 +110,9 @@ export async function setFinalMatchResultAction(formData: FormData) {
   const diff = diffRaw ? Number(diffRaw) : null;
   const playedAtRaw = String(formData.get("playedAt") ?? "").trim();
 
-  await prisma.finalMatch.update({
+  const guardado = await prisma.finalMatch.update({
     where: { finalFourId_key: { finalFourId: finalFour.id, key } },
+    select: { id: true },
     data: {
       winnerId,
       pokemonDiff:
@@ -119,6 +123,9 @@ export async function setFinalMatchResultAction(formData: FormData) {
       replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
     },
   });
+
+  // Con repetición, sus estadísticas se leen después de contestar (ver matchdays.ts)
+  after(() => estadisticasDeUnCombate({ tipo: "final", id: guardado.id }).catch(() => {}));
 
   /**
    * Si se cambia un resultado anterior, las rondas que dependían de él dejan

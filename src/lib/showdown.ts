@@ -660,6 +660,10 @@ export type EstadisticasDePokemon = {
   cayo: boolean;
   /** Turnos que empezó en el campo */
   turnos: number;
+  /** Turnos que no pudo moverse: parálisis, sueño, congelación, retroceso o enamorado */
+  turnosPerdidos: number;
+  /** Ganó su lado y era el único que le quedaba */
+  ultimoEnPie: boolean;
 };
 
 export type EstadisticasDelCombate = {
@@ -685,7 +689,7 @@ function vidaDe(texto: string | undefined): number | null {
 /** Lo que se va sumando de cada pokémon */
 const CAMPOS_SUMABLES = [
   "kos", "criticosHechos", "criticosRecibidos", "supereficaces", "fallos",
-  "esquivados", "danoHecho", "danoRecibido", "turnos",
+  "esquivados", "danoHecho", "danoRecibido", "turnos", "turnosPerdidos",
 ] as const;
 type CampoSumable = (typeof CAMPOS_SUMABLES)[number];
 
@@ -745,6 +749,8 @@ export function estadisticasDeLaRepeticion(log: string, conAnil = false): Estadi
         danoRecibido: 0,
         cayo: false,
         turnos: 0,
+        turnosPerdidos: 0,
+        ultimoEnPie: false,
       };
       porClave.set(k, e);
     }
@@ -846,6 +852,13 @@ export function estadisticasDeLaRepeticion(log: string, conAnil = false): Estadi
         if (quien && quien.lado !== objetivo.lado) sumar(causante, "danoHecho", dano);
       }
       ultimoGolpe.set(objetivo.k, { k: causante, accion });
+    } else if (tipo === "cant") {
+      // Lo que no depende de él: lo que le hacen o la mala suerte, no recargar
+      const quien = deLinea(partes[2]);
+      if (quien && /^(par|slp|frz|flinch|attract)$/i.test((partes[3] ?? "").trim())) {
+        ficha(quien.lado, quien.nombre);
+        sumar(quien.k, "turnosPerdidos");
+      }
     } else if (tipo === "faint") {
       const objetivo = deLinea(partes[2]);
       if (!objetivo) continue;
@@ -855,6 +868,19 @@ export function estadisticasDeLaRepeticion(log: string, conAnil = false): Estadi
       const quien = golpe?.k && golpe.accion === accion ? porClave.get(golpe.k) : null;
       if (quien && quien.lado !== caido.lado) sumar(golpe!.k!, "kos");
     }
+  }
+
+  /**
+   * **El último en pie**: ganó su lado con un solo pokémon vivo. Hace falta
+   * saber cuántos llevaba (`enPie` de `resultadoDeLaRepeticion`, que cuenta
+   * también los que no llegaron a salir) y que de los que salieron solo quede él.
+   */
+  const { ganador, enPie } = resultadoDeLaRepeticion(log);
+  if (ganador && enPie[ganador] === 1) {
+    const vivos = [...porClave.entries()].filter(
+      ([k, e]) => e.lado === ganador && !e.cayo && (apariciones.get(k) ?? 1) > 0,
+    );
+    if (vivos.length === 1) vivos[0][1].ultimoEnPie = true;
   }
 
   const redondear = (n: number) => Math.round(n);

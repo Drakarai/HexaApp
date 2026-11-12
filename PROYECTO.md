@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de noviembre de 2026 (**estadísticas de los pokémon**: lo que hizo cada uno en cada combate, galardones y clasificaciones, sacado de las repeticiones).
+Última actualización: 12 de noviembre de 2026 (**estadísticas, segunda tanda**: retos, series y final también cuentan, once galardones y la pantalla más compacta).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -70,7 +70,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Sprites** | En *Mi perfil → Personalizar*, por dispositivo: **Blanco y Negro** (de fábrica; los del 650 en adelante, los de Smogon al mismo estilo), **Iconos de caja**, de dos maneras: **Espada y Escudo** (los muñequitos del PC de la 8ª y, para los que no tienen —Hisui, Paldea, las megas nuevas—, los de la comunidad de Pokémon Essentials; sin variocolor, como en Espada y Escudo) o **Todos iguales** (todos los de Essentials, al estilo de la 7ª, con variocolor) o **HOME** (los modelos 3D). Manda en casillas, equipos, listas, el mapa y el hall (el cementerio, el suyo y el del perfil de cada jugador, nunca lleva iconos: con los de Blanco y Negro queda más bonito); la ficha de cada pokémon va siempre **animada** al estilo de Blanco y Negro: los oficiales hasta el #649 y, del 650 en adelante y en las formas, los de la comunidad de Pokémon Essentials, también shiny. |
 | **Historia de cada pokémon** | En su ficha del Equipo y PC, del cementerio y del hall, **una línea de tiempo**: dónde y cuándo se capturó (y qué era si ha evolucionado), cada evolución, los gimnasios, jornadas, retos, royales y la final que jugó con su resultado, los **MVP** que ganó, su entrada al hall y **dónde cayó**, con cuántos días duró, cuántos combates y victorias. Lo de la caja (dónde se capturó y sus evoluciones) solo lo ve su dueño fuera de un Soul Link; lo demás, todos. Desde la ficha de Equipo y PC, **«Compartir su tarjeta»**: una imagen (`api/pokemon/[id]`) con su sprite nítido, mote, tipos, su set y lo que ha vivido (días, combates, MVPs, dónde se capturó), para el grupo. Solo la puede pedir quien puede ver su ficha: su dueño, o los del locke en un Soul Link. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **O de Equipo y PC**: «Traer mi equipo de Equipo y PC» mete de golpe los que lleva en el equipo (con su ilustración grande), y en «Añadir pokémon» la pestaña **De tu PC** enseña sus vivos del equipo y de las cajas para añadirlos de un toque (los que ya están en el hall no salen); **Escribirlo** es lo de siempre. Lo del PC solo le sale a su dueño (en un Soul Link, también a quien administra), como la caja: el hall es público y la caja no. Por lo mismo, «traer el último equipo» sin jornadas, que tira de la caja, ya no lo puede usar quien administra con la caja de otro. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon abre **la misma ficha que el Equipo y PC** (cabecera teñida, sprite animado, tipos) con su *Historia* en una pestaña, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. Entre las menciones, **quién se llevó más coronas** y la **causa de muerte más repetida**. Y **Para el grupo**: el locke entero en **una imagen** —campeón con su equipo, podio, cifras y menciones— con botón de compartir (el menú del móvil) o descargar. **La entrada al Hall de la Fama, como en los juegos**: cada pokémon entra en diagonal hasta el centro, grita y se lee su número, mote y especie; se van quedando en fila y al final «¡Bienvenidos al Hall de la Fama!» con el equipo entero y confeti. Tocar la pantalla pasa al siguiente. La primera vez que alguien abre el hall con un equipo **completo** que no ha visto, se le ofrece verla (*Ver la entrada* / *Ahora no*), de uno en uno si hay varios; cada equipo tiene además su botón **Entrada** para repetirla. La entrada acaba con **confeti**. |
-| **Estadísticas** | Lo que hace cada pokémon en los combates de jornada, **sacado de la repetición de Showdown**: KOs, daño hecho y recibido (en % de vida, sumado), críticos hechos y recibidos, golpes muy eficaces, fallos, esquivas, turnos en el campo y si acabó en pie. **En Jornadas**, en un combate con repetición, tocar un pokémon de los equipos abre lo suyo en ese combate (para votar al MVP con datos) y **📊 Estadísticas del combate** saca la tabla de los dos lados. **En *La edición → Estadísticas*** (no sale en lockes sin jornadas): seis **galardones** —El Verdugo (KOs), Tocado por los dioses (críticos), Imán de críticos, Francotirador (muy eficaces), Veterano (combates) y Superviviente (días vivo)—, clasificaciones de cinco con filtro por jugador, cuántos de los combates jugados tenían repetición, y **«Leer las que faltan»** para las repeticiones de antes. Cada pokémon **junta todo lo suyo, también lo de antes de evolucionar**. En la ficha del Equipo y PC, pestaña Combate, **📈 Sus números** con los galardones que lleva. Si hay dos iguales en tu caja y no se sabe cuál combatió, en su hoja del combate te sale **«¿Cuál de tu caja es?»** (solo a ti). |
+| **Estadísticas** | Lo que hace cada pokémon en los combates, **sacado de la repetición de Showdown** (o de la web de repeticiones del servidor de Añil, en sus lockes): KOs, daño hecho y recibido (en % de vida, sumado), críticos hechos y recibidos, golpes muy eficaces, fallos, esquivas, turnos en el campo, **turnos sin poder moverse** (parálisis, sueño, congelación, retroceso, enamorado) y si acabó en pie o fue **el último en pie** de una victoria. Cuentan **los combates de jornada (también las series al mejor de tres), los retos y la final**. **Donde se juega cada uno**: tocar un pokémon de los equipos abre lo suyo (en una serie o en la final, sumado de todos sus combates) para votar al MVP con datos, y el botón **Estadísticas del combate / de la serie** saca las tablas de los dos lados (en la final, uno por llave). **En *La edición → Estadísticas*** (no sale en lockes sin jornadas): **once galardones** en una tira que se desliza en el móvil —El Verdugo (KOs), Barrendero (más KOs en un combate, desde dos), Tocado por los dioses (críticos), Francotirador (muy eficaces), El Muro (daño aguantado en los combates que no cayó), El último en pie, Veterano (combates), Superviviente (días vivo), Imán de críticos, Patoso (fallos) y Gafado (turnos sin moverse)—; los que no tienen dueño van al final y apagados. Debajo, **una sola tarjeta de clasificaciones** con pestañas y un desplegable de jugador. Dice de cuántos combates jugados hay números, y **«Leer las que faltan»** lee las repeticiones de antes. Cada pokémon **junta todo lo suyo, también lo de antes de evolucionar**. En la ficha del Equipo y PC, pestaña Combate, **Sus números** con los galardones que lleva. Si hay dos iguales en tu caja y no se sabe cuál combatió, en su hoja te sale **«¿Cuál de tu caja es?»** (solo a ti). |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Buscador rápido** | En el ordenador, **Ctrl+K** (o ⌘K) o «Buscar…» arriba de la barra lateral: pantallas, jugadores, rutas de tu mapa (abre el Mapa con la ruta escrita), tus pokémon (abre su ficha del Equipo y PC) y el cementerio. Flechas, Enter y Escape. Sin tildes ni mayúsculas. |
 | **Clasificación pública** | Un **enlace sin cuenta** (`/clasificacion/<clave>`) para quien sigue el locke de fuera: solo la tabla, o el marcador en un dualocke, sin fotos ni nada más. Lo crea, lo cambia (el de antes deja de abrir) o lo quita quien lleva el locke, en *Competiciones → Ajustes*. No en solitario ni en Soul Link. |
@@ -3922,6 +3922,17 @@ registro trae cada ataque, crítico, «muy eficaz», fallo, daño y caída.
   ahora para todos. Se eligió entre tres opciones.
 - Los combates **sin repetición cuentan como combate** (para Veterano) y la
   pantalla dice de cuántos hay números, para no engañar.
+- **Retos, series y final, cada uno con su manera de guardar el equipo**: en
+  una serie de jornada el equipo cuelga de uno de sus combates y los demás lo
+  toman de ahí; en la final es el de cada uno para todo el cuadro, y **quién
+  juega cada combate no se guarda**, se deduce del cuadro
+  (`getFinalFourState`). Los combates que «no cuentan» de una llave ya
+  decidida, fuera. Los royales no entran: son de muchos a la vez.
+- **Lo guardado lleva versión** (`GuardadoDelCombate.version`): al leer algo
+  nuevo de las repeticiones se sube y lo de antes se vuelve a leer solo.
+- **`estadisticas` va fuera de todas las consultas por defecto** (`omit` en
+  `lib/db.ts`, como las imágenes): pesa, y si no, se colaba en cada pantalla
+  que pide combates. Quien la necesita la pide con su `select`.
 
 ## 4. Reglas del locke que están implementadas
 
@@ -4231,10 +4242,12 @@ Piezas con truco:
   estadísticas.
 - **Estadísticas**: `estadisticasDeLaRepeticion` en `lib/showdown.ts` (lo que
   hizo cada pokémon, con pruebas en `tests/estadisticas-combate.test.ts`);
-  `lib/estadisticas.ts` (leer y guardar las de un combate, juntarlas por
-  pokémon del locke, `GALARDONES`); `actions/estadisticas.ts`;
-  `components/estadisticas-del-combate.tsx` (las hojas de Jornadas, que
-  `MatchTeams` abre con `conEstadisticas`); `app/(app)/estadisticas/`; y
+  `lib/estadisticas.ts` (cargar cualquier combate —`RefCombate`: jornada, reto
+  o final—, leer y guardar sus estadísticas, juntarlas por pokémon del locke,
+  `GALARDONES`); `actions/estadisticas.ts`;
+  `components/estadisticas-del-combate.tsx` (las hojas, que `MatchTeams` abre
+  con `estadisticas={{ refs }}`, y `BotonDeEstadisticas` para la final);
+  `app/(app)/estadisticas/` (con `clasificaciones.tsx`, las pestañas); y
   `equipo/sus-numeros.tsx` en la ficha. La repetición de mentira de las pruebas
   (`guia/showdown-falso.cjs`) lleva ataques y críticos para que salgan números.
 - `components/pestanas.tsx` y `components/pestanas-enlace.tsx` — las pestañas,
@@ -4553,11 +4566,11 @@ riesgo es pequeño) y una copia automática fuera de Neon.
 cada push a la rama de trabajo se publica solo. `DEPLOY.md` sigue valiendo para
 montarla de cero.
 
-**Estadísticas, primera tanda hecha**: lo que se saca de la repetición, los
-seis galardones y las clasificaciones. Quedan para otra tanda las ideas que se
-hablaron y no entraron: más títulos (los que dependen de datos que la
-repetición no trae, como niveles o el momento de la captura en el juego) y
-enseñar los galardones en otras pantallas (hall, cementerio). Las repeticiones
+**Estadísticas hechas**: lo que se saca de la repetición en jornadas, series,
+retos y final, los once galardones y las clasificaciones. Quedan las ideas que
+se hablaron y no entraron: enseñar los galardones en otras pantallas (hall,
+cementerio, la imagen del resumen) y los momentos sueltos en la Historia de
+cada pokémon («barrida de 3 en la Jornada 4»). Los royales no cuentan. Las repeticiones
 de combates de antes no se leen solas: se leen con «Leer las que faltan».
 
 **Pendiente pequeño**: el mapa de fondo de Johto que hay subido mide 215×149
@@ -5139,3 +5152,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 167. **Dualocke por el juego**: el título puede ser de quien se pase el juego con menos wipeos, y cada uno puede dar su locke por perdido.
 168. **Hall de la fama desde Equipo y PC**: traer el equipo que llevas o elegir pokémon de tu PC.
 169. **Estadísticas de los pokémon**: lo de cada uno en cada combate de jornada, sacado de la repetición, con galardones y clasificaciones.
+170. **Estadísticas en retos, series y final**, once galardones y la pantalla compacta, con iconos.

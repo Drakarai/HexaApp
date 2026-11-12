@@ -30,6 +30,10 @@ const SIN_IMAGENES = {
   // No es una imagen, pero pesa como todas juntas: el volcado de una copia son
   // varios megas y no puede colarse en un listado por descuido
   backup: { payload: true },
+  // Lo leído de cada repetición: solo lo piden las estadísticas, con su `select`
+  match: { estadisticas: true },
+  challengeMatch: { estadisticas: true },
+  finalMatch: { estadisticas: true },
 } as const;
 
 /**

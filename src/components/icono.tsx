@@ -83,6 +83,13 @@ import {
   Mountain,
   TreePine,
   Waves,
+  Sword,
+  Magnet,
+  Sprout,
+  Snail,
+  PersonStanding,
+  TrendingUp,
+  CircleSlash2,
   type LucideIcon,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -205,6 +212,15 @@ const LINEA: Record<string, Linea> = {
   "🐞": { icono: Bug },
   "💡": { icono: Lightbulb, color: ORO },
   "🔄": { icono: RefreshCw },
+  // Las estadísticas y sus galardones (ver lib/estadisticas.ts)
+  "📈": { icono: TrendingUp },
+  "🗡️": { icono: Sword },
+  "🧲": { icono: Magnet },
+  "🏕️": { icono: Tent },
+  "🌱": { icono: Sprout },
+  "😵": { icono: CircleSlash2 },
+  "🐌": { icono: Snail },
+  "🧍": { icono: PersonStanding },
   // Las clases de zona del mapa
   "🛤️": { icono: Route },
   "🏘️": { icono: Building2 },

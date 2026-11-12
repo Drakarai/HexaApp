@@ -1,5 +1,8 @@
 "use server";
 
+import { after } from "next/server";
+import { estadisticasDeUnCombate } from "@/lib/estadisticas";
+
 import { revalidatePath } from "next/cache";
 import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
@@ -87,6 +90,9 @@ export async function setChallengeResultAction(formData: FormData) {
       playedAt: fechaBruta ? new Date(fechaBruta) : winnerId ? new Date() : null,
     },
   });
+
+  // Con repetición, sus estadísticas se leen después de contestar (ver matchdays.ts)
+  after(() => estadisticasDeUnCombate({ tipo: "reto", id }).catch(() => {}));
 
   // Los objetos del premio caen solos en la bolsa del que ha ganado, y se
   // corrigen si el ganador cambia: ver lib/premios.ts

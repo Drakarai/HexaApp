@@ -346,6 +346,15 @@ export default async function FinalFourPage() {
                   <MatchTeams
                     matchId={state.finalFourId}
                     finalFourId={state.finalFourId}
+                    // Al tocar uno de sus pokémon, lo suyo en toda la final
+                    estadisticas={{
+                      refs: state.llaves
+                        .filter((l) => [l.a?.participantId, l.b?.participantId].includes(jugador.participantId))
+                        .flatMap((l) => l.combates)
+                        .filter((c) => c.id && c.replayUrl && !c.sobra)
+                        .map((c) => ({ tipo: "final" as const, id: c.id! })),
+                      sinBoton: true,
+                    }}
                     rotulo={`El equipo de ${jugador.displayName} para ${nombre}`}
                     canManage={
                       canManage ||

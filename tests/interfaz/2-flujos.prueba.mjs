@@ -204,13 +204,17 @@ describe("lo de todos los días", () => {
     // En la repetición de mentira, Brasa tumba a dos: la columna de KOs es la primera
     const brasa = tabla.locator("tr", { hasText: "Brasa" });
     assert.equal((await brasa.locator("td").nth(1).innerText()).trim(), "2");
-    assert.equal(await tabla.locator("h3", { hasText: "Rodri" }).count(), 1, "el otro lado es de Rodri");
+    assert.equal(await tabla.locator("h4", { hasText: "Rodri" }).count(), 1, "el otro lado es de Rodri");
     await pagina.keyboard.press("Escape");
 
     // Y en la pantalla de estadísticas, Brasa es El Verdugo
     await ir(pagina, "/estadisticas");
     const verdugo = pagina.locator("[data-galardones] .card", { hasText: "El Verdugo" });
     assert.match(await verdugo.innerText(), /Brasa[\s\S]*2 KOs/);
+    // Las clasificaciones van de una en una, con pestañas
+    const clasificaciones = pagina.locator("[data-clasificaciones]");
+    await clasificaciones.getByRole("tab", { name: /Barrida/ }).click();
+    assert.match(await clasificaciones.locator("li").first().innerText(), /Brasa[\s\S]*2 KOs/);
     sinProblemas(problemas, "estadísticas del combate");
   });
 
