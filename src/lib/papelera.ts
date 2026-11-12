@@ -1,5 +1,5 @@
 import "server-only";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { borrarPuntosHuerfanos } from "@/lib/puntos-huerfanos";
 
@@ -122,13 +122,27 @@ export async function restaurarJornada(id: string): Promise<{ error?: string; la
     ).map((u) => u.id),
   );
   const { mvpTiebreakId, ...jornada } = c.jornada;
+  // A qué pokémon de la caja apuntaba cada uno del equipo: si se borró mientras tanto, a ninguno
+  const capturasQueSiguen = new Set(
+    (
+      await prisma.capture.findMany({
+        where: { id: { in: c.equipos.map((e) => e.captureId).filter((x): x is string => Boolean(x)) } },
+        select: { id: true },
+      })
+    ).map((x) => x.id),
+  );
 
   await prisma.$transaction([
     prisma.matchday.create({ data: jornada }),
-    prisma.match.createMany({ data: c.combates }),
+    // Lo leído de la repetición vuelve con el combate (un Json vacío se dice así en Prisma)
+    prisma.match.createMany({
+      data: c.combates.map((m) => ({ ...m, estadisticas: m.estadisticas ?? Prisma.JsonNull })),
+    }),
     prisma.royale.createMany({ data: c.royales }),
     prisma.royalePuesto.createMany({ data: c.puestos }),
-    prisma.matchPokemon.createMany({ data: c.equipos }),
+    prisma.matchPokemon.createMany({
+      data: c.equipos.map((e) => ({ ...e, captureId: e.captureId && capturasQueSiguen.has(e.captureId) ? e.captureId : null })),
+    }),
     prisma.mvpVote.createMany({ data: c.votos }),
     prisma.pointEntry.createMany({
       data: c.puntos.map((p) => ({ ...p, createdById: p.createdById && autores.has(p.createdById) ? p.createdById : null })),

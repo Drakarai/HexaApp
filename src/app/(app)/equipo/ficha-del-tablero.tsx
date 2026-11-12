@@ -15,6 +15,7 @@ import { HistoriaDelPokemon } from "@/components/historia-del-pokemon";
 import { Pestanas } from "@/components/pestanas";
 import { CabeceraDeFicha } from "@/components/cabecera-de-ficha";
 import { FichaDeCombate } from "./ficha-de-combate";
+import { SusNumeros } from "./sus-numeros";
 import { Debilidades } from "./debilidades";
 import { Intercambio } from "./intercambio";
 import { CopiarParaShowdown } from "./exportar-showdown";
@@ -788,6 +789,7 @@ export function Ficha({
         />
       ) : null}
       {pestanaVisible === "combate" ? <Debilidades pokemonId={pokemon.mega?.pokemonId ?? pokemon.pokemonId} deLocke={pokemon.debilidades} /> : null}
+      {pestanaVisible === "combate" ? <SusNumeros captureId={pokemon.id} /> : null}
 
       {pestanaVisible === "historia" ? (
         <HistoriaDelPokemon

@@ -194,6 +194,26 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "resultado de la repetición");
   });
 
+  test("las estadísticas del combate salen de su repetición", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/jornadas");
+    const combate = pagina.locator("li", { hasText: "Draka" }).filter({ hasText: "Rodri" }).first();
+    await combate.getByRole("button", { name: /Estadísticas del combate/ }).click();
+    const tabla = pagina.getByRole("dialog").locator("[data-estadisticas-combate]");
+    await tabla.waitFor();
+    // En la repetición de mentira, Brasa tumba a dos: la columna de KOs es la primera
+    const brasa = tabla.locator("tr", { hasText: "Brasa" });
+    assert.equal((await brasa.locator("td").nth(1).innerText()).trim(), "2");
+    assert.equal(await tabla.locator("h3", { hasText: "Rodri" }).count(), 1, "el otro lado es de Rodri");
+    await pagina.keyboard.press("Escape");
+
+    // Y en la pantalla de estadísticas, Brasa es El Verdugo
+    await ir(pagina, "/estadisticas");
+    const verdugo = pagina.locator("[data-galardones] .card", { hasText: "El Verdugo" });
+    assert.match(await verdugo.innerText(), /Brasa[\s\S]*2 KOs/);
+    sinProblemas(problemas, "estadísticas del combate");
+  });
+
   test("la actividad se filtra por tipo", async () => {
     const { pagina, problemas } = sesion;
     await ir(pagina, "/actividad");

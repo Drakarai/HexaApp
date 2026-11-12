@@ -94,6 +94,7 @@ export const PANTALLAS_DEL_BUZON: { href: string; rotulo: string }[] = [
   { href: "/final-four", rotulo: "La final" },
   { href: "/hall-de-la-fama", rotulo: "Hall de la fama" },
   { href: "/puntos", rotulo: "Puntos" },
+  { href: "/estadisticas", rotulo: "Estadísticas" },
   { href: "/muertes", rotulo: "Cementerio" },
   { href: "/actividad", rotulo: "Actividad" },
   { href: "/level-caps", rotulo: "Level caps" },

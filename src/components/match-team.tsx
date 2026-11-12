@@ -16,6 +16,7 @@ import { cx } from "@/lib/utils";
 import { Hoja } from "@/components/hoja";
 import { Pestanas } from "@/components/pestanas";
 import { useEsAnil } from "@/components/juego-del-locke";
+import { EstadisticasDelCombate, type QueSeMira } from "@/components/estadisticas-del-combate";
 
 export type TeamPokemon = {
   id: string;
@@ -49,6 +50,7 @@ export function MatchTeams({
   maximo = 6,
   aLaVez = 1,
   repeticion,
+  conEstadisticas = false,
 }: {
   matchId: string;
   /**
@@ -73,8 +75,20 @@ export function MatchTeams({
   aLaVez?: number;
   /** El enlace de la repetición del combate, si ya se apuntó: de ahí salen los equipos */
   repeticion?: string | null;
+  /**
+   * Que se puedan mirar sus números: tocar un pokémon enseña lo que hizo en
+   * este combate, y sale el botón de las del combate entero. Solo en los de
+   * jornada con repetición, que es de donde salen.
+   */
+  conEstadisticas?: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [mira, setMira] = useState<QueSeMira | null>(null);
+  const verNumeros = conEstadisticas && Boolean(repeticion);
+  const alTocar = verNumeros
+    ? (pokemon: TeamPokemon) =>
+        setMira({ tipo: "pokemon", teamId: pokemon.id, nombre: pokemon.nickname ?? pokemon.species, imagen: pokemon.boxImage })
+    : undefined;
   const hasTeams = sides.some((side) => side.team.length > 0);
 
   /**
@@ -88,7 +102,8 @@ export function MatchTeams({
     Math.max(1, ...sides.map((side) => side.team.length)),
   );
 
-  if (!hasTeams && !canManage) return null;
+  // Sin equipos apuntados, la repetición sigue teniendo sus números
+  if (!hasTeams && !canManage && !verNumeros) return null;
 
   return (
     <div className="mt-2 border-t border-white/5 pt-2">
@@ -97,7 +112,7 @@ export function MatchTeams({
           {/* Móvil: una tira de sprites por jugador, que es lo que cabe */}
           <div className="space-y-1.5 lg:hidden">
             {sides.map((side) => (
-              <TeamRow key={side.participantId} side={side} aLaVez={aLaVez} />
+              <TeamRow key={side.participantId} side={side} aLaVez={aLaVez} alTocar={alTocar} />
             ))}
           </div>
 
@@ -115,11 +130,24 @@ export function MatchTeams({
                 maximo={maximo}
                 casillas={casillas}
                 aLaVez={aLaVez}
+                alTocar={alTocar}
               />
             ))}
           </div>
         </>
       ) : null}
+
+      {verNumeros ? (
+        <button
+          type="button"
+          className="btn-ghost btn-sm mt-2 mr-2"
+          onClick={() => setMira({ tipo: "combate" })}
+        >
+          📊 Estadísticas del combate
+        </button>
+      ) : null}
+
+      {mira ? <EstadisticasDelCombate matchId={matchId} mira={mira} onCerrar={() => setMira(null)} /> : null}
 
       {canManage ? (
         <button
@@ -159,7 +187,15 @@ export function MatchTeams({
   );
 }
 
-function TeamRow({ side, aLaVez = 1 }: { side: TeamSide; aLaVez?: number }) {
+function TeamRow({
+  side,
+  aLaVez = 1,
+  alTocar,
+}: {
+  side: TeamSide;
+  aLaVez?: number;
+  alTocar?: (pokemon: TeamPokemon) => void;
+}) {
   if (!side.team.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5">
@@ -176,6 +212,7 @@ function TeamRow({ side, aLaVez = 1 }: { side: TeamSide; aLaVez?: number }) {
           pokemon={pokemon}
           owner={side.displayName}
           abre={aLaVez > 1 && index < aLaVez}
+          alTocar={alTocar}
         />
       ))}
     </div>
@@ -194,11 +231,13 @@ function TeamBox({
   maximo = 6,
   casillas = maximo,
   aLaVez = 1,
+  alTocar,
 }: {
   side: TeamSide;
   maximo?: number;
   casillas?: number;
   aLaVez?: number;
+  alTocar?: (pokemon: TeamPokemon) => void;
 }) {
   const huecos = Array.from({ length: casillas }, (_, index) => side.team[index] ?? null);
 
@@ -223,8 +262,9 @@ function TeamBox({
       <div className="grid grid-cols-3 gap-1.5">
         {huecos.map((pokemon, index) =>
           pokemon ? (
-            <div
+            <Casilla
               key={pokemon.id}
+              alTocar={alTocar && (() => alTocar(pokemon))}
               title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species})${
                 aLaVez > 1 && index < aLaVez ? " · abre el combate" : ""
               }`}
@@ -254,7 +294,7 @@ function TeamBox({
               <p className="truncate text-center text-[11px] text-slate-400">
                 {pokemon.nickname ?? pokemon.species}
               </p>
-            </div>
+            </Casilla>
           ) : (
             <div
               key={`hueco-${index}`}
@@ -271,26 +311,62 @@ function TeamBox({
   );
 }
 
+/** Una casilla del equipo: un botón si se puede tocar para ver sus números */
+function Casilla({
+  alTocar,
+  className,
+  title,
+  children,
+}: {
+  alTocar?: () => void;
+  className?: string;
+  title?: string;
+  children: React.ReactNode;
+}) {
+  if (!alTocar) {
+    return (
+      <div title={title} className={className}>
+        {children}
+      </div>
+    );
+  }
+  return (
+    <button
+      type="button"
+      title={`${title} · toca para ver lo que hizo`}
+      onClick={alTocar}
+      className={cx(className, "block text-left transition hover:bg-white/[0.08]")}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Sprite({
   pokemon,
   owner,
   size = 34,
   abre = false,
+  alTocar,
 }: {
   pokemon: TeamPokemon;
   owner: string;
   size?: number;
   /** Que es de los que salen al terreno al empezar (dobles, VGC) */
   abre?: boolean;
+  alTocar?: (pokemon: TeamPokemon) => void;
 }) {
+  const Etiqueta = alTocar ? "button" : "span";
   return (
-    <span
+    <Etiqueta
+      {...(alTocar ? { type: "button" as const, onClick: () => alTocar(pokemon) } : {})}
       title={`${pokemon.nickname ?? pokemon.species} (${pokemon.species}) de ${owner}${
         abre ? " · abre el combate" : ""
       }`}
       className={cx(
         "flex shrink-0 items-center justify-center rounded-lg bg-white/[0.04]",
         abre && "ring-1 ring-brand-400/50",
+        alTocar && "transition hover:bg-white/[0.1]",
       )}
       style={{ width: size, height: size }}
     >
@@ -307,7 +383,7 @@ export function Sprite({
           ?
         </span>
       )}
-    </span>
+    </Etiqueta>
   );
 }
 

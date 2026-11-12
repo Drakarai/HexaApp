@@ -3,7 +3,7 @@
 // y los valores válidos están centralizados en src/lib/constants.ts
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   // Los `include` en una sola consulta con JOIN, y no una por relación: cada
   // una era otra ida y vuelta a la base de datos, que está en internet
   previewFeatures = ["relationJoins"]
@@ -219,44 +219,44 @@ model MapRegion {
  * captura directamente; al tocarla salen las hijas para elegir.
  */
 model MapZone {
-  id       String  @id @default(cuid())
-  regionId String
-  name     String
+  id        String  @id @default(cuid())
+  regionId  String
+  name      String
   /**
    * "ruta" | "ciudad" | "cueva" | "bosque" | "agua" | "otro". Solo es color.
    */
-  kind     String  @default("ruta")
+  kind      String  @default("ruta")
   /**
    * Qué forma tiene sobre el mapa: "rect", "circulo" (redondo), "circle"
    * (óvalo, se llama así porque es el nombre que ya estaba guardado), "poly"
    * o "none".
    * Las de "none" no salen dibujadas, solo en la lista de zonas.
    */
-  shape    String  @default("rect")
+  shape     String  @default("rect")
   /**
    * Esquina superior izquierda del recuadro que la contiene
    */
-  x        Int
-  y        Int
-  w        Int     @default(150)
-  h        Int     @default(44)
+  x         Int
+  y         Int
+  w         Int     @default(150)
+  h         Int     @default(44)
   /**
    * Solo para "poly": los vértices, en JSON `[[x,y], …]` del lienzo
    */
-  points   String?
+  points    String?
   /**
    * Grados que está girada sobre su centro. Hay rutas que van en diagonal y un
    * rectángulo recto encima de ellas se come media ciudad de al lado.
    */
-  angle    Int     @default(0)
+  angle     Int     @default(0)
   /**
    * Color propio. Si no lo tiene, se usa el de su tipo (ver lib/zonas.ts)
    */
-  color    String?
+  color     String?
   /**
    * Si cuelga de otra zona, cuál. Las hijas no se dibujan: viven en su padre.
    */
-  parentId String?
+  parentId  String?
   /**
    * Si es **otro trozo de una ruta partida**, de cuál: la ruta empieza, en medio
    * hay algo que ocupa su sitio, y sigue al otro lado. Un trozo solo es dibujo
@@ -265,7 +265,7 @@ model MapZone {
    * va con ella si se borra.
    */
   trozoDeId String?
-  position Int     @default(0)
+  position  Int     @default(0)
 
   region   MapRegion @relation(fields: [regionId], references: [id], onDelete: Cascade)
   parent   MapZone?  @relation("ZonaPadre", fields: [parentId], references: [id], onDelete: SetNull)
@@ -371,11 +371,15 @@ model Capture {
   habilidadMega String?
   createdAt     DateTime @default(now())
 
-  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
-  zone        MapZone?    @relation(fields: [zoneId], references: [id], onDelete: SetNull)
-  muerte      Death?      @relation(fields: [deathId], references: [id], onDelete: SetNull)
+  participant Participant    @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  zone        MapZone?       @relation(fields: [zoneId], references: [id], onDelete: SetNull)
+  muerte      Death?         @relation(fields: [deathId], references: [id], onDelete: SetNull)
   // Los jugadores que la tienen de as (uno, el suyo)
-  esAsDe      Participant[] @relation("AsDelJugador")
+  esAsDe      Participant[]  @relation("AsDelJugador")
+  /**
+   * Los equipos de combate en los que su dueño dijo que era este (ver MatchPokemon.captureId)
+   */
+  enCombates  MatchPokemon[] @relation("EnCombates")
 
   @@index([participantId])
   @@index([zoneId])
@@ -544,14 +548,14 @@ model Competition {
    * basa**: de él salen el mapa de capturas y la plantilla de level caps, pero
    * no su nombre ni sus versiones. Sin base, se empieza de cero y no hay mapa.
    */
-  juegoNoOficial Boolean @default(false)
+  juegoNoOficial      Boolean   @default(false)
   /**
    * Qué tipos se usan: `"antiguos"` (los de la generación del juego: sin Hada,
    * Clefairy Normal) o `"actuales"` (los de ahora). Solo se elige en juegos de
    * la 1ª a la 5ª y en fangames sin base; vacío es lo de cada uno (ver
    * `generacionDeTipos` en lib/juegos.ts).
    */
-  tipos          String?
+  tipos               String?
   // Modalidad ("Random", "Nuzlocke clásico", ...)
   modality            String?
   description         String?
@@ -585,7 +589,6 @@ model Competition {
    * o null si no hay. Para que la siga gente de fuera sin cuenta: solo enseña
    * la tabla. Larga y al azar, así que no se adivina; cambiarla deja
    * inservible la de antes. La crea y la quita quien lleva el locke.
-   *
    * Con índice y **no `@unique`**: añadir una restricción única hace que
    * `prisma db push` pida `--accept-data-loss`, y el build de Vercel lo lanza
    * sin él, así que el despliegue se pararía. Que no se repita ya lo asegura
@@ -706,12 +709,12 @@ model Participant {
 
   // Pokémon as: el representante del jugador en esta edición. Va aquí y no en
   // User para que cada competición conserve el suyo cuando se archiva.
-  aceSpecies     String?
-  aceNickname    String?
+  aceSpecies      String?
+  aceNickname     String?
   // Por qué es su as. Opcional, para lucirse en la ficha.
-  aceReason      String?
-  aceImage       String?
-  aceDetailImage String?
+  aceReason       String?
+  aceImage        String?
+  aceDetailImage  String?
   /**
    * La captura del Equipo y PC que es su as. **El as se elige de la caja**, y
    * con esto se sabe cuál es: los campos de arriba son una copia de ella que
@@ -720,16 +723,16 @@ model Participant {
    * as —la clasificación, el cementerio, su imagen— siga igual. Null en los de
    * antes, que eran una especie escrita a mano.
    */
-  aceCaptureId   String?
+  aceCaptureId    String?
   // Quién ha sido su as y por qué dejó de serlo: ver lib/as.ts
-  historialDeAses Json   @default("[]")
+  historialDeAses Json    @default("[]")
 
   // El fondo de cada caja de su Equipo y PC, separados por comas (ver
   // lib/fondos-de-caja.ts). Vacío: el de fábrica de cada caja.
-  fondosDeCaja   String?
+  fondosDeCaja  String?
   // El nombre de cada caja, si se le ha puesto: una lista con una posición
   // por caja y null donde se queda con «Caja N» (ver lib/fondos-de-caja.ts)
-  nombresDeCaja  Json     @default("[]")
+  nombresDeCaja Json    @default("[]")
 
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -773,17 +776,17 @@ model Participant {
 // ---------------------------------------------------------------------------
 
 model RuleSection {
-  id            String   @id @default(cuid())
-  competitionId String
-  title         String
+  id             String    @id @default(cuid())
+  competitionId  String
+  title          String
   // Texto de la sección. Se admite una sintaxis ligera: líneas que empiezan por
   // "- " se renderizan como lista y **texto** en negrita.
-  body          String
+  body           String
   // Agrupador opcional ("Básicas", "Jornadas", "Puntos"...)
-  category      String?
-  position      Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  category       String?
+  position       Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   /**
    * Cuándo cambió **de verdad** con el locke ya en marcha: la regla que se
    * añade o se reescribe cuando ya se está jugando. Enciende el punto de
@@ -791,9 +794,11 @@ model RuleSection {
    * reordenar, al corregir una errata sin avisar o al montar las reglas antes
    * de empezar, y eso no es noticia para nadie.
    */
-  cambiadaAt    DateTime?
-  /** Quién la cambió: a él no hace falta avisarle */
-  cambiadaPorId String?
+  cambiadaAt     DateTime?
+  /**
+   * Quién la cambió: a él no hace falta avisarle
+   */
+  cambiadaPorId  String?
   /**
    * Lo que decía antes del último cambio, para poder enseñarlo. Vacío en una
    * sección añadida con el locke empezado: antes no decía nada.
@@ -807,28 +812,28 @@ model RuleSection {
 }
 
 model LevelCap {
-  id            String   @id @default(cuid())
-  competitionId String
+  id             String   @id @default(cuid())
+  competitionId  String
   // Nombre del líder / hito ("Pegaso", "Alto Mando", "Liga Pokémon")
-  label         String
-  cap           Int
+  label          String
+  cap            Int
   // "GYM" | "ELITE_FOUR" | "CHAMPION" | "OTHER"
-  kind          String   @default("GYM")
-  badge         String?
-  notes         String?
+  kind           String   @default("GYM")
+  badge          String?
+  notes          String?
   // Medallas o retratos: si hay más de una, se van alternando con un fundido.
   // Cada una es una URL o una imagen subida (data URL ya redimensionada).
-  images        String[] @default([])
+  images         String[] @default([])
   // Legado de cuando solo se admitía una imagen. Se sigue leyendo como
   // respaldo si "images" está vacío, y se vacía al guardar desde el formulario.
-  image         String?
-  position      Int      @default(0)
+  image          String?
+  position       Int      @default(0)
   /**
    * Checkpoint de jornada: cuando todos hayan pasado este hito, toca jugar la
    * jornada antes de seguir, y la portada enseña el rival en vez del level cap
    * siguiente. Qué jornada es sale del orden (ver lib/checkpoints.ts).
    */
-  jornadaDespues Boolean @default(false)
+  jornadaDespues Boolean  @default(false)
 
   competition Competition    @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   clears      GymClear[]
@@ -900,42 +905,46 @@ model LevelCapTemplateItem {
  * solo con sus level caps y sus reglas.
  */
 model LockeRequest {
-  id            String    @id @default(cuid())
-  userId        String
-  name          String
+  id             String    @id @default(cuid())
+  userId         String
+  name           String
   /**
    * El juego de lib/juegos.ts, si eligió uno de la lista
    */
-  gameId        String?
-  /** Para un juego no oficial: su nombre (ver `Competition.juegoNoOficial`) */
-  game          String?
-  juegoNoOficial Boolean  @default(false)
-  modality      String?
-  description   String?
+  gameId         String?
+  /**
+   * Para un juego no oficial: su nombre (ver `Competition.juegoNoOficial`)
+   */
+  game           String?
+  juegoNoOficial Boolean   @default(false)
+  modality       String?
+  description    String?
   /**
    * Para cuánta gente se pide el locke. **1 es el de uno mismo**, que es para
    * lo único que valía esto al principio; de 2 en adelante es un locke de
    * grupo, y quien lo pide se lleva además el permiso de organizador para dar
    * de alta a sus amigos.
    */
-  /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero */
-  estilo        String    @default("competitivo")
-  maxPlayers    Int       @default(1)
+  /**
+   * /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero
+   */
+  estilo         String    @default("competitivo")
+  maxPlayers     Int       @default(1)
   /**
    * "PENDIENTE" | "ACEPTADA" | "RECHAZADA"
    */
-  estado        String    @default("PENDIENTE")
+  estado         String    @default("PENDIENTE")
   /**
    * Lo que conteste el administrador, sobre todo si dice que no
    */
-  respuesta     String?
-  createdAt     DateTime  @default(now())
-  resueltaAt    DateTime?
-  resueltaById  String?
+  respuesta      String?
+  createdAt      DateTime  @default(now())
+  resueltaAt     DateTime?
+  resueltaById   String?
   /**
    * La edición que se creó al aceptarla, para poder enlazarla
    */
-  competitionId String?
+  competitionId  String?
 
   user     User  @relation("SolicitanteDeLocke", fields: [userId], references: [id], onDelete: Cascade)
   resuelta User? @relation("ResolutorDeLocke", fields: [resueltaById], references: [id], onDelete: SetNull)
@@ -1038,7 +1047,7 @@ model GymVideo {
 // ---------------------------------------------------------------------------
 
 model Death {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
   participantId String
   // Especie del pokémon ("Typhlosion")
   species       String
@@ -1058,7 +1067,7 @@ model Death {
   location      String?
   // Qué lo mató
   cause         String?
-  diedAt        DateTime @default(now())
+  diedAt        DateTime  @default(now())
   notes         String?
   // Sprite pequeño que se ve en la caja. Se elige al registrar la baja.
   boxImage      String?
@@ -1071,7 +1080,7 @@ model Death {
    * su captura deja de apuntar aquí; en su historia queda qué baja era.
    */
   revividoEl    DateTime?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime  @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   // Si se borra la zona del mapa la baja se queda, sin sitio: perder el
@@ -1298,6 +1307,15 @@ model Match {
    * dejarlo en paz para que lo jueguen.
    */
   excepcion      Boolean   @default(false)
+  /**
+   * Lo que hizo cada pokémon en el combate, leído de la repetición
+   * (`estadisticasDeLaRepeticion` en lib/showdown.ts): KOs, críticos,
+   * supereficaces, daño… Se lee una vez y se guarda; `estadisticasDe` es el
+   * enlace del que salió, para volver a leerlo si se cambia. Ver
+   * lib/estadisticas.ts.
+   */
+  estadisticas   Json?
+  estadisticasDe String?
 
   matchday     Matchday       @relation(fields: [matchdayId], references: [id], onDelete: Cascade)
   participantA Participant    @relation("MatchPlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
@@ -1313,7 +1331,15 @@ model Match {
  * administrador y son los candidatos a MVP de esa jornada.
  */
 model MatchPokemon {
-  id               String  @id @default(cuid())
+  id               String   @id @default(cuid())
+  /**
+   * Qué pokémon de la caja de su entrenador es, cuando no se puede saber por
+   * el mote y la especie (dos Pidgey sin mote): lo elige su dueño al mirar sus
+   * números del combate. Así sus estadísticas se juntan con las del bueno.
+   * Ver lib/estadisticas.ts.
+   */
+  captureId        String?
+  capture          Capture? @relation("EnCombates", fields: [captureId], references: [id], onDelete: SetNull)
   /**
    * De qué combate es el equipo. Va uno de los dos, nunca los dos: los de
    * jornada apuntan a `matchId` y los de reto a `challengeMatchId`. Se comparte
@@ -1354,7 +1380,7 @@ model MatchPokemon {
    * Ilustración oficial. Solo se usa en la ficha si gana la votación de MVP.
    */
   detailImage      String?
-  position         Int     @default(0)
+  position         Int      @default(0)
 
   match          Match?          @relation(fields: [matchId], references: [id], onDelete: Cascade)
   challengeMatch ChallengeMatch? @relation(fields: [challengeMatchId], references: [id], onDelete: Cascade)
@@ -1371,6 +1397,7 @@ model MatchPokemon {
   @@index([royaleId, participantId])
   @@index([finalFourId, participantId])
   @@index([participantId])
+  @@index([captureId])
 }
 
 /**
@@ -1962,13 +1989,13 @@ model Backup {
  * un grupo con el que no tiene nada que ver.
  */
 model LockeDeAntes {
-  id           String   @id @default(cuid())
-  nombre       String
+  id               String   @id @default(cuid())
+  nombre           String
   /**
    * El juego, escrito a mano: de entonces no hay identificador que valga
    */
-  juego        String?
-  cuando       DateTime
+  juego            String?
+  cuando           DateTime
   /**
    * El ganador, si tiene cuenta. Si no la tiene, va su nombre escrito en
    * `ganadorNombre` y esto queda vacío: de un locke de antes puede haber gente
@@ -1981,18 +2008,20 @@ model LockeDeAntes {
   /**
    * Las cuentas de quienes lo jugaron. El ganador entra siempre.
    */
-  jugadoresIds String[] @default([])
+  jugadoresIds     String[] @default([])
   /**
    * Los que lo jugaron **sin cuenta**, por su nombre. Salen en la línea del
    * locke y cuentan para su tamaño, pero no tienen fila en ningún palmarés.
    * Si uno se hace cuenta luego, al editar se vincula y pasa a `jugadoresIds`.
    */
-  sinCuenta    String[] @default([])
-  /** El logo de aquel locke, como el de una edición (data URL o `ref:` del almacén) */
-  logo         String?
-  notas        String?
-  createdById  String?
-  createdAt    DateTime @default(now())
+  sinCuenta        String[] @default([])
+  /**
+   * El logo de aquel locke, como el de una edición (data URL o `ref:` del almacén)
+   */
+  logo             String?
+  notas            String?
+  createdById      String?
+  createdAt        DateTime @default(now())
 
   ganador     User? @relation("GanadorDeAntes", fields: [ganadorId], references: [id], onDelete: Cascade)
   subcampeon  User? @relation("SubcampeonDeAntes", fields: [subcampeonId], references: [id], onDelete: SetNull)
@@ -2077,7 +2106,6 @@ model JornadaBorrada {
  * una jornada, tocó los puntos, una regla o la bolsa de alguien, y cuándo. Lo
  * apunta `registrar()` (lib/registro.ts) desde las acciones de quien
  * administra y se ve en Diagnóstico.
- *
  * Sin relación con `Competition` ni con `User` a propósito: el registro tiene
  * que aguantar que se borre el locke o la cuenta, que es justo cuando hace
  * falta saber quién fue. Por eso lleva copiados los nombres.

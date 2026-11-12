@@ -617,3 +617,256 @@ export function quienEsQuien(
       : "orden";
   return { ids, por };
 }
+
+/**
+ * **Lo que hizo cada pokémon en un combate**, sacado del registro de la
+ * repetición: para las estadísticas de los pokémon del locke y para votar al
+ * MVP sabiendo quién hizo qué.
+ *
+ * Cómo se atribuye cada cosa, a partir de las líneas del registro:
+ *
+ * - `|move|ATACANTE|Movimiento|OBJETIVO` dice quién está atacando ahora; lo
+ *   que viene detrás hasta el siguiente movimiento es de ese ataque.
+ * - `|-crit|OBJETIVO`: un crítico de quien ataca, recibido por el objetivo.
+ * - `|-supereffective|OBJETIVO`: «¡Es muy eficaz!», de quien ataca.
+ * - `|-miss|ATACANTE|OBJETIVO`: un fallo de uno, que el otro esquiva.
+ * - `|-damage|OBJETIVO|vida`: el daño, en % de la vida. Sin `[from]` es del
+ *   ataque; con `[from]` (veneno, púas, Vidasfera…) no es de nadie, salvo que
+ *   diga `[of]` quién lo causó (un Casco Dentado).
+ * - `|faint|OBJETIVO`: el KO es de quien le dio el último golpe, si fue el
+ *   rival. Si cayó por veneno o una trampa, no se lo apunta nadie.
+ *
+ * Cada pokémon se reconoce por su nombre en el combate («p1a: Brasa»), que en
+ * Showdown es el mote o, sin mote, la especie: no cambia aunque cambie de
+ * hueco en dobles.
+ */
+export type EstadisticasDePokemon = {
+  /** "p1", "p2" */
+  lado: string;
+  /** Su nombre en el combate, para reconocerlo */
+  nombre: string;
+  mote: string | null;
+  especie: string;
+  pokemonId: number | null;
+  kos: number;
+  criticosHechos: number;
+  criticosRecibidos: number;
+  supereficaces: number;
+  fallos: number;
+  esquivados: number;
+  /** En % de la vida del rival, sumado */
+  danoHecho: number;
+  danoRecibido: number;
+  cayo: boolean;
+  /** Turnos que empezó en el campo */
+  turnos: number;
+};
+
+export type EstadisticasDelCombate = {
+  lados: { lado: string; nombre: string }[];
+  pokemon: EstadisticasDePokemon[];
+};
+
+/** "p1a: Brasa" → lado p1 y nombre Brasa */
+function quienEnElLog(texto: string | undefined) {
+  const quien = /^(p\d)([a-z])?: (.*)$/.exec(texto ?? "");
+  return quien ? { lado: quien[1], hueco: quien[2] ?? "a", nombre: quien[3] } : null;
+}
+
+/** "45/100", "123/250 par", "0 fnt" → el % de vida que le queda */
+function vidaDe(texto: string | undefined): number | null {
+  const valor = (texto ?? "").split(" ")[0];
+  if (valor === "0") return 0;
+  const [actual, maximo] = valor.split("/").map(Number);
+  if (!Number.isFinite(actual) || !Number.isFinite(maximo) || maximo <= 0) return null;
+  return (actual / maximo) * 100;
+}
+
+/** Lo que se va sumando de cada pokémon */
+const CAMPOS_SUMABLES = [
+  "kos", "criticosHechos", "criticosRecibidos", "supereficaces", "fallos",
+  "esquivados", "danoHecho", "danoRecibido", "turnos",
+] as const;
+type CampoSumable = (typeof CAMPOS_SUMABLES)[number];
+
+export function estadisticasDeLaRepeticion(log: string, conAnil = false): EstadisticasDelCombate {
+  const nombres = new Map<string, string>();
+  const porClave = new Map<string, EstadisticasDePokemon>();
+  const vida = new Map<string, number>();
+  // El último golpe de cada uno, y en qué acción fue: un KO es del golpe de esa
+  // misma acción (si no, quien usa Explosión le daría el KO a quien le pegó antes)
+  const ultimoGolpe = new Map<string, { k: string | null; accion: number }>();
+  let accion = 0;
+  // Quién está en cada hueco ("p1a"), para contar sus turnos
+  const enElCampo = new Map<string, string>();
+  /**
+   * **Ilusión**: Zoroark entra disfrazado de otro y todo lo que hace sale a
+   * nombre del disfraz, hasta que `|replace|` dice quién era. Por eso cada
+   * hueco apunta lo que se ha sumado desde que entró (`tramo`): al descubrirse,
+   * eso pasa del disfraz al de verdad, y el disfraz se queda como estaba.
+   */
+  const tramo = new Map<string, Partial<Record<CampoSumable, number>>>();
+  const apariciones = new Map<string, number>();
+  const sumar = (k: string, campo: CampoSumable, cuanto = 1) => {
+    const e = porClave.get(k);
+    if (!e) return;
+    e[campo] += cuanto;
+    for (const [hueco, quien] of enElCampo) {
+      if (quien !== k) continue;
+      const suyo = tramo.get(hueco) ?? {};
+      suyo[campo] = (suyo[campo] ?? 0) + cuanto;
+      tramo.set(hueco, suyo);
+    }
+  };
+  let atacante: string | null = null;
+
+  const clave = (lado: string, nombre: string) => `${lado}:${nombre}`;
+  const ficha = (lado: string, nombre: string, especieDeShowdown?: string) => {
+    const k = clave(lado, nombre);
+    let e = porClave.get(k);
+    if (!e) {
+      const especie = (especieDeShowdown ?? nombre).replace(EN_COMBATE, "");
+      const pokemonId = numeroDe(especie, conAnil);
+      const base = especie.split("-")[0];
+      const esMote = plano(nombre) !== plano(especie) && plano(nombre) !== plano(base);
+      e = {
+        lado,
+        nombre,
+        mote: esMote ? nombre : null,
+        especie: nombreDeLaEspecie(pokemonId, especie),
+        pokemonId,
+        kos: 0,
+        criticosHechos: 0,
+        criticosRecibidos: 0,
+        supereficaces: 0,
+        fallos: 0,
+        esquivados: 0,
+        danoHecho: 0,
+        danoRecibido: 0,
+        cayo: false,
+        turnos: 0,
+      };
+      porClave.set(k, e);
+    }
+    return e;
+  };
+  const deLinea = (texto: string | undefined) => {
+    const q = quienEnElLog(texto);
+    return q ? { ...q, k: clave(q.lado, q.nombre) } : null;
+  };
+
+  for (const linea of log.split("\n")) {
+    const partes = linea.split("|");
+    const tipo = partes[1];
+    if (tipo === "player" && partes[3]) {
+      nombres.set(partes[2], partes[3]);
+    } else if (tipo === "replace") {
+      // Se descubre la ilusión: lo hecho desde que entró era del de verdad
+      const q = quienEnElLog(partes[2]);
+      if (!q) continue;
+      const hueco = `${q.lado}${q.hueco}`;
+      const disfraz = enElCampo.get(hueco);
+      const especie = (partes[3] ?? "").split(",")[0].trim();
+      const real = ficha(q.lado, q.nombre, especie);
+      const k = clave(q.lado, q.nombre);
+      if (disfraz && disfraz !== k) {
+        const deDisfraz = porClave.get(disfraz)!;
+        for (const [campo, cuanto] of Object.entries(tramo.get(hueco) ?? {}) as [CampoSumable, number][]) {
+          deDisfraz[campo] -= cuanto;
+          real[campo] += cuanto;
+        }
+        apariciones.set(disfraz, (apariciones.get(disfraz) ?? 1) - 1);
+        if (vida.has(disfraz)) vida.set(k, vida.get(disfraz)!);
+        // Los golpes que llevan su nombre de disfraz son suyos
+        for (const [objetivo, golpe] of ultimoGolpe) if (golpe.k === disfraz) ultimoGolpe.set(objetivo, { ...golpe, k });
+        if (atacante === disfraz) atacante = k;
+      }
+      apariciones.set(k, (apariciones.get(k) ?? 0) + 1);
+      enElCampo.set(hueco, k);
+    } else if (tipo === "switch" || tipo === "drag") {
+      const q = quienEnElLog(partes[2]);
+      if (!q) continue;
+      const especie = (partes[3] ?? "").split(",")[0].trim();
+      ficha(q.lado, q.nombre, especie);
+      const k = clave(q.lado, q.nombre);
+      enElCampo.set(`${q.lado}${q.hueco}`, k);
+      tramo.set(`${q.lado}${q.hueco}`, {});
+      apariciones.set(k, (apariciones.get(k) ?? 0) + 1);
+      const v = vidaDe(partes[4]);
+      if (v !== null) vida.set(k, v);
+    } else if (tipo === "turn") {
+      for (const k of enElCampo.values()) {
+        const e = porClave.get(k);
+        if (e && !e.cayo) sumar(k, "turnos");
+      }
+    } else if (tipo === "move") {
+      accion++;
+      const q = deLinea(partes[2]);
+      atacante = q ? q.k : null;
+      if (q) ficha(q.lado, q.nombre);
+    } else if (tipo === "-crit") {
+      const objetivo = deLinea(partes[2]);
+      if (!objetivo || !atacante) continue;
+      sumar(atacante, "criticosHechos");
+      ficha(objetivo.lado, objetivo.nombre);
+      sumar(objetivo.k, "criticosRecibidos");
+    } else if (tipo === "-supereffective") {
+      if (atacante && deLinea(partes[2])) sumar(atacante, "supereficaces");
+    } else if (tipo === "-miss") {
+      const quien = deLinea(partes[2]);
+      const objetivo = deLinea(partes[3]);
+      if (quien) {
+        ficha(quien.lado, quien.nombre);
+        sumar(quien.k, "fallos");
+      }
+      if (objetivo) {
+        ficha(objetivo.lado, objetivo.nombre);
+        sumar(objetivo.k, "esquivados");
+      }
+    } else if (tipo === "-damage" || tipo === "-heal" || tipo === "-sethp") {
+      const objetivo = deLinea(partes[2]);
+      if (!objetivo) continue;
+      const nueva = vidaDe(partes[3]);
+      if (nueva === null) continue;
+      const antes = vida.get(objetivo.k) ?? 100;
+      vida.set(objetivo.k, nueva);
+      if (tipo !== "-damage") continue;
+      const dano = Math.max(0, antes - nueva);
+      const etiquetas = partes.slice(4).join("|");
+      const de = /\[of\] (p\d[a-z]?: [^|]+)/.exec(etiquetas);
+      const causante = etiquetas.includes("[from]")
+        ? de
+          ? deLinea(de[1])?.k ?? null
+          : null
+        : atacante;
+      ficha(objetivo.lado, objetivo.nombre);
+      sumar(objetivo.k, "danoRecibido", dano);
+      if (causante && causante !== objetivo.k) {
+        const quien = porClave.get(causante);
+        if (quien && quien.lado !== objetivo.lado) sumar(causante, "danoHecho", dano);
+      }
+      ultimoGolpe.set(objetivo.k, { k: causante, accion });
+    } else if (tipo === "faint") {
+      const objetivo = deLinea(partes[2]);
+      if (!objetivo) continue;
+      const caido = ficha(objetivo.lado, objetivo.nombre);
+      caido.cayo = true;
+      const golpe = ultimoGolpe.get(objetivo.k);
+      const quien = golpe?.k && golpe.accion === accion ? porClave.get(golpe.k) : null;
+      if (quien && quien.lado !== caido.lado) sumar(golpe!.k!, "kos");
+    }
+  }
+
+  const redondear = (n: number) => Math.round(n);
+  return {
+    lados: [...nombres].sort(([a], [b]) => a.localeCompare(b)).map(([lado, nombre]) => ({ lado, nombre })),
+    pokemon: [...porClave.entries()]
+      .filter(([k, e]) => (apariciones.get(k) ?? 1) > 0 || e.cayo || CAMPOS_SUMABLES.some((c) => e[c] > 0))
+      .map(([, e]) => e)
+      .map((e) => ({
+      ...e,
+      danoHecho: redondear(e.danoHecho),
+      danoRecibido: redondear(e.danoRecibido),
+    })),
+  };
+}

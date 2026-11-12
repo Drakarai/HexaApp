@@ -47,6 +47,8 @@ const S = {
   // 📊 y no 🏆 desde que la clasificación lleva su gráfico: el trofeo se lo
   // queda la Final Four, que es la que reparte de verdad
   puntos: { href: "/puntos", label: "Puntos", icon: "📊" },
+  // Lo que ha hecho cada pokémon en los combates de jornada (ver lib/estadisticas.ts)
+  estadisticas: { href: "/estadisticas", label: "Estadísticas", icon: "📈" },
   ruleta: { href: "/ruleta", label: "Ruleta", icon: "🎡" },
   jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
   retos: { href: "/retos", label: "Retos", icon: "🔥" },
@@ -93,7 +95,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "La edición",
     icon: "📚",
-    children: [S.puntos, S.cementerio, S.actividad, S.levelCaps, S.reglas, S.palmares],
+    children: [S.puntos, S.estadisticas, S.cementerio, S.actividad, S.levelCaps, S.reglas, S.palmares],
   },
   {
     label: "Lo mío",
@@ -296,7 +298,11 @@ export default async function AppLayout({
               // pantalla. Y sin jornadas no hay clasificación que enseñar.
               ...grupo.children
                 .filter(
-                  (item) => !(perfil.sinJornadas && item.href === S.puntos.href),
+                  (item) =>
+                    !(
+                      perfil.sinJornadas &&
+                      (item.href === S.puntos.href || item.href === S.estadisticas.href)
+                    ),
                 )
                 .map((item) =>
                   item.href === S.puntos.href

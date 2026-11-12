@@ -17,6 +17,7 @@ const PANTALLAS = [
   "/final-four",
   "/hall-de-la-fama",
   "/puntos",
+  "/estadisticas",
   "/muertes",
   "/actividad",
   "/level-caps",

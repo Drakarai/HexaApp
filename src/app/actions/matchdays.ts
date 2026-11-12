@@ -1,5 +1,8 @@
 "use server";
 
+import { after } from "next/server";
+import { estadisticasDeUnCombate } from "@/lib/estadisticas";
+
 import { revalidatePath } from "next/cache";
 import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
@@ -351,6 +354,12 @@ export async function setMatchResultAction(formData: FormData) {
       replayUrl: enlaceSeguro(String(formData.get("replayUrl") ?? "")),
     },
   });
+  /**
+   * Con repetición, sus estadísticas se leen ya, **después de contestar**:
+   * guardar el resultado no espera a Showdown, y quien abra luego los números
+   * del combate los tiene sin esperar. Si falla, se leen al mirarlas.
+   */
+  after(() => estadisticasDeUnCombate(matchId).catch(() => {}));
 
   const existing = await prisma.pointEntry.findUnique({
     where: { sourceMatchId: matchId },
