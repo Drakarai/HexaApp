@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { Icono } from "@/components/icono";
 import { cx } from "@/lib/utils";
+import { spriteMini } from "@/lib/sprites-de-quinta";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { galardonesDe, getEstadisticasDelLocke } from "@/lib/estadisticas";
 import { LeerLasQueFaltan } from "./leer-las-que-faltan";
@@ -63,51 +64,14 @@ export default async function EstadisticasPage() {
             <h2 id="galardones" className="antetitulo mb-2">
               Galardones
             </h2>
-            {/* En el móvil, una tira que se desliza: once tarjetas una debajo de
-                otra eran media pantalla antes de llegar a las clasificaciones */}
-            <div
-              className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-3 sm:overflow-visible sm:px-0 lg:grid-cols-4"
-              data-galardones
-            >
-              {galardones.map((g) => {
-                const dueno = g.pokemon ? deQuien.get(g.pokemon.participantId) : null;
-                return (
-                  <div
-                    key={g.id}
-                    data-galardon={g.id}
-                    className={cx(
-                      "card flex w-44 shrink-0 snap-start items-center gap-2 p-2 sm:w-auto",
-                      !g.pokemon && "opacity-50",
-                    )}
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.04]">
-                      {g.pokemon?.imagen ? (
-                        <SpritePokemon src={g.pokemon.imagen} alt="" loading="lazy" className="h-full w-full object-contain" />
-                      ) : (
-                        <Icono emoji={g.icono} tamano={18} className="text-slate-500" />
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1 leading-tight">
-                      <p className="flex items-center gap-1 truncate text-[11px] text-amber-200/90">
-                        <Icono emoji={g.icono} tamano={12} /> {g.titulo}
-                      </p>
-                      {g.pokemon ? (
-                        <>
-                          <p className="truncate text-sm font-semibold text-white">
-                            {g.pokemon.mote ?? g.pokemon.especie}
-                          </p>
-                          <p className="truncate text-[11px] text-slate-400">
-                            {g.que(g.valor)}
-                            {dueno ? ` · ${dueno.displayName}` : ""}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-xs text-slate-500">Sin dueño</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+            {/* En el móvil, una vitrina de tres en fila (se probaron una tira
+                que se deslizaba y una lista; se eligió esta); en el ordenador,
+                tarjetas en rejilla */}
+            <div className="sm:hidden">
+              <Vitrina galardones={galardones} deQuien={deQuien} />
+            </div>
+            <div className="hidden sm:block">
+              <Rejilla galardones={galardones} deQuien={deQuien} />
             </div>
           </section>
 
@@ -116,7 +80,8 @@ export default async function EstadisticasPage() {
               clave: p.clave,
               participantId: p.participantId,
               nombre: p.mote ?? p.especie,
-              imagen: p.imagen,
+              // Sin imagen guardada, el sprite de su especie
+              imagen: p.imagen ?? (p.pokemonId ? spriteMini(p.pokemonId, false) : null),
               numeros: p.numeros,
             }))}
             jugadores={participantes.map((p) => ({
@@ -129,5 +94,92 @@ export default async function EstadisticasPage() {
         </>
       )}
     </>
+  );
+}
+
+type Galardon = ReturnType<typeof galardonesDe>[number];
+type Duenos = Map<string, { displayName: string }>;
+
+function imagenDe(g: Galardon) {
+  if (!g.pokemon) return null;
+  return g.pokemon.imagen ?? (g.pokemon.pokemonId ? spriteMini(g.pokemon.pokemonId, false) : null);
+}
+
+function Sprite({ g, tamano }: { g: Galardon; tamano: string }) {
+  const src = imagenDe(g);
+  return (
+    <span className={cx("flex shrink-0 items-center justify-center rounded-lg bg-white/[0.04]", tamano)}>
+      {src ? (
+        <SpritePokemon src={src} alt="" loading="lazy" className="h-full w-full object-contain" />
+      ) : (
+        <Icono emoji={g.icono} tamano={18} className="text-slate-500" />
+      )}
+    </span>
+  );
+}
+
+/** En el ordenador: tarjetas en rejilla */
+function Rejilla({ galardones, deQuien }: { galardones: Galardon[]; deQuien: Duenos }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 lg:grid-cols-4" data-galardones>
+      {galardones.map((g) => {
+        const dueno = g.pokemon ? deQuien.get(g.pokemon.participantId) : null;
+        return (
+          <div
+            key={g.id}
+            data-galardon={g.id}
+            className={cx("card flex items-center gap-2 p-2", !g.pokemon && "opacity-50")}
+          >
+            <Sprite g={g} tamano="h-10 w-10" />
+            <div className="min-w-0 flex-1 leading-tight">
+              <p className="flex items-center gap-1 truncate text-[11px] text-amber-200/90">
+                <Icono emoji={g.icono} tamano={12} /> {g.titulo}
+              </p>
+              {g.pokemon ? (
+                <>
+                  <p className="truncate text-sm font-semibold text-white">{g.pokemon.mote ?? g.pokemon.especie}</p>
+                  <p className="truncate text-[11px] text-slate-400">
+                    {g.que(g.valor)}
+                    {dueno ? ` · ${dueno.displayName}` : ""}
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs text-slate-500">Sin dueño</p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/** En el móvil: una vitrina de tres en fila, el pokémon en grande y el título encima */
+function Vitrina({ galardones, deQuien }: { galardones: Galardon[]; deQuien: Duenos }) {
+  return (
+    <div className="grid grid-cols-3 gap-1.5" data-galardones>
+      {galardones.map((g) => {
+        const dueno = g.pokemon ? deQuien.get(g.pokemon.participantId) : null;
+        return (
+          <div
+            key={g.id}
+            data-galardon={g.id}
+            className={cx("card flex flex-col items-center gap-0.5 p-1.5 text-center", !g.pokemon && "opacity-45")}
+          >
+            <p className="flex w-full items-center justify-center gap-1 truncate text-[10px] font-semibold text-amber-200/90">
+              <Icono emoji={g.icono} tamano={11} /> <span className="truncate">{g.titulo}</span>
+            </p>
+            <Sprite g={g} tamano="h-12 w-12" />
+            <p className="w-full truncate text-xs font-semibold text-white">
+              {g.pokemon ? (g.pokemon.mote ?? g.pokemon.especie) : "—"}
+            </p>
+            <p className="w-full truncate text-[10px] text-slate-400">
+              {g.pokemon ? `${g.que(g.valor)}` : "Sin dueño"}
+            </p>
+            {dueno ? <p className="w-full truncate text-[10px] text-slate-500">{dueno.displayName}</p> : null}
+          </div>
+        );
+      })}
+    </div>
   );
 }

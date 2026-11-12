@@ -209,12 +209,26 @@ describe("lo de todos los días", () => {
 
     // Y en la pantalla de estadísticas, Brasa es El Verdugo
     await ir(pagina, "/estadisticas");
-    const verdugo = pagina.locator("[data-galardones] .card", { hasText: "El Verdugo" });
+    const verdugo = pagina.locator('[data-galardon="verdugo"]:visible');
     assert.match(await verdugo.innerText(), /Brasa[\s\S]*2 KOs/);
     // Las clasificaciones van de una en una, con pestañas
     const clasificaciones = pagina.locator("[data-clasificaciones]");
     await clasificaciones.getByRole("tab", { name: /Barrida/ }).click();
     assert.match(await clasificaciones.locator("li").first().innerText(), /Brasa[\s\S]*2 KOs/);
+
+    // En el móvil, la vitrina y la clasificación con desplegable
+    const hector = await entrar(navegador, "hector", MOVIL);
+    try {
+      await ir(hector.pagina, "/estadisticas");
+      const enMovil = hector.pagina.locator('[data-galardon="verdugo"]:visible');
+      assert.match(await enMovil.innerText(), /Brasa[\s\S]*2 KOs/);
+      const lista = hector.pagina.locator("[data-clasificaciones]");
+      await lista.getByRole("combobox", { name: "Qué clasificación" }).selectOption("mejorBarrida");
+      assert.match(await lista.locator("li").first().innerText(), /Brasa[\s\S]*2 KOs/);
+      sinProblemas(hector.problemas, "estadísticas en el móvil");
+    } finally {
+      await hector.cerrar();
+    }
     sinProblemas(problemas, "estadísticas del combate");
   });
 

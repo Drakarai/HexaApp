@@ -62,12 +62,25 @@ export function Clasificaciones({ pokemon, jugadores }: { pokemon: Fila[]; jugad
           ))}
         </select>
       </div>
+      {/* En el móvil, doce pestañas no se ven ni deslizando: un desplegable */}
+      <select
+        className="input mb-3 sm:hidden"
+        aria-label="Qué clasificación"
+        value={campo}
+        onChange={(e) => setCampo(e.target.value as Campo)}
+      >
+        {TABLAS.map((t) => (
+          <option key={t.campo} value={t.campo}>
+            {t.rotulo}
+          </option>
+        ))}
+      </select>
       <Pestanas
         etiqueta="Qué clasificación"
         opciones={TABLAS.map((t) => ({ valor: t.campo, rotulo: t.rotulo, icono: t.icono }))}
         valor={campo}
         onCambiar={setCampo}
-        className="mb-3"
+        className="mb-3 hidden sm:flex"
       />
       {top.length ? (
         <ol className="space-y-1.5">
