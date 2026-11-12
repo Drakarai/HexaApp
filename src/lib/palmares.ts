@@ -10,6 +10,7 @@ import {
   formatoParaJugadores,
 } from "@/lib/formatos-finales";
 import { ganadorDeLaJornada, jornadasDelDualocke } from "@/lib/marcador";
+import { campeonPorElJuego } from "@/lib/campeon-por-el-juego";
 import { jornadasParaGanar, perfilDeLocke } from "@/lib/perfiles-de-locke";
 
 /**
@@ -204,6 +205,7 @@ export async function getPalmares(): Promise<Palmares> {
         maxPlayers: true,
         estilo: true,
         jornadasPrevistas: true,
+        jornadasDanTitulo: true,
       },
     }),
     prisma.lockeDeAntes.findMany({
@@ -226,9 +228,19 @@ export async function getPalmares(): Promise<Palmares> {
 
   if (!ids.length && !deAntes.length) return { ediciones: [], gente: [] };
 
-  // Los que se ganan pasándose la Liga: en solitario y en Soul Link
+  /**
+   * Los dualockes en los que manda pasarse el juego y no las jornadas (ver
+   * lib/campeon-por-el-juego.ts): de ellos hacen falta además la Liga y los
+   * wipeos de cada uno, como en la portada.
+   */
+  const porElJuego = new Set(
+    competiciones
+      .filter((c) => !c.jornadasDanTitulo && categoriaDe.get(c.id) !== "soullink" && perfilDeLocke(c.maxPlayers).victoria === "jornadas")
+      .map((c) => c.id),
+  );
+  // Los que se ganan pasándose la Liga: en solitario y en Soul Link (y esos dualockes)
   const porLaLiga = competiciones
-    .filter((c) => ["solitario", "soullink"].includes(categoriaDe.get(c.id)!))
+    .filter((c) => ["solitario", "soullink"].includes(categoriaDe.get(c.id)!) || porElJuego.has(c.id))
     .map((c) => c.id);
 
   const [
@@ -242,6 +254,7 @@ export async function getPalmares(): Promise<Palmares> {
     firmasDeAvatar,
     logos,
     logosDeAntes,
+    wipeosPorJuego,
   ] = await Promise.all([
     prisma.participant.findMany({
       where: { competitionId: { in: ids } },
@@ -319,7 +332,16 @@ export async function getPalmares(): Promise<Palmares> {
     urlsDeImagen("logo", ids),
     // Y los de los lockes de antes, que también pueden tener
     urlsDeImagen("logo-antes", deAntes.map((locke) => locke.id)),
+    // Los wipeos, solo de los dualockes que se ganan pasándose el juego
+    porElJuego.size
+      ? prisma.wipeo.groupBy({
+          by: ["participantId"],
+          where: { participant: { competitionId: { in: [...porElJuego] } } },
+          _count: { _all: true },
+        })
+      : [],
   ]);
+  const wipeosDe = new Map(wipeosPorJuego.map((w) => [w.participantId, w._count._all]));
   /** Quién se ha pasado la Liga en cada edición */
   const ligaPasadaEn = new Map<string, Set<string>>();
   for (const marca of ligas) {
@@ -388,7 +410,34 @@ export async function getPalmares(): Promise<Palmares> {
       enPie.every((p) => ligaPasadaEn.get(competicion.id)?.has(p.id))
         ? enPie.map((p) => p.id)
         : null;
-    const { campeon, subcampeon } = categoriaDe.get(competicion.id) === "soullink"
+    const combatesDelLocke = combates.filter(
+      (c) => c.matchdayId && jornadasDe.get(c.matchdayId) === competicion.id,
+    );
+    /** Con la Liga mandando: la misma cuenta que la portada */
+    const delJuego = porElJuego.has(competicion.id)
+      ? campeonPorElJuego(
+          suyos.map((p) => ({
+            id: p.id,
+            fuera: Boolean(p.retiredAt),
+            ligaPasada: Boolean(ligaPasadaEn.get(competicion.id)?.has(p.id)),
+            wipeos: wipeosDe.get(p.id) ?? 0,
+            jornadas: jornadasGanadas(combatesDelLocke).get(p.id) ?? 0,
+          })),
+          porJornadas,
+        )
+      : undefined;
+    const { campeon, subcampeon } = delJuego !== undefined && delJuego?.tipo !== "final"
+      ? delJuego
+        ? {
+            campeon: delJuego.campeonId,
+            subcampeon: delJuego.tipo === "juego" ? delJuego.otroId : null,
+          }
+        : { campeon: null, subcampeon: null }
+      : delJuego?.tipo === "final"
+      ? final && formato
+        ? campeonYSubcampeon(formato, final.seeds, new Map(final.matches.map((m) => [m.key, m.winnerId])))
+        : { campeon: null, subcampeon: null }
+      : categoriaDe.get(competicion.id) === "soullink"
       ? { campeon: juntos?.[0] ?? null, subcampeon: null }
       : categoriaDe.get(competicion.id) === "solitario"
       ? { campeon: [...(ligaPasadaEn.get(competicion.id) ?? [])][0] ?? null, subcampeon: null }
@@ -634,6 +683,20 @@ export async function getPalmares(): Promise<Palmares> {
         a.displayName.localeCompare(b.displayName, "es"),
     ),
   };
+}
+
+/** Cuántas jornadas lleva ganadas cada uno en un dualocke */
+function jornadasGanadas(combates: { matchdayId: string; winnerId: string | null }[]) {
+  const porJornada = new Map<string, { winnerId: string | null }[]>();
+  for (const combate of combates) {
+    porJornada.set(combate.matchdayId, [...(porJornada.get(combate.matchdayId) ?? []), combate]);
+  }
+  const ganadas = new Map<string, number>();
+  for (const suyos of porJornada.values()) {
+    const { ganadorId } = ganadorDeLaJornada(suyos);
+    if (ganadorId) ganadas.set(ganadorId, (ganadas.get(ganadorId) ?? 0) + 1);
+  }
+  return ganadas;
 }
 
 /** Quién llegó a la mayoría de jornadas de un dualocke, si alguien llegó. */

@@ -21,7 +21,7 @@ import { getResumenDeCombates } from "@/lib/cara-a-cara";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
-import { comoEstaFuera } from "@/lib/wipeos";
+import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { Wipeos } from "./wipeos-client";
 import { cx, formatDate } from "@/lib/utils";
 import { coronasDe } from "@/lib/coronas";
@@ -318,6 +318,20 @@ export default async function PlayerPage({
         participantId={id}
         nombre={participant.displayName}
         editable={editableDelLocke}
+        /**
+         * Darlo por perdido él mismo: en un locke de competir y si no se ha
+         * retirado (eso es otra cosa, y la decide la organización). Quien
+         * administra lo tiene además en Competiciones.
+         */
+        perderLocke={
+          esMio &&
+          editableDelLocke &&
+          !perfilDeLocke(participant.competition.maxPlayers, participant.competition.estilo).cooperativo &&
+          participant.competition.maxPlayers > 1 &&
+          (!participant.retiredAt || participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO)
+            ? { perdido: Boolean(participant.retiredAt) }
+            : null
+        }
         wipeos={wipeos.map((wipeo) => ({
           id: wipeo.id,
           ocurridoAt: formatDate(wipeo.ocurridoAt),

@@ -109,7 +109,7 @@ export default async function FinalFourPage() {
         <p
           className={cx(
             "mb-6 rounded-xl border px-4 py-3 text-sm",
-            porMayoria || marcador?.empate
+            porMayoria || (marcador?.danTitulo && marcador.empate)
               ? "border-amber-400/40 bg-amber-400/10 text-amber-100"
               : "border-white/10 bg-white/[0.03] text-slate-300",
           )}
@@ -121,9 +121,15 @@ export default async function FinalFourPage() {
               jornadas. La {nombre} se juega igual, por el honor, pero no cambia el
               campeón.
             </>
-          ) : marcador?.empate ? (
+          ) : (marcador?.danTitulo && marcador.empate) ? (
             <>
               Empate en jornadas: <strong>esta {nombre} decide el locke</strong>.
+            </>
+          ) : marcador && !marcador.danTitulo ? (
+            <>
+              En este locke el título es de quien se pase el juego (con menos wipeos
+              si os lo pasáis los dos). La {nombre} solo decide si acabáis igualados
+              en todo; si no, se juega por el honor.
             </>
           ) : (
             <>

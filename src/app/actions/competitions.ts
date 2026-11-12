@@ -382,6 +382,8 @@ export async function updateCompetitionAction(
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
+      // Solo si el formulario lo traía (en un dualocke): si no, se queda como estaba
+      ...(formData.get("conTitulo") ? { jornadasDanTitulo: formData.get("jornadasDanTitulo") === "on" } : {}),
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }
         : {}),

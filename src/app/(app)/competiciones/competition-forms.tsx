@@ -276,6 +276,7 @@ export function EditCompetitionForm({
     maxPlayers: number;
     /** Los que ya están apuntados: menos plazas que eso no puede tener */
     apuntados: number;
+    jornadasDanTitulo: boolean;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -362,6 +363,29 @@ export function EditCompetitionForm({
             />
           </div>
         </div>
+        {/* Solo en un dualocke: es donde las jornadas deciden el título por mayoría */}
+        {competition.maxPlayers === 2 && !soulLink ? (
+          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+            {/* Para saber que el formulario lo trae: una casilla sin marcar no se envía */}
+            <input type="hidden" name="conTitulo" value="1" />
+            <label className="flex items-start gap-2.5 text-sm text-slate-200">
+              <input
+                type="checkbox"
+                name="jornadasDanTitulo"
+                defaultChecked={competition.jornadasDanTitulo}
+                className="mt-0.5"
+              />
+              <span>
+                Las jornadas pueden dar el título aunque se pierda el juego
+                <span className="mt-0.5 block text-xs text-slate-400">
+                  Quitándolo, manda pasarse el juego: si uno pierde el locke gana el
+                  otro, y si los dos se pasan la Liga, quien tenga menos wipeos (con
+                  los mismos, las jornadas).
+                </span>
+              </span>
+            </label>
+          </div>
+        ) : null}
         <div>
           <label className="label">Descripción</label>
           <textarea

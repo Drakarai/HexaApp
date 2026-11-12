@@ -718,7 +718,11 @@ export default async function DashboardPage() {
                 ha ganado el locke
                 {ganador?.como === "jornadas" && ganador.jornadas
                   ? ` por ${ganador.jornadas.ganadas}-${ganador.jornadas.perdidas} en jornadas`
-                  : ""}
+                  : ganador?.como === "juego" && ganador.porElJuego
+                    ? ganador.porElJuego.desempate === "wipeos"
+                      ? ` pasándose el juego con menos wipeos (${ganador.porElJuego.wipeos} a ${ganador.porElJuego.wipeosDelOtro})`
+                      : " pasándose el juego, con el desempate de las jornadas"
+                    : ""}
                 .
               </p>
               {sigueTrasGanar ? (

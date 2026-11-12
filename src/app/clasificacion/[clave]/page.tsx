@@ -85,7 +85,9 @@ export default async function ClasificacionPublica({ params }: { params: Promise
             ))}
           </div>
           <p className="mt-3 text-center text-sm text-slate-400">
-            {marcador.campeonId
+            {!marcador.danTitulo
+              ? "El título es de quien se pase el juego; las jornadas desempatan"
+              : marcador.campeonId
               ? `Ha ganado ${marcador.jugadores.find((j) => j.participantId === marcador.campeonId)?.displayName ?? "?"}`
               : `Gana quien llegue a ${marcador.hacenFalta} jornadas`}
           </p>

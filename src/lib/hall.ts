@@ -122,6 +122,12 @@ export function ordenDelHall(
     if (sinFinal?.como === "abandono") {
       return `${sinFinal.champion.displayName} fue el único que siguió en pie hasta el final.`;
     }
+    if (sinFinal?.como === "juego" && sinFinal.porElJuego) {
+      const { wipeos, wipeosDelOtro, desempate } = sinFinal.porElJuego;
+      return desempate === "wipeos"
+        ? `${sinFinal.champion.displayName} ganó el locke pasándose el juego con ${wipeos} ${wipeos === 1 ? "wipeo" : "wipeos"}, por ${wipeosDelOtro} de ${sinFinal.runnerUp?.displayName ?? "su rival"}.`
+        : `${sinFinal.champion.displayName} ganó el locke: los dos se pasaron el juego con los mismos wipeos y desempataron las jornadas.`;
+    }
     if (sinFinal?.como === "jornadas") {
       const { ganadas, perdidas } = sinFinal.jornadas ?? { ganadas: 0, perdidas: 0 };
       // La final se juega igual aunque no cuente: si se jugó, se dice

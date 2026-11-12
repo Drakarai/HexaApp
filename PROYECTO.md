@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 11 de noviembre de 2026 (**la base de datos dormida ya no tumba la página**: más espera al conectar y reintento).
+Última actualización: 12 de noviembre de 2026 (**el dualocke se puede ganar pasándose el juego** y cada uno puede dar su locke por perdido).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -44,8 +44,9 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Cada reto es **un cartel de duelo**: los dos frente a frente con el «VS», el que gana con corona y el que pierde apagado; los objetos del premio, plegados. Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
+| **Dualocke: el título por el juego** | En *Ajustes → Editar datos* de un dualocke, **«Las jornadas pueden dar el título aunque se pierda el juego»**, encendido por defecto (lo de siempre). Apagado, manda pasarse el juego: si uno pierde el locke (o se retira) gana el otro; si los dos se pasan la Liga, quien tenga **menos wipeos**, y con los mismos, las jornadas (y si también, la Jornada Final); si solo se la ha pasado uno y lleva menos wipeos de los que ya tiene el otro, ya ha ganado. Mientras no, no hay campeón aunque alguien lleve la mayoría. El marcador deja de decir «gana el locke» y «bola de partido», y la portada, el hall y el palmarés cuentan cómo se ganó («pasándose el juego con menos wipeos, 1 a 2»). |
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
-| **Locke perdido** | Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
+| **Locke perdido** | **Lo puede marcar el propio jugador** desde su perfil, con «He perdido el locke» (y «Lo retomo» para deshacerlo), además de quien administra desde Competiciones: quien wipea y decide no seguir lo dice él. Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
 | **Copiar de otra edición** | Al montar el locke siguiente, traerse de otro las **reglas**, los **level caps** y los **ajustes** (puntos de inicio, jornadas previstas, si los retos cuentan para la diferencia) en vez de reescribirlos. **Vale entre juegos distintos**, avisando de que unos level caps de otra región tienen los líderes que no son. No se copian jugadores, jornadas, puntos ni bajas. |
 | **Lockes de antes** | Los que se jugaron **antes de que existiera la aplicación** se apuntan a mano en el palmarés: nombre, juego, cuándo fue, campeón, subcampeón y quiénes jugaron. Solo queda la línea —de aquello no hay bajas ni combates— y **solo lo ven los que lo jugaron**. Lo apunta quien puede montar lockes, y cada uno quita lo suyo. Los que jugaron **sin cuenta** se escriben por su nombre (pueden haber ganado) y cuentan para el tamaño del locke; quien lo apuntó —o el Creador— lo puede **editar**, y si uno de ellos se hace cuenta, se **vincula** y desde entonces le cuenta, título incluido. Un organizador solo ve en ese formulario las cuentas de su gente. Si se borra la cuenta de alguien que jugó uno, **se queda por su nombre** (también si ganó) en vez de desaparecer el locke de todos los palmarés. También pueden llevar **logo**, como una edición: sale en el historial de ediciones y en la vitrina de quien lo ganó. |
 | **Palmarés** | El histórico de **todas las ediciones juntas**, que hasta ahora vivían cada una en su burbuja. Arriba, la cuenta de cada persona sumando todos sus lockes, como **una tabla de almanaque**: posición, entrenador, títulos (un trofeo por cada uno; de cinco en adelante, «×N»), victorias-derrotas con su porcentaje y pokémon enterrados; el primero va en ámbar y tu fila con el color de la app. Abajo, cada edición con su campeón, a quién ganó y su categoría; tocando una se abre. **Sale la gente de tus lockes** (los que juegas o jugaste y los que miras), **con las cifras de todos los suyos**, también los jugados con otros; la lista de ediciones es solo la tuya. **Cada uno elige quién sale**: por defecto él y toda la gente con la que ha compartido locke, y desde "Elegir quién sale" busca y quita o vuelve a poner a quien quiera. **Pestañas por tamaño** —Todo, Grupo (3 o más), Dualocke y Solitario—, y en "Todo" cada persona lleva de dónde salen sus títulos ("3 dual · 1 en solitario"). En solitario cuenta como ganado **pasarse la Liga**. **Tocando una fila se abre debajo su vitrina**: los lockes que ha ganado, con logo, nombre y año, también los que ganó con otra gente. En el **historial de ediciones**, cada una con su logo, su descripción y su juego, y además **las de fuera que ha ganado tu gente** ("Héctor ha ganado"), que no se abren; el rival solo se nombra si también está en tu palmarés, y un selector "Con mi gente · Mías" las quita. |
@@ -3830,6 +3831,19 @@ llegó a hacerse nada) o la que **leía** cuando se cortó (una que guardaba no,
 que podría haberse hecho). Probado apagando Postgres a mitad de una visita: la
 página espera unos segundos y sale bien.
 
+**El título de un dualocke puede ser del juego y no de las jornadas.** Lo
+pidió el grupo: que no se lleve el locke quien gana las jornadas pero pierde la
+partida. Es un interruptor por locke (`Competition.jornadasDanTitulo`, a
+`true` por defecto para no cambiarle el campeón a ningún locke ya jugado), y
+solo en dualockes, que es donde la mayoría de jornadas da el título. La regla
+vive en `lib/campeon-por-el-juego.ts`, sin base de datos y con sus pruebas, y
+la usan `getCampeonDelLocke` (portada, hall, cuadro, imagen del resumen) y el
+palmarés, que así dan siempre el mismo campeón: el palmarés no tuvo que
+cambiar de idea, solo de quién es el campeón. Pasarse el juego es marcar el
+level cap de tipo Campeón; los wipeos son los de su perfil. El marcador
+(`Marcador.danTitulo`) sigue sabiendo quién llegó a la mayoría, porque eso
+desempata, pero no lo enseña como campeón.
+
 **Una ruta partida son trozos, no zonas.** Un trozo es una `MapZone` con
 `trozoDeId` apuntando a su ruta (con `onDelete: Cascade`: borrar la ruta se
 lleva sus trozos). Se pensó en dejar que una zona tuviera varias formas en un
@@ -5078,3 +5092,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 164. **El porqué del as desde la ficha**: hacerlo as o cambiar su porqué sin salir del Equipo y PC.
 165. **Repositorio listo para ser público**: nombres de ejemplo inventados, nada personal en el código ni en el historial, guías rehechas y README de presentación.
 166. **La base dormida ya no tumba la página**: más espera al conectar con Neon y reintento de lo que no llegó a hacerse.
+167. **Dualocke por el juego**: el título puede ser de quien se pase el juego con menos wipeos, y cada uno puede dar su locke por perdido.

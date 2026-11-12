@@ -167,7 +167,8 @@ export default async function MatchdaysPage() {
         subtitle="Los combates de cada jornada. Al marcar al ganador, su punto se suma solo."
       />
 
-      {marcador?.bolaDePartido.length ? (
+      {/* Con el juego mandando no hay «bola de partido»: las jornadas no dan el título */}
+      {marcador?.danTitulo && marcador.bolaDePartido.length ? (
         <div className="mb-4">
           <BolaDePartido quienes={marcador.bolaDePartido} />
         </div>

@@ -643,6 +643,7 @@ export default async function CompetitionsPage({
               estilo: leerEstilo(active.estilo),
               maxPlayers: active.maxPlayers,
               apuntados: participants.length,
+              jornadasDanTitulo: active.jornadasDanTitulo,
             }}
           />
 

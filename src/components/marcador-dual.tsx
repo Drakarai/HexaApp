@@ -32,8 +32,17 @@ export function MarcadorDual({
   /** De quién puede cambiar el as quien mira: el suyo, o todos si administra */
   editables?: string[];
 }) {
-  const { jugadores, jornadas, hacenFalta, campeonId, bolaDePartido, previstas, empate } =
+  const { jugadores, jornadas, hacenFalta, bolaDePartido: bolaSiDanTitulo, previstas, empate: empateSiDanTitulo, danTitulo } =
     marcador;
+  /**
+   * Con «las jornadas dan el título» apagado, llegar a la mayoría no gana el
+   * locke: manda pasarse el juego (ver lib/campeon-por-el-juego.ts) y las
+   * jornadas solo desempatan. Aquí no se dice ni «gana el locke» ni «bola de
+   * partido».
+   */
+  const campeonId = danTitulo ? marcador.campeonId : null;
+  const bolaDePartido = danTitulo ? bolaSiDanTitulo : [];
+  const empate = danTitulo && empateSiDanTitulo;
   const nombreDe = (id: string | null) =>
     jugadores.find((jugador) => jugador.participantId === id)?.displayName ?? null;
 
@@ -44,11 +53,22 @@ export function MarcadorDual({
           <>
             <h2 className="section-title mb-1">El marcador</h2>
             <p className="muted mb-4">
-              Cada jornada es un combate al mejor de tres. Se juegan {previstas}, y
-              gana el locke el primero que se lleve {hacenFalta}
-              {previstas % 2 === 0
-                ? `; si acabáis ${previstas / 2}-${previstas / 2}, lo decide la Jornada Final.`
-                : "."}
+              {danTitulo ? (
+                <>
+                  Cada jornada es un combate al mejor de tres. Se juegan {previstas}, y
+                  gana el locke el primero que se lleve {hacenFalta}
+                  {previstas % 2 === 0
+                    ? `; si acabáis ${previstas / 2}-${previstas / 2}, lo decide la Jornada Final.`
+                    : "."}
+                </>
+              ) : (
+                <>
+                  Cada jornada es un combate al mejor de tres. En este locke el título
+                  es de quien se pase el juego: si uno lo pierde gana el otro, y si
+                  os lo pasáis los dos, quien tenga menos wipeos. Las jornadas
+                  desempatan.
+                </>
+              )}
             </p>
           </>
         )}
@@ -91,6 +111,8 @@ export function MarcadorDual({
                 <p className="mt-1 text-xs text-slate-500">
                   {jugador.participantId === campeonId
                     ? <><Icono emoji="🏆" /> Gana el locke</>
+                    : !danTitulo
+                    ? jugador.ganadas === 1 ? "jornada" : "jornadas"
                     : jugador.leFaltan === 1
                     ? "Le vale una más"
                     : `Le faltan ${jugador.leFaltan}`}
@@ -115,6 +137,10 @@ export function MarcadorDual({
           <div className="mt-4">
             <BolaDePartido quienes={bolaDePartido} />
           </div>
+        ) : !danTitulo ? (
+          <p className="mt-3 text-center text-xs text-slate-500">
+            El título es de quien se pase el juego; las jornadas desempatan.
+          </p>
         ) : compacto ? (
           <p className="mt-3 text-center text-xs text-slate-500">
             Gana el primero que se lleve {hacenFalta} de {previstas} jornadas.

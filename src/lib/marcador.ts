@@ -62,6 +62,14 @@ export type Marcador = {
    * lo decide la Jornada Final, que para eso es el desempate.
    */
   empate: boolean;
+  /**
+   * Si las jornadas dan el título (el interruptor de Ajustes). Apagado, la
+   * mayoría de jornadas solo desempata y el campeón sale de pasarse el juego
+   * (ver lib/campeon-por-el-juego.ts): el marcador no puede decir «gana el
+   * locke». `campeonId` sigue diciendo quién llegó a la mayoría, que es lo que
+   * se usa para desempatar.
+   */
+  danTitulo: boolean;
 };
 
 /**
@@ -102,7 +110,7 @@ export const getMarcador = cache(async function getMarcador(
   const [competition, participantes, jornadas] = await Promise.all([
     prisma.competition.findUnique({
       where: { id: competitionId },
-      select: { jornadasPrevistas: true },
+      select: { jornadasPrevistas: true, jornadasDanTitulo: true },
     }),
     getParticipants(competitionId),
     prisma.matchday.findMany({
@@ -129,6 +137,7 @@ export const getMarcador = cache(async function getMarcador(
     })),
     jornadas,
     competition?.jornadasPrevistas ?? null,
+    competition?.jornadasDanTitulo ?? true,
   );
 });
 
@@ -150,6 +159,7 @@ export function calcularMarcador(
     matches: { winnerId: string | null }[];
   }[],
   jornadasPrevistas: number | null,
+  danTitulo = true,
 ): Marcador {
   // Las previstas mandan sobre las creadas: si no, el primero que gane la
   // primera jornada saldría campeón, porque de una la mayoría es una. Un
@@ -215,6 +225,7 @@ export function calcularMarcador(
     previstas,
     quedanPorDecidir: Math.max(0, quedanPorDecidir),
     empate: !campeon && quedanPorDecidir < 1,
+    danTitulo,
   };
 }
 

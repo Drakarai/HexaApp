@@ -5,10 +5,7 @@ import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import {
-  assertCanActForParticipant,
-  requireCompetitionManager,
-} from "@/lib/competition";
+import { assertCanActForParticipant } from "@/lib/competition";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { resolverRetiradas } from "@/lib/retiradas";
 import type { FormState } from "@/app/actions/auth";
@@ -21,12 +18,14 @@ import type { FormState } from "@/app/actions/auth";
  * - Un **wipeo** es una marca que se cuenta y ya. Se ponen las que haga falta y
  *   se quitan si se apuntó mal. Que te barran el equipo en la primera ruta no
  *   tiene por qué costarte el locke.
- * - **Perder el locke** es quedarse fuera de la competición, y eso lo decide
- *   quien administra la edición, no un contador.
+ * - **Perder el locke** es quedarse fuera de la competición, y eso no lo
+ *   decide un contador: se marca a propósito.
  *
  * Quién puede qué: un wipeo lo apunta **el propio jugador o quien administre el
- * locke**, igual que una baja —es su partida y lo sabe él—; dejar a alguien
- * fuera es solo de la organización.
+ * locke**, igual que una baja —es su partida y lo sabe él—. Dar el locke por
+ * perdido, también: quien wipea y decide no seguir lo dice él mismo («He
+ * perdido el locke»), sin esperar a la organización. Retirar a alguien sigue
+ * siendo solo de la organización.
  */
 
 /** Un wipeo sale en su perfil, en la clasificación y en el muro. */
@@ -100,10 +99,11 @@ export async function perderElLockeAction(formData: FormData) {
   const participantId = String(formData.get("participantId") ?? "");
   const participant = await prisma.participant.findUnique({
     where: { id: participantId },
-    select: { competitionId: true, retiredAt: true, motivoDeSalida: true },
+    select: { competitionId: true, retiredAt: true, motivoDeSalida: true, userId: true },
   });
   if (!participant) return;
-  const manager = await requireCompetitionManager(participant.competitionId);
+  // Él mismo o quien administra (y lo suyo, no en una edición archivada)
+  const { user: manager } = await assertCanActForParticipant(participantId);
 
   // Si ya está fuera por esto, el botón lo devuelve al locke
   if (participant.retiredAt && participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO) {
@@ -125,7 +125,13 @@ export async function perderElLockeAction(formData: FormData) {
   });
   {
     const nombre = await nombresDeJugadores(participantId);
-    await registrar(participant.competitionId, "jugadores", `Da el locke por perdido a ${nombre(participantId)}`);
+    await registrar(
+      participant.competitionId,
+      "jugadores",
+      manager.id === participant.userId
+        ? `${nombre(participantId)} da su locke por perdido`
+        : `Da el locke por perdido a ${nombre(participantId)}`,
+    );
   }
 
   /**

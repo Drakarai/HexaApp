@@ -6,6 +6,8 @@ import { getMarcador, type Marcador } from "@/lib/marcador";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { getLigaEnCooperativo } from "@/lib/soul-link";
 import { getProgresoEnSolitario } from "@/lib/solitario";
+import { LEVEL_CAP_KINDS } from "@/lib/constants";
+import { campeonPorElJuego, type JugadorDelDual } from "@/lib/campeon-por-el-juego";
 
 /**
  * Quién ha ganado el locke. **Todas las pantallas lo preguntan aquí** —portada,
@@ -22,12 +24,18 @@ import { getProgresoEnSolitario } from "@/lib/solitario";
  * 3. **Por la final**: el ganador del cuadro. En el dualocke solo cuenta
  *    cuando las jornadas acabaron empatadas, que es cuando se llega a ella sin
  *    campeón.
+ *
+ * Salvo en un dualocke con **«las jornadas dan el título» apagado** en
+ * Ajustes: ahí manda pasarse el juego (ver lib/campeon-por-el-juego.ts) y las
+ * jornadas solo desempatan.
  */
 
 export type CampeonDelLocke = {
   champion: BracketPlayer;
   runnerUp: BracketPlayer | null;
-  como: "jornadas" | "abandono" | "final";
+  como: "jornadas" | "abandono" | "final" | "juego";
+  /** Ganado pasándose el juego (`como: "juego"`): los wipeos de cada uno y qué desempató */
+  porElJuego?: { wipeos: number; wipeosDelOtro: number; desempate: "wipeos" | "jornadas" };
   /** Ganado por jornadas: el marcador, "4-2" */
   jornadas?: { ganadas: number; perdidas: number };
   /**
@@ -46,7 +54,7 @@ export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
     estado ?? getFinalFourState(competitionId),
     prisma.competition.findUnique({
       where: { id: competitionId },
-      select: { maxPlayers: true, estilo: true },
+      select: { maxPlayers: true, estilo: true, jornadasDanTitulo: true },
     }),
   ]);
 
@@ -54,8 +62,72 @@ export const getCampeonDelLocke = cache(async function getCampeonDelLocke(
   // En un Soul Link no hay campeón: se gana entre todos (ver lib/soul-link.ts)
   if (perfil?.cooperativo) return null;
   const esDual = perfil?.victoria === "jornadas";
+  if (esDual && competition && !competition.jornadasDanTitulo) {
+    return campeonDelDualPorElJuego(competitionId, state);
+  }
   return decidirCampeon(state, esDual ? await getMarcador(competitionId) : null);
 });
+
+/** El dualocke en el que manda pasarse el juego: junta lo que hace falta y decide */
+async function campeonDelDualPorElJuego(
+  competitionId: string,
+  state: FinalFourState,
+): Promise<CampeonDelLocke | null> {
+  const [marcador, jugadores, ligas, wipeos] = await Promise.all([
+    getMarcador(competitionId),
+    prisma.participant.findMany({
+      where: { competitionId },
+      select: { id: true, retiredAt: true },
+    }),
+    prisma.gymClear.findMany({
+      where: { levelCap: { competitionId, kind: LEVEL_CAP_KINDS.CHAMPION } },
+      select: { participantId: true },
+    }),
+    prisma.wipeo.groupBy({
+      by: ["participantId"],
+      where: { participant: { competitionId } },
+      _count: { _all: true },
+    }),
+  ]);
+  const conLiga = new Set(ligas.map((l) => l.participantId));
+  const cuantosWipeos = new Map(wipeos.map((w) => [w.participantId, w._count._all]));
+  const delDual: JugadorDelDual[] = jugadores.map((j) => ({
+    id: j.id,
+    fuera: Boolean(j.retiredAt),
+    ligaPasada: conLiga.has(j.id),
+    wipeos: cuantosWipeos.get(j.id) ?? 0,
+    jornadas: marcador.jugadores.find((m) => m.participantId === j.id)?.ganadas ?? 0,
+  }));
+  const resultado = campeonPorElJuego(delDual, marcador.campeonId);
+  if (!resultado) return null;
+  // Igualados en todo: la Jornada Final, como en cualquier dualocke
+  if (resultado.tipo === "final") return decidirCampeon(state, null);
+
+  const ficha = (id: string, seed: number): BracketPlayer | null => {
+    const j = marcador.jugadores.find((m) => m.participantId === id);
+    return j
+      ? { participantId: j.participantId, displayName: j.displayName, color: j.color, avatarImage: j.avatarImage, seed }
+      : null;
+  };
+  const champion = ficha(resultado.campeonId, 1);
+  if (!champion) return null;
+  const runnerUp = ficha(resultado.otroId, 2);
+  if (resultado.tipo === "abandono") {
+    // Como en cualquier abandono, el podio es solo él (ver `POR_ABANDONO`)
+    return { champion, runnerUp: null, como: "abandono", quedaPorJugar: false };
+  }
+  return {
+    champion,
+    runnerUp,
+    como: "juego",
+    porElJuego: {
+      wipeos: cuantosWipeos.get(resultado.campeonId) ?? 0,
+      wipeosDelOtro: cuantosWipeos.get(resultado.otroId) ?? 0,
+      desempate: resultado.desempate,
+    },
+    quedaPorJugar: false,
+  };
+}
 
 /**
  * La cuenta de `getCampeonDelLocke`, sin tocar la base de datos. `marcador`

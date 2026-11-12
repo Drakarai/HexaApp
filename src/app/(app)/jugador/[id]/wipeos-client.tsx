@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   apuntarWipeoAction,
+  perderElLockeAction,
   quitarWipeoAction,
 } from "@/app/actions/wipeos";
 import type { FormState } from "@/app/actions/auth";
@@ -20,20 +21,24 @@ export type WipeoVista = {
  * Los wipeos de un jugador: la cuenta, la lista y el formulario de apuntar.
  *
  * Se ponen **sin límite** y se quitan de una en una, que es lo que hace falta
- * cuando alguien apunta uno por error. Perder el locke es otra cosa y se decide
- * desde *Competiciones*: aquí solo se cuenta lo que ha pasado.
+ * cuando alguien apunta uno por error. Perder el locke es otra cosa: el propio
+ * jugador lo dice aquí abajo, con «He perdido el locke», cuando wipea y decide
+ * no seguir (y quien administra, desde *Competiciones*).
  */
 export function Wipeos({
   participantId,
   nombre,
   wipeos,
   editable,
+  perderLocke = null,
 }: {
   participantId: string;
   nombre: string;
   wipeos: WipeoVista[];
   /** Si quien mira es el propio jugador o administra el locke */
   editable: boolean;
+  /** Si sale «He perdido el locke» (solo al propio jugador), y si ya lo dio por perdido */
+  perderLocke?: { perdido: boolean } | null;
 }) {
   const [estado, apuntar] = useActionState<FormState, FormData>(
     apuntarWipeoAction,
@@ -152,6 +157,38 @@ export function Wipeos({
             ＋ Apuntar un wipeo de {nombre}
           </button>
         )
+      ) : null}
+
+      {perderLocke ? (
+        <form action={perderElLockeAction} className="mt-4 border-t border-white/10 pt-3">
+          <input type="hidden" name="participantId" value={participantId} />
+          {perderLocke.perdido ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="min-w-0 flex-1 text-sm text-red-300">
+                <Icono emoji="💥" /> Diste este locke por perdido.
+              </p>
+              <ConfirmSubmit
+                className="btn-ghost btn-sm"
+                message="¿Vuelves al locke? Los combates que ya se dieron por perdidos se quedan como están."
+              >
+                Lo retomo
+              </ConfirmSubmit>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="min-w-0 flex-1 text-xs text-slate-400">
+                ¿Has wipeado y no vas a seguir? Dalo por perdido: quedas fuera y
+                tus combates sin jugar los gana el rival.
+              </p>
+              <ConfirmSubmit
+                className="btn-ghost btn-sm text-red-300"
+                message="¿Das el locke por perdido? Quedas fuera: tus combates sin jugar los gana tu rival y, si manda pasarse el juego, el título es suyo. Se puede deshacer."
+              >
+                <Icono emoji="💥" /> He perdido el locke
+              </ConfirmSubmit>
+            </div>
+          )}
+        </form>
       ) : null}
     </section>
   );

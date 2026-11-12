@@ -258,6 +258,16 @@ async function cuandoSeDecidio(competitionId: string): Promise<Date | null> {
     return ultimoEnIrse?.retiredAt ?? null;
   }
 
+  // Pasándose el juego: cuando se pasó la Liga el último de los dos que la tienen
+  if (ganador.como === "juego") {
+    const liga = await prisma.gymClear.findFirst({
+      where: { levelCap: { competitionId, kind: LEVEL_CAP_KINDS.CHAMPION } },
+      orderBy: { clearedAt: "desc" },
+      select: { clearedAt: true },
+    });
+    return liga?.clearedAt ?? null;
+  }
+
   // Por mayoría de jornadas, en el dualocke
   const [marcador, jornadas] = await Promise.all([
     getMarcador(competitionId),
