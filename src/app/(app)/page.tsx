@@ -38,7 +38,7 @@ import {
   getGraficoClasificacion,
   movimientosEnLaTabla,
 } from "@/lib/grafico-clasificacion";
-import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { esLockePerdido } from "@/lib/wipeos";
 import { Icono } from "@/components/icono";
 import {
   checkpointAbierto,
@@ -184,7 +184,7 @@ export default async function DashboardPage() {
    */
   const fuera = standings.filter((row) => row.retirado);
   const perdidos = fuera.filter(
-    (row) => row.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO,
+    (row) => esLockePerdido(row.motivoDeSalida),
   ).length;
   const retirados = fuera.length - perdidos;
   const quienesFaltan = [

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 12 de noviembre de 2026 (**los galardones en el móvil, en vitrina**).
+Última actualización: 13 de noviembre de 2026 (**locke con vidas**: cada baja gasta una y quien se queda sin ellas pierde el locke).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -71,6 +71,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Historia de cada pokémon** | En su ficha del Equipo y PC, del cementerio y del hall, **una línea de tiempo**: dónde y cuándo se capturó (y qué era si ha evolucionado), cada evolución, los gimnasios, jornadas, retos, royales y la final que jugó con su resultado, los **MVP** que ganó, su entrada al hall y **dónde cayó**, con cuántos días duró, cuántos combates y victorias. Lo de la caja (dónde se capturó y sus evoluciones) solo lo ve su dueño fuera de un Soul Link; lo demás, todos. Desde la ficha de Equipo y PC, **«Compartir su tarjeta»**: una imagen (`api/pokemon/[id]`) con su sprite nítido, mote, tipos, su set y lo que ha vivido (días, combates, MVPs, dónde se capturó), para el grupo. Solo la puede pedir quien puede ver su ficha: su dueño, o los del locke en un Soul Link. |
 | **Hall de la fama** | El cierre del locke, disponible cuando el final ya tiene campeón. El equipo **se trae de la final** con un botón, y si no jugó el cuadro, del último combate de jornada. **O de Equipo y PC**: «Traer mi equipo de Equipo y PC» mete de golpe los que lleva en el equipo (con su ilustración grande), y en «Añadir pokémon» la pestaña **De tu PC** enseña sus vivos del equipo y de las cajas para añadirlos de un toque (los que ya están en el hall no salen); **Escribirlo** es lo de siempre. Lo del PC solo le sale a su dueño (en un Soul Link, también a quien administra), como la caja: el hall es público y la caja no. Por lo mismo, «traer el último equipo» sin jornadas, que tira de la caja, ya no lo puede usar quien administra con la caja de otro. **Podio** con el campeón, el subcampeón y cómo se ganó la final; la clasificación final va por **cómo acabó el locke** —primero los del cuadro por lo lejos que llegaron, luego los que seguían jugando, y al final los que se fueron, el último en irse arriba—; **cómo fue el locke** en cifras —cuánto duró, jornadas, combates, caídos con su ruta más mortífera, wipeos, quién más MVPs, quién perdió más y quién menos—; y el **equipo de 6** con el que terminó cada uno, el del campeón en dorado. Cada pokémon abre **la misma ficha que el Equipo y PC** (cabecera teñida, sprite animado, tipos) con su *Historia* en una pestaña, y el equipo **se puede traer del último combate de jornada** en vez de teclearlo. Entre las menciones, **quién se llevó más coronas** y la **causa de muerte más repetida**. Y **Para el grupo**: el locke entero en **una imagen** —campeón con su equipo, podio, cifras y menciones— con botón de compartir (el menú del móvil) o descargar. **La entrada al Hall de la Fama, como en los juegos**: cada pokémon entra en diagonal hasta el centro, grita y se lee su número, mote y especie; se van quedando en fila y al final «¡Bienvenidos al Hall de la Fama!» con el equipo entero y confeti. Tocar la pantalla pasa al siguiente. La primera vez que alguien abre el hall con un equipo **completo** que no ha visto, se le ofrece verla (*Ver la entrada* / *Ahora no*), de uno en uno si hay varios; cada equipo tiene además su botón **Entrada** para repetirla. La entrada acaba con **confeti**. |
 | **Estadísticas** | Lo que hace cada pokémon en los combates, **sacado de la repetición de Showdown** (o de la web de repeticiones del servidor de Añil, en sus lockes): KOs, daño hecho y recibido (en % de vida, sumado), críticos hechos y recibidos, golpes muy eficaces, fallos, esquivas, turnos en el campo, **turnos sin poder moverse** (parálisis, sueño, congelación, retroceso, enamorado) y si acabó en pie o fue **el último en pie** de una victoria. Cuentan **los combates de jornada (también las series al mejor de tres), los retos y la final**. **Donde se juega cada uno**: tocar un pokémon de los equipos abre lo suyo (en una serie o en la final, sumado de todos sus combates) para votar al MVP con datos, y el botón **Estadísticas del combate / de la serie** saca las tablas de los dos lados (en la final, uno por llave). **En *La edición → Estadísticas*** (no sale en lockes sin jornadas): **once galardones** —en el móvil, una **vitrina de tres en fila** con el pokémon en grande (se probaron una tira deslizable y una lista, y se eligió esta); en el ordenador, tarjetas en rejilla— —El Verdugo (KOs), Barrendero (más KOs en un combate, desde dos), Tocado por los dioses (críticos), Francotirador (muy eficaces), El Muro (daño aguantado en los combates que no cayó), El último en pie, Veterano (combates), Superviviente (días vivo), Imán de críticos, Patoso (fallos) y Gafado (turnos sin moverse)—; los que no tienen dueño van al final y apagados. Debajo, **una sola tarjeta de clasificaciones** con pestañas (en el móvil, un desplegable) y otro desplegable de jugador. Sin imagen guardada, sale el sprite de la especie. Dice de cuántos combates jugados hay números, y **«Leer las que faltan»** lee las repeticiones de antes. Cada pokémon **junta todo lo suyo, también lo de antes de evolucionar**. En la ficha del Equipo y PC, pestaña Combate, **Sus números** con los galardones que lleva. Si hay dos iguales en tu caja y no se sabe cuál combatió, en su hoja te sale **«¿Cuál de tu caja es?»** (solo a ti). |
+| **Locke con vidas** | Opción al **crear el locke** (también en solitario) y en *Ajustes → Editar datos*, **apagada de entrada**: «Jugar con vidas», cuántas (20 de entrada) y **con vida 0** o sin ella. Cada **baja del cementerio sin revivir** gasta una vida: con 20 vidas se pierde con la baja 20; con vida 0, a cero se sigue y se pierde con la 21. Los wipeos dan igual: un equipo barrido son seis bajas. **Arriba del cementerio**, una barra por jugador con las que le quedan (ámbar en la última, rojo sin vidas, «En la vida 0»), y al registrar una baja el mensaje dice cuántas quedan. **Quedarse sin vidas saca del locke solo** (motivo «sin vidas», 💔), como un locke perdido: sus combates pendientes los gana el rival y sigue votando al MVP. Y al revés: borrar la baja, revivir o deshacer la devuelve **si estaba fuera por eso**. Quien administra puede «Devolverle el locke» igual que con un wipeo. En solitario y en Soul Link el contador avisa pero no saca a nadie. |
 | **Ruleta** | Sorteos personalizables; girar gasta un ticket de esa ruleta, salvo los administradores. Una casilla puede ser texto suelto ("monotipo la próxima ruta") o **un premio de verdad**: un objeto del catálogo de la bolsa o tickets de una ruleta, que salen solos de la rueda a la bolsa o al saldo. |
 | **Buscador rápido** | En el ordenador, **Ctrl+K** (o ⌘K) o «Buscar…» arriba de la barra lateral: pantallas, jugadores, rutas de tu mapa (abre el Mapa con la ruta escrita), tus pokémon (abre su ficha del Equipo y PC) y el cementerio. Flechas, Enter y Escape. Sin tildes ni mayúsculas. |
 | **Clasificación pública** | Un **enlace sin cuenta** (`/clasificacion/<clave>`) para quien sigue el locke de fuera: solo la tabla, o el marcador en un dualocke, sin fotos ni nada más. Lo crea, lo cambia (el de antes deja de abrir) o lo quita quien lleva el locke, en *Competiciones → Ajustes*. No en solitario ni en Soul Link. |
@@ -3934,6 +3935,28 @@ registro trae cada ataque, crítico, «muy eficaz», fallo, daño y caída.
   `lib/db.ts`, como las imágenes): pesa, y si no, se colaba en cada pantalla
   que pide combates. Quien la necesita la pide con su `select`.
 
+### El locke con vidas
+
+Se pidió como opción del locke, apagada por defecto. Lo que se decidió:
+
+- **Cuentan las bajas del cementerio, no los wipeos**: un wipeo son seis bajas
+  que ya se apuntan una a una. **Revivir devuelve la vida** (la baja deja de
+  contar para las vidas, aunque siga contando para los desempates como
+  siempre): si se quiere al revés, es cambiar `BAJAS_QUE_CUENTAN` en
+  `lib/vidas-servidor.ts`.
+- **La vida 0**: con N vidas, sin vida 0 se pierde con la baja N; con vida 0,
+  con la N+1. La cuenta está en `estadoDeVidas` (lib/vidas.ts), con pruebas.
+- **Perder el locke por vidas es automático** (al contrario que por wipeo, que
+  se marca a mano), porque aquí la regla es exacta. Va con su propio motivo,
+  `MOTIVOS_DE_SALIDA.VIDAS`, para que se pueda devolver solo cuando se
+  recuperan las vidas sin tocar a quien se retiró o perdió por wipeo. Para
+  todo lo demás es un locke perdido: `esLockePerdido` en lib/wipeos.ts junta
+  los dos motivos y es lo que miran el MVP, la portada y los botones.
+- `comprobarVidas` se llama **en cada sitio donde cambian las bajas**:
+  registrar (a mano o de la caja, con su pareja de Soul Link), borrar,
+  revivir, deshacer y leer la partida. Una forma nueva de apuntar bajas tiene
+  que llamarla también.
+
 ## 4. Reglas del locke que están implementadas
 
 - **Clasificación y desempates**: puntos → menos pokémon muertos (los revividos
@@ -4250,6 +4273,12 @@ Piezas con truco:
   `app/(app)/estadisticas/` (con `clasificaciones.tsx`, las pestañas); y
   `equipo/sus-numeros.tsx` en la ficha. La repetición de mentira de las pruebas
   (`guia/showdown-falso.cjs`) lleva ataques y críticos para que salgan números.
+- `lib/vidas.ts` (la cuenta, sin base de datos) y `lib/vidas-servidor.ts`
+  (`vidasDelLocke` para el cementerio y `comprobarVidas`, que saca o devuelve
+  al jugador). El recuadro del formulario es `CampoDeVidas` en
+  `competiciones/competition-forms.tsx`; el marcador, `MarcadorDeVidas` en
+  `muertes/page.tsx`. Pruebas: `tests/vidas.test.ts` y
+  `tests/interfaz/7-vidas.prueba.mjs`.
 - `components/pestanas.tsx` y `components/pestanas-enlace.tsx` — las pestañas,
   con estado o como enlaces. `lib/colores-de-tipo.ts`, el color de cada tipo
   (aparte de `lib/tipos.ts` para no cargar la tabla entera en el navegador).
@@ -5153,3 +5182,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 168. **Hall de la fama desde Equipo y PC**: traer el equipo que llevas o elegir pokémon de tu PC.
 169. **Estadísticas de los pokémon**: lo de cada uno en cada combate de jornada, sacado de la repetición, con galardones y clasificaciones.
 170. **Estadísticas en retos, series y final**, once galardones y la pantalla compacta, con iconos.
+171. **Locke con vidas**: opción al crear el locke, con o sin vida 0; el cementerio lleva la cuenta y quien se queda sin vidas pierde el locke.

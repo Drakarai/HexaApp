@@ -357,7 +357,7 @@ export function PointsChart({
             caídos · {suUltimo.diff > 0 ? "+" : ""}
             {suUltimo.diff} de diferencia ·{" "}
             {modo === "siguen" && suSalida
-              ? `${suSalida.motivo === "wipeo" ? "pierde el locke" : "se retira"} en ${suSalida.etiqueta}, ${suUltimo.puesto}º`
+              ? `${suSalida.motivo === "wipeo" || suSalida.motivo === "vidas" ? "pierde el locke" : "se retira"} en ${suSalida.etiqueta}, ${suUltimo.puesto}º`
               : `acaba ${suUltimo.puesto}º`}
           </>
         ) : (
@@ -377,7 +377,7 @@ export function PointsChart({
                       <span style={{ color: quien.color }}>
                         {quien.displayName}
                       </span>{" "}
-                      <Icono emoji={salida.motivo === "wipeo" ? "💥" : "🚪"} /> {salida.etiqueta}
+                      <Icono emoji={salida.motivo === "wipeo" ? "💥" : salida.motivo === "vidas" ? "💔" : "🚪"} /> {salida.etiqueta}
                     </span>
                   );
                 })}

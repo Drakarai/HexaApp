@@ -69,7 +69,7 @@ export async function getAvisos({
   >`
     WITH yo AS (
       SELECT id,
-             ("retiredAt" IS NULL OR "motivoDeSalida" = ${MOTIVOS_DE_SALIDA.WIPEO}) AS vota
+             ("retiredAt" IS NULL OR "motivoDeSalida" IN (${MOTIVOS_DE_SALIDA.WIPEO}, ${MOTIVOS_DE_SALIDA.VIDAS})) AS vota
         FROM "Participant"
        WHERE "competitionId" = ${competitionId} AND "userId" = ${userId}
        LIMIT 1

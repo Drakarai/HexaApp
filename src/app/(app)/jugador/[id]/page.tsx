@@ -21,7 +21,7 @@ import { getResumenDeCombates } from "@/lib/cara-a-cara";
 import { getTitulosDeUsuario } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
-import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { comoEstaFuera, esLockePerdido } from "@/lib/wipeos";
 import { Wipeos } from "./wipeos-client";
 import { cx, formatDate } from "@/lib/utils";
 import { coronasDe } from "@/lib/coronas";
@@ -328,7 +328,7 @@ export default async function PlayerPage({
           editableDelLocke &&
           !perfilDeLocke(participant.competition.maxPlayers, participant.competition.estilo).cooperativo &&
           participant.competition.maxPlayers > 1 &&
-          (!participant.retiredAt || participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO)
+          (!participant.retiredAt || esLockePerdido(participant.motivoDeSalida))
             ? { perdido: Boolean(participant.retiredAt) }
             : null
         }

@@ -90,6 +90,8 @@ import {
   PersonStanding,
   TrendingUp,
   CircleSlash2,
+  HeartCrack,
+  Heart,
   type LucideIcon,
 } from "lucide-react";
 import { cx } from "@/lib/utils";
@@ -159,6 +161,8 @@ const LINEA: Record<string, Linea> = {
   "⏫": { icono: CloudUpload },
   // Salidas del locke
   "💥": { icono: Bomb, color: "text-red-400" },
+  "💔": { icono: HeartCrack, color: "text-red-400" },
+  "❤️": { icono: Heart, color: "text-rose-400", relleno: true },
   "🚪": { icono: DoorOpen },
   "🪦": { icono: Ghost },
   "🛡️": { icono: Shield },

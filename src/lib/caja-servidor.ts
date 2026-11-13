@@ -6,6 +6,8 @@ import { assertCanActForParticipant } from "@/lib/competition";
 import { descargarSprites } from "@/lib/sprites-servidor";
 import { companerasDe } from "@/lib/equipo-y-caja";
 import { capturasParaVincular } from "@/lib/soul-link";
+import { comprobarVidas } from "@/lib/vidas-servidor";
+import { avisoDeVidas } from "@/lib/vidas";
 
 /**
  * Lo que comparten las acciones del Equipo y PC y el cementerio: quién puede
@@ -223,11 +225,18 @@ export async function caer(
     await prisma.capture.update({ where: { id: c.id }, data: { deathId: baja.id } });
   }
 
+  // Cada baja es una vida menos (si el locke va con vidas): ver lib/vidas.ts
+  const vidas = new Map<string, Awaited<ReturnType<typeof comprobarVidas>>>();
+  for (const participantId of new Set(todas.map((c) => c.participantId))) {
+    vidas.set(participantId, await comprobarVidas(participantId));
+  }
+
   const otras = todas.filter((c) => c.id !== captura.id);
-  const mensaje = otras.length
+  const sinVidas = avisoDeVidas(vidas.get(captura.participantId) ?? null);
+  const mensaje = (otras.length
     ? `F por ${nombreDe(captura)}. Con él cae ${otras
         .map((c) => `${nombreDe(c)} de ${c.participant.displayName}`)
         .join(" y ")}.`
-    : `F por ${nombreDe(captura)}.`;
+    : `F por ${nombreDe(captura)}.`) + sinVidas;
   return { foto, muertes, mensaje };
 }

@@ -585,6 +585,17 @@ model Competition {
    */
   jornadasDanTitulo   Boolean   @default(true)
   /**
+   * **Locke con vidas**: cuántos pokémon se le pueden morir a cada uno antes de
+   * perder el locke. Vacío es sin vidas, lo de siempre. Cuentan las bajas del
+   * cementerio que no se han revivido; ver lib/vidas.ts.
+   */
+  vidas               Int?
+  /**
+   * Si se juega con **vida 0**: al llegar a cero se sigue, y es la siguiente
+   * baja la que hace perder. Con 20 vidas, 21 bajas en vez de 20.
+   */
+  vidaCero            Boolean   @default(false)
+  /**
    * La clave del **enlace público** de la clasificación (`/clasificacion/<clave>`),
    * o null si no hay. Para que la siga gente de fuera sin cuenta: solo enseña
    * la tabla. Larga y al azar, así que no se adivina; cambiarla deja

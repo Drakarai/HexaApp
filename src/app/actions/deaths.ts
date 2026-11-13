@@ -1,5 +1,8 @@
 "use server";
 
+import { comprobarVidas } from "@/lib/vidas-servidor";
+import { avisoDeVidas } from "@/lib/vidas";
+
 import { revalidatePath } from "next/cache";
 import { mensajeDeError } from "@/lib/permiso";
 import { registrar } from "@/lib/registro";
@@ -124,8 +127,9 @@ export async function createDeathAction(
     },
   });
 
+  const vidas = await comprobarVidas(participantId);
   refrescarBajas();
-  return { success: `F por ${nickname || species}.` };
+  return { success: `F por ${nickname || species}.${avisoDeVidas(vidas)}` };
 }
 
 /** Edición desde el panel de detalle, incluidas las dos imágenes. */
@@ -195,5 +199,7 @@ export async function deleteDeathAction(formData: FormData) {
     "cementerio",
     `Borra la baja de ${death.nickname ?? death.species} de ${participant.displayName} (vuelve a estar vivo)`,
   );
+  // Una baja menos es una vida de vuelta: si se había quedado sin ellas, vuelve
+  await comprobarVidas(death.participantId);
   refrescarBajas();
 }

@@ -1,5 +1,7 @@
 "use server";
 
+import { comprobarVidas, comprobarVidasDelLocke } from "@/lib/vidas-servidor";
+
 import { prisma } from "@/lib/db";
 import { mensajeDeError } from "@/lib/permiso";
 import { requireUser } from "@/lib/auth";
@@ -517,6 +519,8 @@ export async function revivirAction(entrada: { deathId: string }): Promise<Resul
       antes = [{ ...creada, deathId: baja.id, historia: [] }];
     }
     await prisma.death.update({ where: { id: baja.id }, data: { revividoEl: ahora } });
+    // Revivir devuelve la vida que costó la baja
+    await comprobarVidas(baja.participantId);
 
     const descripcion = `Revivir a ${nombre}`;
     await apuntarCambio(baja.participantId, descripcion, antes);
@@ -840,6 +844,14 @@ export async function deshacerEnCajaAction(entrada: {
     ]);
     // Deshacer una evolución (o un intercambio, o el shiny) también se la deshace al as
     await sincronizarAs(antes.filter((f) => existen.has(f.id)).map((f) => f.id));
+    // Bajas que se van o vuelven: cambian las vidas (en un Soul Link, también las de la pareja)
+    if (cambio.muertes.length || vuelvenACaer.length) {
+      const deQuien = await prisma.participant.findUnique({
+        where: { id: entrada.participantId },
+        select: { competitionId: true },
+      });
+      if (deQuien) await comprobarVidasDelLocke(deQuien.competitionId);
+    }
     refrescar(cambio.muertes.length > 0 || vuelvenACaer.length > 0 || cambio.capturas.length > 0);
     return { aviso: `Deshecho: ${cambio.descripcion.charAt(0).toLowerCase()}${cambio.descripcion.slice(1)}.` };
   });

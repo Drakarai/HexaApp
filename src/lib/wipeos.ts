@@ -11,7 +11,20 @@ export const MOTIVOS_DE_SALIDA = {
   RETIRADA: "retirada",
   /** Perdió el locke: le barrieron el equipo y se acabó */
   WIPEO: "wipeo",
+  /**
+   * Perdió el locke **por quedarse sin vidas** (ver lib/vidas.ts). Lo pone y lo
+   * quita la aplicación sola al apuntar o quitar bajas; para todo lo demás es
+   * un locke perdido como el del wipeo.
+   */
+  VIDAS: "vidas",
 } as const;
+
+/** Los motivos que son **perder el locke** (no irse): votan al MVP, se devuelven con el mismo botón */
+export const MOTIVOS_DE_LOCKE_PERDIDO: string[] = [MOTIVOS_DE_SALIDA.WIPEO, MOTIVOS_DE_SALIDA.VIDAS];
+
+export function esLockePerdido(motivoDeSalida: string | null | undefined) {
+  return Boolean(motivoDeSalida && MOTIVOS_DE_LOCKE_PERDIDO.includes(motivoDeSalida));
+}
 
 /**
  * Cómo se cuenta cada salida. El de retirada es el de siempre; el de wipeo se
@@ -30,6 +43,12 @@ export const SALIDAS = {
     color: "text-red-400",
     largo: "Perdió el locke por wipeo",
   },
+  [MOTIVOS_DE_SALIDA.VIDAS]: {
+    etiqueta: "sin vidas",
+    icono: "💔",
+    color: "text-red-400",
+    largo: "Perdió el locke: se quedó sin vidas",
+  },
 } as const;
 
 /**
@@ -43,6 +62,7 @@ export function comoEstaFuera(participante: {
   motivoDeSalida?: string | null;
 }) {
   if (!participante.retiredAt) return null;
+  if (participante.motivoDeSalida === MOTIVOS_DE_SALIDA.VIDAS) return SALIDAS[MOTIVOS_DE_SALIDA.VIDAS];
   return participante.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO
     ? SALIDAS[MOTIVOS_DE_SALIDA.WIPEO]
     : SALIDAS[MOTIVOS_DE_SALIDA.RETIRADA];
@@ -61,16 +81,13 @@ export function puedeVotarElMvp(participante: {
   retiredAt: Date | null;
   motivoDeSalida?: string | null;
 }) {
-  return (
-    !participante.retiredAt ||
-    participante.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO
-  );
+  return !participante.retiredAt || esLockePerdido(participante.motivoDeSalida);
 }
 
 /** Lo mismo, dicho en una consulta de Prisma */
 export const VOTANTES_DEL_MVP = {
   OR: [
     { retiredAt: null },
-    { motivoDeSalida: MOTIVOS_DE_SALIDA.WIPEO },
+    { motivoDeSalida: { in: MOTIVOS_DE_LOCKE_PERDIDO } },
   ],
 };

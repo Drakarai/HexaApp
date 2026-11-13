@@ -1,5 +1,7 @@
 "use client";
 
+import { CampoDeVidas } from "./competition-forms";
+
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   crearLockeEnSolitarioAction,
@@ -125,6 +127,8 @@ export function LockeEnSolitarioForm({
             </div>
           ) : null}
         </div>
+        {/* Al pedirlo no: eso lo ajusta quien lo apruebe, en Editar datos */}
+        {puedeCrearDirecto ? <CampoDeVidas /> : null}
         <div>
           <label className="label">
             {puedeCrearDirecto ? "Descripción" : "Cuéntale de qué va"}

@@ -1,5 +1,8 @@
 "use server";
 
+import { leerVidas } from "@/lib/vidas";
+import { comprobarVidasDelLocke } from "@/lib/vidas-servidor";
+
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
@@ -175,6 +178,11 @@ export async function createCompetitionAction(
       maxPlayers: plazas,
       estilo,
       jornadasPrevistas,
+      ...leerVidas({
+        conVidas: formData.get("conVidas"),
+        vidas: formData.get("vidas"),
+        vidaCero: formData.get("vidaCero"),
+      }),
       createdById: admin.id,
     },
   });
@@ -384,6 +392,14 @@ export async function updateCompetitionAction(
       jornadasPrevistas: numeroOpcional(formData.get("jornadasPrevistas"), 50),
       // Solo si el formulario lo traía (en un dualocke): si no, se queda como estaba
       ...(formData.get("conTitulo") ? { jornadasDanTitulo: formData.get("jornadasDanTitulo") === "on" } : {}),
+      // Igual: solo si el formulario trae el recuadro de las vidas
+      ...(formData.get("conCampoDeVidas")
+        ? leerVidas({
+            conVidas: formData.get("conVidas"),
+            vidas: formData.get("vidas"),
+            vidaCero: formData.get("vidaCero"),
+          })
+        : {}),
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }
         : {}),
@@ -394,6 +410,8 @@ export async function updateCompetitionAction(
   });
 
   await registrar(competitionId, "locke", "Cambia los datos del locke (nombre, juego, plazas, estilo…)");
+  // Con más o menos vidas, alguno puede quedarse fuera o volver
+  if (formData.get("conCampoDeVidas")) await comprobarVidasDelLocke(competitionId);
   revalidatePath("/", "layout");
   return { success: "Competición actualizada." };
 }

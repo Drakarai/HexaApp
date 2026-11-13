@@ -20,7 +20,7 @@ import {
   cambiarArranqueAction,
 } from "@/app/actions/competitions";
 import { getMisSolicitudes } from "@/lib/solicitudes";
-import { comoEstaFuera, MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { comoEstaFuera, esLockePerdido } from "@/lib/wipeos";
 import { perderElLockeAction } from "@/app/actions/wipeos";
 import { firmaDeColumna, urlsDeImagen } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
@@ -442,7 +442,7 @@ export default async function CompetitionsPage({
                          * los dos lo devolverían al locke, y dos botones que
                          * hacen lo mismo con nombres distintos solo confunden.
                          */}
-                        {participant.motivoDeSalida !== MOTIVOS_DE_SALIDA.WIPEO ? (
+                        {!esLockePerdido(participant.motivoDeSalida) ? (
                         <form action={retirarParticipanteAction}>
                           <input
                             type="hidden"
@@ -473,7 +473,7 @@ export default async function CompetitionsPage({
                          * otro.
                          */}
                         {!participant.retiredAt ||
-                        participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO ? (
+                        esLockePerdido(participant.motivoDeSalida) ? (
                           <form action={perderElLockeAction}>
                           <input
                             type="hidden"
@@ -644,6 +644,8 @@ export default async function CompetitionsPage({
               maxPlayers: active.maxPlayers,
               apuntados: participants.length,
               jornadasDanTitulo: active.jornadasDanTitulo,
+              vidas: active.vidas,
+              vidaCero: active.vidaCero,
             }}
           />
 

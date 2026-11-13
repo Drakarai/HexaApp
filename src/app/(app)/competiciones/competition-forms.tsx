@@ -1,5 +1,7 @@
 "use client";
 
+import { VIDAS_MAXIMAS, VIDAS_POR_DEFECTO } from "@/lib/vidas";
+
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addParticipantAction,
@@ -57,6 +59,72 @@ function EstiloPicker({
       </div>
       <input type="hidden" name="estilo" value={estilo} />
       <p className="mt-1 text-xs text-slate-500">{ESTILOS[estilo].explicacion}</p>
+    </div>
+  );
+}
+
+/**
+ * **Locke con vidas**, apagado de entrada: cuántos pokémon se pueden morir
+ * antes de perder el locke, y si se juega con vida 0. Ver lib/vidas.ts.
+ */
+export function CampoDeVidas({
+  vidas = null,
+  vidaCero = false,
+}: {
+  vidas?: number | null;
+  vidaCero?: boolean;
+}) {
+  const [con, setCon] = useState(vidas != null);
+  const [cuantas, setCuantas] = useState(vidas ?? VIDAS_POR_DEFECTO);
+  const [cero, setCero] = useState(vidaCero);
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3" data-campo-vidas>
+      {/* Para saber que el formulario lo trae: una casilla sin marcar no se envía */}
+      <input type="hidden" name="conCampoDeVidas" value="1" />
+      <label className="flex items-start gap-2.5 text-sm text-slate-200">
+        <input
+          type="checkbox"
+          name="conVidas"
+          checked={con}
+          onChange={(e) => setCon(e.target.checked)}
+          className="mt-0.5"
+        />
+        <span>
+          Jugar con vidas
+          <span className="mt-0.5 block text-xs text-slate-400">
+            Cada pokémon que muere es una vida menos, y quien se queda sin vidas pierde el locke. Los wipeos
+            aquí dan igual: son seis bajas más en el cementerio.
+          </span>
+        </span>
+      </label>
+      {con ? (
+        <div className="mt-3 flex flex-wrap items-end gap-4 pl-6">
+          <div>
+            <label className="label" htmlFor="vidas">
+              Vidas
+            </label>
+            <input
+              id="vidas"
+              name="vidas"
+              type="number"
+              min={1}
+              max={VIDAS_MAXIMAS}
+              value={cuantas}
+              onChange={(e) => setCuantas(Number(e.target.value))}
+              className="input w-24"
+            />
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-sm text-slate-200">
+            <input type="checkbox" name="vidaCero" checked={cero} onChange={(e) => setCero(e.target.checked)} />
+            Con vida 0
+          </label>
+          <p className="basis-full text-xs text-slate-400">
+            {cero
+              ? `Se pueden morir ${cuantas + 1}: al llegar a cero se sigue con la vida 0, y la baja ${cuantas + 1} acaba el locke.`
+              : `Se pueden morir ${cuantas}: la baja ${cuantas} acaba el locke.`}
+          </p>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -168,6 +236,8 @@ export function NewCompetitionForm({
           </div>
         </div>
 
+        <CampoDeVidas />
+
         <div>
           <label className="label">Descripción</label>
           <textarea name="description" className="textarea" rows={3} />
@@ -277,6 +347,8 @@ export function EditCompetitionForm({
     /** Los que ya están apuntados: menos plazas que eso no puede tener */
     apuntados: number;
     jornadasDanTitulo: boolean;
+    vidas: number | null;
+    vidaCero: boolean;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -386,6 +458,7 @@ export function EditCompetitionForm({
             </label>
           </div>
         ) : null}
+        <CampoDeVidas vidas={competition.vidas} vidaCero={competition.vidaCero} />
         <div>
           <label className="label">Descripción</label>
           <textarea

@@ -1,5 +1,8 @@
 "use server";
 
+import { comprobarVidas } from "@/lib/vidas-servidor";
+import { avisoDeVidas } from "@/lib/vidas";
+
 import { prisma } from "@/lib/db";
 import { mensajeDeError } from "@/lib/permiso";
 import { getZonasParaElegir } from "@/lib/mapas";
@@ -448,6 +451,7 @@ export async function aplicarPartidaAction(
       const hecho = antes.length + muertes.length + creadas.length;
       if (!hecho) throw new Error("No se ha podido aplicar la partida: no ha cambiado nada. Prueba otra vez en un rato.");
       await apuntarCambio(participant.id, "Leer la partida (a medias)", antes, muertes, creadas).catch(() => {});
+      if (muertes.length) await comprobarVidas(participant.id).catch(() => null);
       await sincronizarAs(antes.map((f) => f.id)).catch(() => {});
       refrescarCaja(true);
       throw new Error(
@@ -457,6 +461,8 @@ export async function aplicarPartidaAction(
 
     await apuntarCambio(participant.id, "Leer la partida", antes, muertes, creadas);
     await sincronizarAs(actualizar.map((p) => p.captureId));
+    // Las bajas sin captura no pasan por `caer`: sus vidas se miran aquí
+    const vidas = muertes.length ? await comprobarVidas(participant.id) : null;
     const cuenta = (tipo: PasoDelPlan["tipo"]) => pasos.filter((p) => p.tipo === tipo).length;
     const partes = [
       cuenta("actualizar") && `${cuenta("actualizar")} al día`,
@@ -464,7 +470,9 @@ export async function aplicarPartidaAction(
       cuenta("muere") + cuenta("baja") && `${cuenta("muere") + cuenta("baja")} al cementerio`,
     ].filter(Boolean);
     refrescarCaja(true);
-    return { aviso: `Partida leída: ${partes.join(", ")}. Si algo no te cuadra, «Deshacer» lo deja como estaba.` };
+    return {
+      aviso: `Partida leída: ${partes.join(", ")}.${avisoDeVidas(vidas)} Si algo no te cuadra, «Deshacer» lo deja como estaba.`,
+    };
   } catch (error) {
     return { error: mensajeDeError(error) };
   }

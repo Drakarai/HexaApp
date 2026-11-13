@@ -6,7 +6,7 @@ import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { assertCanActForParticipant } from "@/lib/competition";
-import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
+import { MOTIVOS_DE_SALIDA, esLockePerdido } from "@/lib/wipeos";
 import { resolverRetiradas } from "@/lib/retiradas";
 import type { FormState } from "@/app/actions/auth";
 
@@ -106,7 +106,8 @@ export async function perderElLockeAction(formData: FormData) {
   const { user: manager } = await assertCanActForParticipant(participantId);
 
   // Si ya está fuera por esto, el botón lo devuelve al locke
-  if (participant.retiredAt && participant.motivoDeSalida === MOTIVOS_DE_SALIDA.WIPEO) {
+  // (También al que se quedó sin vidas: quien administra puede perdonarle)
+  if (participant.retiredAt && esLockePerdido(participant.motivoDeSalida)) {
     await prisma.participant.update({
       where: { id: participantId },
       data: { retiredAt: null, motivoDeSalida: null },

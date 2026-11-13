@@ -22,6 +22,9 @@ import { colorDeZona } from "@/lib/zonas";
 import { NewDeathForm } from "./death-form";
 import { DeathBox, type BoxDeath } from "./death-box";
 import { findSpecies } from "@/lib/pokedex";
+import { vidasDelLocke } from "@/lib/vidas-servidor";
+import { textoDeVidas, type EstadoDeVidas } from "@/lib/vidas";
+import { Icono } from "@/components/icono";
 
 export const metadata = { title: "Cementerio" };
 
@@ -237,6 +240,9 @@ export default async function DeathsPage({
     participant: fichaDeJugador(death.participantId),
   }));
 
+  // En un locke con vidas, lo que le queda a cada uno (ver lib/vidas.ts)
+  const vidas = await vidasDelLocke(competition.id);
+
   return (
     <>
       <PageHeader
@@ -285,6 +291,17 @@ export default async function DeathsPage({
           </Link>
         ))}
       </div>
+
+      {vidas.size ? (
+        <MarcadorDeVidas
+          jugadores={(selected ? [selected] : participants).map((p) => ({
+            id: p.id,
+            nombre: p.displayName,
+            color: p.color,
+            vidas: vidas.get(p.id)!,
+          }))}
+        />
+      ) : null}
 
       {mortiferas.length ? <RutasMortiferas zonas={mortiferas} /> : null}
 
@@ -369,6 +386,63 @@ function RutasMortiferas({
             />
             {zona.name}
             <span className="ml-1 font-bold text-slate-300">{zona.bajas}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Las vidas de cada uno, arriba del cementerio: es aquí donde se gastan. La
+ * barra se vacía con cada baja; en la última se pone en ámbar y sin vidas, en
+ * rojo.
+ */
+function MarcadorDeVidas({
+  jugadores,
+}: {
+  jugadores: { id: string; nombre: string; color: string; vidas: EstadoDeVidas }[];
+}) {
+  const { vidas: total, vidaCero } = jugadores[0].vidas;
+  return (
+    <section className="card mb-5 p-3" aria-labelledby="vidas" data-vidas>
+      <div className="mb-2 flex items-baseline justify-between gap-2">
+        <h2 id="vidas" className="antetitulo flex items-center gap-1.5">
+          <Icono emoji="❤️" /> Vidas
+        </h2>
+        <p className="text-[11px] text-slate-500">
+          {total} {vidaCero ? "y la vida 0" : "por jugador"}
+        </p>
+      </div>
+      <ul className="space-y-2">
+        {jugadores.map(({ id, nombre, color, vidas }) => (
+          <li key={id} className="flex items-center gap-2.5 text-sm" data-vidas-de={nombre}>
+            <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: color }} aria-hidden />
+            <span className="w-24 shrink-0 truncate text-slate-200 sm:w-32">{nombre}</span>
+            <span
+              className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/[0.06]"
+              role="meter"
+              aria-label={`Vidas de ${nombre}`}
+              aria-valuemin={0}
+              aria-valuemax={vidas.vidas}
+              aria-valuenow={vidas.quedan}
+            >
+              <span
+                className={cx(
+                  "block h-full rounded-full",
+                  vidas.sinVidas ? "bg-red-500" : vidas.enLaUltima ? "bg-amber-400" : "bg-rose-400",
+                )}
+                style={{ width: `${(vidas.quedan / vidas.vidas) * 100}%` }}
+              />
+            </span>
+            <span
+              className={cx(
+                "w-24 shrink-0 text-right text-xs font-semibold tabular-nums",
+                vidas.sinVidas ? "text-red-400" : vidas.enLaUltima ? "text-amber-300" : "text-slate-200",
+              )}
+            >
+              {vidas.sinVidas || vidas.enLaVidaCero ? textoDeVidas(vidas) : `${vidas.quedan} / ${vidas.vidas}`}
+            </span>
           </li>
         ))}
       </ul>

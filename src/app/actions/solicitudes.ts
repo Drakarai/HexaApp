@@ -1,5 +1,7 @@
 "use server";
 
+import { leerVidas } from "@/lib/vidas";
+
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/db";
@@ -241,6 +243,11 @@ export async function crearLockeEnSolitarioAction(
       modality: String(formData.get("modality") ?? "").trim() || null,
       description: String(formData.get("description") ?? "").trim() || null,
       maxPlayers: 1,
+      ...leerVidas({
+        conVidas: formData.get("conVidas"),
+        vidas: formData.get("vidas"),
+        vidaCero: formData.get("vidaCero"),
+      }),
       createdById: admin.id,
       participants: {
         create: {
