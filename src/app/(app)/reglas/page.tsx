@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { requireUser, esCreador } from "@/lib/auth";
+import { getTitulosAGanar, type TituloAGanar } from "@/lib/titulos";
+import { TitleBadge } from "@/components/title-badge";
 import { canManageCompetition, getActiveCompetition } from "@/lib/competition";
 import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
@@ -48,7 +50,7 @@ export default async function RulesPage({
   const competition = await getActiveCompetition();
   if (!competition) return <NoCompetition canCreate={esCreador(user)} />;
 
-  const [canManage, rules, visto, empezado, { editar }] = await Promise.all([
+  const [canManage, rules, visto, empezado, { editar }, aGanar] = await Promise.all([
     canManageCompetition(competition.id, user),
     prisma.ruleSection.findMany({
       where: { competitionId: competition.id },
@@ -71,6 +73,8 @@ export default async function RulesPage({
     }),
     lockeEmpezado(competition.id),
     searchParams,
+    // Los títulos que se pueden ganar en este locke (ver lib/titulos.ts)
+    getTitulosAGanar(competition.id),
   ]);
   const editando = canManage && editar === "1";
 
@@ -242,6 +246,8 @@ export default async function RulesPage({
         </>
       )}
 
+      {aGanar.length ? <TitulosAGanar titulos={aGanar} /> : null}
+
       {/* Sin reglas no hay nada que editar: el formulario sale ya */}
       {canManage && (editando || rules.length === 0) ? (
         <div className="mt-8">
@@ -396,5 +402,31 @@ function CambiosDeLaRegla({
         </div>
       </details>
     </details>
+  );
+}
+
+/**
+ * Los títulos que se pueden ganar en este locke, al pie del reglamento: es
+ * donde se mira a qué se juega. Cada uno con quién lo ha ganado ya aquí.
+ */
+function TitulosAGanar({ titulos }: { titulos: TituloAGanar[] }) {
+  return (
+    <section className="card mt-8" aria-labelledby="titulos-a-ganar" data-titulos-a-ganar>
+      <h2 id="titulos-a-ganar" className="section-title mb-1">
+        Títulos que se pueden ganar
+      </h2>
+      <p className="muted mb-3">Los reparte quien administra el locke. Valen dentro de este locke.</p>
+      <ul className="grid gap-2 sm:grid-cols-2">
+        {titulos.map((t) => (
+          <li key={t.id} className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
+            <TitleBadge titulo={t} />
+            {t.description ? <p className="mt-1.5 text-sm text-slate-400">{t.description}</p> : null}
+            <p className="mt-1.5 text-xs text-slate-500">
+              {t.ganadores.length ? `Lo tiene${t.ganadores.length > 1 ? "n" : ""}: ${t.ganadores.join(", ")}` : "Todavía nadie"}
+            </p>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

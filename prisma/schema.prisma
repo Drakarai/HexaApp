@@ -140,6 +140,13 @@ model Title {
    * administra y solo se puede dar dentro de él. Se va con el locke.
    */
   competitionId String?
+  /**
+   * Del catálogo común pero **de locke**: una lista base de títulos que se
+   * ganan en cada locke, uno por locke. Se dan siempre como «solo de ese
+   * locke» y salen en cada uno como «Títulos que se pueden ganar». Los extras
+   * de un locke lo son siempre.
+   */
+  deLocke       Boolean  @default(false)
 
   awards      TitleAward[]
   competition Competition? @relation("TitulosDelLocke", fields: [competitionId], references: [id], onDelete: Cascade)
@@ -972,6 +979,7 @@ model LockeRequest {
    * de alta a sus amigos.
    */
   /**
+   * /**
    * /**
    * /**
    * /**

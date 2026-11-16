@@ -24,6 +24,11 @@ export type TituloAdmin = {
   editable: boolean;
   /** Es un extra del locke: solo se da dentro de él */
   extra: boolean;
+  /**
+   * Se gana en cada locke y solo vale en él: los «de locke» del catálogo
+   * común (una lista base para todos los lockes) y los extras.
+   */
+  deLocke: boolean;
   concedidos: {
     awardId: string;
     userId: string;
@@ -101,15 +106,16 @@ export function Titles({
 }
 
 /** Las opciones de «dónde» al dar un título (ver `leerAlcance` en actions/titulos.ts) */
-function opcionesDeDonde(donde: DondeSeReparte, extra: boolean) {
+function opcionesDeDonde(donde: DondeSeReparte, deLocke: boolean) {
   if (donde.tipo === "locke") {
-    return extra
+    return deLocke
       ? [{ valor: `locke:${donde.locke.id}`, rotulo: "Solo en este locke" }]
       : [
           { valor: `locke:${donde.locke.id}`, rotulo: "Solo en este locke" },
           { valor: `general:${donde.locke.id}`, rotulo: "General, ganado aquí" },
         ];
   }
+  if (deLocke) return donde.lockes.map((l) => ({ valor: `locke:${l.id}`, rotulo: `Solo en ${l.name}` }));
   return [
     { valor: "general", rotulo: "General" },
     ...donde.lockes.flatMap((l) => [
@@ -174,6 +180,8 @@ function NuevoTitulo({ competitionId }: { competitionId: string | null }) {
           />
         </div>
 
+        {competitionId ? null : <CasillaDeLocke />}
+
         <div>
           <label className="label">Color</label>
           <input type="hidden" name="color" value={color} />
@@ -231,13 +239,19 @@ function Titulo({
 
   // El mismo título se puede ganar en sitios distintos: si ya lo tiene ahí, lo dice la acción
   const candidatos = usuarios;
-  const opciones = opcionesDeDonde(donde, titulo.extra);
+  const opciones = opcionesDeDonde(donde, titulo.deLocke);
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
       <div className="flex flex-wrap items-center gap-2">
         <TitleBadge titulo={titulo} />
-        {titulo.extra ? <span className="chip text-[10px]">de este locke</span> : null}
+        {titulo.extra ? (
+          <span className="chip text-[10px]">de este locke</span>
+        ) : titulo.deLocke ? (
+          <span className="chip text-[10px]" title="Se gana en cada locke y solo vale en él">
+            de locke
+          </span>
+        ) : null}
         <span className="text-xs text-slate-500">
           {titulo.concedidos.length === 0
             ? "sin repartir"
@@ -313,6 +327,12 @@ function Titulo({
               defaultValue={titulo.description ?? ""}
             />
           </div>
+          {titulo.extra ? null : (
+            <div className="sm:col-span-4">
+              <input type="hidden" name="conDeLocke" value="1" />
+              <CasillaDeLocke defaultChecked={titulo.deLocke} />
+            </div>
+          )}
           <div className="sm:col-span-4">
             <SubmitButton className="btn-ghost btn-sm">Guardar</SubmitButton>
           </div>
@@ -434,5 +454,21 @@ function CambiarDonde({
       </select>
       {estado?.error ? <span className="text-[11px] text-rose-300">{estado.error}</span> : null}
     </form>
+  );
+}
+
+/** «De locke»: entra en la lista base de títulos que se ganan en cada locke */
+function CasillaDeLocke({ defaultChecked = false }: { defaultChecked?: boolean }) {
+  return (
+    <label className="flex items-start gap-2.5 text-sm text-slate-200">
+      <input type="checkbox" name="deLocke" defaultChecked={defaultChecked} className="mt-0.5" />
+      <span>
+        De locke
+        <span className="mt-0.5 block text-xs text-slate-400">
+          Va a la lista de títulos que se pueden ganar en cada locke: se da como «solo de ese locke» y
+          cada locke tiene el suyo. Sin marcar, es un título general.
+        </span>
+      </span>
+    </label>
   );
 }

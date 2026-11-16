@@ -173,6 +173,7 @@ export async function getTitulosParaRepartir(competitionId: string | null): Prom
     // En Administración, el común; en un locke, solo sus extras
     editable: competitionId ? t.competitionId === competitionId : true,
     extra: Boolean(t.competitionId),
+    deLocke: t.deLocke || Boolean(t.competitionId),
     concedidos: t.awards
       // Los «solo de un locke» de un locke que ya no existe no se cuentan
       .filter((a) => !(a.soloEnElLocke && !a.competition))
@@ -196,4 +197,32 @@ export async function getTitulosParaRepartir(competitionId: string | null): Prom
             : "General",
       })),
   }));
+}
+
+export type TituloAGanar = TituloPuesto & { id: string; ganadores: string[] };
+
+/**
+ * **Los títulos que se pueden ganar en un locke**: la lista base del catálogo
+ * (los marcados «de locke») y los extras de ese locke, con quién lo ha ganado
+ * ya en él. Es pública para quien ve el locke: son las metas, no lo privado de
+ * nadie.
+ */
+export async function getTitulosAGanar(competitionId: string): Promise<TituloAGanar[]> {
+  const titulos = await prisma.title.findMany({
+    where: { OR: [{ competitionId: null, deLocke: true }, { competitionId }] },
+    orderBy: [{ competitionId: { sort: "asc", nulls: "first" } }, { createdAt: "asc" }],
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      icon: true,
+      color: true,
+      awards: {
+        where: { competitionId, soloEnElLocke: true },
+        orderBy: { awardedAt: "asc" },
+        select: { user: { select: { displayName: true } } },
+      },
+    },
+  });
+  return titulos.map(({ awards, ...t }) => ({ ...t, ganadores: awards.map((a) => a.user.displayName) }));
 }

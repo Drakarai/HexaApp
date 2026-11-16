@@ -51,7 +51,10 @@ export async function crearTituloAction(_prev: FormState, formData: FormData): P
   if (!datos.name) return { error: "El título necesita un nombre." };
   if (datos.name.length > 60) return { error: "Ese nombre es demasiado largo." };
 
-  await prisma.title.create({ data: { ...datos, competitionId } });
+  await prisma.title.create({
+    // Un extra ya es de su locke; en el común se elige
+    data: { ...datos, competitionId, deLocke: !competitionId && formData.get("deLocke") === "on" },
+  });
   if (competitionId) await registrar(competitionId, "jugadores", `Crea el título «${datos.name}» para el locke`);
   refrescar();
   return { success: `Título "${datos.name}" creado.` };
@@ -64,7 +67,14 @@ export async function editarTituloAction(formData: FormData) {
   await assertPuedeTocarElTitulo(titulo.competitionId);
   const datos = datosDelTitulo(formData);
   if (!datos.name) return;
-  await prisma.title.update({ where: { id }, data: datos });
+  await prisma.title.update({
+    where: { id },
+    data: {
+      ...datos,
+      // Solo el común (el formulario lo trae con su casilla); un extra lo es siempre
+      ...(!titulo.competitionId && formData.get("conDeLocke") ? { deLocke: formData.get("deLocke") === "on" } : {}),
+    },
+  });
   refrescar();
 }
 
@@ -107,7 +117,7 @@ export async function concederTituloAction(_prev: FormState, formData: FormData)
     else await requireCreador();
 
     const [titulo, usuario, juega] = await Promise.all([
-      prisma.title.findUnique({ where: { id: titleId }, select: { name: true, competitionId: true } }),
+      prisma.title.findUnique({ where: { id: titleId }, select: { name: true, competitionId: true, deLocke: true } }),
       prisma.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
       alcance.competitionId
         ? prisma.participant.count({ where: { userId, competitionId: alcance.competitionId } })
@@ -118,6 +128,10 @@ export async function concederTituloAction(_prev: FormState, formData: FormData)
     // Un extra es de su locke: ni se da en otro ni se hace general
     if (titulo.competitionId && (titulo.competitionId !== alcance.competitionId || !alcance.soloEnElLocke)) {
       return { error: "Ese título es de un locke: solo se puede dar dentro de él." };
+    }
+    // Los «de locke» del catálogo se ganan en cada locke, y solo ahí
+    if (titulo.deLocke && !alcance.soloEnElLocke) {
+      return { error: "Ese título es de locke: se da como «solo de un locke»." };
     }
 
     const yaLoTiene = await prisma.titleAward.findFirst({
@@ -162,7 +176,7 @@ export async function cambiarAlcanceDelTituloAction(_prev: FormState, formData: 
         titleId: true,
         competitionId: true,
         soloEnElLocke: true,
-        title: { select: { name: true, competitionId: true } },
+        title: { select: { name: true, competitionId: true, deLocke: true } },
         user: { select: { displayName: true } },
       },
     });
@@ -191,6 +205,9 @@ export async function cambiarAlcanceDelTituloAction(_prev: FormState, formData: 
       (concesion.title.competitionId !== alcance.competitionId || !alcance.soloEnElLocke)
     ) {
       return { error: "Ese título es de un locke: solo puede ser de él." };
+    }
+    if (concesion.title.deLocke && !alcance.soloEnElLocke) {
+      return { error: "Ese título es de locke: solo puede ser de un locke." };
     }
     const repetido = await prisma.titleAward.findFirst({
       where: {
