@@ -143,6 +143,87 @@ export async function concederTituloAction(_prev: FormState, formData: FormData)
   }
 }
 
+/**
+ * Cambiar dónde vale un título ya dado (general, general de un locke o solo de
+ * un locke) **sin quitarlo**: se quedan su fecha, quién lo dio y el porqué.
+ * Quien administra un locke solo lo mueve dentro de lo suyo: de lo dado en su
+ * locke a otra forma de su mismo locke. El resto, el Creador.
+ */
+export async function cambiarAlcanceDelTituloAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const awardId = String(formData.get("awardId") ?? "");
+    const alcance = leerAlcance(String(formData.get("alcance") ?? ""));
+    if (!alcance) return { error: "Elige dónde vale." };
+    const concesion = await prisma.titleAward.findUnique({
+      where: { id: awardId },
+      select: {
+        id: true,
+        userId: true,
+        titleId: true,
+        competitionId: true,
+        soloEnElLocke: true,
+        title: { select: { name: true, competitionId: true } },
+        user: { select: { displayName: true } },
+      },
+    });
+    if (!concesion) return { error: "Ese título ya no está." };
+    if (concesion.competitionId === alcance.competitionId && concesion.soloEnElLocke === alcance.soloEnElLocke) {
+      return {};
+    }
+
+    // Hay que poder tocar lo de antes y lo de después
+    const user = await getCurrentUser();
+    if (!user) return { error: "Tienes que iniciar sesión." };
+    if (!esCreador(user)) {
+      if (!concesion.competitionId || concesion.competitionId !== alcance.competitionId) {
+        return { error: "Solo puedes moverlo dentro de tu locke." };
+      }
+      await requireCompetitionManager(concesion.competitionId);
+    }
+    if (alcance.competitionId) {
+      const juega = await prisma.participant.count({
+        where: { userId: concesion.userId, competitionId: alcance.competitionId },
+      });
+      if (!juega) return { error: `${concesion.user.displayName} no juega ese locke.` };
+    }
+    if (
+      concesion.title.competitionId &&
+      (concesion.title.competitionId !== alcance.competitionId || !alcance.soloEnElLocke)
+    ) {
+      return { error: "Ese título es de un locke: solo puede ser de él." };
+    }
+    const repetido = await prisma.titleAward.findFirst({
+      where: {
+        titleId: concesion.titleId,
+        userId: concesion.userId,
+        competitionId: alcance.competitionId,
+        soloEnElLocke: alcance.soloEnElLocke,
+        NOT: { id: concesion.id },
+      },
+      select: { id: true },
+    });
+    if (repetido) return { error: `${concesion.user.displayName} ya lo tiene ahí.` };
+
+    await prisma.titleAward.update({
+      where: { id: concesion.id },
+      data: {
+        ...alcance,
+        // Uno de un locke no se lleva como general: si lo llevaba, se le quita
+        ...(alcance.soloEnElLocke ? { equipped: false } : {}),
+      },
+    });
+    await registrar(
+      alcance.competitionId ?? concesion.competitionId,
+      "jugadores",
+      `Cambia dónde vale el título «${concesion.title.name}» de ${concesion.user.displayName}`,
+    );
+    refrescar();
+    return { success: "Cambiado." };
+  } catch (error) {
+    return { error: mensajeDeError(error) };
+  }
+}
+
 export async function revocarTituloAction(formData: FormData) {
   const id = String(formData.get("awardId") ?? "");
   const concesion = await prisma.titleAward.findUnique({

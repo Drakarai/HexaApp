@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import {
   borrarTituloAction,
+  cambiarAlcanceDelTituloAction,
   concederTituloAction,
   crearTituloAction,
   editarTituloAction,
@@ -30,6 +31,8 @@ export type TituloAdmin = {
     note: string | null;
     awardedAt: string;
     equipped: boolean;
+    /** El valor del desplegable de «Dónde»: `general`, `general:<locke>`, `locke:<locke>` */
+    alcance: string;
     /** «General», «General · Hexalocke 2», «Solo en Hexalocke 2» */
     donde: string;
   }[];
@@ -326,7 +329,12 @@ function Titulo({
               <span className="font-semibold text-slate-200">
                 {concesion.displayName}
               </span>
-              <span className="text-[10px] uppercase tracking-wide text-slate-500">{concesion.donde}</span>
+              <CambiarDonde
+                awardId={concesion.awardId}
+                alcance={concesion.alcance}
+                donde={concesion.donde}
+                opciones={opciones}
+              />
               <span className="min-w-0 flex-1 truncate text-slate-500">
                 {concesion.note ?? "—"}
               </span>
@@ -384,5 +392,47 @@ function Titulo({
         <p className="mt-2 text-xs text-slate-500">No hay a quién dárselo.</p>
       )}
     </li>
+  );
+}
+
+/**
+ * Dónde vale un título ya dado, para cambiarlo sin quitarlo. Si lo que tiene
+ * ahora no está entre lo que se puede elegir aquí (se dio en otro sitio), sale
+ * igual, para que se vea; cambiarlo lo decide la acción.
+ */
+function CambiarDonde({
+  awardId,
+  alcance,
+  donde,
+  opciones,
+}: {
+  awardId: string;
+  alcance: string;
+  donde: string;
+  opciones: { valor: string; rotulo: string }[];
+}) {
+  const [estado, cambiar, pendiente] = useActionState<FormState, FormData>(cambiarAlcanceDelTituloAction, null);
+  const todas = opciones.some((o) => o.valor === alcance) ? opciones : [{ valor: alcance, rotulo: donde }, ...opciones];
+  return (
+    <form action={cambiar} className="flex items-center gap-1.5">
+      <input type="hidden" name="awardId" value={awardId} />
+      <select
+        name="alcance"
+        aria-label="Dónde vale"
+        // Se remonta con lo guardado: si no, se queda en lo elegido aunque falle
+        key={alcance}
+        defaultValue={alcance}
+        disabled={pendiente}
+        onChange={(e) => e.currentTarget.form?.requestSubmit()}
+        className="rounded-md border border-white/10 bg-ink-850 px-1.5 py-0.5 text-[11px] text-slate-300"
+      >
+        {todas.map((o) => (
+          <option key={o.valor} value={o.valor}>
+            {o.rotulo}
+          </option>
+        ))}
+      </select>
+      {estado?.error ? <span className="text-[11px] text-rose-300">{estado.error}</span> : null}
+    </form>
   );
 }

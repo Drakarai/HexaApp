@@ -32,7 +32,7 @@ async function dar(pagina, titulo, persona, donde) {
   const plegado = fila.locator("details", { hasText: "Dárselo a alguien" });
   if ((await plegado.getAttribute("open")) === null) await plegado.locator("summary").click();
   await fila.locator('select[name="userId"]').selectOption({ label: persona });
-  await fila.getByLabel("Dónde").selectOption({ label: donde });
+  await fila.getByLabel("Dónde", { exact: true }).selectOption({ label: donde });
   await fila.getByRole("button", { name: "Dárselo" }).click();
   await fila.getByText(`"${titulo}" para ${persona}.`).waitFor();
 }
@@ -52,7 +52,7 @@ describe("títulos generales y de un locke", () => {
       const opciones = await draka.pagina
         .locator("li", { hasText: EXTRA })
         .first()
-        .getByLabel("Dónde")
+        .getByLabel("Dónde", { exact: true })
         .locator("option")
         .allTextContents();
       assert.deepEqual(opciones, ["Solo en este locke"]);
@@ -89,6 +89,38 @@ describe("títulos generales y de un locke", () => {
       await ir(pagina, "/puntos");
       await pagina.getByText(EXTRA).first().waitFor();
       sinProblemas(problemas, "títulos de Héctor");
+    } finally {
+      await hector.cerrar();
+    }
+  });
+
+  test("un título ya dado cambia de sitio sin quitarlo", async () => {
+    const draka = await entrar(navegador, "draka");
+    try {
+      await ir(draka.pagina, "/admin?seccion=titulos");
+      const concesion = draka.pagina.locator("li", { hasText: COMUN }).locator("li", { hasText: "Héctor" });
+      await concesion.getByLabel("Dónde vale").selectOption({ label: "Solo en Hexalocke 2" });
+      await draka.pagina.waitForTimeout(1500);
+      await ir(draka.pagina, "/admin?seccion=titulos");
+      assert.equal(
+        await draka.pagina.locator("li", { hasText: COMUN }).locator("li", { hasText: "Héctor" }).getByLabel("Dónde vale").inputValue(),
+        await draka.pagina.locator("li", { hasText: COMUN }).locator('option', { hasText: "Solo en Hexalocke 2" }).first().getAttribute("value"),
+      );
+      sinProblemas(draka.problemas, "cambiar dónde vale");
+    } finally {
+      await draka.cerrar();
+    }
+
+    // En su perfil ya no hay generales: los dos son de Hexalocke 2, y el porqué sigue
+    const hector = await entrar(navegador, "hector", MOVIL);
+    try {
+      await ir(hector.pagina, "/perfil?seccion=titulos");
+      const grupos = await hector.pagina.locator("[data-grupo-de-titulos]").evaluateAll((g) =>
+        g.map((x) => x.getAttribute("data-grupo-de-titulos")),
+      );
+      assert.deepEqual(grupos, ["En Hexalocke 2"]);
+      // Era su general puesto: uno de un locke no se lleva en general
+      assert.equal(await hector.pagina.getByText("puesto en general").count(), 0);
     } finally {
       await hector.cerrar();
     }

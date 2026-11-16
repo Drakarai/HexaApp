@@ -183,6 +183,12 @@ export async function getTitulosParaRepartir(competitionId: string | null): Prom
         note: a.note,
         awardedAt: a.awardedAt.toISOString(),
         equipped: a.equipped,
+        // Como lo manda el desplegable de «Dónde» (ver `leerAlcance`)
+        alcance: a.soloEnElLocke
+          ? `locke:${a.competitionId}`
+          : a.competitionId
+            ? `general:${a.competitionId}`
+            : "general",
         donde: a.soloEnElLocke
           ? `Solo en ${a.competition!.name}`
           : a.competition
