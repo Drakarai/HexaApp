@@ -2,7 +2,7 @@ import { SpritePokemon } from "@/components/sprite-pokemon";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { esCreador, requireUser } from "@/lib/auth";
 import { puedeVerLocke } from "@/lib/acceso";
 import {
   canManageCompetition,
@@ -18,7 +18,7 @@ import { AceBadge } from "@/components/ace-badge";
 import { FavoritesGrid, type Favorito } from "@/components/favorites-grid";
 import { HeadToHead } from "@/components/head-to-head";
 import { getResumenDeCombates } from "@/lib/cara-a-cara";
-import { getTitulosDeUsuario } from "@/lib/titulos";
+import { getTitulosDeUsuario, tituloQueSeVe } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
 import { comoEstaFuera, esLockePerdido } from "@/lib/wipeos";
@@ -97,7 +97,7 @@ export default async function PlayerPage({
     getResumenDeCombates(competitionId, id),
     // Los títulos son de la persona, no del participante: la siguen de una
     // edición a otra
-    getTitulosDeUsuario(participant.userId),
+    getTitulosDeUsuario(participant.userId, competitionId),
     // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
     prisma.$queryRaw<{ id: string; v: string | null }[]>`
       select "id", ${firmaDeColumna(`"boxImage"`)} as v from "Death" where "participantId" = ${id}
@@ -128,7 +128,8 @@ export default async function PlayerPage({
   const editable = esMio || canManage;
   const editableDelLocke = editable && !soloLectura(participant.competition, canManage);
 
-  const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
+  // Dentro del locke, el que lleva puesto en él (o, si no eligió, el general)
+  const tituloPuesto = tituloQueSeVe(titulos, true);
 
   const firmaDeBaja = new Map(firmasBaja.map((fila) => [fila.id, fila.v]));
   const firmaDeFavorito = new Map(firmasFavorito.map((fila) => [fila.id, fila.v]));
@@ -347,6 +348,8 @@ export default async function PlayerPage({
           editable={editable}
           propio={esMio}
           nombre={participant.displayName}
+          locke={{ id: competitionId, name: participant.competition.name }}
+          soloEnElLocke={!esMio && !esCreador(user)}
         />
       </div>
 

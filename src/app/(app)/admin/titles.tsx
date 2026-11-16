@@ -19,6 +19,10 @@ export type TituloAdmin = {
   description: string | null;
   icon: string | null;
   color: string;
+  /** Se puede cambiar o borrar desde aquí (el común en Administración, los extras en su locke) */
+  editable: boolean;
+  /** Es un extra del locke: solo se da dentro de él */
+  extra: boolean;
   concedidos: {
     awardId: string;
     userId: string;
@@ -26,8 +30,19 @@ export type TituloAdmin = {
     note: string | null;
     awardedAt: string;
     equipped: boolean;
+    /** «General», «General · Hexalocke 2», «Solo en Hexalocke 2» */
+    donde: string;
   }[];
 };
+
+/**
+ * Desde dónde se reparten: en **Administración** el Creador lo da en general o
+ * en cualquier locke; en los **ajustes de un locke**, quien lo administra solo
+ * dentro de él.
+ */
+export type DondeSeReparte =
+  | { tipo: "creador"; lockes: { id: string; name: string }[] }
+  | { tipo: "locke"; locke: { id: string; name: string } };
 
 export type UsuarioSimple = { id: string; displayName: string };
 
@@ -51,26 +66,30 @@ const COLORES = [
 export function Titles({
   titulos,
   usuarios,
+  donde,
 }: {
   titulos: TituloAdmin[];
   usuarios: UsuarioSimple[];
+  donde: DondeSeReparte;
 }) {
+  const enLocke = donde.tipo === "locke";
   return (
     <section className="card">
-      <h2 className="section-title mb-1">Títulos</h2>
+      <h2 className="section-title mb-1">{enLocke ? "Títulos del locke" : "Títulos"}</h2>
       <p className="muted mb-4">
-        Distinciones que te inventas y repartes. Salen debajo del nombre en el
-        perfil de cada uno, y solo son eso: adorno.
+        {enLocke
+          ? "Los del catálogo común y los que te inventes para este locke. Al darlo eliges si es solo de este locke (se lleva puesto aquí) o general (se lleva en cualquier sitio y dice que se ganó aquí). Son solo adorno."
+          : "El catálogo común: vale en cualquier locke, y quien administra cada uno también los reparte allí. Aquí se dan generales, asociados a un locke o solo de él. Son solo adorno."}
       </p>
 
-      <NuevoTitulo />
+      <NuevoTitulo competitionId={enLocke ? donde.locke.id : null} />
 
       {titulos.length === 0 ? (
-        <p className="muted mt-4">Todavía no has creado ninguno.</p>
+        <p className="muted mt-4">Todavía no hay ninguno.</p>
       ) : (
         <ul className="mt-4 space-y-2">
           {titulos.map((titulo) => (
-            <Titulo key={titulo.id} titulo={titulo} usuarios={usuarios} />
+            <Titulo key={titulo.id} titulo={titulo} usuarios={usuarios} donde={donde} />
           ))}
         </ul>
       )}
@@ -78,7 +97,26 @@ export function Titles({
   );
 }
 
-function NuevoTitulo() {
+/** Las opciones de «dónde» al dar un título (ver `leerAlcance` en actions/titulos.ts) */
+function opcionesDeDonde(donde: DondeSeReparte, extra: boolean) {
+  if (donde.tipo === "locke") {
+    return extra
+      ? [{ valor: `locke:${donde.locke.id}`, rotulo: "Solo en este locke" }]
+      : [
+          { valor: `locke:${donde.locke.id}`, rotulo: "Solo en este locke" },
+          { valor: `general:${donde.locke.id}`, rotulo: "General, ganado aquí" },
+        ];
+  }
+  return [
+    { valor: "general", rotulo: "General" },
+    ...donde.lockes.flatMap((l) => [
+      { valor: `general:${l.id}`, rotulo: `General, ganado en ${l.name}` },
+      { valor: `locke:${l.id}`, rotulo: `Solo en ${l.name}` },
+    ]),
+  ];
+}
+
+function NuevoTitulo({ competitionId }: { competitionId: string | null }) {
   const [estado, crear] = useActionState<FormState, FormData>(
     crearTituloAction,
     null,
@@ -91,10 +129,11 @@ function NuevoTitulo() {
     <details className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
       <summary className="cursor-pointer list-none text-sm font-semibold text-white">
         <span className="mr-2 inline-block">＋</span>
-        Crear un título
+        {competitionId ? "Crear un título para este locke" : "Crear un título"}
       </summary>
 
       <form action={crear} className="mt-3 space-y-3">
+        {competitionId ? <input type="hidden" name="competitionId" value={competitionId} /> : null}
         <div className="grid gap-3 sm:grid-cols-[6rem_1fr]">
           <div>
             <label className="label">Emoji</label>
@@ -175,9 +214,11 @@ function NuevoTitulo() {
 function Titulo({
   titulo,
   usuarios,
+  donde,
 }: {
   titulo: TituloAdmin;
   usuarios: UsuarioSimple[];
+  donde: DondeSeReparte;
 }) {
   const [editando, setEditando] = useState(false);
   const [estado, conceder] = useActionState<FormState, FormData>(
@@ -185,19 +226,21 @@ function Titulo({
     null,
   );
 
-  // A quien ya lo tiene no se le puede volver a dar
-  const yaLoTienen = new Set(titulo.concedidos.map((c) => c.userId));
-  const candidatos = usuarios.filter((usuario) => !yaLoTienen.has(usuario.id));
+  // El mismo título se puede ganar en sitios distintos: si ya lo tiene ahí, lo dice la acción
+  const candidatos = usuarios;
+  const opciones = opcionesDeDonde(donde, titulo.extra);
 
   return (
     <li className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
       <div className="flex flex-wrap items-center gap-2">
         <TitleBadge titulo={titulo} />
+        {titulo.extra ? <span className="chip text-[10px]">de este locke</span> : null}
         <span className="text-xs text-slate-500">
           {titulo.concedidos.length === 0
             ? "sin repartir"
             : `${titulo.concedidos.length} ${titulo.concedidos.length === 1 ? "persona" : "personas"}`}
         </span>
+        {titulo.editable ? (
         <div className="ml-auto flex items-center gap-1.5">
           <button
             type="button"
@@ -215,6 +258,7 @@ function Titulo({
             </ConfirmSubmit>
           </form>
         </div>
+        ) : null}
       </div>
 
       {titulo.description ? (
@@ -282,11 +326,7 @@ function Titulo({
               <span className="font-semibold text-slate-200">
                 {concesion.displayName}
               </span>
-              {concesion.equipped ? (
-                <span className="text-[10px] uppercase tracking-wide text-brand-400">
-                  puesto
-                </span>
-              ) : null}
+              <span className="text-[10px] uppercase tracking-wide text-slate-500">{concesion.donde}</span>
               <span className="min-w-0 flex-1 truncate text-slate-500">
                 {concesion.note ?? "—"}
               </span>
@@ -308,27 +348,40 @@ function Titulo({
       ) : null}
 
       {candidatos.length ? (
-        <form action={conceder} className="mt-2 grid gap-2 sm:grid-cols-[10rem_1fr_auto]">
-          <input type="hidden" name="titleId" value={titulo.id} />
-          <select name="userId" className="input" key={String(candidatos[0].id)} defaultValue={candidatos[0].id}>
-            {candidatos.map((usuario) => (
-              <option key={usuario.id} value={usuario.id}>
-                {usuario.displayName}
-              </option>
-            ))}
-          </select>
-          <input
-            name="note"
-            className="input"
-            placeholder="Por qué se lo lleva (opcional)"
-          />
-          <SubmitButton className="btn-ghost btn-sm">Dárselo</SubmitButton>
-          <div className="sm:col-span-3">
-            <FormMessage state={estado} />
-          </div>
-        </form>
+        // Plegado: con el catálogo entero, un formulario abierto por título hacía la pestaña eterna
+        <details className="mt-2 group/dar">
+          <summary className="cursor-pointer list-none text-xs font-semibold text-brand-300">
+            ＋ Dárselo a alguien
+          </summary>
+          <form action={conceder} className="mt-2 grid gap-2 sm:grid-cols-[10rem_12rem_1fr_auto]">
+            <input type="hidden" name="titleId" value={titulo.id} />
+            <select name="userId" className="input" key={String(candidatos[0].id)} defaultValue={candidatos[0].id}>
+              {candidatos.map((usuario) => (
+                <option key={usuario.id} value={usuario.id}>
+                  {usuario.displayName}
+                </option>
+              ))}
+            </select>
+            <select name="alcance" className="input" aria-label="Dónde" defaultValue={opciones[0].valor}>
+              {opciones.map((o) => (
+                <option key={o.valor} value={o.valor}>
+                  {o.rotulo}
+                </option>
+              ))}
+            </select>
+            <input
+              name="note"
+              className="input"
+              placeholder="Por qué se lo lleva (opcional)"
+            />
+            <SubmitButton className="btn-ghost btn-sm">Dárselo</SubmitButton>
+            <div className="sm:col-span-4">
+              <FormMessage state={estado} />
+            </div>
+          </form>
+        </details>
       ) : (
-        <p className="mt-2 text-xs text-slate-500">Lo tiene ya todo el mundo.</p>
+        <p className="mt-2 text-xs text-slate-500">No hay a quién dárselo.</p>
       )}
     </li>
   );

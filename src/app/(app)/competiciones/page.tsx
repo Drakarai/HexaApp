@@ -27,6 +27,8 @@ import { urlDeImagen } from "@/lib/imagen-url";
 import { leerEstilo, perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { NewUserForm } from "../admin/user-forms";
 import { ChallengeDiffToggle } from "../admin/challenge-diff-toggle";
+import { Titles } from "../admin/titles";
+import { getTitulosParaRepartir } from "@/lib/titulos";
 import {
   LockeEnSolitarioForm,
   MisSolicitudes,
@@ -323,6 +325,9 @@ export default async function CompetitionsPage({
     },
   ];
   const activa = seccionActiva(secciones, pedida);
+  // Los títulos del locke, solo si se va a ver su pestaña (ver lib/titulos.ts)
+  const titulosDelLocke =
+    activa === "ajustes" && active && canManageActive ? await getTitulosParaRepartir(active.id) : [];
 
   return (
     <>
@@ -659,6 +664,13 @@ export default async function CompetitionsPage({
                 name: otra.name,
                 mismoJuego: otra.gameId === active.gameId,
               }))}
+          />
+
+          {/* Los títulos: el catálogo común y los extras de este locke, para quien lo juega */}
+          <Titles
+            donde={{ tipo: "locke", locke: { id: active.id, name: active.name } }}
+            titulos={titulosDelLocke}
+            usuarios={participants.map((p) => ({ id: p.userId, displayName: p.displayName }))}
           />
 
           {/**

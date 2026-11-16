@@ -4,167 +4,211 @@ import { revalidatePath } from "next/cache";
 import { registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
 import { esCreador, getCurrentUser, requireCreador } from "@/lib/auth";
+import { canManageCompetition, requireCompetitionManager } from "@/lib/competition";
 import type { FormState } from "@/app/actions/auth";
-import { conPermiso } from "@/lib/permiso";
+import { conPermiso, mensajeDeError } from "@/lib/permiso";
 
 /**
- * Títulos: los inventa un administrador y los reparte a quien quiera. Son
- * **solo estéticos** —ni puntos, ni ventajas, ni cuentan para la
- * clasificación—, así que aquí no hay más regla que quién puede tocarlos.
+ * Títulos: se inventan y se reparten. Son **solo estéticos** —ni puntos, ni
+ * ventajas, ni cuentan para la clasificación—, así que aquí la única regla es
+ * quién puede tocar qué (ver lib/titulos.ts para cómo se ven):
+ *
+ * - El **catálogo común** y los títulos generales sin locke: el Creador.
+ * - Los **extras de un locke** y lo que se da dentro de un locke (sea solo de
+ *   él o general «ganado en él»): el Creador y quien administra ese locke, y
+ *   solo a quien lo juega.
  */
 
-/** Refresca todo lo que enseña un título: los perfiles y la administración. */
+/** Refresca todo lo que enseña un título: perfiles, clasificación, ajustes. */
 function refrescar() {
-  revalidatePath("/admin");
-  revalidatePath("/perfil");
-  revalidatePath("/jugador/[id]", "page");
+  revalidatePath("/", "layout");
 }
 
-export async function crearTituloAction(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const [, sinPermiso] = await conPermiso(requireCreador());
+/** Lo que se teclea de un título, igual al crearlo que al cambiarlo */
+function datosDelTitulo(formData: FormData) {
+  return {
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || null,
+    // Un emoji o dos como mucho: la chapa es pequeña
+    icon: String(formData.get("icon") ?? "").trim().slice(0, 4) || null,
+    color: String(formData.get("color") ?? "").trim() || "#a78bfa",
+  };
+}
+
+/** Quien puede tocar un título: el Creador, o quien administra su locke si es un extra */
+async function assertPuedeTocarElTitulo(competitionId: string | null) {
+  if (competitionId) return requireCompetitionManager(competitionId);
+  return requireCreador();
+}
+
+export async function crearTituloAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  // Con locke, es un extra de ese locke; sin él, del catálogo común
+  const competitionId = String(formData.get("competitionId") ?? "") || null;
+  const [, sinPermiso] = await conPermiso(assertPuedeTocarElTitulo(competitionId));
   if (sinPermiso) return sinPermiso;
 
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return { error: "El título necesita un nombre." };
-  if (name.length > 60) return { error: "Ese nombre es demasiado largo." };
+  const datos = datosDelTitulo(formData);
+  if (!datos.name) return { error: "El título necesita un nombre." };
+  if (datos.name.length > 60) return { error: "Ese nombre es demasiado largo." };
 
-  await prisma.title.create({
-    data: {
-      name,
-      description: String(formData.get("description") ?? "").trim() || null,
-      // Un emoji o dos como mucho: la chapa es pequeña
-      icon: String(formData.get("icon") ?? "").trim().slice(0, 4) || null,
-      color: String(formData.get("color") ?? "").trim() || "#a78bfa",
-    },
-  });
-
+  await prisma.title.create({ data: { ...datos, competitionId } });
+  if (competitionId) await registrar(competitionId, "jugadores", `Crea el título «${datos.name}» para el locke`);
   refrescar();
-  return { success: `Título "${name}" creado.` };
+  return { success: `Título "${datos.name}" creado.` };
 }
 
 export async function editarTituloAction(formData: FormData) {
-  await requireCreador();
   const id = String(formData.get("titleId") ?? "");
-  const name = String(formData.get("name") ?? "").trim();
-  if (!id || !name) return;
-
-  await prisma.title.update({
-    where: { id },
-    data: {
-      name,
-      description: String(formData.get("description") ?? "").trim() || null,
-      icon: String(formData.get("icon") ?? "").trim().slice(0, 4) || null,
-      color: String(formData.get("color") ?? "").trim() || "#a78bfa",
-    },
-  });
+  const titulo = await prisma.title.findUnique({ where: { id }, select: { competitionId: true } });
+  if (!titulo) return;
+  await assertPuedeTocarElTitulo(titulo.competitionId);
+  const datos = datosDelTitulo(formData);
+  if (!datos.name) return;
+  await prisma.title.update({ where: { id }, data: datos });
   refrescar();
 }
 
 /** Borra el título y, en cascada, todas sus concesiones. */
 export async function borrarTituloAction(formData: FormData) {
-  await requireCreador();
   const id = String(formData.get("titleId") ?? "");
-  if (id) await prisma.title.delete({ where: { id } });
-  refrescar();
-}
-
-export async function concederTituloAction(
-  _prev: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const [admin, sinPermiso] = await conPermiso(requireCreador());
-  if (sinPermiso) return sinPermiso;
-
-  const titleId = String(formData.get("titleId") ?? "");
-  const userId = String(formData.get("userId") ?? "");
-  if (!titleId || !userId) return { error: "Elige el título y a quién se lo das." };
-
-  const [titulo, usuario] = await Promise.all([
-    prisma.title.findUnique({ where: { id: titleId }, select: { name: true } }),
-    prisma.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
-  ]);
-  if (!titulo || !usuario) return { error: "Ese título o ese usuario ya no está." };
-
-  const yaLoTiene = await prisma.titleAward.findUnique({
-    where: { titleId_userId: { titleId, userId } },
-  });
-  if (yaLoTiene) {
-    return { error: `${usuario.displayName} ya tiene "${titulo.name}".` };
-  }
-
-  await prisma.titleAward.create({
-    data: {
-      titleId,
-      userId,
-      note: String(formData.get("note") ?? "").trim() || null,
-      awardedById: admin.id,
-    },
-  });
-
-  await registrar(null, "jugadores", `Concede el título «${titulo.name}» a ${usuario.displayName}`);
-  refrescar();
-  return { success: `"${titulo.name}" para ${usuario.displayName}.` };
-}
-
-export async function revocarTituloAction(formData: FormData) {
-  await requireCreador();
-  const id = String(formData.get("awardId") ?? "");
-  if (id) {
-    const quitado = await prisma.titleAward.delete({
-      where: { id },
-      select: { title: { select: { name: true } }, user: { select: { displayName: true } } },
-    });
-    await registrar(null, "jugadores", `Quita el título «${quitado.title.name}» a ${quitado.user.displayName}`);
-  }
+  const titulo = await prisma.title.findUnique({ where: { id }, select: { competitionId: true } });
+  if (!titulo) return;
+  await assertPuedeTocarElTitulo(titulo.competitionId);
+  await prisma.title.delete({ where: { id } });
   refrescar();
 }
 
 /**
- * Poner o quitar el título que se lleva debajo del nombre.
+ * Dónde se da, como lo manda el formulario: `general` (sin locke, solo el
+ * Creador), `general:<locke>` (general, ganado en ese locke) o `locke:<locke>`
+ * (solo se lleva dentro de ese locke).
+ */
+function leerAlcance(valor: string) {
+  const [tipo, competitionId] = valor.split(":");
+  if (tipo === "general" && !competitionId) return { competitionId: null, soloEnElLocke: false };
+  if ((tipo === "general" || tipo === "locke") && competitionId) {
+    return { competitionId, soloEnElLocke: tipo === "locke" };
+  }
+  return null;
+}
+
+export async function concederTituloAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  try {
+    const user = await getCurrentUser();
+    if (!user) return { error: "Tienes que iniciar sesión." };
+
+    const titleId = String(formData.get("titleId") ?? "");
+    const userId = String(formData.get("userId") ?? "");
+    const alcance = leerAlcance(String(formData.get("alcance") ?? "general"));
+    if (!titleId || !userId || !alcance) return { error: "Elige el título, a quién y dónde." };
+
+    // Sin locke solo el Creador; con locke, también quien lo administra
+    if (alcance.competitionId) await requireCompetitionManager(alcance.competitionId);
+    else await requireCreador();
+
+    const [titulo, usuario, juega] = await Promise.all([
+      prisma.title.findUnique({ where: { id: titleId }, select: { name: true, competitionId: true } }),
+      prisma.user.findUnique({ where: { id: userId }, select: { displayName: true } }),
+      alcance.competitionId
+        ? prisma.participant.count({ where: { userId, competitionId: alcance.competitionId } })
+        : 1,
+    ]);
+    if (!titulo || !usuario) return { error: "Ese título o esa persona ya no está." };
+    if (!juega) return { error: `${usuario.displayName} no juega ese locke.` };
+    // Un extra es de su locke: ni se da en otro ni se hace general
+    if (titulo.competitionId && (titulo.competitionId !== alcance.competitionId || !alcance.soloEnElLocke)) {
+      return { error: "Ese título es de un locke: solo se puede dar dentro de él." };
+    }
+
+    const yaLoTiene = await prisma.titleAward.findFirst({
+      where: { titleId, userId, competitionId: alcance.competitionId, soloEnElLocke: alcance.soloEnElLocke },
+      select: { id: true },
+    });
+    if (yaLoTiene) return { error: `${usuario.displayName} ya tiene "${titulo.name}" ahí.` };
+
+    await prisma.titleAward.create({
+      data: {
+        titleId,
+        userId,
+        note: String(formData.get("note") ?? "").trim() || null,
+        awardedById: user.id,
+        ...alcance,
+      },
+    });
+    await registrar(alcance.competitionId, "jugadores", `Concede el título «${titulo.name}» a ${usuario.displayName}`);
+    refrescar();
+    return { success: `"${titulo.name}" para ${usuario.displayName}.` };
+  } catch (error) {
+    return { error: mensajeDeError(error) };
+  }
+}
+
+export async function revocarTituloAction(formData: FormData) {
+  const id = String(formData.get("awardId") ?? "");
+  const concesion = await prisma.titleAward.findUnique({
+    where: { id },
+    select: { competitionId: true, title: { select: { name: true } }, user: { select: { displayName: true } } },
+  });
+  if (!concesion) return;
+  // Lo dado en un locke lo quita también quien lo administra; lo de fuera, el Creador
+  if (concesion.competitionId) await requireCompetitionManager(concesion.competitionId);
+  else await requireCreador();
+  await prisma.titleAward.delete({ where: { id } });
+  await registrar(
+    concesion.competitionId,
+    "jugadores",
+    `Quita el título «${concesion.title.name}» a ${concesion.user.displayName}`,
+  );
+  refrescar();
+}
+
+/**
+ * Ponerse o quitarse un título. Con `competitionId`, **el de ese locke**
+ * (uno general o uno de ese locke); sin él, **el general**, el que sale fuera
+ * de los lockes y donde no se ha elegido otro.
  *
- * Lo puede hacer **el dueño o un administrador**: cada uno elige el suyo, pero
- * el admin también puede ponerle uno a alguien. Apagar los demás y encender el
- * elegido va en la misma transacción, que es lo que garantiza que no acabe
- * habiendo dos puestos a la vez.
+ * Lo puede hacer el dueño, el Creador y, para lo de un locke, quien lo
+ * administra. El general va en `TitleAward.equipped`: apagar los demás y
+ * encender el elegido van en la misma transacción para que no haya dos.
  */
 export async function equiparTituloAction(formData: FormData) {
   const usuario = await getCurrentUser();
   if (!usuario) return;
 
   const awardId = String(formData.get("awardId") ?? "");
-  // Sin concesión = quitarse el que lleve; hace falta saber de quién
+  // Sin concesión es quitarse el que lleve; hace falta saber de quién
   const userId = String(formData.get("userId") ?? "");
+  const competitionId = String(formData.get("competitionId") ?? "") || null;
 
-  const dueno = awardId
-    ? (
-        await prisma.titleAward.findUnique({
-          where: { id: awardId },
-          select: { userId: true },
-        })
-      )?.userId
-    : userId;
-  if (!dueno) return;
+  const concesion = awardId
+    ? await prisma.titleAward.findUnique({
+        where: { id: awardId },
+        select: { userId: true, soloEnElLocke: true, competitionId: true },
+      })
+    : null;
+  const dueno = concesion?.userId ?? userId;
+  if (!dueno || (awardId && !concesion)) return;
 
-  const puede = dueno === usuario.id || esCreador(usuario);
+  const puede =
+    dueno === usuario.id ||
+    esCreador(usuario) ||
+    (competitionId ? await canManageCompetition(competitionId, usuario) : false);
   if (!puede) return;
 
-  await prisma.$transaction([
-    prisma.titleAward.updateMany({
-      where: { userId: dueno, equipped: true },
-      data: { equipped: false },
-    }),
-    ...(awardId
-      ? [
-          prisma.titleAward.update({
-            where: { id: awardId },
-            data: { equipped: true },
-          }),
-        ]
-      : []),
-  ]);
-
+  if (competitionId) {
+    // Solo vale uno general o uno de este mismo locke
+    if (concesion && concesion.soloEnElLocke && concesion.competitionId !== competitionId) return;
+    await prisma.participant.updateMany({
+      where: { userId: dueno, competitionId },
+      data: { tituloPuestoId: awardId || null },
+    });
+  } else {
+    // Uno de un locke no se lleva fuera de él
+    if (concesion?.soloEnElLocke) return;
+    await prisma.$transaction([
+      prisma.titleAward.updateMany({ where: { userId: dueno, equipped: true }, data: { equipped: false } }),
+      ...(awardId ? [prisma.titleAward.update({ where: { id: awardId }, data: { equipped: true } })] : []),
+    ]);
+  }
   refrescar();
 }

@@ -21,7 +21,7 @@ import { ThemePicker } from "./theme-picker";
 import { getEstilo } from "@/lib/estilo";
 import { cambiarEstiloAction } from "@/app/actions/estilo";
 import { cx } from "@/lib/utils";
-import { getTitulosDeUsuario } from "@/lib/titulos";
+import { getTitulosDeUsuario, tituloQueSeVe } from "@/lib/titulos";
 import { TitleBadge } from "@/components/title-badge";
 import { TitlesSection } from "@/components/titles-section";
 import { findSpecies } from "@/lib/pokedex";
@@ -106,7 +106,8 @@ export default async function ProfilePage({
   ] = await Promise.all([
     getEstilo(),
     competicionPedida,
-    getTitulosDeUsuario(user.id),
+    // Con el locke que se mira: decide cuál se lleva puesto ahí
+    competicionPedida.then((c) => getTitulosDeUsuario(user.id, c?.id ?? null)),
     prisma.participant.count({ where: { userId: user.id } }),
     searchParams,
     deTuLocke,
@@ -126,7 +127,7 @@ export default async function ProfilePage({
     : { image: null, detailImage: null };
   const firmaDeFavorito = new Map(firmasFavoritos.map((fila) => [fila.id, fila.v]));
   const spritesFavoritos = (id: string) => urlDeImagen("favorito", id, firmaDeFavorito.get(id));
-  const tituloPuesto = titulos.find((titulo) => titulo.equipped) ?? null;
+  const tituloPuesto = tituloQueSeVe(titulos, Boolean(competition));
   // De muestra en sprites y sonido, tu as si lo tienes; si no, el de siempre
   const dexDelAs = (myParticipant?.aceSpecies && findSpecies(myParticipant.aceSpecies)?.dex) || null;
 
@@ -233,7 +234,15 @@ export default async function ProfilePage({
         </div>
       ) : null}
 
-      {activa === "titulos" ? <TitlesSection userId={user.id} titulos={titulos} editable propio /> : null}
+      {activa === "titulos" ? (
+        <TitlesSection
+          userId={user.id}
+          titulos={titulos}
+          editable
+          propio
+          locke={competition ? { id: competition.id, name: competition.name } : null}
+        />
+      ) : null}
 
       {activa === "personalizar" ? (
         <div className="grid gap-4 xl:grid-cols-2">

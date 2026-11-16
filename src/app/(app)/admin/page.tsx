@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { esCreador, requireCreadorPage } from "@/lib/auth";
 import { firmaDeColumna } from "@/lib/imagenes";
+import { getTitulosParaRepartir } from "@/lib/titulos";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { PageHeader } from "@/components/page-header";
 import { Avatar, ConfirmSubmit } from "@/components/ui";
@@ -13,7 +14,7 @@ import {
 } from "@/app/actions/users";
 import { NewUserForm, ResetPasswordForm } from "./user-forms";
 import { Backups, type CopiaView } from "./backups";
-import { Titles, type TituloAdmin } from "./titles";
+import { Titles } from "./titles";
 import { getSolicitudesPendientes } from "@/lib/solicitudes";
 import { SolicitudesPendientes } from "./solicitudes";
 import {
@@ -53,7 +54,7 @@ export default async function AdminPage({
    * una detrás de otra, cinco idas y vueltas a la base de datos; las fotos de
    * perfil se piden de toda la tabla, que es lo que se lista.
    */
-  const [users, solicitudes, copias, titulos, firmasAvatar, lockesEnMarcha] = await Promise.all([
+  const [users, solicitudes, copias, titulos, firmasAvatar, lockesEnMarcha, lockes] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ role: "asc" }, { displayName: "asc" }],
       include: { _count: { select: { participations: true } } },
@@ -73,40 +74,21 @@ export default async function AdminPage({
         rawSize: true,
       },
     }),
-    prisma.title.findMany({
-      orderBy: { createdAt: "asc" },
-      include: {
-        awards: {
-          orderBy: { awardedAt: "desc" },
-          include: { user: { select: { id: true, displayName: true } } },
-        },
-      },
-    }),
+    // El catálogo común, con todo lo repartido (ver lib/titulos.ts)
+    getTitulosParaRepartir(null),
     prisma.$queryRaw<{ id: string; v: string | null }[]>`
       select "id", ${firmaDeColumna(`"avatarImage"`)} as v from "User"
     `,
     prisma.competition.count({ where: { status: COMPETITION_STATUS.ACTIVE } }),
+    // Para dar un título asociado a un locke o solo de él
+    prisma.competition.findMany({ orderBy: { startedAt: "desc" }, select: { id: true, name: true } }),
   ]);
   const copiasView: CopiaView[] = copias.map((copia) => ({
     ...copia,
     createdAt: copia.createdAt.toISOString(),
   }));
 
-  const titulosView: TituloAdmin[] = titulos.map((titulo) => ({
-    id: titulo.id,
-    name: titulo.name,
-    description: titulo.description,
-    icon: titulo.icon,
-    color: titulo.color,
-    concedidos: titulo.awards.map((concesion) => ({
-      awardId: concesion.id,
-      userId: concesion.user.id,
-      displayName: concesion.user.displayName,
-      note: concesion.note,
-      awardedAt: concesion.awardedAt.toISOString(),
-      equipped: concesion.equipped,
-    })),
-  }));
+
 
   // Direcciones de las fotos de perfil: ver lib/imagen-url.ts
   const firmaDeAvatar = new Map(firmasAvatar.map((fila) => [fila.id, fila.v]));
@@ -295,7 +277,8 @@ export default async function AdminPage({
 
           {activa === "titulos" ? (
             <Titles
-              titulos={titulosView}
+              donde={{ tipo: "creador", lockes }}
+              titulos={titulos}
               usuarios={users.map((usuario) => ({
                 id: usuario.id,
                 displayName: usuario.displayName,

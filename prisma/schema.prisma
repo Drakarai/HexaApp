@@ -122,50 +122,72 @@ model TabSeen {
  * edición a otra.
  */
 model Title {
-  id          String   @id @default(cuid())
-  name        String
+  id            String   @id @default(cuid())
+  name          String
   /**
    * Qué significa. Sale al pasar por encima de la chapa.
    */
-  description String?
+  description   String?
   /**
    * Un emoji, para que la chapa se reconozca de un vistazo
    */
-  icon        String?
-  color       String   @default("#a78bfa")
-  createdAt   DateTime @default(now())
+  icon          String?
+  color         String   @default("#a78bfa")
+  createdAt     DateTime @default(now())
+  /**
+   * Vacío, del **catálogo común** (lo crea el Creador y vale en cualquier
+   * locke). Con un locke, es un **extra de ese locke**: lo crea quien lo
+   * administra y solo se puede dar dentro de él. Se va con el locke.
+   */
+  competitionId String?
 
-  awards TitleAward[]
+  awards      TitleAward[]
+  competition Competition? @relation("TitulosDelLocke", fields: [competitionId], references: [id], onDelete: Cascade)
+
+  @@index([competitionId])
 }
 
 /**
  * Que a alguien le hayan dado un título, con el porqué.
  */
 model TitleAward {
-  id          String   @id @default(cuid())
-  titleId     String
-  userId      String
+  id            String   @id @default(cuid())
+  titleId       String
+  userId        String
   /**
    * Por qué se lo ha llevado. Lo escribe quien lo concede.
    */
-  note        String?
+  note          String?
   /**
    * Si es el que lleva puesto ahora mismo, el que sale debajo de su nombre.
    * Solo puede haber uno encendido por persona; de eso se encarga la acción de
    * equipar, que apaga los demás en la misma transacción. Se guarda aquí y no
    * en `User` para no meter una clave foránea circular entre las dos tablas.
    */
-  equipped    Boolean  @default(false)
-  awardedAt   DateTime @default(now())
-  awardedById String?
+  equipped      Boolean  @default(false)
+  awardedAt     DateTime @default(now())
+  awardedById   String?
+  /**
+   * En qué locke se ganó. Con `soloEnElLocke`, es **un título de ese locke**:
+   * solo se puede llevar puesto dentro de él. Sin, es **general** (se lleva en
+   * cualquier sitio) y el locke es solo de dónde viene («ganado en…»). Vacío:
+   * general sin locke. Ver lib/titulos.ts.
+   */
+  competitionId String?
+  soloEnElLocke Boolean  @default(false)
 
-  title     Title @relation(fields: [titleId], references: [id], onDelete: Cascade)
-  user      User  @relation("TitleOwner", fields: [userId], references: [id], onDelete: Cascade)
-  awardedBy User? @relation("TitleGiver", fields: [awardedById], references: [id], onDelete: SetNull)
+  title       Title        @relation(fields: [titleId], references: [id], onDelete: Cascade)
+  user        User         @relation("TitleOwner", fields: [userId], references: [id], onDelete: Cascade)
+  awardedBy   User?        @relation("TitleGiver", fields: [awardedById], references: [id], onDelete: SetNull)
+  competition Competition? @relation("TitulosDadosEnElLocke", fields: [competitionId], references: [id], onDelete: SetNull)
 
-  // El mismo título dos veces a la misma persona no aporta nada
-  @@unique([titleId, userId])
+  /**
+   * Ya no es único: el mismo título se puede ganar en dos lockes. Que no se dé
+   * dos veces **en el mismo sitio** lo comprueba la acción de dar.
+   */
+  @@index([titleId, userId])
   @@index([userId])
+  @@index([competitionId])
 }
 
 // ---------------------------------------------------------------------------
@@ -656,6 +678,8 @@ model Competition {
   espectadores Spectator[]
   sorteos      Sorteo[]
   papelera     JornadaBorrada[]
+  titulos      Title[]          @relation("TitulosDelLocke")
+  titulosDados TitleAward[]     @relation("TitulosDadosEnElLocke")
 
   @@index([enlacePublico])
 }
@@ -719,6 +743,13 @@ model Participant {
    * es solo cómo se cuenta, que es justo lo que se quería distinguir.
    */
   motivoDeSalida String?
+  /**
+   * El título que lleva puesto **en este locke** (una concesión suya: uno
+   * general o uno de este locke). Vacío, el general que lleve puesto. Sin
+   * clave foránea a propósito, como `TitleAward.equipped`: si la concesión se
+   * borra, se lee como vacío. Ver `titulosPuestosEnElLocke`.
+   */
+  tituloPuestoId String?
 
   // Pokémon as: el representante del jugador en esta edición. Va aquí y no en
   // User para que cada competición conserve el suyo cuando se archiva.
@@ -941,6 +972,7 @@ model LockeRequest {
    * de alta a sus amigos.
    */
   /**
+   * /**
    * /**
    * /**
    * /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero
