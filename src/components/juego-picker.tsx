@@ -14,7 +14,7 @@ import {
   type EleccionDeTipos,
 } from "@/lib/juegos";
 import { cx } from "@/lib/utils";
-import { esPokemonAnil } from "@/lib/anil";
+import { esPokemonAnil } from "@/lib/anil-basico";
 
 /**
  * En qué juego se juega la edición.

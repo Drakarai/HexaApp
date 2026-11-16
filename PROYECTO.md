@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 13 de noviembre de 2026 (**locke con vidas**: cada baja gasta una y quien se queda sin ellas pierde el locke).
+Última actualización: 16 de noviembre de 2026 (**repaso de rendimiento**: casi todas las pantallas en una tanda de consultas, y menos JavaScript en las de combates).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -2195,6 +2195,60 @@ para lo mismo solo confunden. Y **el tachado es del nombre**, no de la línea: l
 lleva un `<span>` suyo, que si no las chapas de *admin* y *💥 locke perdido*
 salían tachadas y no se leían.
 
+
+### El repaso de noviembre: una tanda y menos JavaScript
+
+Medido pantalla por pantalla con `LATENCIA_FALSA=50` y **con el locke ya
+elegido** (la cookie puesta, que es lo normal; sin ella sale una tanda más
+para buscar el locke por defecto). Antes de tocar nada casi todas iban ya en
+2 tandas; ahora **casi todas van en una**. Lo que se cambió:
+
+- **`/muertes`** pedía primero el orden de las bajas y luego sus fichas y
+  firmas. Ahora se traen **todas las del locke con sus firmas** a la vez que
+  lo demás y se recortan en memoria (las imágenes no viajan, así que una
+  ficha son cuatro textos). Las capturas que se pueden dar por muertas
+  tampoco esperan: en un Soul Link se piden las de todos y se quitan si no
+  administras. Y el marcador de vidas entró en la misma tanda.
+- **`getFinalFourState` va con `cache()`**: el campeón, «¿ha terminado el
+  locke?» y las estadísticas de la final lo pedían cada uno, tres o cuatro
+  veces por visita. **`/estadisticas`** además ya no busca el equipo de las
+  series fuera cuando ha cargado el locke entero, ni pregunta el locke a
+  `lockeTerminado` si ya se tiene.
+- **`/perfil`**: lo tuyo del locke sale en cuanto se sabe el locke, sin
+  esperar a los títulos.
+- **Índices nuevos** para lo que se pregunta en cada visita:
+  `Participant.userId` (qué lockes ve cada uno) y `winnerId` en los tres
+  tipos de combate (el aviso de novedades), más `Spectator.competitionId` y
+  `GymClear.levelCapId`.
+- **«Sus números»** sumaba el locke entero cada vez que se abría la pestaña
+  Combate de una ficha. Ahora una petición trae los de toda esa caja y la
+  página los guarda.
+
+En el navegador, el marco común (React y Next) son unos 365 KB sin comprimir y
+no se puede quitar. Lo que sí sobraba:
+
+- **Los datos de Añil en todas las pantallas** (46 KB: objetos, megas,
+  formas…), porque el sprite de cada pokémon y el compañero importaban
+  `lib/anil.ts` para saber si un pokémon es de Añil. Lo pequeño está ahora en
+  `lib/anil-basico.ts`; `anil.ts` lo reexporta y trae los datos solo donde se
+  usan. **Lo que importe el navegador en todas partes, de `anil-basico`.**
+- **La Pokédex (unos 45 KB) se carga al usar el buscador**, no con la
+  página: el buscador de especies estaba montado en once pantallas dentro de
+  formularios que casi nunca se abren. `usePokedex` en `species-picker.tsx`;
+  lo mismo en la cobertura de `/notas`.
+- **El editor de equipos va aparte** (`match-team-editor.tsx`) y se pide al
+  abrirlo, igual que la hoja de estadísticas del combate. Lo veían todos y
+  solo lo abre quien apunta.
+
+Resultado en una visita en frío: las pantallas de combates (jornadas, retos,
+sorteo, final, level caps, cementerio) bajan de 720-750 KB de JavaScript a
+630-660; `/equipo` de 800 a 730; `/notas` de 736 a 694; todas las demás unos
+28 KB. El HTML comprimido ronda los 19 KB por pantalla y el servidor pinta en
+20-45 ms (la portada, unos 90): ahí no hay nada que rascar que se note.
+
+**Lo que se dejó**: `/palmares` sigue en 4 tandas porque cada paso depende del
+anterior de verdad (con quién has jugado → sus lockes → lo de esos lockes) y es
+una pantalla de visita rara.
 ### La ruleta reparte premios de verdad
 
 Una casilla ya no es solo texto. Puede ser **un objeto del catálogo de la
@@ -4273,6 +4327,11 @@ Piezas con truco:
   `app/(app)/estadisticas/` (con `clasificaciones.tsx`, las pestañas); y
   `equipo/sus-numeros.tsx` en la ficha. La repetición de mentira de las pruebas
   (`guia/showdown-falso.cjs`) lleva ataques y críticos para que salgan números.
+- `lib/anil-basico.ts` — lo de Añil que carga el navegador en todas las
+  pantallas (si un pokémon o un locke es de Añil, sus dibujos). Los datos del
+  juego siguen en `lib/anil.ts`, que lo reexporta.
+- `components/match-team-editor.tsx` — el editor de equipos de un combate,
+  separado de `match-team.tsx` para cargarlo al abrirlo (`next/dynamic`).
 - `lib/vidas.ts` (la cuenta, sin base de datos) y `lib/vidas-servidor.ts`
   (`vidasDelLocke` para el cementerio y `comprobarVidas`, que saca o devuelve
   al jugador). El recuadro del formulario es `CampoDeVidas` en
@@ -5183,3 +5242,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 169. **Estadísticas de los pokémon**: lo de cada uno en cada combate de jornada, sacado de la repetición, con galardones y clasificaciones.
 170. **Estadísticas en retos, series y final**, once galardones y la pantalla compacta, con iconos.
 171. **Locke con vidas**: opción al crear el locke, con o sin vida 0; el cementerio lleva la cuenta y quien se queda sin vidas pierde el locke.
+172. **Repaso de rendimiento**: casi todas las pantallas en una tanda de consultas, índices nuevos y 70-90 KB menos de JavaScript en las de combates.

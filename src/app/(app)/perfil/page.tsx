@@ -64,36 +64,54 @@ export default async function ProfilePage({
    * final de todo). Lo tuyo del locke (el as y los favoritos) se busca por tu
    * cuenta dentro de él, sin esperar a saber qué participante eres.
    */
-  const [estilo, competition, titulos, lockesJugados, { seccion: pedida }] = await Promise.all([
+  const competicionPedida = getActiveCompetition();
+  /**
+   * Lo tuyo del locke sale **en cuanto se sabe el locke**, sin esperar a los
+   * títulos ni a lo demás de la primera tanda: el locke ya lo ha pedido el
+   * layout (va con `cache()`), así que todo sale a la vez.
+   */
+  const deTuLocke = (async () => {
+    const competition = await competicionPedida;
+    const tuyo = competition ? { competitionId: competition.id, userId: user.id } : null;
+    return tuyo
+      ? Promise.all([
+          getMyParticipant(tuyo.competitionId, user.id),
+          canManageCompetition(tuyo.competitionId, user),
+          prisma.$queryRaw<{ id: string; va: string | null; vb: string | null }[]>`
+            select "id",
+                   ${firmaDeColumna(`"aceImage"`)} as va,
+                   ${firmaDeColumna(`"aceDetailImage"`)} as vb
+            from "Participant"
+            where "competitionId" = ${tuyo.competitionId} and "userId" = ${user.id}
+          `,
+          prisma.favoritePokemon.findMany({
+            where: { participant: tuyo },
+            orderBy: { position: "asc" },
+          }),
+          prisma.$queryRaw<{ id: string; v: string | null }[]>`
+            select f."id", ${firmaDeColumna(`f."image"`)} as v
+            from "FavoritePokemon" f join "Participant" p on p."id" = f."participantId"
+            where p."competitionId" = ${tuyo.competitionId} and p."userId" = ${user.id}
+          `,
+        ])
+      : null;
+  })();
+  const [
+    estilo,
+    competition,
+    titulos,
+    lockesJugados,
+    { seccion: pedida },
+    loTuyo,
+  ] = await Promise.all([
     getEstilo(),
-    getActiveCompetition(),
+    competicionPedida,
     getTitulosDeUsuario(user.id),
     prisma.participant.count({ where: { userId: user.id } }),
     searchParams,
+    deTuLocke,
   ]);
-  const tuyo = competition ? { competitionId: competition.id, userId: user.id } : null;
-  const [myParticipant, gestiona, firmasAs, favoritos, firmasFavoritos] = tuyo
-    ? await Promise.all([
-        getMyParticipant(tuyo.competitionId, user.id),
-        canManageCompetition(tuyo.competitionId, user),
-        prisma.$queryRaw<{ id: string; va: string | null; vb: string | null }[]>`
-          select "id",
-                 ${firmaDeColumna(`"aceImage"`)} as va,
-                 ${firmaDeColumna(`"aceDetailImage"`)} as vb
-          from "Participant"
-          where "competitionId" = ${tuyo.competitionId} and "userId" = ${user.id}
-        `,
-        prisma.favoritePokemon.findMany({
-          where: { participant: tuyo },
-          orderBy: { position: "asc" },
-        }),
-        prisma.$queryRaw<{ id: string; v: string | null }[]>`
-          select f."id", ${firmaDeColumna(`f."image"`)} as v
-          from "FavoritePokemon" f join "Participant" p on p."id" = f."participantId"
-          where p."competitionId" = ${tuyo.competitionId} and p."userId" = ${user.id}
-        `,
-      ])
-    : [null, false, [], [], []];
+  const [myParticipant, gestiona, firmasAs, favoritos, firmasFavoritos] = loTuyo ?? [null, false, [], [], []];
   const companeroPuesto = (await cookies()).get(COOKIE_DEL_COMPANERO)?.value !== "no";
   // Archivada y sin administrarla: el as y los favoritos de esa edición se ven
   // pero se quedan como estaban

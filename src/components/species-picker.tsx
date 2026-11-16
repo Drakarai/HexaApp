@@ -1,16 +1,12 @@
 "use client";
 
-import { useId, useState } from "react";
-import {
-  findSpecies,
-  searchSpecies,
-  type PokedexSpecies,
-} from "@/lib/pokedex";
+import { useEffect, useId, useState } from "react";
+import type { PokedexSpecies } from "@/lib/pokedex";
 import { cx } from "@/lib/utils";
 import { spriteMini } from "@/lib/sprites-de-quinta";
 import { Icono } from "@/components/icono";
 import { useEsAnil } from "@/components/juego-del-locke";
-import { esPokemonDeAnil } from "@/lib/anil";
+import { esPokemonDeAnil } from "@/lib/anil-basico";
 
 /**
  * Busca el pokémon por su nombre en español y manda al servidor **qué** pokémon
@@ -23,6 +19,34 @@ import { esPokemonDeAnil } from "@/lib/anil";
  * descarga el servidor al guardar (ver lib/sprites-servidor.ts) y aquí solo
  * viajan el número de la especie y si es shiny.
  */
+type Pokedex = typeof import("@/lib/pokedex");
+let pokedexCargada: Pokedex | null = null;
+
+/**
+ * La Pokédex (unos 45 KB) **se pide al usarla**, no con la página: el buscador
+ * está montado en once pantallas dentro de formularios que casi nunca se
+ * abren (el editor de equipos de cada combate, el alta de bajas…), y cargarla
+ * siempre era pagarla en cada visita. Se pide al entrar en el campo, o nada más
+ * montar si ya trae una especie; tarda lo que se tarda en escribir la primera
+ * letra.
+ */
+function usePokedex(yaHaceFalta: boolean) {
+  const [pokedex, setPokedex] = useState<Pokedex | null>(pokedexCargada);
+  const cargar = () => {
+    if (pokedexCargada) return setPokedex(pokedexCargada);
+    import("@/lib/pokedex").then((modulo) => {
+      pokedexCargada = modulo;
+      setPokedex(modulo);
+    });
+  };
+  useEffect(() => {
+    if (yaHaceFalta && !pokedex) cargar();
+    // Solo al montar: lo demás lo pide el propio campo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return { pokedex, cargar };
+}
+
 export function SpeciesPicker({
   defaultSpecies = "",
   defaultBoxImage = "",
@@ -39,15 +63,28 @@ export function SpeciesPicker({
 }) {
   // En un locke de Pokémon Añil también salen sus pokémon nuevos
   const anil = useEsAnil();
+  const { pokedex, cargar } = usePokedex(Boolean(defaultSpecies));
+  const findSpecies = (nombre: string) => pokedex?.findSpecies(nombre, anil);
   const [query, setQuery] = useState(defaultSpecies);
   const [selected, setSelected] = useState<PokedexSpecies | null>(() =>
-    defaultSpecies ? (findSpecies(defaultSpecies, anil) ?? null) : null,
+    defaultSpecies ? (findSpecies(defaultSpecies) ?? null) : null,
   );
+  // Al llegar la Pokédex, lo que ya esté escrito se reconoce como si acabara de escribirse
+  useEffect(() => {
+    if (!pokedex || selected || !query) return;
+    const match = pokedex.findSpecies(query, anil);
+    if (match) {
+      setSelected(match);
+      // Con una especie de antes no se cambia nada hasta que se elija otra
+      if (query !== defaultSpecies) setFormId(match.forms[0].id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pokedex]);
   const [formId, setFormId] = useState<number | null>(null);
   const [shiny, setShiny] = useState(false);
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
 
-  const suggestions = suggestionsOpen ? searchSpecies(query, 8, anil) : [];
+  const suggestions = suggestionsOpen && pokedex ? pokedex.searchSpecies(query, 8, anil) : [];
   // Puede haber dos buscadores en la misma página (el alta y una ficha)
   const fieldId = useId();
 
@@ -79,7 +116,8 @@ export function SpeciesPicker({
             onChange={(event) => {
               setQuery(event.target.value);
               setSuggestionsOpen(true);
-              const match = findSpecies(event.target.value, anil);
+              cargar();
+              const match = findSpecies(event.target.value);
               if (match) {
                 setSelected(match);
                 setFormId(match.forms[0].id);
@@ -88,7 +126,10 @@ export function SpeciesPicker({
                 setFormId(null);
               }
             }}
-            onFocus={() => setSuggestionsOpen(true)}
+            onFocus={() => {
+              cargar();
+              setSuggestionsOpen(true);
+            }}
             onBlur={() => {
               // Da tiempo a que el clic en una sugerencia llegue antes de cerrar
               window.setTimeout(() => setSuggestionsOpen(false), 150);

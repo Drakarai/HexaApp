@@ -103,8 +103,12 @@ export type FinalFourState =
  * Estado de la final. Se desbloquea solo cuando todos los combates de todas
  * las jornadas tienen ganador: hasta entonces no se sabe cómo queda la tabla,
  * y sembrar el cuadro antes no tendría sentido.
+ *
+ * Con `cache()`: en una misma visita lo piden varios (el campeón, si el locke
+ * ha terminado, las estadísticas de la final…) y eran tres o cuatro veces las
+ * mismas consultas.
  */
-export async function getFinalFourState(
+export const getFinalFourState = cache(async function getFinalFourState(
   competitionId: string,
 ): Promise<FinalFourState> {
   /**
@@ -142,7 +146,7 @@ export async function getFinalFourState(
     jornadasPrevistas: competition?.jornadasPrevistas ?? null,
     standings,
   });
-}
+});
 
 /**
  * La cuenta de `getFinalFourState`, sin tocar la base de datos: en qué punto

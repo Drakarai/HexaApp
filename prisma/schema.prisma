@@ -677,6 +677,8 @@ model Spectator {
   competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, competitionId])
+  // Los espectadores de un locke, sin saber aún quién mira
+  @@index([competitionId])
 }
 
 model Participant {
@@ -780,6 +782,8 @@ model Participant {
 
   @@unique([competitionId, userId])
   @@index([competitionId])
+  // Qué lockes juega cada uno: se pregunta en cada visita (ver getActiveCompetition)
+  @@index([userId])
 }
 
 // ---------------------------------------------------------------------------
@@ -938,6 +942,7 @@ model LockeRequest {
    */
   /**
    * /**
+   * /**
    * /** "competitivo" o "soullink", como `Competition.estilo`. Uno solo es siempre lo primero
    */
   estilo         String    @default("competitivo")
@@ -1028,6 +1033,8 @@ model GymClear {
   levelCap    LevelCap    @relation(fields: [levelCapId], references: [id], onDelete: Cascade)
 
   @@unique([participantId, levelCapId])
+  // Quién ha superado un gimnasio, desde el gimnasio
+  @@index([levelCapId])
 }
 
 /**
@@ -1336,6 +1343,8 @@ model Match {
   team         MatchPokemon[]
 
   @@index([matchdayId])
+  // Lo que ha ganado cada uno: el aviso de novedades lo mira en cada visita
+  @@index([winnerId])
 }
 
 /**
@@ -1466,6 +1475,8 @@ model ChallengeMatch {
   premios      ChallengePrize[]
 
   @@index([competitionId])
+  // Igual que en Match
+  @@index([winnerId])
 }
 
 /**
@@ -1726,6 +1737,8 @@ model FinalMatch {
   winner    Participant? @relation("FinalMatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
 
   @@unique([finalFourId, key])
+  // Igual que en Match
+  @@index([winnerId])
 }
 
 /**

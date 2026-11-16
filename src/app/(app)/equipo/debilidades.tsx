@@ -5,7 +5,7 @@ import { ChapaDeTipo } from "@/components/chapa-de-tipo";
 import { Pestanas } from "@/components/pestanas";
 import type { Debilidad } from "@/lib/soul-link";
 import { cx } from "@/lib/utils";
-import { GENERACION_ANIL } from "@/lib/anil";
+import { GENERACION_ANIL } from "@/lib/anil-basico";
 
 /** De lo que más duele a lo que no hace nada, con cómo se lee cada uno */
 const FILAS: { x: number; rotulo: string; color: string }[] = [

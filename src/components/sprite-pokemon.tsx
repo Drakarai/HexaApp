@@ -13,7 +13,7 @@ import {
 } from "@/lib/sprites-de-quinta";
 import { cx } from "@/lib/utils";
 import tiras from "@/lib/sprites-animados.json";
-import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil";
+import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil-basico";
 
 /**
  * Los animados **en tira** del paquete de la comunidad de Pokémon Essentials

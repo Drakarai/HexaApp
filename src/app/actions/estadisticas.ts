@@ -202,19 +202,31 @@ export async function leerRepeticionesPendientesAction(
   };
 }
 
+/** Lo de un pokémon de la caja para su ficha */
+export type NumerosDeLaFicha = { numeros: Numeros; galardones: { titulo: string; icono: string }[] };
+
 /**
- * Los números de un pokémon de tu caja, para su ficha. Fuera de un Soul Link
- * la caja es privada, así que solo los pide su dueño.
+ * Los números de un pokémon de tu caja, para su ficha, **y de paso los de toda
+ * esa caja**: sumarlos pide el locke entero, así que sale igual de caro uno que
+ * todos, y la ficha los guarda para cuando se abra la del siguiente. Fuera de
+ * un Soul Link la caja es privada, así que solo los pide su dueño.
  */
 export async function numerosDelPokemonAction(
   captureId: string,
-): Promise<{ numeros?: Numeros; galardones?: { titulo: string; icono: string }[]; error?: string }> {
+): Promise<{ porCaptura?: Record<string, NumerosDeLaFicha>; error?: string }> {
   const user = await requireUser();
   const captura = await prisma.capture.findUnique({
     where: { id: String(captureId ?? "") },
     select: {
       id: true,
-      participant: { select: { userId: true, competitionId: true, competition: { select: { estilo: true } } } },
+      participantId: true,
+      participant: {
+        select: {
+          userId: true,
+          competitionId: true,
+          competition: { select: { estilo: true, maxPlayers: true } },
+        },
+      },
     },
   });
   if (!captura) return { error: "Ese pokémon no existe." };
@@ -224,11 +236,18 @@ export async function numerosDelPokemonAction(
     (participant.competition.estilo === "soullink" && (await puedeVerLocke(participant.competitionId)));
   if (!puede) return { error: "Ese pokémon no es tuyo." };
 
-  const { pokemon } = await getEstadisticasDelLocke(participant.competitionId, user.id);
-  const este = pokemon.find((p) => p.clave === `c:${captura.id}`);
-  if (!este) return {};
-  const galardones = galardonesDe(pokemon)
-    .filter((g) => g.pokemon?.clave === este.clave)
-    .map((g) => ({ titulo: g.titulo, icono: g.icono }));
-  return { numeros: este.numeros, galardones };
+  const { pokemon } = await getEstadisticasDelLocke(participant.competitionId, user.id, participant.competition);
+  const galardones = galardonesDe(pokemon);
+  const porCaptura: Record<string, NumerosDeLaFicha> = {};
+  // Solo los de su misma caja: los demás no tiene por qué verlos
+  for (const p of pokemon) {
+    if (!p.captureId || p.participantId !== captura.participantId) continue;
+    porCaptura[p.captureId] = {
+      numeros: p.numeros,
+      galardones: galardones
+        .filter((g) => g.pokemon?.clave === p.clave)
+        .map((g) => ({ titulo: g.titulo, icono: g.icono })),
+    };
+  }
+  return { porCaptura };
 }

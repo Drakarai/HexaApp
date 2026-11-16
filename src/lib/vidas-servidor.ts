@@ -1,7 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { estadoDeVidas, type EstadoDeVidas } from "@/lib/vidas";
+import { estadoDeVidas, type ConVidas, type EstadoDeVidas } from "@/lib/vidas";
 import { MOTIVOS_DE_SALIDA } from "@/lib/wipeos";
 import { perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { resolverRetiradas } from "@/lib/retiradas";
@@ -10,18 +10,18 @@ import { registrar } from "@/lib/registro";
 /** Las bajas que cuentan como vida perdida: las del cementerio sin revivir */
 const BAJAS_QUE_CUENTAN = { revividoEl: null } as const;
 
-/** Cómo va de vidas cada jugador de un locke; vacío si el locke no va con vidas */
-export async function vidasDelLocke(competitionId: string): Promise<Map<string, EstadoDeVidas>> {
-  const locke = await prisma.competition.findUnique({
-    where: { id: competitionId },
-    select: { vidas: true, vidaCero: true },
-  });
-  if (!locke?.vidas) return new Map();
+/**
+ * Cómo va de vidas cada jugador de un locke; vacío si el locke no va con vidas.
+ * Recibe el locke ya leído (las pantallas lo tienen siempre), para no gastar un
+ * viaje en preguntar si va con vidas: así entra en la misma tanda que lo demás.
+ */
+export async function vidasDelLocke(locke: { id: string } & ConVidas): Promise<Map<string, EstadoDeVidas>> {
+  if (!locke.vidas) return new Map();
   const [jugadores, bajas] = await Promise.all([
-    prisma.participant.findMany({ where: { competitionId }, select: { id: true } }),
+    prisma.participant.findMany({ where: { competitionId: locke.id }, select: { id: true } }),
     prisma.death.groupBy({
       by: ["participantId"],
-      where: { participant: { competitionId }, ...BAJAS_QUE_CUENTAN },
+      where: { participant: { competitionId: locke.id }, ...BAJAS_QUE_CUENTAN },
       _count: { _all: true },
     }),
   ]);

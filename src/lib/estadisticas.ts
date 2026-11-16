@@ -85,7 +85,11 @@ const mismaPareja = (a: { participantAId: string; participantBId: string }, b: t
  * para toda la serie y va colgado de uno de sus combates: los demás lo toman
  * de ahí.
  */
-async function combatesDeJornada(where: Prisma.MatchWhereInput): Promise<CombateConEquipos[]> {
+async function combatesDeJornada(
+  where: Prisma.MatchWhereInput,
+  /** Si se ha cargado el locke entero: entonces no hay serie que buscar fuera */
+  todoElLocke = false,
+): Promise<CombateConEquipos[]> {
   const combates = await prisma.match.findMany({
     where,
     orderBy: [{ matchday: { position: "asc" } }, { position: "asc" }],
@@ -105,8 +109,13 @@ async function combatesDeJornada(where: Prisma.MatchWhereInput): Promise<Combate
       matchday: { select: { competitionId: true } },
     },
   });
-  const sinEquipo = combates.filter((c) => !c.team.length);
-  const hermanos = sinEquipo.length
+  // El equipo de la serie suele estar ya entre los cargados (con todo el locke,
+  // siempre): solo se pregunta por lo que falte, que es pedir un combate suelto
+  const conEquipo = combates.filter((c) => c.team.length);
+  const delaSerie = (c: (typeof combates)[number]) =>
+    conEquipo.find((h) => h.matchdayId === c.matchdayId && mismaPareja(h, c));
+  const sinEquipo = combates.filter((c) => !c.team.length && !delaSerie(c));
+  const hermanos = sinEquipo.length && !todoElLocke
     ? await prisma.match.findMany({
         where: { matchdayId: { in: [...new Set(sinEquipo.map((c) => c.matchdayId))] }, team: { some: {} } },
         orderBy: { position: "asc" },
@@ -127,7 +136,9 @@ async function combatesDeJornada(where: Prisma.MatchWhereInput): Promise<Combate
     lados: [c.participantA, c.participantB].map((p) => ({ id: p.id, nombre: p.displayName })),
     equipo: c.team.length
       ? c.team
-      : (hermanos.find((h) => h.matchdayId === c.matchdayId && mismaPareja(h, c))?.team ?? []),
+      : (delaSerie(c)?.team ??
+        hermanos.find((h) => h.matchdayId === c.matchdayId && mismaPareja(h, c))?.team ??
+        []),
   }));
 }
 
@@ -240,7 +251,7 @@ export async function cargarCombates(refs: RefCombate[]): Promise<(CombateConEqu
 /** Todos los combates del locke, de los tres sitios */
 export async function combatesDelLocke(competitionId: string) {
   const [jornadas, retos, final] = await Promise.all([
-    combatesDeJornada({ matchday: { competitionId } }),
+    combatesDeJornada({ matchday: { competitionId } }, true),
     combatesDeReto({ competitionId }),
     combatesDeLaFinal(competitionId),
   ]);
@@ -358,8 +369,13 @@ const dexDe = (especie: string) => findSpecies(especie, true)?.dex ?? null;
  * final—, con sus números juntos. `quienMira` decide la forma que se enseña
  * (ver arriba).
  */
-export async function getEstadisticasDelLocke(competitionId: string, quienMira: string | null) {
-  const [combates, capturas, participantes, terminado] = await Promise.all([
+export async function getEstadisticasDelLocke(
+  competitionId: string,
+  quienMira: string | null,
+  /** El locke, si ya se tiene: ahorra preguntarlo antes de saber si ha terminado */
+  locke?: { maxPlayers: number; estilo: string },
+) {
+  const [combates, capturas, participantes, terminado, bajas] = await Promise.all([
     combatesDelLocke(competitionId),
     prisma.capture.findMany({
       where: { participant: { competitionId }, failed: false },
@@ -374,14 +390,15 @@ export async function getEstadisticasDelLocke(competitionId: string, quienMira: 
       },
     }),
     prisma.participant.findMany({ where: { competitionId }, select: { id: true, userId: true } }),
-    lockeTerminado(competitionId),
+    lockeTerminado(competitionId, locke),
+    // Cuándo cayó cada uno, para los días que estuvo vivo: todas las del locke
+    // a la vez que lo demás, en vez de esperar a saber cuáles hacen falta
+    prisma.death.findMany({
+      where: { participant: { competitionId } },
+      select: { id: true, diedAt: true },
+    }),
   ]);
   const deQuien = new Map(participantes.map((p) => [p.id, p.userId]));
-  // Cuándo cayó cada uno, para los días que estuvo vivo
-  const bajas = await prisma.death.findMany({
-    where: { id: { in: capturas.map((c) => c.deathId).filter((id): id is string => Boolean(id)) } },
-    select: { id: true, diedAt: true },
-  });
   const cayoEl = new Map(bajas.map((b) => [b.id, b.diedAt.getTime()]));
 
   /** El pokémon de la caja que es, si se sabe sin dudar */

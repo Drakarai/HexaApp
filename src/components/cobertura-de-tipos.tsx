@@ -8,7 +8,6 @@ import {
   type MiembroDelEquipo,
   type QueTabla,
 } from "@/app/actions/tipos";
-import { searchSpecies } from "@/lib/pokedex";
 import { spriteMini } from "@/lib/sprites-de-quinta";
 import {
   coberturaOfensiva,
@@ -22,7 +21,7 @@ import {
 import { cx } from "@/lib/utils";
 import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { DibujoVacio } from "@/components/dibujo-vacio";
-import { GENERACION_ANIL } from "@/lib/anil";
+import { GENERACION_ANIL } from "@/lib/anil-basico";
 import { Hoja } from "@/components/hoja";
 
 /**
@@ -568,6 +567,15 @@ function Selector({
   /** Dónde va el próximo que se toque; null con el equipo lleno */
   const [destino, setDestino] = useState<number | null>(hueco);
   const [texto, setTexto] = useState("");
+  /**
+   * La Pokédex se pide al empezar a buscar, no con la página (ver
+   * `SpeciesPicker`): son unos 45 KB que solo hacen falta para buscar fuera del
+   * equipo.
+   */
+  const [pokedex, setPokedex] = useState<typeof import("@/lib/pokedex") | null>(null);
+  const pedirPokedex = () => {
+    if (!pokedex) import("@/lib/pokedex").then(setPokedex);
+  };
   const buscador = useRef<HTMLInputElement>(null);
 
   // En el ordenador se escribe directamente; en el móvil el teclado taparía la caja
@@ -606,7 +614,7 @@ function Selector({
     else grupos.push({ titulo, lista: [p] });
   }
   // En Añil también sus pokémon nuevos
-  const dePokedex = busqueda ? searchSpecies(texto, 12, generacion === GENERACION_ANIL) : [];
+  const dePokedex = busqueda && pokedex ? pokedex.searchSpecies(texto, 12, generacion === GENERACION_ANIL) : [];
   const puestos = equipo.filter(Boolean).length;
   const marcado = destino !== null ? equipo[destino] : null;
 
@@ -660,7 +668,11 @@ function Selector({
           value={texto}
           autoComplete="off"
           enterKeyHint="search"
-          onChange={(evento) => setTexto(evento.target.value)}
+          onFocus={pedirPokedex}
+          onChange={(evento) => {
+            pedirPokedex();
+            setTexto(evento.target.value);
+          }}
           onKeyDown={(evento) => {
             // Intro mete el primero que salga, como hacía el buscador de antes
             if (evento.key !== "Enter") return;

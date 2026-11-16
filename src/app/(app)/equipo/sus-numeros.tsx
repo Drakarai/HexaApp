@@ -3,10 +3,31 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Icono } from "@/components/icono";
-import { numerosDelPokemonAction } from "@/app/actions/estadisticas";
+import { numerosDelPokemonAction, type NumerosDeLaFicha } from "@/app/actions/estadisticas";
 import type { Numeros } from "@/lib/estadisticas";
 
-type Leido = Awaited<ReturnType<typeof numerosDelPokemonAction>>;
+/**
+ * Lo ya pedido, mientras dure la página: la acción devuelve los de toda la
+ * caja de una vez, así que abrir la ficha del siguiente no vuelve a sumar el
+ * locke entero. Los que no han combatido no vienen: se apuntan como nulos.
+ */
+const yaSumados = new Map<string, NumerosDeLaFicha | null>();
+const enCamino = new Map<string, Promise<NumerosDeLaFicha | null>>();
+
+function numerosDe(captureId: string): Promise<NumerosDeLaFicha | null> {
+  if (yaSumados.has(captureId)) return Promise.resolve(yaSumados.get(captureId)!);
+  let promesa = enCamino.get(captureId);
+  if (!promesa) {
+    promesa = numerosDelPokemonAction(captureId).then((r) => {
+      for (const [id, suyos] of Object.entries(r.porCaptura ?? {})) yaSumados.set(id, suyos);
+      if (!r.error) yaSumados.set(captureId, r.porCaptura?.[captureId] ?? null);
+      enCamino.delete(captureId);
+      return r.porCaptura?.[captureId] ?? null;
+    });
+    enCamino.set(captureId, promesa);
+  }
+  return promesa;
+}
 
 /**
  * Lo que lleva hecho este pokémon en los combates de jornada, junto en su
@@ -14,20 +35,20 @@ type Leido = Awaited<ReturnType<typeof numerosDelPokemonAction>>;
  * pestaña, que sumarlo cuesta lo mismo que la pantalla de estadísticas entera.
  */
 export function SusNumeros({ captureId }: { captureId: string }) {
-  const [leido, setLeido] = useState<Leido | null>(null);
+  const [leido, setLeido] = useState<NumerosDeLaFicha | null>(null);
 
   useEffect(() => {
     let vivo = true;
-    numerosDelPokemonAction(captureId)
+    numerosDe(captureId)
       .then((r) => vivo && setLeido(r))
-      .catch(() => vivo && setLeido({ error: "No se han podido sumar sus números." }));
+      .catch(() => vivo && setLeido(null));
     return () => {
       vivo = false;
     };
   }, [captureId]);
 
   // Si no ha combatido en ninguna jornada, no hay nada que enseñar
-  if (!leido || leido.error || !leido.numeros?.combates) return null;
+  if (!leido?.numeros.combates) return null;
   const n: Numeros = leido.numeros;
 
   const cifras: [string, string][] = [

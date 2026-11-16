@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { siYaFallo, useEstiloDeSprites } from "@/components/sprite-pokemon";
 import { iconoDeCaja, iconoDelPaquete, REPINTAR, spriteQuietoDeQuinta, type EstiloDeSprites } from "@/lib/sprites-de-quinta";
-import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil";
+import { esPokemonDeAnil, spritesDeAnil } from "@/lib/anil-basico";
 import { precargarGrito, sonarGrito } from "@/lib/gritos";
 import type { Companero as DatosDelCompanero } from "@/lib/companero";
 import { frasesDelCompaneroAction, type FrasesDelCompanero } from "@/app/actions/companero";

@@ -181,11 +181,17 @@ export function decidirCampeon(
  * que se la pasen todos los que siguen. Las acciones del hall preguntaban solo
  * por el campeón y en esos dos no dejaban apuntar el equipo.
  */
-export async function lockeTerminado(competitionId: string): Promise<boolean> {
-  const competicion = await prisma.competition.findUnique({
-    where: { id: competitionId },
-    select: { maxPlayers: true, estilo: true },
-  });
+export async function lockeTerminado(
+  competitionId: string,
+  /** El locke, si quien llama ya lo tiene: una ida y vuelta menos */
+  locke?: { maxPlayers: number; estilo: string },
+): Promise<boolean> {
+  const competicion =
+    locke ??
+    (await prisma.competition.findUnique({
+      where: { id: competitionId },
+      select: { maxPlayers: true, estilo: true },
+    }));
   if (!competicion) return false;
   const perfil = perfilDeLocke(competicion.maxPlayers, competicion.estilo);
   if (perfil.cooperativo) return (await getLigaEnCooperativo(competitionId)).superada;

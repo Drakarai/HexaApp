@@ -33,7 +33,7 @@ export default async function EstadisticasPage() {
   }
 
   const [{ pokemon, conRepeticion, jugados, sinLeer }, participantes] = await Promise.all([
-    getEstadisticasDelLocke(competition.id, user.id),
+    getEstadisticasDelLocke(competition.id, user.id, competition),
     getParticipants(competition.id),
   ]);
   const deQuien = new Map(participantes.map((p) => [p.id, p]));

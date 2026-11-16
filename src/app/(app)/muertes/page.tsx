@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/page-header";
 import { NoCompetition } from "@/components/no-competition";
 import { EmptyState } from "@/components/ui";
 import { cx, formatDate, toDateInputValue } from "@/lib/utils";
-import { firmasDeDosImagenes } from "@/lib/imagenes";
+import { firmaDeColumna } from "@/lib/imagenes";
 import { urlDeImagen } from "@/lib/imagen-url";
 import { getZonasMasMortiferas, getZonasParaElegir } from "@/lib/mapas";
 import { generacionDeTipos, regionesDelJuego } from "@/lib/juegos";
@@ -61,13 +61,28 @@ export default async function DeathsPage({
     { diedAt: "desc" },
     { createdAt: "desc" },
   ];
-  /** Primero solo quién y cuándo, que pesa nada, para saber **qué** casillas entran */
-  const ordenDe = (soloDe?: string) =>
+  /**
+   * **Todas las bajas del locke de una vez**, con sus fichas y las firmas de sus
+   * imágenes, y luego se recortan aquí. Antes se pedía primero el orden (para
+   * saber qué casillas entraban) y después las fichas: una ida y vuelta más en
+   * fila, y la base de datos está lejos. Las imágenes no viajan (ver
+   * lib/db.ts), así que una ficha son unos pocos textos: traerse las que no se
+   * pintan cuesta mucho menos que esperar otra vez.
+   */
+  const bajasDelLocke = () =>
     prisma.death.findMany({
-      where: { participant: { competitionId: competition.id, ...(soloDe ? { id: soloDe } : {}) } },
+      where: { participant: { competitionId: competition.id } },
       orderBy: deLaMasNueva,
-      select: { id: true, participantId: true },
     });
+  const firmasDelLocke = () =>
+    prisma.$queryRaw<{ id: string; caja: string | null; ficha: string | null }[]>`
+      select d."id",
+             ${firmaDeColumna(`d."boxImage"`)} as "caja",
+             ${firmaDeColumna(`d."detailImage"`)} as "ficha"
+      from "Death" d
+      join "Participant" p on p."id" = d."participantId"
+      where p."competitionId" = ${competition.id}
+    `;
 
   /**
    * Todo lo que no depende de nada, **a la vez**. Antes las bajas esperaban a
@@ -76,39 +91,23 @@ export default async function DeathsPage({
    * contra la base de datos, y ahora son cuatro. El filtro por jugador se usa
    * tal cual y se comprueba después (ver abajo).
    */
-  // Todas las regiones del juego: en la 2ª generación se muere igual en Kanto
-  const [canManage, participants, zonas, mortiferas, ordenPedido, counts] =
-    await Promise.all([
-      canManageCompetition(competition.id, user),
-      getParticipants(competition.id),
-      getZonasParaElegir(regionesDelJuego(competition.gameId)),
-      getZonasMasMortiferas(competition.id),
-      ordenDe(jugador),
-      prisma.death.groupBy({
-        by: ["participantId"],
-        where: { participant: { competitionId: competition.id } },
-        _count: { _all: true },
-      }),
-    ]);
-  const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));
-  const myParticipantId = participants.find((p) => p.userId === user.id)?.id ?? null;
-
   /**
    * Los pokémon vivos de la caja que se pueden dar por muertos desde aquí. En
    * un Soul Link, los de todos si administras (como en Equipo y PC); en los
    * demás lockes, **solo los tuyos**: la caja es privada y esta lista no puede
-   * enseñarle a nadie lo que llevan los demás.
+   * enseñarle a nadie lo que llevan los demás. Se piden a la vez que lo demás:
+   * en un Soul Link, los de todos, y se quitan abajo si no administras.
    */
-  const deQuien =
-    competition.estilo === "soullink" && canManage
-      ? participants.map((p) => p.id)
-      : myParticipantId
-        ? [myParticipantId]
-        : [];
   const pedirCapturasQueCaen = async () => {
-    if (!deQuien.length) return [];
     const capturas = await prisma.capture.findMany({
-      where: { participantId: { in: deQuien }, failed: false, deathId: null },
+      where: {
+        participant:
+          competition.estilo === "soullink"
+            ? { competitionId: competition.id }
+            : { competitionId: competition.id, userId: user.id },
+        failed: false,
+        deathId: null,
+      },
       orderBy: { createdAt: "asc" },
       select: {
         id: true,
@@ -129,14 +128,38 @@ export default async function DeathsPage({
     });
   };
 
+  // Todas las regiones del juego: en la 2ª generación se muere igual en Kanto
+  const [canManage, participants, zonas, mortiferas, todasLasBajas, firmas, counts, vidas, susCapturas] =
+    await Promise.all([
+      canManageCompetition(competition.id, user),
+      getParticipants(competition.id),
+      getZonasParaElegir(regionesDelJuego(competition.gameId)),
+      getZonasMasMortiferas(competition.id),
+      bajasDelLocke(),
+      firmasDelLocke(),
+      prisma.death.groupBy({
+        by: ["participantId"],
+        where: { participant: { competitionId: competition.id } },
+        _count: { _all: true },
+      }),
+      // En un locke con vidas, lo que le queda a cada uno (ver lib/vidas.ts)
+      vidasDelLocke(competition),
+      pedirCapturasQueCaen(),
+    ]);
+  const nombreDeZona = new Map(zonas.map((zona) => [zona.id, zona.label]));
+  const myParticipantId = participants.find((p) => p.userId === user.id)?.id ?? null;
+
   const selected = participants.find((participant) => participant.id === jugador);
   const myParticipant = participants.find(
     (participant) => participant.userId === user.id,
   );
 
-  // Un `?jugador=` que no es de este locke no filtra nada, como siempre: en
-  // ese caso raro se vuelven a pedir todas
-  const orden = jugador && !selected ? await ordenDe() : ordenPedido;
+  // Un `?jugador=` que no es de este locke no filtra nada, como siempre
+  const orden = selected ? todasLasBajas.filter((b) => b.participantId === selected.id) : todasLasBajas;
+  // Las de los demás solo se quedan en un Soul Link y administrándolo
+  const capturasQueCaen = susCapturas.filter(
+    (c) => (competition.estilo === "soullink" && canManage) || c.participantId === myParticipantId,
+  );
 
   // La tanda se corta por jugador: cada caja se llena hasta el tope con las
   // suyas, sin que las bajas de uno le quiten sitio a las de otro.
@@ -146,35 +169,18 @@ export default async function DeathsPage({
       const van = llevaPuestas.get(baja.participantId) ?? 0;
       llevaPuestas.set(baja.participantId, van + 1);
       return van < cuantas;
-    })
-    .map((baja) => baja.id);
+    });
 
   const quedanMas = counts.some((row) => {
     if (selected && row.participantId !== selected.id) return false;
     return row._count._all > cuantas;
   });
 
-  /**
-   * Las fichas de la tanda, las firmas de sus dos imágenes y las capturas que
-   * se pueden dar por muertas, a la vez: ya se sabe qué bajas son.
-   *
-   * Sin `include` del participante: los 6 jugadores ya están cargados arriba
-   * y repetirlos en cada baja multiplicaba el peso de la página.
-   */
-  const [deLaMasNuevaALaMasVieja, [firmasCaja, firmasFicha], capturasQueCaen] =
-    await Promise.all([
-      prisma.death.findMany({
-        where: { id: { in: losDeLaTanda } },
-        orderBy: deLaMasNueva,
-      }),
-      // Direcciones de las imágenes, no las imágenes: ver lib/imagen-url.ts
-      firmasDeDosImagenes("baja", "baja-ficha", losDeLaTanda),
-      pedirCapturasQueCaen(),
-    ]);
+  const porFirma = new Map(firmas.map((fila) => [fila.id, fila]));
   // Y se leen de la más antigua a la más nueva, como siempre
-  const deaths = deLaMasNuevaALaMasVieja.reverse();
-  const cajas = (id: string) => urlDeImagen("baja", id, firmasCaja.get(id));
-  const fichas = (id: string) => urlDeImagen("baja-ficha", id, firmasFicha.get(id));
+  const deaths = losDeLaTanda.reverse();
+  const cajas = (id: string) => urlDeImagen("baja", id, porFirma.get(id)?.caja);
+  const fichas = (id: string) => urlDeImagen("baja-ficha", id, porFirma.get(id)?.ficha);
   const porId = new Map(participants.map((p) => [p.id, p]));
 
   const countFor = (participantId: string) =>
@@ -239,9 +245,6 @@ export default async function DeathsPage({
     editable: esMio(death.participantId),
     participant: fichaDeJugador(death.participantId),
   }));
-
-  // En un locke con vidas, lo que le queda a cada uno (ver lib/vidas.ts)
-  const vidas = await vidasDelLocke(competition.id);
 
   return (
     <>
