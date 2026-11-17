@@ -72,9 +72,47 @@ export async function editarTituloAction(formData: FormData) {
     data: {
       ...datos,
       // Solo el común (el formulario lo trae con su casilla); un extra lo es siempre
-      ...(!titulo.competitionId && formData.get("conDeLocke") ? { deLocke: formData.get("deLocke") === "on" } : {}),
     },
   });
+  refrescar();
+}
+
+/**
+ * Meter un título del catálogo en **la lista de títulos a obtener** (la que
+ * comparten todos los lockes: se gana en cada uno) o sacarlo de ella. Solo el
+ * Creador, que es el dueño del catálogo.
+ *
+ * Al meterlo, lo que ya se había dado **en un locke** pasa a ser de ese locke,
+ * que es lo que significa estar en la lista; lo dado sin locke se queda como
+ * general hasta que se le diga dónde (con «Dónde vale»). Al sacarlo, lo dado
+ * se queda como está.
+ */
+export async function listaDeTitulosAction(formData: FormData) {
+  await requireCreador();
+  const id = String(formData.get("titleId") ?? "");
+  const enLaLista = formData.get("enLaLista") === "1";
+  const titulo = await prisma.title.findUnique({ where: { id }, select: { competitionId: true, name: true } });
+  // Los extras de un locke ya son de su locke: no entran ni salen de la lista común
+  if (!titulo || titulo.competitionId) return;
+  await prisma.$transaction([
+    prisma.title.update({ where: { id }, data: { deLocke: enLaLista } }),
+    ...(enLaLista
+      ? [
+          prisma.titleAward.updateMany({
+            where: { titleId: id, competitionId: { not: null }, soloEnElLocke: false },
+            // Uno de un locke no se lleva como general
+            data: { soloEnElLocke: true, equipped: false },
+          }),
+        ]
+      : []),
+  ]);
+  await registrar(
+    null,
+    "jugadores",
+    enLaLista
+      ? `Pasa «${titulo.name}» a la lista de títulos a obtener`
+      : `Saca «${titulo.name}» de la lista de títulos a obtener`,
+  );
   refrescar();
 }
 

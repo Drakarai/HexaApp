@@ -22,6 +22,9 @@ async function crear(pagina, rotulo, nombre) {
   const nuevo = pagina.locator("details", { hasText: rotulo }).first();
   if ((await nuevo.getAttribute("open")) === null) await nuevo.locator("summary").click();
   await nuevo.locator('input[name="name"]').fill(nombre);
+  // En Administración se elige la lista; estos, generales
+  const lista = nuevo.getByLabel("Dónde va");
+  if (await lista.count()) await lista.selectOption({ label: "Títulos generales (se lleva en cualquier sitio)" });
   await nuevo.getByRole("button", { name: "Crear título" }).click();
   await nuevo.getByText(`Título "${nombre}" creado.`).waitFor();
 }
@@ -126,37 +129,52 @@ describe("títulos generales y de un locke", () => {
     }
   });
 
-  test("los «de locke» del catálogo son una lista que se gana en cada locke", async () => {
-    const BASE_DE_LOCKE = "Cazador de rutas";
+  test("la lista de títulos a obtener: crear en ella y pasar a ella uno que ya existía", async () => {
+    const DE_LA_LISTA = "Cazador de rutas";
     const draka = await entrar(navegador, "draka");
     try {
-      await ir(draka.pagina, "/admin?seccion=titulos");
-      const nuevo = draka.pagina.locator("details", { hasText: "Crear un título" }).first();
+      const { pagina } = draka;
+      await ir(pagina, "/admin?seccion=titulos");
+      const nuevo = pagina.locator("details", { hasText: "Crear un título" }).first();
       if ((await nuevo.getAttribute("open")) === null) await nuevo.locator("summary").click();
-      await nuevo.locator('input[name="name"]').fill(BASE_DE_LOCKE);
-      await nuevo.getByLabel(/De locke/).check();
+      await nuevo.locator('input[name="name"]').fill(DE_LA_LISTA);
+      await nuevo.getByLabel("Dónde va").selectOption({ label: "A la lista de títulos a obtener (se gana en cada locke)" });
       await nuevo.getByRole("button", { name: "Crear título" }).click();
-      await nuevo.getByText(`Título "${BASE_DE_LOCKE}" creado.`).waitFor();
+      await nuevo.getByText(`Título "${DE_LA_LISTA}" creado.`).waitFor();
+
+      const lista = pagina.locator('[data-bloque-de-titulos="Títulos a obtener"]');
+      await lista.getByText(DE_LA_LISTA).waitFor();
       // Solo se puede dar como «solo en» un locke, nunca general
-      const opciones = await draka.pagina
-        .locator("li", { hasText: BASE_DE_LOCKE })
+      const opciones = await lista
+        .locator("li", { hasText: DE_LA_LISTA })
         .first()
         .getByLabel("Dónde", { exact: true })
         .locator("option")
         .allTextContents();
       assert.ok(opciones.length && opciones.every((o) => o.startsWith("Solo en ")), opciones.join(" | "));
+
+      // Uno que ya existía y ya se dio pasa a la lista con un botón
+      const generales = pagina.locator('[data-bloque-de-titulos="Títulos generales"]');
+      await generales
+        .locator("li", { hasText: COMUN })
+        .first()
+        .getByRole("button", { name: "Pasar a la lista de títulos a obtener" })
+        .click();
+      await lista.getByText(COMUN).waitFor();
+      sinProblemas(draka.problemas, "lista de títulos a obtener");
     } finally {
       await draka.cerrar();
     }
 
-    // Y en las reglas del locke sale como uno que se puede ganar, con los extras
+    // Y en las reglas del locke salen los de la lista, con quién los tiene
     const hector = await entrar(navegador, "hector", MOVIL);
     try {
       await ir(hector.pagina, "/reglas");
-      const lista = hector.pagina.locator("[data-titulos-a-ganar]");
-      await lista.getByText(BASE_DE_LOCKE).waitFor();
-      assert.match(await lista.locator("li", { hasText: BASE_DE_LOCKE }).innerText(), /Todavía nadie/);
-      assert.match(await lista.locator("li", { hasText: EXTRA }).innerText(), /Lo tiene: Héctor/);
+      const enReglas = hector.pagina.locator("[data-titulos-a-ganar]");
+      await enReglas.getByText(DE_LA_LISTA).waitFor();
+      assert.match(await enReglas.locator("li", { hasText: DE_LA_LISTA }).innerText(), /Todavía nadie/);
+      assert.match(await enReglas.locator("li", { hasText: COMUN }).innerText(), /Lo tiene: Héctor/);
+      assert.match(await enReglas.locator("li", { hasText: EXTRA }).innerText(), /Lo tiene: Héctor/);
       sinProblemas(hector.problemas, "títulos que se pueden ganar");
     } finally {
       await hector.cerrar();

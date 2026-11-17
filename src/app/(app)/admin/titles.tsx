@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import {
   borrarTituloAction,
   cambiarAlcanceDelTituloAction,
+  listaDeTitulosAction,
   concederTituloAction,
   crearTituloAction,
   editarTituloAction,
@@ -87,7 +88,7 @@ export function Titles({
       <p className="muted mb-4">
         {enLocke
           ? "Los del catálogo común y los que te inventes para este locke. Al darlo eliges si es solo de este locke (se lleva puesto aquí) o general (se lleva en cualquier sitio y dice que se ganó aquí). Son solo adorno."
-          : "El catálogo común: vale en cualquier locke, y quien administra cada uno también los reparte allí. Aquí se dan generales, asociados a un locke o solo de él. Son solo adorno."}
+          : "Crea títulos y repártelos. Los de la lista de títulos a obtener se ganan en cada locke (también los reparte quien lo administra); los generales se llevan en cualquier sitio. Son solo adorno."}
       </p>
 
       <NuevoTitulo competitionId={enLocke ? donde.locke.id : null} />
@@ -95,13 +96,58 @@ export function Titles({
       {titulos.length === 0 ? (
         <p className="muted mt-4">Todavía no hay ninguno.</p>
       ) : (
-        <ul className="mt-4 space-y-2">
-          {titulos.map((titulo) => (
-            <Titulo key={titulo.id} titulo={titulo} usuarios={usuarios} donde={donde} />
-          ))}
-        </ul>
+        <>
+          <Bloque
+            titulo="Títulos a obtener"
+            ayuda={
+              enLocke
+                ? "La lista compartida (la misma en todos los lockes) y los extras de este locke. Se ganan aquí y valen aquí; salen en Reglas como los que se pueden ganar."
+                : "Una sola lista para todos los lockes: cada título se gana en cada locke y vale dentro de él. Sale en las Reglas de cada locke como «Títulos que se pueden ganar»."
+            }
+            titulos={titulos.filter((t) => t.deLocke)}
+            usuarios={usuarios}
+            donde={donde}
+          />
+          <Bloque
+            titulo="Títulos generales"
+            ayuda="Se llevan en cualquier sitio y los ve todo el mundo."
+            titulos={titulos.filter((t) => !t.deLocke)}
+            usuarios={usuarios}
+            donde={donde}
+          />
+        </>
       )}
     </section>
+  );
+}
+
+function Bloque({
+  titulo,
+  ayuda,
+  titulos,
+  usuarios,
+  donde,
+}: {
+  titulo: string;
+  ayuda: string;
+  titulos: TituloAdmin[];
+  usuarios: UsuarioSimple[];
+  donde: DondeSeReparte;
+}) {
+  return (
+    <div className="mt-5" data-bloque-de-titulos={titulo}>
+      <h3 className="rotulo">{titulo}</h3>
+      <p className="mb-2 text-xs text-slate-500">{ayuda}</p>
+      {titulos.length ? (
+        <ul className="space-y-2">
+          {titulos.map((t) => (
+            <Titulo key={t.id} titulo={t} usuarios={usuarios} donde={donde} />
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-slate-500">Ninguno.</p>
+      )}
+    </div>
   );
 }
 
@@ -180,7 +226,17 @@ function NuevoTitulo({ competitionId }: { competitionId: string | null }) {
           />
         </div>
 
-        {competitionId ? null : <CasillaDeLocke />}
+        {competitionId ? null : (
+          <div>
+            <label className="label" htmlFor="lista-del-titulo">
+              Dónde va
+            </label>
+            <select id="lista-del-titulo" name="deLocke" className="input" defaultValue="on">
+              <option value="on">A la lista de títulos a obtener (se gana en cada locke)</option>
+              <option value="">Títulos generales (se lleva en cualquier sitio)</option>
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="label">Color</label>
@@ -247,10 +303,6 @@ function Titulo({
         <TitleBadge titulo={titulo} />
         {titulo.extra ? (
           <span className="chip text-[10px]">de este locke</span>
-        ) : titulo.deLocke ? (
-          <span className="chip text-[10px]" title="Se gana en cada locke y solo vale en él">
-            de locke
-          </span>
         ) : null}
         <span className="text-xs text-slate-500">
           {titulo.concedidos.length === 0
@@ -280,6 +332,16 @@ function Titulo({
 
       {titulo.description ? (
         <p className="mt-1 text-xs text-slate-500">{titulo.description}</p>
+      ) : null}
+
+      {donde.tipo === "creador" && !titulo.extra ? (
+        <form action={listaDeTitulosAction} className="mt-1.5">
+          <input type="hidden" name="titleId" value={titulo.id} />
+          <input type="hidden" name="enLaLista" value={titulo.deLocke ? "0" : "1"} />
+          <button type="submit" className="text-xs text-brand-300 hover:underline">
+            {titulo.deLocke ? "Sacar de la lista de títulos a obtener" : "Pasar a la lista de títulos a obtener"}
+          </button>
+        </form>
       ) : null}
 
       {editando ? (
@@ -327,12 +389,6 @@ function Titulo({
               defaultValue={titulo.description ?? ""}
             />
           </div>
-          {titulo.extra ? null : (
-            <div className="sm:col-span-4">
-              <input type="hidden" name="conDeLocke" value="1" />
-              <CasillaDeLocke defaultChecked={titulo.deLocke} />
-            </div>
-          )}
           <div className="sm:col-span-4">
             <SubmitButton className="btn-ghost btn-sm">Guardar</SubmitButton>
           </div>
@@ -454,21 +510,5 @@ function CambiarDonde({
       </select>
       {estado?.error ? <span className="text-[11px] text-rose-300">{estado.error}</span> : null}
     </form>
-  );
-}
-
-/** «De locke»: entra en la lista base de títulos que se ganan en cada locke */
-function CasillaDeLocke({ defaultChecked = false }: { defaultChecked?: boolean }) {
-  return (
-    <label className="flex items-start gap-2.5 text-sm text-slate-200">
-      <input type="checkbox" name="deLocke" defaultChecked={defaultChecked} className="mt-0.5" />
-      <span>
-        De locke
-        <span className="mt-0.5 block text-xs text-slate-400">
-          Va a la lista de títulos que se pueden ganar en cada locke: se da como «solo de ese locke» y
-          cada locke tiene el suyo. Sin marcar, es un título general.
-        </span>
-      </span>
-    </label>
   );
 }
