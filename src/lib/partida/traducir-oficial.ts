@@ -3,6 +3,7 @@ import tablas from "@/lib/partida/oficial-tablas.json";
 import { POKEDEX } from "@/lib/pokedex";
 import { MOVIMIENTOS_POR_POKEMON } from "@/lib/movimientos";
 import { claveDe, sinMoteDeEspecie, type PokemonTraducido } from "./traducir";
+import { FORMAS_DEL_MOD, HABILIDADES_DEL_MOD, objetoDelMod } from "./expansion-usum";
 import { GENERACION_DE, type Familia, type PartidaOficial, type PokemonOficial } from "./oficial/comun";
 
 /**
@@ -48,7 +49,10 @@ export function traducirOficial(p: PokemonOficial, familia: Familia): PokemonTra
   const especie = NOMBRE_POR_DEX.get(p.especie);
   if (!especie) return null;
   const generacion = GENERACION_DE[familia];
-  const deLaForma = p.forma ? T.formas[`${p.especie}_${p.forma}`] : undefined;
+  // USUM puede venir con el mod de expansión: lo suyo va en números que el juego no usa
+  const conMod = familia === "usum";
+  const forma = `${p.especie}_${p.forma}`;
+  const deLaForma = p.forma ? (T.formas[forma] ?? (conMod ? FORMAS_DEL_MOD[forma] : undefined)) : undefined;
   const avisos: string[] = [];
 
   let habilidad: string | null = null;
@@ -56,13 +60,15 @@ export function traducirOficial(p: PokemonOficial, familia: Familia): PokemonTra
     const suyas = T.habilidadesG3[String(p.especie)] ?? [];
     habilidad = suyas[p.ranuraDeHabilidad ?? 0] ?? suyas[0] ?? null;
   } else if (p.habilidad) {
-    habilidad = T.habilidades[String(p.habilidad)] ?? null;
+    // Desde la 299 el mod lleva su propio orden, que no es el de PokéAPI
+    habilidad = (conMod && p.habilidad >= 299 ? HABILIDADES_DEL_MOD[p.habilidad] : T.habilidades[String(p.habilidad)]) ?? null;
     if (!habilidad) avisos.push(`la habilidad nº ${p.habilidad}`);
   }
 
   let objeto: string | null = null;
   if (p.objeto) {
-    objeto = T.objetos[String(generacion)]?.[String(p.objeto)] ?? null;
+    // Antes que la tabla: PokéAPI pone en algunos de esos huecos objetos que en la 7ª no existen
+    objeto = (conMod ? objetoDelMod(p.objeto) : null) ?? T.objetos[String(generacion)]?.[String(p.objeto)] ?? null;
     if (!objeto) avisos.push(`el objeto nº ${p.objeto}`);
   }
 

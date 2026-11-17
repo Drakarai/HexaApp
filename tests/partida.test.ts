@@ -265,7 +265,9 @@ describe("El plan", () => {
 
 import { leerPartidaOficial } from "@/lib/partida/oficial";
 import { traducirOficial, partidaOficialDelNavegador } from "@/lib/partida/traducir-oficial";
-import { pk, partidaG1, partidaG2, partidaG3, partidaG4, partidaG5, partidaG6 } from "./partidas-falsas";
+import { pk, partidaG1, partidaG2, partidaG3, partidaG4, partidaG5, partidaG6, partidaUSUMConMod } from "./partidas-falsas";
+import { OBJETOS_DE_LOS_PAQUETES, OBJETOS_DEL_HEXALOCKE_3, OBJETOS_DEL_MOD } from "@/lib/partida/expansion-usum";
+import { objetoPorSlug } from "@/lib/objetos";
 
 const oficial = (sav: Uint8Array) => {
   const p = leerPartidaOficial(sav);
@@ -329,6 +331,35 @@ describe("Partidas de los juegos oficiales", () => {
     assert.equal(t[0].sitio, "Cascada Meteoro");
     assert.equal(t[1].sitio, "Ruta 114");
     assert.equal(t[1].clave, "c1-0");
+  });
+
+  test("USUM con el mod de expansión: habilidad de 9 bits, objetos y formas suyos", () => {
+    // Hospitalidad (299), la Energía Potenciadora (960) del mod y Darumaka de Galar
+    const { p, t } = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 299, objeto: 960 }));
+    assert.equal(p.familia, "usum");
+    assert.equal(p.pokemon[0].habilidad, 299);
+    assert.equal(t[0].habilidad, "hospitality");
+    assert.equal(t[0].objeto, "booster-energy");
+    // Una menta de los paquetes de pk3DS en el número que le dio la ROM del Hexalocke 3
+    const menta = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 33, objeto: 113 })).t[0];
+    assert.equal(menta.habilidad, "swift-swim");
+    assert.equal(menta.objeto, "lonely-mint");
+    assert.deepEqual(menta.avisos, []);
+    // En Ludicolo la forma 1 no existe; el número sí se lee
+    const forma = traducirOficial({ ...p.pokemon[0], especie: 554, forma: 1 }, "usum")!;
+    assert.equal(forma.pokemonId, 10176);
+    assert.ok(forma.formaExacta);
+    // En X, lo mismo no es del mod
+    assert.equal(traducirOficial({ ...p.pokemon[0], objeto: 960 }, "xy")!.objeto, null);
+  });
+
+  test("todo lo del mod existe en la app", () => {
+    const slugs = [...Object.values(OBJETOS_DEL_MOD), ...Object.values(OBJETOS_DE_LOS_PAQUETES)];
+    for (const s of slugs) assert.ok(objetoPorSlug(s), s);
+    for (const nombre of Object.values(OBJETOS_DEL_HEXALOCKE_3)) {
+      const clave = ["Reins of Unity", "Cream Reswirler", "Move Reminder"].includes(nombre);
+      assert.ok(clave || OBJETOS_DE_LOS_PAQUETES[nombre], nombre);
+    }
   });
 
   test("lo que no es una partida no se lee, y lo que llega del navegador se comprueba", () => {

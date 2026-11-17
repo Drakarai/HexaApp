@@ -1,4 +1,5 @@
 import data from "./objetos.json";
+import expansion from "./objetos-expansion.json";
 import { OBJETOS_DE_ANIL, OBJETOS_QUE_NO_ESTAN_EN_ANIL } from "./anil";
 
 export type ObjetoDelJuego = {
@@ -16,7 +17,16 @@ export type ObjetoDelJuego = {
  * PokéAPI, igual que la pokédex, y el resultado se sube al repositorio: buscar
  * un objeto no depende de que nadie de fuera conteste.
  */
-export const OBJETOS: ObjetoDelJuego[] = data.objetos;
+export const OBJETOS: ObjetoDelJuego[] = [...data.objetos, ...expansion.objetos].sort((a, b) =>
+  a.nombre.localeCompare(b.nombre, "es"),
+);
+
+/*
+ * `objetos-expansion.json` son los de la 8ª y la 9ª (mentas, Botas Gruesas,
+ * megapiedras de Z-A…) que hay en el mod de expansión de Ultrasol y Ultraluna
+ * (ver lib/partida/expansion-usum.ts). Los CSV de PokéAPI con los que se hizo
+ * objetos.json no los traían; nombre y dibujo son de PokéAPI igualmente.
+ */
 
 /** De dónde salen los dibujos. Solo se usa al crear el objeto. */
 export const SPRITES_DE_OBJETOS = data.sprites;
@@ -36,7 +46,8 @@ function normalizar(texto: string) {
  * la Venusaurita es la X). Ver lib/anil.ts.
  */
 const CON_ANIL: ObjetoDelJuego[] = [
-  ...OBJETOS.filter((objeto) => !OBJETOS_QUE_NO_ESTAN_EN_ANIL.has(objeto.slug)),
+  // Los de la expansión de USUM, no: la lista de Añil se hizo con objetos.json
+  ...data.objetos.filter((objeto) => !OBJETOS_QUE_NO_ESTAN_EN_ANIL.has(objeto.slug)),
   ...OBJETOS_DE_ANIL,
 ].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
 

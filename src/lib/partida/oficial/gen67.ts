@@ -63,7 +63,7 @@ export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, do
     mote: conMote ? textoUtf16(pk, 0x40, 0x1a) || null : null,
     shiny: (tsv ^ psv) < 16,
     naturaleza: pk[0x1c],
-    habilidad: pk[0x14] || null,
+    habilidad: habilidadDe(pk, generacion) || null,
     ranuraDeHabilidad: null,
     objeto: u16(pk, 0x0a) || null,
     movimientos: vacios([u16(pk, 0x5a), u16(pk, 0x5c), u16(pk, 0x5e), u16(pk, 0x60)]),
@@ -71,7 +71,16 @@ export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, do
     fecha: fecha(pk[0xd4], pk[0xd5], pk[0xd6]),
     donde,
   };
-  void generacion;
+}
+
+/**
+ * En la 7ª, el mod de expansión de USUM tiene más de 255 habilidades y guarda
+ * el 9º bit en el 0x10 del byte de al lado (el de qué hueco de habilidad es,
+ * que en el juego original solo usa 1, 2 y 4). Sin él, Hospitalidad (299) se
+ * leía como Antiplanta (43). En una partida sin mod ese bit está a 0.
+ */
+function habilidadDe(pk: Uint8Array, generacion: 6 | 7) {
+  return generacion === 7 ? pk[0x14] | ((pk[0x15] & 0x10) << 4) : pk[0x14];
 }
 
 export function leerGen67(datos: Uint8Array, familia: Familia): PartidaOficial {
