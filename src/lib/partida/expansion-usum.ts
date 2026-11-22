@@ -3,7 +3,8 @@
  * del Hexalocke 3, aleatorizado con nuestro pk3DS). La partida es la de USUM,
  * pero el mod usa números que el juego original deja libres:
  *
- * - **Habilidades** con un 9º bit (`0x15 & 0x10` del pokémon, ver `gen67.ts`)
+ * - **Habilidades** con un 9º bit (`0x15 & 0x10` del pokémon en la 1.42, el
+ *   byte `0x3B` en la versión del 19-11-2026; ver `gen67.ts`)
  *   y, desde la 299, su propio orden, que no es el de PokéAPI: allí Encarnación
  *   es una sola y aquí son cuatro (una por máscara).
  * - **Objetos** en los huecos 505–520 y 960–1023: los de la 8ª y la 9ª y las
