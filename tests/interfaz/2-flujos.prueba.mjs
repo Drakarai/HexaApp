@@ -63,6 +63,30 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "la ficha");
   });
 
+  test("un movimiento de la ficha enseña su detalle al tocarlo", async () => {
+    const { pagina, problemas } = sesion;
+    await pagina.locator('[aria-label^="Cacahuete —"]').first().click();
+    const ficha = pagina.getByRole("dialog");
+    await ficha.waitFor();
+    await ficha.getByRole("tab", { name: /Combate/ }).click();
+    await ficha.getByRole("button", { name: "Apuntar", exact: true }).click();
+    await ficha.getByLabel("Movimiento 1").fill("Golpe Cuerpo");
+    await ficha.getByRole("button", { name: "Guardar", exact: true }).click();
+    const movimiento = ficha.getByRole("button", { name: /Golpe Cuerpo/ });
+    await movimiento.waitFor({ timeout: 15_000 });
+    await movimiento.click();
+    // Su efecto con la probabilidad exacta, y que hace contacto
+    await ficha.getByText("Paraliza al objetivo").waitFor({ timeout: 15_000 });
+    assert.ok(await ficha.getByText("30 %", { exact: true }).isVisible());
+    assert.ok(await ficha.getByText("Contacto").isVisible());
+    // Se cierra al tocarlo otra vez
+    await movimiento.click();
+    await ficha.getByText("Paraliza al objetivo").waitFor({ state: "detached" });
+    await pagina.keyboard.press("Escape");
+    await ficha.waitFor({ state: "detached" });
+    sinProblemas(problemas, "el detalle de un movimiento");
+  });
+
   test("exportar el equipo a Showdown", async () => {
     const { pagina, problemas } = sesion;
     await pagina.getByRole("button", { name: /Exportar a Showdown/ }).click();
