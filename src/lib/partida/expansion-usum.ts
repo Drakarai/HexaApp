@@ -39,7 +39,10 @@ export const HABILIDADES_DEL_MOD: Record<number, string> = {
   312: "dragonize",
   313: "mega-sol",
   314: "spicy-spray",
-  // 315 Eelevate y 316 Fire Mane son inventadas del mod: no están en la app
+  315: "eelevate",
+  316: "fire-mane",
+  // 317 y 318 son huecos vacíos del mod
+  319: "aura-guard",
 };
 
 /** Los objetos fijos del mod. Faltan los que la app no tiene (Eternatusita, Teracristal, Emblema del Líder) */

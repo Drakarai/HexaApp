@@ -266,7 +266,8 @@ describe("El plan", () => {
 import { leerPartidaOficial } from "@/lib/partida/oficial";
 import { traducirOficial, partidaOficialDelNavegador } from "@/lib/partida/traducir-oficial";
 import { pk, partidaG1, partidaG2, partidaG3, partidaG4, partidaG5, partidaG6, partidaUSUMConMod } from "./partidas-falsas";
-import { OBJETOS_DE_LOS_PAQUETES, OBJETOS_DEL_HEXALOCKE_3, OBJETOS_DEL_MOD } from "@/lib/partida/expansion-usum";
+import { HABILIDADES_DEL_MOD, OBJETOS_DE_LOS_PAQUETES, OBJETOS_DEL_HEXALOCKE_3, OBJETOS_DEL_MOD } from "@/lib/partida/expansion-usum";
+import { habilidadPorNombre, habilidadPorSlug } from "@/lib/habilidades";
 import { objetoPorSlug } from "@/lib/objetos";
 
 const oficial = (sav: Uint8Array) => {
@@ -360,6 +361,18 @@ describe("Partidas de los juegos oficiales", () => {
     assert.equal(nueva.t[0].habilidad, "mega-sol");
     const baja = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 33, objeto: 0, formatoNuevo: true }));
     assert.equal(baja.p.pokemon[0].habilidad, 33);
+  });
+
+  test("las habilidades de Leyendas Z-A del mod existen en la app, con su descripción", () => {
+    const aura = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 319, objeto: 0, formatoNuevo: true })).t[0];
+    assert.equal(aura.habilidad, "aura-guard");
+    for (const [n, slug] of Object.entries(HABILIDADES_DEL_MOD)) {
+      const h = habilidadPorSlug(slug, false);
+      assert.ok(h, `la ${n} (${slug}) no está en la app`);
+      assert.ok(h!.d, `la ${n} (${slug}) no tiene descripción`);
+    }
+    assert.equal(habilidadPorSlug("fire-mane", false)!.n, "Crin de Fuego");
+    assert.equal(habilidadPorNombre("Eelevate", false)!.s, "eelevate");
   });
 
   test("una partida sin mod no se lee como si lo tuviera", () => {

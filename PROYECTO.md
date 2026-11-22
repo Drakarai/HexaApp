@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 22 de noviembre de 2026 (la partida del mod de expansión de USUM también con **la versión del 19-11-2026**, que guarda el byte alto de la habilidad aparte).
+Última actualización: 22 de noviembre de 2026 (la partida del mod de USUM también con **la versión del 19-11-2026**, y **las habilidades más recientes** completas: las 44 de la 9ª que salían sin descripción y tres de Leyendas Z-A que faltaban).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4491,6 +4491,12 @@ Piezas con truco:
   `tests/partidas/pk` (de las pruebas de PKHeX).
 - `lib/habilidades.ts` (con `habilidades.json`, de `scripts/habilidades.py` y
   PokéAPI) — nombre, descripción y las de cada pokémon; en Añil, las de Añil.
+  Lo que PokéAPI aún no trae va en `scripts/habilidades-recientes.json`: las
+  descripciones de la 9ª que le faltaban (44, que salían vacías) y las de
+  Leyendas Z-A que no tiene (Impulso Anguila, Crin de Fuego, Aura Protectora),
+  con el texto oficial en español del mod de USUM; la de Evocarrecuerdos es
+  nuestra, porque el mod no la trae. El script lo aplica al regenerar, sin
+  pisar lo que PokéAPI ya tenga.
 - `lib/megas.ts` (con `megas.json`, de `scripts/megas.py`) — `megaPorPiedra`:
   la mega que se enseña si lleva su megapiedra.
 - `public/iconos-de-caja/` (y `shiny/`) con su lista en
