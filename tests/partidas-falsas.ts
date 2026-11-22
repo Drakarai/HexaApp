@@ -118,10 +118,19 @@ export function partidaG6(equipo: Uint8Array, caja: Uint8Array) {
  * Ultrasol con el mod de expansión: el pokémon cambiado como lo guarda el mod
  * (habilidad con 9º bit, objeto y forma con números suyos), en el equipo.
  */
-export function partidaUSUMConMod(claro: Uint8Array, cambio: { habilidad: number; objeto: number; forma?: number }) {
+export function partidaUSUMConMod(
+  claro: Uint8Array,
+  cambio: { habilidad: number; objeto: number; forma?: number; formatoNuevo?: boolean },
+) {
   const d = claro.slice(0, 0xe8);
   d[0x14] = cambio.habilidad & 0xff;
-  d[0x15] = (d[0x15] & ~0x10) | ((cambio.habilidad >> 4) & 0x10);
+  if (cambio.formatoNuevo) {
+    // La versión del mod del 19-11-2026: el byte alto en el 0x3B
+    d[0x15] &= ~0x10;
+    d[0x3b] = cambio.habilidad >> 8;
+  } else {
+    d[0x15] = (d[0x15] & ~0x10) | ((cambio.habilidad >> 4) & 0x10);
+  }
   pon16(d, 0x0a, cambio.objeto);
   if (cambio.forma !== undefined) d[0x1d] = (d[0x1d] & 7) | (cambio.forma << 3);
   let suma = 0;

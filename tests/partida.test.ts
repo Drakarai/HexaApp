@@ -353,6 +353,15 @@ describe("Partidas de los juegos oficiales", () => {
     assert.equal(traducirOficial({ ...p.pokemon[0], objeto: 960 }, "xy")!.objeto, null);
   });
 
+  test("USUM con la versión nueva del mod: la habilidad con el byte alto aparte", () => {
+    // Megasolar (313) guardada como la versión del 19-11-2026, y una de las de siempre
+    const nueva = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 313, objeto: 0, formatoNuevo: true }));
+    assert.equal(nueva.p.pokemon[0].habilidad, 313);
+    assert.equal(nueva.t[0].habilidad, "mega-sol");
+    const baja = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 33, objeto: 0, formatoNuevo: true }));
+    assert.equal(baja.p.pokemon[0].habilidad, 33);
+  });
+
   test("todo lo del mod existe en la app", () => {
     const slugs = [...Object.values(OBJETOS_DEL_MOD), ...Object.values(OBJETOS_DE_LOS_PAQUETES)];
     for (const s of slugs) assert.ok(objetoPorSlug(s), s);

@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 17 de noviembre de 2026 (**leer la partida de USUM con el mod de expansión** del Hexalocke 3: habilidades de 9 bits, objetos y formas del mod y los objetos de los paquetes de pk3DS).
+Última actualización: 22 de noviembre de 2026 (la partida del mod de expansión de USUM también con **la versión del 19-11-2026**, que guarda el byte alto de la habilidad aparte).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3661,9 +3661,12 @@ de las otras.
 
 **USUM con el mod de expansión (Hexalocke 3).** La partida de la ROM con
 PokemonUSUMExpansion tiene la forma de la de USUM, pero el mod usa números que
-el juego original deja libres: las habilidades llevan un **9º bit** en el
-`0x10` del byte 0x15 del pokémon (sin él, Hospitalidad, la 299, salía como
-Antiplanta, la 43) y desde la 299 van **en su orden**, que no es el de PokéAPI
+el juego original deja libres: las habilidades llevan un **9º bit**, que la
+1.42 guardaba en el `0x10` del byte 0x15 del pokémon y la versión del
+19-11-2026 en el **byte 0x3B** (que solo vale 1: la mayor es la 319), pasando
+a ese formato las viejas al leerlas, así que en una partida conviven los dos y
+se leen los dos (sin él, Hospitalidad, la 299, salía como Antiplanta, la 43).
+Desde la 299 van **en su orden**, que no es el de PokéAPI
 (allí Encarnación es una y en el mod cuatro); los objetos de la 8ª, la 9ª y
 las megapiedras de Z-A van en 505–520 y 960–1023, fijos del mod; y los que
 añaden los paquetes de pk3DS (mentas, Parche Habilidad, Botas Gruesas…) van

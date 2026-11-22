@@ -74,13 +74,19 @@ export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, do
 }
 
 /**
- * En la 7ª, el mod de expansión de USUM tiene más de 255 habilidades y guarda
- * el 9º bit en el 0x10 del byte de al lado (el de qué hueco de habilidad es,
- * que en el juego original solo usa 1, 2 y 4). Sin él, Hospitalidad (299) se
- * leía como Antiplanta (43). En una partida sin mod ese bit está a 0.
+ * En la 7ª, el mod de expansión de USUM tiene más de 255 habilidades. La 1.42
+ * guardaba el 9º bit en el 0x10 del byte de al lado (el de qué hueco de
+ * habilidad es, que en el juego original solo usa 1, 2 y 4); la versión del
+ * 19-11-2026 guarda el byte alto en el 0x3B y pasa a ese formato las que
+ * encuentra a la antigua, así que en una partida pueden convivir los dos. Sin
+ * ellos, Hospitalidad (299) se leía como Antiplanta (43). El 0x3B solo vale 1
+ * (la mayor del mod es la 319): en una partida sin mod ese byte y el bit están
+ * a 0, y cualquier otro valor no es una habilidad.
  */
 function habilidadDe(pk: Uint8Array, generacion: 6 | 7) {
-  return generacion === 7 ? pk[0x14] | ((pk[0x15] & 0x10) << 4) : pk[0x14];
+  if (generacion === 6) return pk[0x14];
+  const alta = (pk[0x15] & 0x10) !== 0 || pk[0x3b] === 1;
+  return pk[0x14] | (alta ? 0x100 : 0);
 }
 
 export function leerGen67(datos: Uint8Array, familia: Familia): PartidaOficial {
