@@ -2,6 +2,7 @@ import datos from "./movimientos.json";
 import { tipoDelMovimiento, type TipoDeMovimiento } from "@/lib/tipo-del-movimiento";
 import { tiposDeGeneracion } from "@/lib/tipos";
 import { GENERACION_ANIL, MOVIMIENTOS_DE_ANIL as DE_ANIL, potenciaEnAnil, tipoDeMovimientoEnAnil } from "@/lib/anil";
+import { potenciaEnGeneracion } from "@/lib/movimientos-detalle";
 
 /**
  * Los movimientos y las naturalezas, para la **ficha completa** de cada
@@ -116,7 +117,18 @@ export function ataquesDeLosMovimientos(slugs: string[]): TipoDeMovimiento[] {
   });
 }
 
-/** Un movimiento listo para pintar en la ficha, con su tipo en esa generación */
+/**
+ * Físico o especial en esa generación. Hasta la 3ª no lo decidía el movimiento
+ * sino su tipo: Normal, Lucha, Volador, Veneno, Tierra, Roca, Bicho, Fantasma y
+ * Acero (los números 1 a 9 de PokéAPI) eran físicos; el resto, especiales. Los
+ * de estado lo son siempre. En Añil, como hoy.
+ */
+export function claseEnGeneracion(clase: number, tipo: number, generacion: number) {
+  if (clase === 0 || generacion > 3) return clase;
+  return tipo <= 9 ? 1 : 2;
+}
+
+/** Un movimiento listo para pintar en la ficha, con su tipo, clase y potencia en esa generación */
 export function movimientoParaVer(slug: string, generacion: number) {
   const m = POR_SLUG.get(slug);
   if (!m) return null;
@@ -126,9 +138,12 @@ export function movimientoParaVer(slug: string, generacion: number) {
     slug: m.s,
     nombre: m.n,
     tipo: existe ? { slug: existe.slug, nombre: existe.nombre } : null,
-    clase: m.c,
-    // En Añil, con su potencia si la cambia (Ciclón pega 60)
-    potencia: (generacion === GENERACION_ANIL ? potenciaEnAnil(m.s) : null) ?? m.p ?? null,
+    clase: claseEnGeneracion(m.c, tipo, generacion),
+    // En Añil, con su potencia si la cambia (Ciclón pega 60); si no, la de esa generación
+    potencia:
+      (generacion === GENERACION_ANIL ? potenciaEnAnil(m.s) : potenciaEnGeneracion(m.s, generacion)) ?? m.p ?? null,
+    // Para pedir el detalle al tocarlo (precisión, efectos…) con los valores de esa generación
+    generacion,
   };
 }
 export type MovimientoParaVer = NonNullable<ReturnType<typeof movimientoParaVer>>;

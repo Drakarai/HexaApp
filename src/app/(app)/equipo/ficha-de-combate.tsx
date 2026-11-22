@@ -8,6 +8,7 @@ import { sinConexion } from "@/lib/acciones-sin-conexion";
 import type { FichaDeCombate as Ficha } from "@/lib/soul-link";
 import { cx } from "@/lib/utils";
 import { useEsAnil } from "@/components/juego-del-locke";
+import { DetalleDeMovimiento } from "./detalle-de-movimiento";
 
 type Aviso = { tipo: "ok" | "error"; texto: string };
 
@@ -83,6 +84,8 @@ export function FichaDeCombate({
   extra?: React.ReactNode;
 }) {
   const [editando, setEditando] = useState(false);
+  // El movimiento abierto (se toca para ver su precisión, efectos…; otra vez, para cerrarlo)
+  const [abierto, setAbierto] = useState<string | null>(null);
   const vacia = !ficha.naturaleza && !ficha.objeto && !ficha.habilidad && !ficha.movimientos.length;
 
   if (editando) {
@@ -153,25 +156,40 @@ export function FichaDeCombate({
             <p className="mt-1.5 text-xs leading-snug text-slate-500">{ficha.habilidad.descripcion}</p>
           ) : null}
           {ficha.movimientos.length ? (
-            <ul className="mt-2 grid grid-cols-2 gap-1.5">
-              {ficha.movimientos.map((m) => (
-                <li
-                  key={m.slug}
-                  className="flex min-w-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1.5"
-                >
-                  {m.tipo ? (
-                    <ChapaDeTipo slug={m.tipo.slug} nombre={m.tipo.nombre} forma="icono" alto={16} />
-                  ) : null}
-                  <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{m.nombre}</span>
-                  <span
-                    className="shrink-0 text-[11px] tabular-nums text-slate-500"
-                    title={m.clase === 0 ? "De estado" : m.clase === 1 ? "Físico" : "Especial"}
-                  >
-                    {m.clase === 0 ? "estado" : (m.potencia ?? "—")}
-                  </span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <ul className="mt-2 grid grid-cols-2 gap-1.5">
+                {ficha.movimientos.map((m) => (
+                  <li key={m.slug} className="min-w-0">
+                    <button
+                      type="button"
+                      aria-expanded={abierto === m.slug}
+                      title="Tócalo para ver su precisión, sus efectos y su descripción"
+                      onClick={() => setAbierto((antes) => (antes === m.slug ? null : m.slug))}
+                      className={cx(
+                        "flex w-full min-w-0 items-center gap-1.5 rounded-lg border px-2 py-1.5 text-left transition",
+                        abierto === m.slug
+                          ? "border-sky-400/40 bg-sky-400/[0.08]"
+                          : "border-white/10 bg-white/[0.03] hover:border-white/20",
+                      )}
+                    >
+                      {m.tipo ? (
+                        <ChapaDeTipo slug={m.tipo.slug} nombre={m.tipo.nombre} forma="icono" alto={16} />
+                      ) : null}
+                      <span className="min-w-0 flex-1 truncate text-sm text-slate-100">{m.nombre}</span>
+                      <span
+                        className="shrink-0 text-[11px] tabular-nums text-slate-500"
+                        title={m.clase === 0 ? "De estado" : m.clase === 1 ? "Físico" : "Especial"}
+                      >
+                        {m.clase === 0 ? "estado" : (m.potencia ?? "—")}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              {ficha.movimientos.map((m) =>
+                m.slug === abierto ? <DetalleDeMovimiento key={m.slug} movimiento={m} /> : null,
+              )}
+            </>
           ) : null}
         </>
       )}
