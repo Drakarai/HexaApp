@@ -40,7 +40,13 @@ const TAMANO_EN_EQUIPO = 0x104;
 const NOMBRE_DE_CAJA = 0x22;
 
 /** Un pokémon de 6ª o 7ª, descifrado; null si el hueco está vacío o es un huevo */
-export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, donde: DondeEnLaPartida): PokemonOficial | null {
+export function leerPk67(
+  datos: Uint8Array,
+  desde: number,
+  generacion: 6 | 7,
+  donde: DondeEnLaPartida,
+  conMod = false,
+): PokemonOficial | null {
   const pk = datos.slice(desde, desde + TAMANO_EN_CAJA);
   const ec = u32(pk, 0);
   if (pk.every((b) => b === 0)) return null;
@@ -63,7 +69,7 @@ export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, do
     mote: conMote ? textoUtf16(pk, 0x40, 0x1a) || null : null,
     shiny: (tsv ^ psv) < 16,
     naturaleza: pk[0x1c],
-    habilidad: habilidadDe(pk, generacion) || null,
+    habilidad: habilidadDe(pk, generacion, conMod) || null,
     ranuraDeHabilidad: null,
     objeto: u16(pk, 0x0a) || null,
     movimientos: vacios([u16(pk, 0x5a), u16(pk, 0x5c), u16(pk, 0x5e), u16(pk, 0x60)]),
@@ -81,11 +87,14 @@ export function leerPk67(datos: Uint8Array, desde: number, generacion: 6 | 7, do
  * encuentra a la antigua, así que en una partida pueden convivir los dos. Sin
  * ellos, Hospitalidad (299) se leía como Antiplanta (43). El 0x3B solo vale 1
  * (la mayor del mod es la 319): en una partida sin mod ese byte y el bit están
- * a 0, y cualquier otro valor no es una habilidad.
+ * a 0, y cualquier otro valor no es una habilidad. El 0x3B solo se mira en
+ * USUM (`conMod`), que es donde está el mod: en el juego original es un dato de
+ * la 6ª (el superentrenamiento de distribución) que un pokémon traído con Bank
+ * puede traer puesto. El bit, en cambio, el juego original nunca lo usa.
  */
-function habilidadDe(pk: Uint8Array, generacion: 6 | 7) {
+function habilidadDe(pk: Uint8Array, generacion: 6 | 7, conMod: boolean) {
   if (generacion === 6) return pk[0x14];
-  const alta = (pk[0x15] & 0x10) !== 0 || pk[0x3b] === 1;
+  const alta = (pk[0x15] & 0x10) !== 0 || (conMod && pk[0x3b] === 1);
   return pk[0x14] | (alta ? 0x100 : 0);
 }
 
@@ -96,7 +105,7 @@ export function leerGen67(datos: Uint8Array, familia: Familia): PartidaOficial {
   const pokemon: PokemonOficial[] = [];
   const enEquipo = datos[d.equipo + 6 * TAMANO_EN_EQUIPO];
   for (let i = 0; i < Math.min(6, enEquipo); i++) {
-    const p = leerPk67(datos, d.equipo + i * TAMANO_EN_EQUIPO, generacion, { lugar: "equipo", hueco: i });
+    const p = leerPk67(datos, d.equipo + i * TAMANO_EN_EQUIPO, generacion, { lugar: "equipo", hueco: i }, familia === "usum");
     if (p) pokemon.push(p);
   }
   const cajas: string[] = [];
@@ -105,7 +114,7 @@ export function leerGen67(datos: Uint8Array, familia: Familia): PartidaOficial {
   for (let caja = 0; caja < abiertas; caja++) {
     cajas.push(textoUtf16(datos, d.nombres + caja * NOMBRE_DE_CAJA, NOMBRE_DE_CAJA) || `Caja ${caja + 1}`);
     for (let hueco = 0; hueco < 30; hueco++) {
-      const p = leerPk67(datos, d.cajas + (caja * 30 + hueco) * TAMANO_EN_CAJA, generacion, { lugar: "caja", caja, hueco });
+      const p = leerPk67(datos, d.cajas + (caja * 30 + hueco) * TAMANO_EN_CAJA, generacion, { lugar: "caja", caja, hueco }, familia === "usum");
       if (p) pokemon.push(p);
     }
   }

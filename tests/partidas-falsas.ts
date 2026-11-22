@@ -120,7 +120,7 @@ export function partidaG6(equipo: Uint8Array, caja: Uint8Array) {
  */
 export function partidaUSUMConMod(
   claro: Uint8Array,
-  cambio: { habilidad: number; objeto: number; forma?: number; formatoNuevo?: boolean },
+  cambio: { habilidad: number; objeto: number; forma?: number; formatoNuevo?: boolean; solYLuna?: boolean },
 ) {
   const d = claro.slice(0, 0xe8);
   d[0x14] = cambio.habilidad & 0xff;
@@ -136,10 +136,12 @@ export function partidaUSUMConMod(
   let suma = 0;
   for (let p = 8; p < 0xe8; p += 2) suma = (suma + u16(d, p)) & 0xffff;
   pon16(d, 6, suma);
-  const sav = new Uint8Array(0x6cc00);
-  sav[0x4c00 + 0x5e1] = 1;
-  sav[0x1600 + 6 * 0x104] = 1;
-  sav.set(cifrar67(d), 0x1600);
+  // Sol y Luna (sin mod) tiene la misma forma con otras direcciones
+  const [tamano, equipo, nombres] = cambio.solYLuna ? [0x6be00, 0x1400, 0x4800] : [0x6cc00, 0x1600, 0x4c00];
+  const sav = new Uint8Array(tamano);
+  sav[nombres + 0x5e1] = 1;
+  sav[equipo + 6 * 0x104] = 1;
+  sav.set(cifrar67(d), equipo);
   return sav;
 }
 

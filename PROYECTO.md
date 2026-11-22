@@ -3666,6 +3666,9 @@ el juego original deja libres: las habilidades llevan un **9º bit**, que la
 19-11-2026 en el **byte 0x3B** (que solo vale 1: la mayor es la 319), pasando
 a ese formato las viejas al leerlas, así que en una partida conviven los dos y
 se leen los dos (sin él, Hospitalidad, la 299, salía como Antiplanta, la 43).
+El 0x3B **solo se mira en USUM**: en el juego original es un dato de la 6ª
+(superentrenamiento de distribución) que puede venir puesto en un pokémon
+traído con Bank, y en Sol y Luna, que no tienen mod, se ignora.
 Desde la 299 van **en su orden**, que no es el de PokéAPI
 (allí Encarnación es una y en el mod cuatro); los objetos de la 8ª, la 9ª y
 las megapiedras de Z-A van en 505–520 y 960–1023, fijos del mod; y los que

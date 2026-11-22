@@ -362,6 +362,17 @@ describe("Partidas de los juegos oficiales", () => {
     assert.equal(baja.p.pokemon[0].habilidad, 33);
   });
 
+  test("una partida sin mod no se lee como si lo tuviera", () => {
+    // Sol y Luna con el 0x3B a 1 (un pokémon traído con Bank de la 6ª): sigue siendo Nado Rápido (33)
+    const sm = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 33 | 0x100, objeto: 0, formatoNuevo: true, solYLuna: true }));
+    assert.equal(sm.p.familia, "sm");
+    assert.equal(sm.p.pokemon[0].habilidad, 33);
+    assert.equal(sm.t[0].habilidad, "swift-swim");
+    // Y USUM sin nada del mod, como siempre
+    const usum = oficial(partidaUSUMConMod(pk("ludicolo.pk7"), { habilidad: 33, objeto: 0 }));
+    assert.equal(usum.t[0].habilidad, "swift-swim");
+  });
+
   test("todo lo del mod existe en la app", () => {
     const slugs = [...Object.values(OBJETOS_DEL_MOD), ...Object.values(OBJETOS_DE_LOS_PAQUETES)];
     for (const s of slugs) assert.ok(objetoPorSlug(s), s);
