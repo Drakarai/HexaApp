@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 17 de noviembre de 2026 (**la lista de títulos a obtener**, compartida por todos los lockes, y **leer la partida de USUM con el mod de expansión** del Hexalocke 3).
+Última actualización: 22 de noviembre de 2026 (**la lista de títulos a obtener**, compartida por todos los lockes; la partida del mod de USUM también con **la versión del 19-11-2026**, y **las habilidades más recientes** completas: las 44 de la 9ª que salían sin descripción y tres de Leyendas Z-A que faltaban).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -3661,9 +3661,15 @@ de las otras.
 
 **USUM con el mod de expansión (Hexalocke 3).** La partida de la ROM con
 PokemonUSUMExpansion tiene la forma de la de USUM, pero el mod usa números que
-el juego original deja libres: las habilidades llevan un **9º bit** en el
-`0x10` del byte 0x15 del pokémon (sin él, Hospitalidad, la 299, salía como
-Antiplanta, la 43) y desde la 299 van **en su orden**, que no es el de PokéAPI
+el juego original deja libres: las habilidades llevan un **9º bit**, que la
+1.42 guardaba en el `0x10` del byte 0x15 del pokémon y la versión del
+19-11-2026 en el **byte 0x3B** (que solo vale 1: la mayor es la 319), pasando
+a ese formato las viejas al leerlas, así que en una partida conviven los dos y
+se leen los dos (sin él, Hospitalidad, la 299, salía como Antiplanta, la 43).
+El 0x3B **solo se mira en USUM**: en el juego original es un dato de la 6ª
+(superentrenamiento de distribución) que puede venir puesto en un pokémon
+traído con Bank, y en Sol y Luna, que no tienen mod, se ignora.
+Desde la 299 van **en su orden**, que no es el de PokéAPI
 (allí Encarnación es una y en el mod cuatro); los objetos de la 8ª, la 9ª y
 las megapiedras de Z-A van en 505–520 y 960–1023, fijos del mod; y los que
 añaden los paquetes de pk3DS (mentas, Parche Habilidad, Botas Gruesas…) van
@@ -4486,6 +4492,12 @@ Piezas con truco:
   `tests/partidas/pk` (de las pruebas de PKHeX).
 - `lib/habilidades.ts` (con `habilidades.json`, de `scripts/habilidades.py` y
   PokéAPI) — nombre, descripción y las de cada pokémon; en Añil, las de Añil.
+  Lo que PokéAPI aún no trae va en `scripts/habilidades-recientes.json`: las
+  descripciones de la 9ª que le faltaban (44, que salían vacías) y las de
+  Leyendas Z-A que no tiene (Impulso Anguila, Crin de Fuego, Aura Protectora),
+  con el texto oficial en español del mod de USUM; la de Evocarrecuerdos es
+  nuestra, porque el mod no la trae. El script lo aplica al regenerar, sin
+  pisar lo que PokéAPI ya tenga.
 - `lib/megas.ts` (con `megas.json`, de `scripts/megas.py`) — `megaPorPiedra`:
   la mega que se enseña si lleva su megapiedra.
 - `public/iconos-de-caja/` (y `shiny/`) con su lista en

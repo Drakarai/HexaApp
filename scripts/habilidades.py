@@ -14,6 +14,10 @@ Por qué así:
 - La descripción es **la más reciente en español** que tenga PokéAPI.
 - De cada pokémon (formas y megas incluidas), sus habilidades en el orden del
   juego: las normales y, la última, la oculta. Sirven para ofrecerlas primero.
+- Lo que PokéAPI aún no trae de las más recientes (las descripciones de la 9ª
+  y las de Leyendas Z-A que le faltan) sale de `habilidades-recientes.json`,
+  con el texto oficial en español del mod de expansión de USUM: sin eso, al
+  regenerar volverían a quedarse vacías.
 """
 
 import csv
@@ -23,6 +27,18 @@ import sys
 
 ESPANOL = "7"
 SALIDA = os.path.join(os.path.dirname(__file__), "..", "src", "lib", "habilidades.json")
+RECIENTES = os.path.join(os.path.dirname(__file__), "habilidades-recientes.json")
+
+
+def completar(habilidades):
+    """Rellena las descripciones vacías y añade las que PokéAPI no tiene; no pisa nada que ya traiga."""
+    extra = json.load(open(RECIENTES, encoding="utf-8"))
+    for h in habilidades:
+        if not h["d"]:
+            h["d"] = extra["descripciones"].get(h["s"], "")
+    tiene = {h["s"] for h in habilidades}
+    habilidades.extend(n for n in extra["nuevas"] if n["s"] not in tiene)
+    habilidades.sort(key=lambda h: h["n"])
 
 
 def main():
@@ -45,7 +61,7 @@ def main():
         if id_ not in nombres:
             continue
         habilidades.append({"s": slug, "n": nombres[id_], "d": descripciones.get(id_, (0, ""))[1]})
-    habilidades.sort(key=lambda h: h["n"])
+    completar(habilidades)
 
     por_pokemon = {}
     for f in sorted(leer("pokemon_abilities"), key=lambda f: (int(f["pokemon_id"]), int(f["slot"]))):
