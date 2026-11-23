@@ -6,7 +6,8 @@ import type { FormState } from "@/app/actions/auth";
 import { FormMessage, SubmitButton } from "@/components/ui";
 
 const BODY_HINT =
-  'Cada línea que empiece por "- " se muestra como viñeta. Usa **texto** para negrita.';
+  'Cada línea que empiece por "- " se muestra como viñeta. Usa **texto** para negrita. ' +
+  'Para un enlace, pega la dirección (https://…) o escribe [texto](https://…).';
 
 /**
  * Los nombres de los campos, **como se llaman en la página**: el reglamento

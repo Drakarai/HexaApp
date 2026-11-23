@@ -295,9 +295,14 @@ describe("lo de todos los días", () => {
     // El artículo nuevo va dentro de ese título, detrás del último que tenía
     await primero.getByRole("button", { name: /Añadir un artículo a «Lo básico del todo»/ }).click();
     await primero.locator('input[name="title"]').last().fill("Artículo de la prueba");
-    await primero.locator('textarea[name="body"]').last().fill("- Una línea cualquiera.");
+    await primero.locator('textarea[name="body"]').last().fill("- Una línea cualquiera, con [la lista de baneos](https://example.com/baneos).");
     await primero.getByRole("button", { name: "Añadir", exact: true }).click();
-    await primero.locator("article", { hasText: "Artículo de la prueba" }).waitFor();
+    const articulo = primero.locator("article", { hasText: "Artículo de la prueba" });
+    await articulo.waitFor();
+    // El enlace escrito en la regla se puede pulsar, y se abre en otra pestaña
+    const enlace = articulo.getByRole("link", { name: "la lista de baneos" });
+    assert.equal(await enlace.getAttribute("href"), "https://example.com/baneos");
+    assert.equal(await enlace.getAttribute("target"), "_blank");
     const nombres = await primero.locator("article h3").allInnerTexts();
     assert.match(nombres.at(-1) ?? "", /Artículo de la prueba/, "el último de su título");
     sinProblemas(problemas, "títulos de las reglas");
