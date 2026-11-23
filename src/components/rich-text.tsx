@@ -1,8 +1,10 @@
 import { Fragment } from "react";
+import { trozosDeLinea } from "@/lib/texto-en-linea";
 
 /**
  * Render muy ligero de texto: líneas que empiezan por "- " se agrupan en una
- * lista, **negrita** se marca en negrita y el resto son párrafos.
+ * lista, **negrita** se marca en negrita, [texto](https://…) y las direcciones
+ * pegadas tal cual son enlaces, y el resto son párrafos.
  * Es intencionadamente limitado — no interpreta HTML, así que no hay riesgo
  * de inyección desde el texto que escriben los administradores.
  */
@@ -39,14 +41,14 @@ export function RichText({ text }: { text: string }) {
               <li key={itemIndex} className="flex gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-400" />
                 <span>
-                  <Bold text={item} />
+                  <EnLinea text={item} />
                 </span>
               </li>
             ))}
           </ul>
         ) : (
           <p key={index}>
-            <Bold text={block.content} />
+            <EnLinea text={block.content} />
           </p>
         ),
       )}
@@ -54,17 +56,27 @@ export function RichText({ text }: { text: string }) {
   );
 }
 
-function Bold({ text }: { text: string }) {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+function EnLinea({ text }: { text: string }) {
   return (
     <>
-      {parts.map((part, index) =>
-        part.startsWith("**") && part.endsWith("**") ? (
+      {trozosDeLinea(text).map((trozo, index) =>
+        trozo.tipo === "negrita" ? (
           <strong key={index} className="font-semibold text-white">
-            {part.slice(2, -2)}
+            {trozo.texto}
           </strong>
+        ) : trozo.tipo === "enlace" ? (
+          // Fuera de la app, en otra pestaña: quien lee la regla no pierde la página
+          <a
+            key={index}
+            href={trozo.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="break-words font-medium text-brand-400 underline decoration-brand-400/40 underline-offset-2 hover:decoration-brand-400"
+          >
+            {trozo.texto}
+          </a>
         ) : (
-          <Fragment key={index}>{part}</Fragment>
+          <Fragment key={index}>{trozo.texto}</Fragment>
         ),
       )}
     </>
