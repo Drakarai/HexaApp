@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de noviembre de 2026 (**el formato de una jornada se cambia en cualquier momento**; antes, **enlaces que se pueden pulsar** en las reglas y las notas, el detalle de cada movimiento al tocarlo en la ficha de combate, con los valores de la generación del locke y los efectos con su probabilidad, la lista de títulos a obtener, la partida del mod de USUM nuevo y las habilidades más recientes).
+Última actualización: 26 de noviembre de 2026 (**GTS, paso 1 probado**: escribir un pokémon en una partida de USUM con el mod y que el juego la acepte).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4742,6 +4742,43 @@ riesgo es pequeño) y una copia automática fuera de Neon.
 cada push a la rama de trabajo se publica solo. `DEPLOY.md` sigue valiendo para
 montarla de cero.
 
+**GTS (intercambios dentro del locke), en marcha.** Para lockes de 3 o más y,
+lo primero, para **Ultrasol/Ultraluna con el mod** del Hexalocke 3. Se va paso
+a paso, como pidió el usuario:
+
+1. **Escribir un pokémon en la partida y que el juego la acepte — probado.**
+   Se hizo fuera del repositorio, con una partida real del usuario: un
+   Ferropalmas a nivel 92 en el primer hueco del equipo, y **el juego la abrió
+   en Citra** con todo bien. Lo que hace falta, sacado de PKHeX (de ahí solo
+   datos: posiciones y la clave; el código es nuestro, PKHeX es GPL):
+   - El pokémon se arma descifrado (suma de 0x08 a 0xE8 en el 0x06), se
+     **baraja al revés** que `desordenar` con la misma tabla `ORDEN` y se cifra
+     con su constante (`descifrar16` vale para las dos cosas; la parte de
+     equipo, 0xE8–0x104, va aparte con la misma semilla). En el equipo hay que
+     escribir nivel y estadísticas calculadas.
+   - La habilidad del mod por encima de 255 se guarda **a la antigua**
+     (`0x15 | 0x10`), que entienden las dos versiones del mod.
+   - Las **39 comprobaciones de bloque** de USUM (tabla al final, `tamaño −
+     0x200`): CRC16 reflejado (0xA001), empezando en 0xFFFF e invertido al
+     final, **con la zona de la firma a cero**.
+   - La **firma** (MemeCrypto de PKHeX, clave «PokedexAndSaveFile»): en el
+     bloque 36, `0x6C000 + 0x100`, 0x80 bytes. SHA256 de los 0x150 bytes de la
+     tabla de comprobaciones, SHA1 de todo menos los 8 últimos, AES con la
+     clave sacada de un SHA1 del DER y la carga, y RSA con la clave privada.
+   - La prueba de que está bien: **volver a firmar la partida original sin
+     tocarla da la misma firma byte a byte**. Es lo primero que tiene que
+     comprobar cualquier versión nueva.
+2. **La GTS en la app, sin tocar partidas**: depositar y buscar, aceptar,
+   cambiar de caja, con las reglas que decida el grupo (ventana de «mercado de
+   fichajes» tras cada jornada, uno por ventana, veto de la organización).
+3. **Unirlo**: al cerrarse un intercambio, cada uno sube su partida y se baja
+   la suya con el pokémon cambiado (los bytes de verdad del otro, guardados al
+   depositarlo), comprobada otra vez con el lector antes de dársela.
+4. Extras si gusta: intercambio prodigioso, bonos de intercambio en la Bolsa.
+
+Por decidir con el grupo: cómo se reparte el tiempo (siempre abierta o por
+ventanas), cuántos intercambios y si la organización veta.
+
 **Estadísticas hechas**: lo que se saca de la repetición en jornadas, series,
 retos y final, los once galardones y las clasificaciones. Quedan las ideas que
 se hablaron y no entraron: enseñar los galardones en otras pantallas (hall,
@@ -5336,4 +5373,5 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 173. **Títulos de locke y generales**: catálogo común y extras de cada locke, los dan el Creador y quien administra cada locke, y en cada locke se lleva el elegido para él.
 174. **La lista de títulos a obtener**: compartida por todos los lockes, en su propio bloque en Administración, y en *Reglas* los que se pueden ganar.
 175. **Leer la partida de USUM con el mod de expansión** (Hexalocke 3): habilidades, objetos y formas del mod y de los paquetes de pk3DS.
+176. **GTS, paso 1**: escribir un pokémon en una partida de USUM con el mod (comprobaciones y firma), probado en Citra.
 176. **El detalle de cada movimiento** al tocarlo en la ficha de combate: precisión, PP, prioridad, contacto, efectos con su probabilidad exacta y descripción, con los valores de la generación del locke.
