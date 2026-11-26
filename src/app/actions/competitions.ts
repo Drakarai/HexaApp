@@ -4,6 +4,7 @@ import { leerVidas } from "@/lib/vidas";
 import { comprobarVidasDelLocke } from "@/lib/vidas-servidor";
 
 import { revalidatePath } from "next/cache";
+import { sePuedeTenerGts } from "@/lib/gts";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { registrar } from "@/lib/registro";
@@ -399,6 +400,14 @@ export async function updateCompetitionAction(
             vidas: formData.get("vidas"),
             vidaCero: formData.get("vidaCero"),
           })
+        : {}),
+      // La GTS, igual: solo si el formulario trae su recuadro (ver lib/gts.ts)
+      ...(formData.get("conCampoDeGts")
+        ? {
+            gts: formData.get("gts") === "on" && sePuedeTenerGts({ estilo, maxPlayers: plazas }),
+            gtsAVista: formData.get("gtsAVista") === "on",
+            gtsVeto: formData.get("gtsVeto") === "on",
+          }
         : {}),
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }

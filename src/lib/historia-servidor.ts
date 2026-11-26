@@ -206,10 +206,13 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
     const cambios = guardados.flatMap((s) => (s.tipo === "evoluciona" || s.tipo === "intercambio" ? [s] : []));
     // Shiny desde la captura: si lo fuera por un premio, saldría su suceso aparte
     const nacioShiny = laCaptura.shiny && !guardados.some((s) => s.tipo === "shiny");
-    const sitio = laCaptura.zone?.name ?? laCaptura.sitio;
+    // Llegado por la GTS: lo capturó otro, y la ruta de la captura es la del que se fue
+    const porLaGts = guardados.find((s) => s.tipo === "gts");
+    const sitio = porLaGts ? porLaGts.sitio : (laCaptura.zone?.name ?? laCaptura.sitio);
+    const quien = porLaGts ? ` por ${porLaGts.de}` : "";
     sucesos.push({
       tipo: "captura",
-      texto: sitio ? `Capturado en ${sitio}` : "Capturado",
+      texto: sitio ? `Capturado${quien} en ${sitio}` : `Capturado${quien}`,
       detalle:
         [
           nacioShiny ? "shiny" : null,
@@ -229,6 +232,13 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
           ? { tipo: "evoluciona", texto: `Evolucionó en ${suceso.a}`, fecha: suceso.fecha }
           : suceso.tipo === "intercambio"
             ? { tipo: "intercambio", texto: `Llegó por intercambio, a cambio de ${suceso.de}`, fecha: suceso.fecha }
+            : suceso.tipo === "gts"
+              ? {
+                  tipo: "intercambio",
+                  texto: `Pasó de ${suceso.de} a ${suceso.a} por la GTS`,
+                  detalle: `A cambio de ${suceso.por}`,
+                  fecha: suceso.fecha,
+                }
             : { tipo: "shiny", texto: "Se volvió shiny", fecha: suceso.fecha },
       );
     }

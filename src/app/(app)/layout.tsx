@@ -30,6 +30,7 @@ import { RecordarPantalla } from "@/components/recordar-pantalla";
 import { Logo } from "@/components/logo";
 import { Icono } from "@/components/icono";
 import { COMPETITION_STATUS } from "@/lib/constants";
+import { sePuedeTenerGts } from "@/lib/gts";
 import { GritosDelLocke } from "@/components/gritos-del-locke";
 import { TirarParaRefrescar } from "@/components/tirar-para-refrescar";
 import { Companero } from "@/components/companero";
@@ -53,6 +54,8 @@ const S = {
   jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
   retos: { href: "/retos", label: "Retos", icon: "🔥" },
   sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
+  // Solo en los lockes que la encienden (ver lib/gts.ts)
+  gts: { href: "/gts", label: "GTS", icon: "🔁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
   // En un Soul Link, el equipo y la caja de todos, con sus vínculos; en los
@@ -90,7 +93,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "Combates",
     icon: "⚔️",
-    children: [S.jornadas, S.retos, S.sorteo, S.ruleta, S.finalFour, S.hall],
+    children: [S.jornadas, S.retos, S.gts, S.sorteo, S.ruleta, S.finalFour, S.hall],
   },
   {
     label: "La edición",
@@ -161,6 +164,7 @@ export default async function AppLayout({
   const tienePalmares =
     !active &&
     (await prisma.lockeDeAntes.count({ where: { jugadoresIds: { has: user.id } } })) > 0;
+  const conGts = Boolean(active?.gts && sePuedeTenerGts(active));
   /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
   const perfil = perfilDeLocke(active?.maxPlayers ?? 6, active?.estilo);
 
@@ -281,9 +285,9 @@ export default async function AppLayout({
         : [
             {
               ...grupo,
-              children: grupo.children.map((item) =>
-                item.href === S.finalFour.href ? finalConSuNombre : item,
-              ),
+              children: grupo.children
+                .filter((item) => item.href !== S.gts.href || conGts)
+                .map((item) => (item.href === S.finalFour.href ? finalConSuNombre : item)),
             },
           ]
       : grupo.label === "La edición"

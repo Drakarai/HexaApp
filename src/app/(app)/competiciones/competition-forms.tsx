@@ -129,6 +129,50 @@ export function CampoDeVidas({
   );
 }
 
+/**
+ * **La GTS** del locke, apagada de entrada: intercambios entre jugadores en
+ * cada checkpoint de jornada, con boletos. Ver lib/gts.ts.
+ */
+function CampoDeGts({ gts, aVista, veto }: { gts: boolean; aVista: boolean; veto: boolean }) {
+  const [con, setCon] = useState(gts);
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3" data-campo-gts>
+      {/* Para saber que el formulario lo trae: una casilla sin marcar no se envía */}
+      <input type="hidden" name="conCampoDeGts" value="1" />
+      <label className="flex items-start gap-2.5 text-sm text-slate-200">
+        <input type="checkbox" name="gts" checked={con} onChange={(e) => setCon(e.target.checked)} className="mt-0.5" />
+        <span>
+          GTS
+          <span className="mt-0.5 block text-xs text-slate-400">
+            Intercambios entre jugadores: se abre a cada uno al pasar el level cap de un checkpoint y se cierra al
+            acabarse su jornada. Dos boletos al empezar y uno por jornada acabada; cada intercambio gasta uno a cada uno.
+          </span>
+        </span>
+      </label>
+      {con ? (
+        <div className="mt-3 space-y-2 pl-6">
+          <label className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="gtsAVista" defaultChecked={aVista} className="mt-0.5" />
+            <span>
+              Ficha a la vista
+              <span className="block text-xs text-slate-400">
+                Sin marcar, como en la GTS de los juegos: solo se ve especie, mote, nivel y sexo hasta recibirlo.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="gtsVeto" defaultChecked={veto} className="mt-0.5" />
+            <span>
+              La organización aprueba cada intercambio
+              <span className="block text-xs text-slate-400">Un intercambio aceptado espera a que lo apruebe quien administra.</span>
+            </span>
+          </label>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function NewCompetitionForm({
   competitions,
   archivables,
@@ -349,6 +393,9 @@ export function EditCompetitionForm({
     jornadasDanTitulo: boolean;
     vidas: number | null;
     vidaCero: boolean;
+    gts: boolean;
+    gtsAVista: boolean;
+    gtsVeto: boolean;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -459,6 +506,10 @@ export function EditCompetitionForm({
           </div>
         ) : null}
         <CampoDeVidas vidas={competition.vidas} vidaCero={competition.vidaCero} />
+        {/* La GTS: de tres para arriba y no en un Soul Link (ver lib/gts.ts) */}
+        {competition.maxPlayers >= 3 && !soulLink ? (
+          <CampoDeGts gts={competition.gts} aVista={competition.gtsAVista} veto={competition.gtsVeto} />
+        ) : null}
         <div>
           <label className="label">Descripción</label>
           <textarea

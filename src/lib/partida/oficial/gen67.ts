@@ -122,4 +122,22 @@ export function leerGen67(datos: Uint8Array, familia: Familia): PartidaOficial {
   return { tipo: "oficial", familia, jugador: null, pokemon, cajas };
 }
 
+/**
+ * Los bytes de un hueco **tal cual están en la partida** (cifrados): los 0x104
+ * de uno del equipo o los 0xE8 de uno de la caja. Es lo que se sube a la GTS,
+ * para que el servidor lo lea él mismo y para poder meterlo después en la
+ * partida de otro (ver `ficha-gen67.ts`).
+ */
+export function bytesDelHueco(datos: Uint8Array, familia: Familia, donde: DondeEnLaPartida): Uint8Array | null {
+  const d = DISPOSICION[familia];
+  if (!d) return null;
+  const desde =
+    donde.lugar === "equipo"
+      ? d.equipo + donde.hueco * TAMANO_EN_EQUIPO
+      : d.cajas + ((donde.caja) * 30 + donde.hueco) * TAMANO_EN_CAJA;
+  const largo = donde.lugar === "equipo" ? TAMANO_EN_EQUIPO : TAMANO_EN_CAJA;
+  if (desde + largo > datos.length) return null;
+  return datos.slice(desde, desde + largo);
+}
+
 export { u32 };

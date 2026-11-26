@@ -625,6 +625,17 @@ model Competition {
    */
   vidaCero            Boolean   @default(false)
   /**
+   * **La GTS** del locke (ver lib/gts.ts), apagada de entrada: intercambios
+   * entre jugadores en la ventana de cada checkpoint de jornada. Solo en
+   * lockes de tres o más y nunca en un Soul Link. `gtsAVista` enseña la ficha
+   * entera de lo depositado; sin ella, solo especie, mote, nivel y sexo, como
+   * en la GTS de los juegos. `gtsVeto` hace que la organización apruebe cada
+   * intercambio antes de que se haga.
+   */
+  gts                 Boolean   @default(false)
+  gtsAVista           Boolean   @default(false)
+  gtsVeto             Boolean   @default(false)
+  /**
    * La clave del **enlace público** de la clasificación (`/clasificacion/<clave>`),
    * o null si no hay. Para que la siga gente de fuera sin cuenta: solo enseña
    * la tabla. Larga y al azar, así que no se adivina; cambiarla deja
@@ -687,6 +698,7 @@ model Competition {
   papelera     JornadaBorrada[]
   titulos      Title[]          @relation("TitulosDelLocke")
   titulosDados TitleAward[]     @relation("TitulosDadosEnElLocke")
+  depositosGts GtsDeposito[]
 
   @@index([enlacePublico])
 }
@@ -817,6 +829,8 @@ model Participant {
   aportadosASorteos SorteoPokemon[]      @relation("SorteoAportadoPor")
   tocadosEnSorteos  SorteoPokemon[]      @relation("SorteoTocaA")
   equipoDeTipos     TypeTeam?
+  depositosGts      GtsDeposito[]
+  ofertasGts        GtsOferta[]
 
   @@unique([competitionId, userId])
   @@index([competitionId])
@@ -2199,4 +2213,70 @@ model CambioDelLocke {
 
   @@index([createdAt])
   @@index([competitionId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// GTS
+// ---------------------------------------------------------------------------
+
+/**
+ * Un pokémon puesto en la GTS de un locke. Se guarda **una copia de su ficha**
+ * (`ficha`, ver `FichaDeGts` en lib/gts.ts) al depositarlo: es lo que se
+ * enseña, y lo que queda en el historial aunque luego cambie o se borre la
+ * captura. `captureId` va sin relación a propósito por lo mismo.
+ *
+ * `checkpoint` es el número del checkpoint en cuya ventana se puso: cuando su
+ * jornada se acaba, lo que siga abierto caduca y vuelve a su dueño.
+ *
+ * `pk` son los bytes del pokémon tal y como estaban en la partida (cifrados,
+ * en base64), si se subió: es lo que hará falta para meterlo en la partida
+ * del otro. Va aparte de la ficha porque nunca sale hacia el navegador.
+ */
+model GtsDeposito {
+  id            String   @id @default(cuid())
+  competitionId String
+  participantId String
+  captureId     String
+  checkpoint    Int
+  ficha         Json
+  pk            String?
+  // Lo que busca a cambio, opcional («algo de tipo agua»)
+  busco         String?
+  // "abierto" | "reservado" (aceptado, falta que lo apruebe la organización)
+  // | "intercambiado" | "retirado" | "caducado"
+  estado        String   @default("abierto")
+  createdAt     DateTime @default(now())
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  ofertas     GtsOferta[]
+
+  @@index([competitionId, estado])
+  @@index([participantId])
+}
+
+/**
+ * Lo que alguien ofrece por un depósito: otro pokémon, con su ficha copiada
+ * igual. Si se acepta (y la organización lo aprueba, si hay veto), es el
+ * intercambio: los dos gastan un boleto y cada pokémon pasa a la caja del otro.
+ */
+model GtsOferta {
+  id            String    @id @default(cuid())
+  depositoId    String
+  participantId String
+  captureId     String
+  ficha         Json
+  pk            String?
+  // "pendiente" | "porAprobar" | "aceptada" | "rechazada" | "retirada"
+  // | "vetada" | "caducada"
+  estado        String    @default("pendiente")
+  createdAt     DateTime  @default(now())
+  // Cuándo se hizo el intercambio, o cuándo se resolvió (rechazo, veto)
+  resueltaEl    DateTime?
+
+  deposito    GtsDeposito @relation(fields: [depositoId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@index([depositoId])
+  @@index([participantId, estado])
 }

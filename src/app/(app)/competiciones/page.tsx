@@ -651,6 +651,9 @@ export default async function CompetitionsPage({
               jornadasDanTitulo: active.jornadasDanTitulo,
               vidas: active.vidas,
               vidaCero: active.vidaCero,
+              gts: active.gts,
+              gtsAVista: active.gtsAVista,
+              gtsVeto: active.gtsVeto,
             }}
           />
 

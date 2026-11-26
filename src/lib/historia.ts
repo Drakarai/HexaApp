@@ -23,7 +23,13 @@ export type SucesoGuardado =
   // Cambiado a un entrenador del juego: se fue `de` y llegó `a`, en su hueco
   | { tipo: "intercambio"; de: string; a: string; fecha: string }
   // Revivido (un premio): de qué baja, que se queda en el cementerio y ya no la apunta
-  | { tipo: "revive"; deathId: string; fecha: string };
+  | { tipo: "revive"; deathId: string; fecha: string }
+  /**
+   * Cambiado por la GTS del locke (ver lib/gts.ts): se fue de `de` a `a`, a
+   * cambio de `por`. `sitio` es dónde lo capturó su primer dueño, porque la
+   * captura se queda con la ruta del que se fue (el encuentro gastado).
+   */
+  | { tipo: "gts"; de: string; a: string; por: string; sitio: string | null; fecha: string };
 
 export function leerHistoria(valor: unknown): SucesoGuardado[] {
   if (!Array.isArray(valor)) return [];
@@ -32,6 +38,10 @@ export function leerHistoria(valor: unknown): SucesoGuardado[] {
     const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown; deathId?: unknown };
     if (suceso.tipo === "shiny") return true;
     if (suceso.tipo === "revive") return typeof suceso.deathId === "string";
+    if (suceso.tipo === "gts") {
+      const g = s as { de?: unknown; a?: unknown; por?: unknown };
+      return typeof g.de === "string" && typeof g.a === "string" && typeof g.por === "string";
+    }
     return (
       (suceso.tipo === "evoluciona" || suceso.tipo === "intercambio") &&
       typeof suceso.de === "string" &&

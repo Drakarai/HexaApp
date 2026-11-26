@@ -125,7 +125,8 @@ const pruebas = readdirSync(join(RAIZ, "tests", "interfaz"))
 const resultado = spawnSync(
   process.execPath,
   ["--test", "--test-concurrency=1", "--test-reporter=spec", ...pruebas],
-  { cwd: RAIZ, stdio: "inherit", env: { ...process.env, PRUEBAS_URL: BASE } },
+  // La base, para las pruebas que preparan algo que la interfaz tardaría mucho en montar
+  { cwd: RAIZ, stdio: "inherit", env: { ...process.env, PRUEBAS_URL: BASE, PRUEBAS_DB: dePruebas.href } },
 );
 if (resultado.status !== 0 && process.env.PRUEBAS_REGISTRO) console.log(registro.slice(-4000));
 process.exit(resultado.status ?? 1);
