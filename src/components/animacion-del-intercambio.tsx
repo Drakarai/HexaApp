@@ -83,6 +83,83 @@ function cargar(src: string | null) {
   });
 }
 
+/**
+ * **Lo que ocupa el dibujo dentro de su fotograma**, en fracciones (el centro y
+ * el alto de lo que no es transparente). Hace falta porque el animado de la
+ * ficha y el quieto no vienen del mismo sitio: del 650 en adelante, el
+ * animado es del paquete de la comunidad, que deja mucho más margen, y
+ * Ferropalmas salía bastante más pequeño que su silueta (lo vio el usuario).
+ * Con esto, el animado se ajusta para ocupar lo mismo que el quieto.
+ */
+type Visible = { cx: number; cy: number; alto: number; ancho: number; altoDelFotograma: number; anchoDelFotograma: number };
+
+function medirImagen(img: HTMLImageElement, tira: boolean): Visible | null {
+  try {
+    const alto = img.naturalHeight;
+    // En una tira los fotogramas son cuadrados y van en fila: se mide el primero
+    const ancho = tira ? alto : img.naturalWidth;
+    if (!alto || !ancho) return null;
+    const o = document.createElement("canvas");
+    o.width = ancho;
+    o.height = alto;
+    const x = o.getContext("2d", { willReadFrequently: true })!;
+    x.drawImage(img, 0, 0, ancho, alto, 0, 0, ancho, alto);
+    const { data } = x.getImageData(0, 0, ancho, alto);
+    let x0 = ancho, y0 = alto, x1 = -1, y1 = -1;
+    for (let y = 0; y < alto; y++) {
+      for (let xx = 0; xx < ancho; xx++) {
+        if (data[(y * ancho + xx) * 4 + 3] > 16) {
+          if (xx < x0) x0 = xx;
+          if (xx > x1) x1 = xx;
+          if (y < y0) y0 = y;
+          if (y > y1) y1 = y;
+        }
+      }
+    }
+    if (x1 < 0) return null;
+    return {
+      cx: (x0 + x1 + 1) / 2 / ancho,
+      cy: (y0 + y1 + 1) / 2 / alto,
+      alto: (y1 - y0 + 1) / alto,
+      ancho: (x1 - x0 + 1) / ancho,
+      altoDelFotograma: alto,
+      anchoDelFotograma: ancho,
+    };
+  } catch {
+    // Una imagen de otro sitio no se deja leer: se queda como venía
+    return null;
+  }
+}
+
+const medidas = new Map<string, Visible | null | "midiendo">();
+
+/** Mide (una vez por dirección) lo que se ve de una imagen; hasta tenerlo, undefined */
+function medida(src: string, tira: boolean): Visible | null | undefined {
+  const ya = medidas.get(src);
+  if (ya === "midiendo") return undefined;
+  if (ya !== undefined) return ya;
+  medidas.set(src, "midiendo");
+  const img = new Image();
+  img.onload = () => medidas.set(src, medirImagen(img, tira));
+  img.onerror = () => medidas.set(src, null);
+  img.src = src;
+  return undefined;
+}
+
+/** El sprite animado que ha puesto `SpritePokemon` en la caja: su dirección, si es tira y lo que mide en pantalla */
+function loQueSeVe(caja: HTMLElement) {
+  const img = caja.querySelector("img");
+  if (img && img.complete && img.naturalWidth) {
+    return { src: img.currentSrc || img.src, tira: false, ancho: img.offsetWidth, alto: img.offsetHeight };
+  }
+  const tira = caja.querySelector<HTMLElement>("span[role=img] > span");
+  if (tira) {
+    const url = /url\(["']?(.*?)["']?\)/.exec(tira.style.backgroundImage)?.[1];
+    if (url) return { src: url, tira: true, ancho: tira.offsetWidth, alto: tira.offsetHeight };
+  }
+  return null;
+}
+
 /** Dónde va cada sprite a color en este fotograma (en el lienzo de 720) */
 type Puesto = { x: number; y: number; escala: number; alfa: number };
 
@@ -469,6 +546,8 @@ export function AnimacionDelIntercambio({
       ]);
       if (!vivo) return;
       const siluetas = { sale: a ? tenido(a, "#a5b4fc") : null, llega: b ? tenido(b, "#ffffff") : null };
+      // Lo que ocupa el quieto (el de la silueta): es la medida a la que se ajusta el animado
+      const quietos = { sale: a ? medirImagen(a, false) : null, llega: b ? medirImagen(b, false) : null };
       const g = canvas.getContext("2d")!;
       const inicio = performance.now() - (reducir ? FINAL * 1000 : 0);
       const fotograma = (ahora: number) => {
@@ -483,15 +562,29 @@ export function AnimacionDelIntercambio({
         g.setTransform(k * densidad, 0, 0, k * densidad, 0, 0);
         const t = (ahora - inicio) / 1000;
         const puestos = pintar(g, t, siluetas, textos);
-        for (const [ref, puesto] of [
-          [spriteSale, puestos.sale],
-          [spriteLlega, puestos.llega],
+        for (const [ref, puesto, quieto] of [
+          [spriteSale, puestos.sale, quietos.sale],
+          [spriteLlega, puestos.llega, quietos.llega],
         ] as const) {
           const el = ref.current;
           if (!el) continue;
           el.style.opacity = String(puesto.alfa);
-          // Mide 288 (un sprite de 96 al triple) y se encoge con el escenario: así va igual que su silueta
-          el.style.transform = `translate(${puesto.x * k}px, ${puesto.y * k}px) translate(-50%, -50%) scale(${(k * puesto.escala) / ESCALA})`;
+          const crece = puesto.escala / ESCALA;
+          const visto = loQueSeVe(el);
+          const animado = visto && visto.alto ? medida(visto.src, visto.tira) : null;
+          if (quieto && visto && animado) {
+            // Que lo dibujado ocupe lo mismo y en el mismo sitio que en el quieto (su silueta)
+            const altoDelQuieto = quieto.alto * quieto.altoDelFotograma * ESCALA;
+            const escala = (crece * altoDelQuieto * k) / (animado.alto * visto.alto);
+            const ox = (quieto.cx - 0.5) * quieto.anchoDelFotograma * ESCALA * crece;
+            const oy = (quieto.cy - 0.5) * quieto.altoDelFotograma * ESCALA * crece;
+            const ax = (animado.cx - 0.5) * visto.ancho;
+            const ay = (animado.cy - 0.5) * visto.alto;
+            el.style.transform = `translate(${(puesto.x + ox) * k}px, ${(puesto.y + oy) * k}px) translate(-50%, -50%) scale(${escala}) translate(${-ax}px, ${-ay}px)`;
+          } else {
+            // Mide 288 (un sprite de 96 al triple) y se encoge con el escenario, como su silueta
+            el.style.transform = `translate(${puesto.x * k}px, ${puesto.y * k}px) translate(-50%, -50%) scale(${(k * puesto.escala) / ESCALA})`;
+          }
         }
         if (t >= FINAL) setAcabada(true);
         marco = requestAnimationFrame(fotograma);
