@@ -652,6 +652,138 @@ export async function cambiarSerieDeJornadaAction(formData: FormData): Promise<F
   return { success: pedido === 1 ? "Ahora es un solo combate." : `Ahora es al mejor de ${pedido}.` };
 }
 
+/**
+ * Cambiar el formato de una jornada ya creada (singles, dobles, VGC…) y sus
+ * condiciones. Entre formatos de dos jugadores se puede **en cualquier
+ * momento**, con combates jugados o no: el formato solo dice cómo se juega, no
+ * cambia quién ganó. Los combates que llevan un formato propio siguen con el
+ * suyo. Si algún equipo apuntado tiene más pokémon de los que permite el nuevo,
+ * no se toca: se avisa para que lo arregle quien lo apuntó.
+ *
+ * El Battle Royale es otra cosa (no hay parejas, sino un orden de llegada), así
+ * que entrar o salir de él solo se puede con la jornada sin nada apuntado: al
+ * entrar se queda un royale con todos los que siguen jugando, y al salir se
+ * proponen los emparejamientos como al crearla.
+ */
+export async function cambiarFormatoDeJornadaAction(formData: FormData): Promise<FormState> {
+  const matchdayId = String(formData.get("matchdayId") ?? "");
+  const jornada = await prisma.matchday.findUnique({
+    where: { id: matchdayId },
+    select: {
+      id: true,
+      label: true,
+      competitionId: true,
+      position: true,
+      alMejorDe: true,
+      formato: true,
+      condiciones: true,
+      matches: {
+        select: {
+          id: true,
+          formato: true,
+          winnerId: true,
+          pokemonDiff: true,
+          replayUrl: true,
+          notes: true,
+          playedAt: true,
+          porRetirada: true,
+          team: { select: { participantId: true } },
+        },
+      },
+      royales: {
+        select: {
+          id: true,
+          cronica: true,
+          replayUrl: true,
+          playedAt: true,
+          puestos: { select: { puesto: true, vivos: true, notes: true } },
+          _count: { select: { equipos: true } },
+        },
+      },
+    },
+  });
+  if (!jornada) return { error: "Esa jornada ya no existe." };
+  try {
+    await requireCompetitionManager(jornada.competitionId);
+  } catch (error) {
+    return { error: mensajeDeError(error) };
+  }
+
+  // Se valida contra la lista: uno que no existe no se guarda
+  const pedido = formatoDeCombate(String(formData.get("formato") ?? ""));
+  if (pedido.id !== String(formData.get("formato") ?? "")) return { error: "Ese formato no existe." };
+  const ahora = formatoDeCombate(jornada.formato);
+  const condiciones = String(formData.get("condiciones") ?? "").trim().slice(0, 120) || null;
+  if (pedido.id === ahora.id && condiciones === (jornada.condiciones ?? null)) return { success: "Ya estaba así." };
+
+  let aviso = "";
+  if (pedido.multiple !== ahora.multiple) {
+    const conCombates = jornada.matches.some(
+      (m) => m.winnerId || m.pokemonDiff !== null || m.replayUrl || m.notes || m.playedAt || m.porRetirada || m.team.length,
+    );
+    const conRoyale = jornada.royales.some(
+      (r) =>
+        r.cronica || r.replayUrl || r.playedAt || r._count.equipos ||
+        r.puestos.some((p) => p.puesto !== null || p.vivos !== null || p.notes),
+    );
+    if (conCombates || conRoyale) {
+      return {
+        error: pedido.multiple
+          ? "Ya hay combates apuntados en esta jornada: no se puede pasar a Battle Royale. Cambia a otro formato de dos, o quita lo apuntado."
+          : "Ya hay algo apuntado en el Battle Royale: no se puede pasar a combates de dos. Quita lo apuntado primero.",
+      };
+    }
+    if (pedido.multiple) {
+      // Fuera los combates sin jugar y dentro un royale con todos los que siguen
+      await prisma.match.deleteMany({ where: { matchdayId: jornada.id } });
+      const jugadores = await prisma.participant.findMany({
+        where: { competitionId: jornada.competitionId, retiredAt: null },
+        orderBy: [{ joinedAt: "asc" }, { id: "asc" }],
+        select: { id: true },
+      });
+      if (jugadores.length >= 2) {
+        await prisma.royale.create({
+          data: { matchdayId: jornada.id, puestos: { create: jugadores.map((j) => ({ participantId: j.id })) } },
+        });
+      }
+      aviso = ` Ahora es un Battle Royale de ${jugadores.length} jugadores.`;
+    } else {
+      await prisma.royale.deleteMany({ where: { matchdayId: jornada.id } });
+      await prisma.matchday.update({ where: { id: jornada.id }, data: { formato: pedido.id } });
+      const { propuestos, descansa } = await emparejarJornada(
+        jornada.competitionId, jornada.id, jornada.position, jornada.alMejorDe,
+      );
+      aviso = propuestos
+        ? ` Combates propuestos: ${propuestos}${descansa ? `. Descansa ${descansa}` : ""}.`
+        : " Monta los combates a mano.";
+    }
+  } else if (!pedido.multiple) {
+    // Equipos que ya no caben: se dejan como están y se avisa
+    const pasados = jornada.matches
+      .filter((m) => !m.formato)
+      .flatMap((m) => {
+        const porJugador = new Map<string, number>();
+        for (const p of m.team) porJugador.set(p.participantId, (porJugador.get(p.participantId) ?? 0) + 1);
+        return [...porJugador.values()].filter((n) => n > pedido.equipo);
+      }).length;
+    if (pasados) {
+      aviso = ` Ojo: ${pasados} ${pasados === 1 ? "equipo apuntado tiene" : "equipos apuntados tienen"} más de ${pedido.equipo} pokémon; hay que quitarle los que sobran.`;
+    }
+  }
+
+  await prisma.matchday.update({ where: { id: jornada.id }, data: { formato: pedido.id, condiciones } });
+  await registrar(
+    jornada.competitionId,
+    "jornadas",
+    pedido.id === ahora.id
+      ? `Cambia las condiciones de la ${jornada.label}`
+      : `Pasa la ${jornada.label} de ${ahora.nombre} a ${pedido.nombre}`,
+  );
+  revalidatePath("/jornadas");
+  revalidatePath("/puntos");
+  return { success: `Ahora es ${pedido.nombre}.${aviso}` };
+}
+
 export async function deleteMatchAction(formData: FormData) {
   const matchId = String(formData.get("matchId") ?? "");
   const match = await prisma.match.findUnique({

@@ -30,7 +30,7 @@ import {
   deleteMatchdayAction,
   permitirCombateAction,
 } from "@/app/actions/matchdays";
-import { NewMatchdayForm, AddMatchForm, MatchResultForm, ElegirSerie } from "./matchday-forms";
+import { NewMatchdayForm, AddMatchForm, MatchResultForm, ElegirSerie, CambiarFormato } from "./matchday-forms";
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
@@ -298,6 +298,14 @@ export default async function MatchdaysPage() {
                         <p className="mt-1 text-xs text-amber-200/80">
                           <Icono emoji="📋" /> {matchday.condiciones}
                         </p>
+                      ) : null}
+                      {/* El formato se cambia siempre; el servidor dice qué cambios caben */}
+                      {canManage && !soloLectura(competition, canManage) ? (
+                        <CambiarFormato
+                          matchdayId={matchday.id}
+                          formato={matchday.formato}
+                          condiciones={matchday.condiciones}
+                        />
                       ) : null}
                       {/* En un dualocke: un combate o al mejor de tres, mientras no haya nada apuntado */}
                       {perfil.serieAlMejorDe && !formato.multiple ? (

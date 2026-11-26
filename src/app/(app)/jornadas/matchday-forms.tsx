@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import {
   addMatchAction,
+  cambiarFormatoDeJornadaAction,
   cambiarSerieDeJornadaAction,
   createMatchdayAction,
   darPorRetiradaAction,
@@ -530,5 +531,53 @@ export function NuevoRoyale({ matchdayId }: { matchdayId: string }) {
       <SubmitButton className="btn-ghost btn-sm"><Icono emoji="👑" /> Añadir royale</SubmitButton>
       <FormMessage state={state} />
     </form>
+  );
+}
+
+/**
+ * Cambiar el formato de una jornada ya creada. Va plegado para no ensuciar la
+ * cabecera: es algo que se hace de vez en cuando, no en cada visita. Lo que se
+ * puede y lo que no lo decide el servidor (pasar a Battle Royale o salir de él
+ * solo con la jornada sin nada apuntado) y aquí se cuenta lo que respondió.
+ */
+export function CambiarFormato({
+  matchdayId,
+  formato,
+  condiciones,
+}: {
+  matchdayId: string;
+  formato: string;
+  condiciones: string | null;
+}) {
+  const [state, formAction] = useActionState<FormState, FormData>(
+    async (_prev: FormState, formData: FormData) => cambiarFormatoDeJornadaAction(formData),
+    null,
+  );
+
+  return (
+    <details className="group mt-1.5">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs text-slate-400 hover:text-slate-200">
+        <Icono emoji="🔁" /> Cambiar formato
+      </summary>
+      <form action={formAction} className="mt-2 grid max-w-md gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-3">
+        <input type="hidden" name="matchdayId" value={matchdayId} />
+        <ElegirFormato valor={formato} label="Formato" />
+        <div>
+          <label className="label" htmlFor={`condiciones-${matchdayId}`}>Condiciones (opcional)</label>
+          <input
+            id={`condiciones-${matchdayId}`}
+            name="condiciones"
+            className="input"
+            defaultValue={condiciones ?? ""}
+            placeholder="Monotipo agua, sin objetos…"
+            maxLength={120}
+          />
+        </div>
+        <FormMessage state={state} />
+        <div>
+          <SubmitButton>Guardar formato</SubmitButton>
+        </div>
+      </form>
+    </details>
   );
 }

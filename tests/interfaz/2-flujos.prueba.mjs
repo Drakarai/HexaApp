@@ -194,6 +194,26 @@ describe("lo de todos los días", () => {
     sinProblemas(problemas, "marcador de la jornada");
   });
 
+  test("el formato de una jornada se cambia aunque esté jugada", async () => {
+    const { pagina, problemas } = sesion;
+    await ir(pagina, "/jornadas");
+    // La primera jornada ya tiene un combate apuntado (el de antes)
+    const cambiar = () => pagina.locator("details", { hasText: "Cambiar formato" }).first();
+    await cambiar().locator("summary").click();
+    await cambiar().locator('select[name="formato"]').selectOption("dobles");
+    await cambiar().getByRole("button", { name: "Guardar formato" }).click();
+    await cambiar().getByText("Ahora es Dobles").waitFor();
+    // A Battle Royale no: ya hay combates apuntados
+    await cambiar().locator('select[name="formato"]').selectOption("royale");
+    await cambiar().getByRole("button", { name: "Guardar formato" }).click();
+    await cambiar().getByText(/no se puede pasar a Battle Royale/).waitFor();
+    // Y se deja como estaba, para lo que viene detrás
+    await cambiar().locator('select[name="formato"]').selectOption("singles");
+    await cambiar().getByRole("button", { name: "Guardar formato" }).click();
+    await cambiar().getByText(/Ahora es /).waitFor();
+    sinProblemas(problemas, "cambiar el formato de la jornada");
+  });
+
   test("el resultado se lee de la repetición", async () => {
     const { pagina, problemas } = sesion;
     await ir(pagina, "/jornadas");
