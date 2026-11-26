@@ -136,6 +136,16 @@ describe("GTS", () => {
     sinProblemas(pablo.problemas, "la GTS de Pablo");
   });
 
+  test("Intercambios lleva a la GTS y al Prodigioso, que sin encender dice que está cerrado", async () => {
+    const { pagina, problemas } = draka;
+    await ir(pagina, "/intercambios");
+    await pagina.locator('[data-intercambio-opcion="GTS"]').waitFor();
+    await pagina.locator('[data-intercambio-opcion="Intercambio Prodigioso"]').click();
+    await pagina.waitForURL(/\/prodigioso/);
+    await pagina.getByText("Cerrado en este locke").waitFor();
+    sinProblemas(problemas, "Intercambios");
+  });
+
   test("a quien no ha pasado el level cap todavía no se le abre", async () => {
     const hector = await entrar(navegador, "hector");
     try {

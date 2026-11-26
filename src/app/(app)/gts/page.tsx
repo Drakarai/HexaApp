@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireUser, esCreador } from "@/lib/auth";
 import {
   canManageCompetition,
@@ -82,6 +83,9 @@ export default async function GtsPage() {
         intercambios={gts.intercambios}
         misCapturas={gts.misCapturas}
       />
+      <Link href="/intercambios" className="mt-4 inline-block text-sm text-slate-400 hover:underline">
+        ← Intercambios
+      </Link>
     </>
   );
 }

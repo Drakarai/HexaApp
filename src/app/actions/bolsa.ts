@@ -1,5 +1,6 @@
 "use server";
 
+import { CLAVE_DEL_BONO } from "@/lib/bono-prodigioso";
 import { revalidatePath } from "next/cache";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
@@ -307,12 +308,17 @@ export async function usarObjetoAction(
           id: true,
           name: true,
           isGroup: true,
+          apiSlug: true,
           options: { select: { id: true, name: true } },
         },
       },
     },
   });
   if (!entrada) return { error: "Ese objeto ya no está en la bolsa." };
+  // El bono prodigioso se gasta solo, al hacer el intercambio: gastado aquí se perdería
+  if (entrada.item.apiSlug === CLAVE_DEL_BONO) {
+    return { error: "El bono prodigioso se gasta solo al hacer un Intercambio Prodigioso, en Intercambios." };
+  }
 
   // El dueño, o quien administra ese locke gastándolo por él
   const suyo = entrada.participant.userId === usuario.id;

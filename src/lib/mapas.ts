@@ -1,8 +1,9 @@
 import "server-only";
+import { leerHistoria } from "@/lib/historia";
 import { prisma } from "@/lib/db";
 import { Prisma } from "@prisma/client";
 import { firmaDeColumna } from "@/lib/imagenes";
-import { urlDeImagen } from "@/lib/imagen-url";
+import { urlDeContenido, urlDeImagen } from "@/lib/imagen-url";
 import {
   REGIONES_DE_MAPA,
   regionesDelJuego,
@@ -372,16 +373,24 @@ export async function getMisCapturas(quien: DeQuien): Promise<CapturaApuntada[]>
   const firmaDe = new Map(firmas.map((fila) => [fila.id, fila.v]));
   const imagenes = (id: string) => urlDeImagen("captura", id, firmaDe.get(id));
 
-  return filas.map((fila) => ({
-    id: fila.id,
-    zoneId: fila.zoneId,
-    species: fila.species,
-    nickname: fila.nickname,
-    notes: fila.notes,
-    image: imagenes(fila.id),
-    failed: fila.failed,
-    createdAt: fila.createdAt,
-  }));
+  return filas.map((fila) => {
+    // Cambiado por el Prodigioso: en su ruta sigue el que se capturó allí
+    const capturado = leerHistoria(fila.historia).find((s) => s.tipo === "prodigioso");
+    return {
+      id: fila.id,
+      zoneId: fila.zoneId,
+      species: capturado?.de ?? fila.species,
+      nickname: capturado ? capturado.deMote : fila.nickname,
+      notes: fila.notes,
+      image: capturado
+        ? capturado.deImagen?.startsWith("ref:")
+          ? urlDeContenido(capturado.deImagen)
+          : null
+        : imagenes(fila.id),
+      failed: fila.failed,
+      createdAt: fila.createdAt,
+    };
+  });
 }
 
 /**

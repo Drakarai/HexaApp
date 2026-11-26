@@ -203,7 +203,9 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
     const laCaptura = laCapturaDeVerdad;
     const guardados = leerHistoria(laCaptura.historia);
     // Lo que fue al principio: lo que se capturó, antes de evolucionar o de cambiarlo
-    const cambios = guardados.flatMap((s) => (s.tipo === "evoluciona" || s.tipo === "intercambio" ? [s] : []));
+    const cambios = guardados.flatMap((s) =>
+      s.tipo === "evoluciona" || s.tipo === "intercambio" || s.tipo === "prodigioso" ? [s] : [],
+    );
     // Shiny desde la captura: si lo fuera por un premio, saldría su suceso aparte
     const nacioShiny = laCaptura.shiny && !guardados.some((s) => s.tipo === "shiny");
     // Llegado por la GTS: lo capturó otro, y la ruta de la captura es la del que se fue
@@ -232,6 +234,13 @@ export async function getHistoria(de: DeQuienEsLaHistoria): Promise<Historia> {
           ? { tipo: "evoluciona", texto: `Evolucionó en ${suceso.a}`, fecha: suceso.fecha }
           : suceso.tipo === "intercambio"
             ? { tipo: "intercambio", texto: `Llegó por intercambio, a cambio de ${suceso.de}`, fecha: suceso.fecha }
+            : suceso.tipo === "prodigioso"
+              ? {
+                  tipo: "intercambio",
+                  texto: "Llegó por el Intercambio Prodigioso",
+                  detalle: `A cambio de ${suceso.deMote ?? suceso.de}`,
+                  fecha: suceso.fecha,
+                }
             : suceso.tipo === "gts"
               ? {
                   tipo: "intercambio",

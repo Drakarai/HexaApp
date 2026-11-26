@@ -24,7 +24,7 @@ export const ZONAS = {
   locke: "El locke",
   cementerio: "Cementerio",
   final: "Final y hall",
-  gts: "GTS",
+  gts: "Intercambios",
 } as const;
 export type Zona = keyof typeof ZONAS;
 

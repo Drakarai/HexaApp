@@ -409,6 +409,20 @@ export async function updateCompetitionAction(
             gtsVeto: formData.get("gtsVeto") === "on",
           }
         : {}),
+      // El Prodigioso, igual (ver lib/prodigioso.ts)
+      ...(formData.get("conCampoDeProdigioso")
+        ? {
+            prodigioso: formData.get("prodigioso") === "on",
+            // Si se apaga, el formulario no trae lo demás: se queda como estaba
+            ...(formData.get("prodigioso") === "on"
+              ? {
+                  prodigiosoPorBst: formData.get("prodigiosoModo") !== "azar",
+                  prodigiosoLegendarios: formData.get("prodigiosoLegendarios") === "on",
+                  prodigiosoPorNivel: formData.get("prodigiosoPorNivel") === "on",
+                }
+              : {}),
+          }
+        : {}),
       ...(Number.isFinite(startingPoints)
         ? { startingPoints: Math.trunc(startingPoints) }
         : {}),

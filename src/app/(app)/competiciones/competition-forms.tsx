@@ -173,6 +173,64 @@ function CampoDeGts({ gts, aVista, veto }: { gts: boolean; aVista: boolean; veto
   );
 }
 
+/**
+ * **El Intercambio Prodigioso**, apagado de entrada: das uno y te llega otro al
+ * azar. Ver lib/prodigioso.ts. Por ahora solo funciona en Ultrasol/Ultraluna
+ * random; en los demás, la pantalla dice que está en obras.
+ */
+function CampoDeProdigioso({
+  activo,
+  porBst,
+  legendarios,
+  porNivel,
+}: {
+  activo: boolean;
+  porBst: boolean;
+  legendarios: boolean;
+  porNivel: boolean;
+}) {
+  const [con, setCon] = useState(activo);
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3" data-campo-prodigioso>
+      <input type="hidden" name="conCampoDeProdigioso" value="1" />
+      <label className="flex items-start gap-2.5 text-sm text-slate-200">
+        <input type="checkbox" name="prodigioso" checked={con} onChange={(e) => setCon(e.target.checked)} className="mt-0.5" />
+        <span>
+          Intercambio Prodigioso
+          <span className="mt-0.5 block text-xs text-slate-400">
+            Das uno de tu caja y te llega otro al azar, al mismo nivel. Un bono por jornada acabada, y los que se den de
+            premio. Por ahora solo en Ultrasol/Ultraluna random.
+          </span>
+        </span>
+      </label>
+      {con ? (
+        <div className="mt-3 space-y-2 pl-6">
+          <div>
+            <label className="label" htmlFor="prodigiosoModo">
+              Qué llega
+            </label>
+            <select id="prodigiosoModo" name="prodigiosoModo" defaultValue={porBst ? "bst" : "azar"} className="input">
+              <option value="bst">Uno parecido en BST al que das</option>
+              <option value="azar">Uno del todo al azar</option>
+            </select>
+          </div>
+          <label className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="prodigiosoPorNivel" defaultChecked={porNivel} className="mt-0.5" />
+            <span>
+              En la etapa que tendría a su nivel
+              <span className="block text-xs text-slate-400">A nivel 12, Gible; a 30, Gabite; a 50, Garchomp.</span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-sm text-slate-200">
+            <input type="checkbox" name="prodigiosoLegendarios" defaultChecked={legendarios} className="mt-0.5" />
+            <span>Pueden llegar legendarios, míticos y Ultraentes</span>
+          </label>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function NewCompetitionForm({
   competitions,
   archivables,
@@ -396,6 +454,10 @@ export function EditCompetitionForm({
     gts: boolean;
     gtsAVista: boolean;
     gtsVeto: boolean;
+    prodigioso: boolean;
+    prodigiosoPorBst: boolean;
+    prodigiosoLegendarios: boolean;
+    prodigiosoPorNivel: boolean;
   };
 }) {
   const [state, formAction] = useActionState<FormState, FormData>(
@@ -510,6 +572,12 @@ export function EditCompetitionForm({
         {competition.maxPlayers >= 3 && !soulLink ? (
           <CampoDeGts gts={competition.gts} aVista={competition.gtsAVista} veto={competition.gtsVeto} />
         ) : null}
+        <CampoDeProdigioso
+          activo={competition.prodigioso}
+          porBst={competition.prodigiosoPorBst}
+          legendarios={competition.prodigiosoLegendarios}
+          porNivel={competition.prodigiosoPorNivel}
+        />
         <div>
           <label className="label">Descripción</label>
           <textarea

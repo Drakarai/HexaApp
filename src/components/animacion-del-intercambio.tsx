@@ -38,8 +38,46 @@ const CX = 360;
 const SPRITE_Y = 300;
 const BOLA_Y = 540;
 const ESCALA = 3;
-const MARCA = "#6366f1";
-const LOGO = { trazo: "#818cf8", arriba: "#a5b4fc", abajo: "#4f46e5", boton: "#e0e7ff", hueco: "#0b0b0e" };
+/**
+ * Los colores: índigo, los de la marca, para la GTS; turquesa para el
+ * Prodigioso, que se note que es otro tipo de intercambio. `rgb*` van sin
+ * `rgb()` para poder ponerles transparencia.
+ */
+type Tema = {
+  fondo: [string, string, string];
+  rejilla: string;
+  linea: string;
+  lineaClara: string;
+  logo: { trazo: string; arriba: string; abajo: string; boton: string; hueco: string };
+  rgbClaro: string;
+  rgbMedio: string;
+  rgbFuerte: string;
+  silueta: string;
+};
+const TEMAS: Record<"gts" | "prodigioso", Tema> = {
+  gts: {
+    fondo: ["#1d1f3f", "#10122a", "#07080f"],
+    rejilla: "#a5b4fc",
+    linea: "#6366f1",
+    lineaClara: "#c7d2fe",
+    logo: { trazo: "#818cf8", arriba: "#a5b4fc", abajo: "#4f46e5", boton: "#e0e7ff", hueco: "#0b0b0e" },
+    rgbClaro: "199,210,254",
+    rgbMedio: "129,140,248",
+    rgbFuerte: "99,102,241",
+    silueta: "#a5b4fc",
+  },
+  prodigioso: {
+    fondo: ["#0f3433", "#0a1f22", "#05100f"],
+    rejilla: "#5eead4",
+    linea: "#14b8a6",
+    lineaClara: "#99f6e4",
+    logo: { trazo: "#2dd4bf", arriba: "#5eead4", abajo: "#0d9488", boton: "#ccfbf1", hueco: "#0b0b0e" },
+    rgbClaro: "153,246,228",
+    rgbMedio: "45,212,191",
+    rgbFuerte: "20,184,166",
+    silueta: "#5eead4",
+  },
+};
 
 const clamp = (x: number, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const tramo = (t: number, a: number, b: number) => clamp((t - a) / (b - a));
@@ -165,7 +203,14 @@ type Puesto = { x: number; y: number; escala: number; alfa: number };
 
 type Siluetas = { sale: HTMLCanvasElement | null; llega: HTMLCanvasElement | null };
 
-function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, textos: { sale: [string, string]; llega: [string, string] }) {
+function pintar(
+  g: CanvasRenderingContext2D,
+  t: number,
+  siluetas: Siluetas,
+  textos: { sale: [string, string]; llega: [string, string] },
+  tema: Tema,
+) {
+  const LOGO = tema.logo;
   const puestos: { sale: Puesto; llega: Puesto } = {
     sale: { x: CX, y: SPRITE_Y, escala: 0, alfa: 0 },
     llega: { x: CX, y: SPRITE_Y, escala: 0, alfa: 0 },
@@ -201,8 +246,8 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     g.globalAlpha = alfa;
     const f = g.createRadialGradient(x, y, 0, x, y, radio);
     f.addColorStop(0, "rgba(255,255,255,1)");
-    f.addColorStop(0.35, "rgba(199,210,254,0.8)");
-    f.addColorStop(1, "rgba(99,102,241,0)");
+    f.addColorStop(0.35, `rgba(${tema.rgbClaro},0.8)`);
+    f.addColorStop(1, `rgba(${tema.rgbFuerte},0)`);
     g.fillStyle = f;
     g.fillRect(0, 0, W, H);
     g.restore();
@@ -246,8 +291,8 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     g.save();
     g.globalAlpha = alfa;
     const s = g.createRadialGradient(x, y, 0, x, y, ancho);
-    s.addColorStop(0, "rgba(99,102,241,0.55)");
-    s.addColorStop(1, "rgba(99,102,241,0)");
+    s.addColorStop(0, `rgba(${tema.rgbFuerte},0.55)`);
+    s.addColorStop(1, `rgba(${tema.rgbFuerte},0)`);
     g.fillStyle = s;
     g.beginPath();
     g.ellipse(x, y, ancho, ancho * 0.22, 0, 0, Math.PI * 2);
@@ -304,8 +349,8 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     g.stroke();
     if (abre >= 0.05) {
       const dentro = g.createRadialGradient(0, 0, 0, 0, 0, rc);
-      dentro.addColorStop(0, `rgba(199,210,254,${0.9 * abre})`);
-      dentro.addColorStop(1, "rgba(99,102,241,0)");
+      dentro.addColorStop(0, `rgba(${tema.rgbClaro},${0.9 * abre})`);
+      dentro.addColorStop(1, `rgba(${tema.rgbFuerte},0)`);
       g.fillStyle = dentro;
       g.beginPath();
       g.ellipse(0, 0, rc * 0.95, r * 0.25, 0, 0, Math.PI * 2);
@@ -355,14 +400,14 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
   // ---------- el fondo ----------
   const velocidad = tramo(t, 3.2, 3.6) * (1 - tramo(t, 5.5, 6.0));
   const grad = g.createRadialGradient(CX, 330, 40, CX, 360, 520);
-  grad.addColorStop(0, "#1d1f3f");
-  grad.addColorStop(0.55, "#10122a");
-  grad.addColorStop(1, "#07080f");
+  grad.addColorStop(0, tema.fondo[0]);
+  grad.addColorStop(0.55, tema.fondo[1]);
+  grad.addColorStop(1, tema.fondo[2]);
   g.fillStyle = grad;
   g.fillRect(0, 0, W, H);
   g.save();
   g.globalAlpha = 0.07;
-  g.strokeStyle = "#a5b4fc";
+  g.strokeStyle = tema.rejilla;
   g.lineWidth = 1;
   const desp = (t * 18) % 40;
   for (let y = -40 + desp; y < H; y += 40) {
@@ -386,7 +431,7 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
       const v = 900 + azar(i + 99) * 900;
       const y = ((azar(i + 7) * (H + 400) + t * v) % (H + 400)) - 200;
       g.globalAlpha = velocidad * (0.12 + azar(i + 3) * 0.35);
-      g.strokeStyle = i % 3 === 0 ? "#c7d2fe" : MARCA;
+      g.strokeStyle = i % 3 === 0 ? tema.lineaClara : tema.linea;
       g.lineWidth = 1 + azar(i + 13) * 2;
       g.beginPath();
       g.moveTo(x, y);
@@ -414,8 +459,8 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     g.globalAlpha = rayo * 0.8;
     const yPok = mezcla(SPRITE_Y, BOLA_Y, absorbe);
     const r = g.createLinearGradient(CX, BOLA_Y, CX, yPok);
-    r.addColorStop(0, "rgba(199,210,254,0.95)");
-    r.addColorStop(1, "rgba(129,140,248,0.15)");
+    r.addColorStop(0, `rgba(${tema.rgbClaro},0.95)`);
+    r.addColorStop(1, `rgba(${tema.rgbMedio},0.15)`);
     g.fillStyle = r;
     g.beginPath();
     g.moveTo(CX - 8, BOLA_Y);
@@ -435,7 +480,7 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     if (sube > 0) {
       estela(
         [0.03, 0.06, 0.09, 0.12].map((d) => [CX, mezcla(BOLA_Y, -90, entra(tramo(t - d, 2.85, 3.3)))]),
-        "#c7d2fe",
+        tema.lineaClara,
       );
     }
     bola(CX, y, 40 * sale(bolaA), giro, abre, tramo(t, 2.75, 2.85) * (1 - sube));
@@ -455,12 +500,12 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
         const o = Math.sin(pp * Math.PI * 2) * 70;
         return sube ? [CX - 60 + o, mezcla(H + 80, -80, pp)] : [CX + 60 - o, mezcla(-80, H + 80, pp)];
       });
-    estela(atras(p, true), "#c7d2fe");
-    estela(atras(p, false), "#a5b4fc");
+    estela(atras(p, true), tema.lineaClara);
+    estela(atras(p, false), tema.rejilla);
     bola(CX - 60 + ola, yA, 36, t * 9, 0, 0.4);
     bola(CX + 60 - ola, yB, 36, -t * 9, 0, 0.4);
     fogonazo(CX, 360, clamp(1 - Math.abs(p - 0.5) * 8) * 0.45, 260);
-    destellos(CX, 360, 4.42, 18, 160, "#c7d2fe");
+    destellos(CX, 360, 4.42, 18, 160, tema.lineaClara);
   }
 
   // ---------- 3. Baja la del otro, bota y se abre ----------
@@ -470,7 +515,7 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     const se = 1 - tramo(t, 7.7, 8.0);
     const y = mezcla(-90, BOLA_Y, rebote(baja));
     if (baja < 0.4) {
-      estela([0.03, 0.06, 0.09].map((d) => [CX, mezcla(-90, BOLA_Y, rebote(tramo(t - d, 5.9, 6.9)))]), "#a5b4fc");
+      estela([0.03, 0.06, 0.09].map((d) => [CX, mezcla(-90, BOLA_Y, rebote(tramo(t - d, 5.9, 6.9)))]), tema.rejilla);
     }
     sombraDelSuelo(CX, BOLA_Y + 34, 60 * baja, baja * se);
     if (se > 0) bola(CX, y, 40 * (0.6 + 0.4 * se), 0, abre, 0);
@@ -496,7 +541,7 @@ function pintar(g: CanvasRenderingContext2D, t: number, siluetas: Siluetas, text
     for (let i = 0; i < 10; i++) {
       const ciclo = ((t - 8.0) * 0.6 + azar(i)) % 1;
       g.globalAlpha = Math.sin(Math.PI * ciclo) * 0.8;
-      g.fillStyle = i % 2 ? "#fde68a" : "#c7d2fe";
+      g.fillStyle = i % 2 ? "#fde68a" : tema.lineaClara;
       estrella(CX + (azar(i + 5) - 0.5) * 360, SPRITE_Y + 140 - ciclo * 220, 3 + azar(i + 9) * 2);
     }
     g.restore();
@@ -513,10 +558,13 @@ export function AnimacionDelIntercambio({
   sale: seVa,
   llega,
   alCerrar,
+  variante = "gts",
 }: {
   sale: PokemonDelIntercambio;
   llega: PokemonDelIntercambio;
   alCerrar: () => void;
+  /** El Prodigioso va en otro color y sin entrenador del otro lado */
+  variante?: "gts" | "prodigioso";
 }) {
   const lienzo = useRef<HTMLCanvasElement>(null);
   const escenario = useRef<HTMLDivElement>(null);
@@ -531,10 +579,17 @@ export function AnimacionDelIntercambio({
     let vivo = true;
     let marco = 0;
     const bienvenido = llega.sexo === "F" ? "¡Bienvenida" : "¡Bienvenido";
-    const textos = {
-      sale: [`${seVa.dueno} manda a`, seVa.nombre] as [string, string],
-      llega: [`Llega de ${llega.dueno} por la GTS`, `${bienvenido}, ${llega.nombre}!`] as [string, string],
-    };
+    const tema = TEMAS[variante];
+    const textos =
+      variante === "prodigioso"
+        ? {
+            sale: ["Intercambio Prodigioso", seVa.nombre] as [string, string],
+            llega: ["Llega por el Intercambio Prodigioso", `${bienvenido}, ${llega.nombre}!`] as [string, string],
+          }
+        : {
+            sale: [`${seVa.dueno} manda a`, seVa.nombre] as [string, string],
+            llega: [`Llega de ${llega.dueno} por la GTS`, `${bienvenido}, ${llega.nombre}!`] as [string, string],
+          };
     const reducir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     void (async () => {
@@ -545,7 +600,7 @@ export function AnimacionDelIntercambio({
         ...["600 22px Barlow", "700 46px 'Barlow Condensed'"].map((f) => document.fonts.load(f).catch(() => null)),
       ]);
       if (!vivo) return;
-      const siluetas = { sale: a ? tenido(a, "#a5b4fc") : null, llega: b ? tenido(b, "#ffffff") : null };
+      const siluetas = { sale: a ? tenido(a, tema.silueta) : null, llega: b ? tenido(b, "#ffffff") : null };
       // Lo que ocupa el quieto (el de la silueta): es la medida a la que se ajusta el animado
       const quietos = { sale: a ? medirImagen(a, false) : null, llega: b ? medirImagen(b, false) : null };
       const g = canvas.getContext("2d")!;
@@ -561,7 +616,7 @@ export function AnimacionDelIntercambio({
         const k = lado / W;
         g.setTransform(k * densidad, 0, 0, k * densidad, 0, 0);
         const t = (ahora - inicio) / 1000;
-        const puestos = pintar(g, t, siluetas, textos);
+        const puestos = pintar(g, t, siluetas, textos, tema);
         for (const [ref, puesto, quieto] of [
           [spriteSale, puestos.sale, quietos.sale],
           [spriteLlega, puestos.llega, quietos.llega],
@@ -595,7 +650,7 @@ export function AnimacionDelIntercambio({
       vivo = false;
       cancelAnimationFrame(marco);
     };
-  }, [seVa, llega]);
+  }, [seVa, llega, variante]);
 
   // Escape también cierra
   useEffect(() => {
@@ -607,7 +662,8 @@ export function AnimacionDelIntercambio({
   // En el body: dentro de la página, lo que la anima al entrar la encerraría (y el menú del móvil quedaba encima)
   return createPortal(
     <div
-      className="fixed inset-0 z-[90] flex flex-col items-center justify-center bg-[#07080f] p-4"
+      className="fixed inset-0 z-[90] flex flex-col items-center justify-center p-4"
+      style={{ background: TEMAS[variante].fondo[2] }}
       role="dialog"
       aria-modal="true"
       aria-label={`Intercambio: llega ${llega.nombre}`}

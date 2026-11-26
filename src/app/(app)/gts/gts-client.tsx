@@ -38,7 +38,7 @@ import { cx } from "@/lib/utils";
 type Resultado = { error?: string; aviso?: string };
 
 /** Lo que se ha sacado de la partida subida: cada pokémon con los bytes de su hueco */
-type DeLaPartida = {
+export type DeLaPartida = {
   clave: string;
   dex: number;
   mote: string | null;
@@ -52,7 +52,7 @@ const plano = (texto: string | null | undefined) =>
 
 const base64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 
-function leerLaPartida(datos: Uint8Array, familia: Familia): { partida: PartidaOficial; huecos: DeLaPartida[] } {
+export function leerLaPartida(datos: Uint8Array, familia: Familia): { partida: PartidaOficial; huecos: DeLaPartida[] } {
   const partida = leerPartidaOficial(datos);
   if (partida.familia !== familia) {
     throw new PartidaOficialNoValida(
@@ -91,7 +91,11 @@ function leerLaPartida(datos: Uint8Array, familia: Familia): { partida: PartidaO
 function candidatos(captura: CapturaParaElegir, partida: DeLaPartida[]) {
   if (captura.mote)
     return partida.filter((p) => plano(p.mote) === plano(captura.mote));
-  return partida.filter((p) => !p.mote && p.dex === captura.dex);
+  const deSuEspecie = partida.filter((p) => p.dex === captura.dex);
+  // Sin mote en la app pueden llevarlo en la partida: si es el nombre de su
+  // especie en español (Ferropalmas), la app lo da por «sin mote»
+  const sinMote = deSuEspecie.filter((p) => !p.mote);
+  return sinMote.length ? sinMote : deSuEspecie;
 }
 
 export function PanelDeLaGts({
@@ -682,7 +686,7 @@ function Poner({
  * busca solo por mote (o por especie si no tiene); si no sale o hay dos, se
  * elige a mano.
  */
-function Elegir({
+export function Elegir({
   capturas,
   familia,
   partida,
@@ -904,7 +908,7 @@ function Estadisticas({
 }
 
 /** Bajar unos bytes como fichero, sin pasar por el servidor otra vez */
-function bajar(base64: string, nombre: string) {
+export function bajar(base64: string, nombre: string) {
   const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
   const enlace = document.createElement("a");
   enlace.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));

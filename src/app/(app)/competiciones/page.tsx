@@ -654,6 +654,10 @@ export default async function CompetitionsPage({
               gts: active.gts,
               gtsAVista: active.gtsAVista,
               gtsVeto: active.gtsVeto,
+              prodigioso: active.prodigioso,
+              prodigiosoPorBst: active.prodigiosoPorBst,
+              prodigiosoLegendarios: active.prodigiosoLegendarios,
+              prodigiosoPorNivel: active.prodigiosoPorNivel,
             }}
           />
 

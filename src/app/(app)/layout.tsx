@@ -54,8 +54,8 @@ const S = {
   jornadas: { href: "/jornadas", label: "Jornadas", icon: "📅" },
   retos: { href: "/retos", label: "Retos", icon: "🔥" },
   sorteo: { href: "/sorteo", label: "Sorteo de préstamos", icon: "🎁" },
-  // Solo en los lockes que la encienden (ver lib/gts.ts)
-  gts: { href: "/gts", label: "GTS", icon: "🔁" },
+  // La GTS y el Prodigioso, solo en los lockes que encienden alguno (ver lib/gts.ts y lib/prodigioso.ts)
+  intercambios: { href: "/intercambios", label: "Intercambios", icon: "🔁" },
   finalFour: { href: "/final-four", label: "Final Four", icon: "🏆" },
   hall: { href: "/hall-de-la-fama", label: "Hall de la fama", icon: "🏅" },
   // En un Soul Link, el equipo y la caja de todos, con sus vínculos; en los
@@ -93,7 +93,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "Combates",
     icon: "⚔️",
-    children: [S.jornadas, S.retos, S.gts, S.sorteo, S.ruleta, S.finalFour, S.hall],
+    children: [S.jornadas, S.retos, S.sorteo, S.ruleta, S.finalFour, S.hall],
   },
   {
     label: "La edición",
@@ -164,7 +164,7 @@ export default async function AppLayout({
   const tienePalmares =
     !active &&
     (await prisma.lockeDeAntes.count({ where: { jugadoresIds: { has: user.id } } })) > 0;
-  const conGts = Boolean(active?.gts && sePuedeTenerGts(active));
+  const conIntercambios = Boolean(active && ((active.gts && sePuedeTenerGts(active)) || active.prodigioso));
   /** Para cuánta gente se montó este locke: de ahí salen sus rótulos */
   const perfil = perfilDeLocke(active?.maxPlayers ?? 6, active?.estilo);
 
@@ -285,9 +285,9 @@ export default async function AppLayout({
         : [
             {
               ...grupo,
-              children: grupo.children
-                .filter((item) => item.href !== S.gts.href || conGts)
-                .map((item) => (item.href === S.finalFour.href ? finalConSuNombre : item)),
+              children: grupo.children.map((item) =>
+                item.href === S.finalFour.href ? finalConSuNombre : item,
+              ),
             },
           ]
       : grupo.label === "La edición"
@@ -314,6 +314,7 @@ export default async function AppLayout({
                     : item,
                 ),
               ...(perfil.sinJornadas ? [S.hall] : []),
+              ...(conIntercambios ? [S.intercambios] : []),
             ],
           },
         ]

@@ -29,7 +29,14 @@ export type SucesoGuardado =
    * cambio de `por`. `sitio` es dónde lo capturó su primer dueño, porque la
    * captura se queda con la ruta del que se fue (el encuentro gastado).
    */
-  | { tipo: "gts"; de: string; a: string; por: string; sitio: string | null; fecha: string };
+  | { tipo: "gts"; de: string; a: string; por: string; sitio: string | null; fecha: string }
+  /**
+   * Llegado por el Intercambio Prodigioso (ver lib/prodigioso.ts) a cambio de
+   * `de` (su mote, `deMote`): la captura pasa a ser el que llega, pero **el
+   * mapa sigue enseñando el que se capturó** en esa ruta, con su dibujo
+   * (`deImagen`, una referencia del almacén).
+   */
+  | { tipo: "prodigioso"; de: string; deMote: string | null; deImagen: string | null; fecha: string };
 
 export function leerHistoria(valor: unknown): SucesoGuardado[] {
   if (!Array.isArray(valor)) return [];
@@ -38,6 +45,7 @@ export function leerHistoria(valor: unknown): SucesoGuardado[] {
     const suceso = s as { tipo?: unknown; de?: unknown; a?: unknown; deathId?: unknown };
     if (suceso.tipo === "shiny") return true;
     if (suceso.tipo === "revive") return typeof suceso.deathId === "string";
+    if (suceso.tipo === "prodigioso") return typeof suceso.de === "string";
     if (suceso.tipo === "gts") {
       const g = s as { de?: unknown; a?: unknown; por?: unknown };
       return typeof g.de === "string" && typeof g.a === "string" && typeof g.por === "string";

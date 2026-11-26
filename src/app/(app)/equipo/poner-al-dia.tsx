@@ -29,11 +29,14 @@ export function PonerAlDia({
   participantId,
   partida,
   onAplicado,
+  onAlDia,
   plegado = false,
 }: {
   participantId: string;
   partida: Leida;
   onAplicado?: () => void;
+  /** Si el Equipo y PC ya está como en la partida (nada que aplicar, o aplicado) */
+  onAlDia?: (alDia: boolean) => void;
   /** La lista de cambios plegada, con el botón a la vista: dentro de otra pantalla (la GTS) */
   plegado?: boolean;
 }) {
@@ -43,6 +46,9 @@ export function PonerAlDia({
   const [estado, setEstado] = useState<{ error?: string; success?: string } | null>(null);
   const [ocupado, empezar] = useTransition();
   const aplicando = useRef(false);
+  // En una referencia: si fuera dependencia del efecto, cada pintada volvería a pedir la vista
+  const alDia = useRef(onAlDia);
+  alDia.current = onAlDia;
 
   function ver(cajaDeCaidos: number | null) {
     setEstado(null);
@@ -57,6 +63,7 @@ export function PonerAlDia({
       } else {
         setVista(respuesta.vista ?? null);
         setQuitados(new Set());
+        alDia.current?.(!respuesta.vista?.pasos.length);
       }
     });
   }
@@ -94,6 +101,7 @@ export function PonerAlDia({
       setEstado({ success: respuesta.aviso });
       setVista(null);
       onAplicado?.();
+      alDia.current?.(true);
       router.refresh();
     });
   }
