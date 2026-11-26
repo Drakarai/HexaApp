@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de noviembre de 2026 (Diagnóstico dice si la clave para firmar partidas de la GTS está puesta y es la buena).
+Última actualización: 26 de noviembre de 2026 (la GTS enseña la forma que tiene el pokémon en la partida: Calyrex Jinete Glacial, Lucario Mega…).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4110,6 +4110,10 @@ La pidió el usuario para el Hexalocke 3 y se cerró con él punto por punto.
   que el elegido de la caja de la app, por mote y familia; si el mote es el
   nombre de la especie en español, el lector lo da por «sin mote» y entonces
   se mira también el mote tal cual.
+  **La forma manda la de la partida** (Calyrex Jinete Glacial, Lucario Mega…)
+  aunque en la app esté apuntado como el normal; las que la app no tiene
+  aparte (letras de Unown, dibujos de Vivillon) se ven como la normal, pero en
+  la partida del otro van tal cual porque se copian sus bytes.
 - **Aceptar reserva antes de cambiar**: el depósito pasa a «reservado» con una
   condición sobre su estado, para que dos clics a la vez no hagan dos
   intercambios.

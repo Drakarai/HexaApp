@@ -212,6 +212,15 @@ export function fichaDeLaPartida(
     pk: Buffer.from(bytes).toString("base64"),
     ficha: {
       ...fichaDeLaApp(c),
+      /**
+       * La forma, la del juego: Calyrex Jinete Glacial, Lucario Mega… Las que
+       * la app no tiene aparte (las letras de Unown, los dibujos de Vivillon)
+       * se quedan con lo de la app; en la partida van tal cual igualmente,
+       * porque se copian sus bytes.
+       */
+      ...(traducido.formaExacta && traducido.pokemonId !== c.pokemonId
+        ? { pokemonId: traducido.pokemonId, imagen: null }
+        : {}),
       nivel: leida.nivel,
       sexo: leida.sexo,
       naturaleza: traducido.naturaleza,
