@@ -5373,5 +5373,5 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 173. **Títulos de locke y generales**: catálogo común y extras de cada locke, los dan el Creador y quien administra cada locke, y en cada locke se lleva el elegido para él.
 174. **La lista de títulos a obtener**: compartida por todos los lockes, en su propio bloque en Administración, y en *Reglas* los que se pueden ganar.
 175. **Leer la partida de USUM con el mod de expansión** (Hexalocke 3): habilidades, objetos y formas del mod y de los paquetes de pk3DS.
-176. **GTS, paso 1**: escribir un pokémon en una partida de USUM con el mod (comprobaciones y firma), probado en Citra.
 176. **El detalle de cada movimiento** al tocarlo en la ficha de combate: precisión, PP, prioridad, contacto, efectos con su probabilidad exacta y descripción, con los valores de la generación del locke.
+177. **GTS, paso 1**: escribir un pokémon en una partida de USUM con el mod (comprobaciones y firma), probado en Citra.
