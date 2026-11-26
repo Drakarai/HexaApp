@@ -12,7 +12,7 @@ import { createCipheriv, createHash } from "node:crypto";
 
 const LARGO_SIG = 0x60;
 
-type Clave = { der: Buffer; n: bigint; d: bigint };
+type Clave = { der: Buffer; n: bigint; e: bigint; d: bigint };
 
 let cacheada: Clave | null | undefined;
 
@@ -23,8 +23,27 @@ export function claveDeFirma(): Clave | null {
   if (!der || !d || !/^[0-9a-f]+$/i.test(der) || !/^[0-9a-f]+$/i.test(d)) return (cacheada = null);
   const bytes = Buffer.from(der, "hex");
   if (bytes.length < 0x7e) return (cacheada = null);
-  cacheada = { der: bytes, n: BigInt("0x" + bytes.subarray(0x18, 0x18 + 0x61).toString("hex")), d: BigInt("0x" + d) };
+  cacheada = {
+    der: bytes,
+    n: BigInt("0x" + bytes.subarray(0x18, 0x18 + 0x61).toString("hex")),
+    e: BigInt("0x" + bytes.subarray(0x7b, 0x7e).toString("hex")),
+    d: BigInt("0x" + d),
+  };
   return cacheada;
+}
+
+/**
+ * Para Diagnóstico: si la clave está puesta y **es la buena**. Se firma un
+ * número cualquiera con la privada y se comprueba con la pública que sale el
+ * mismo: con un trozo de menos al copiarla no saldría, y el juego rechazaría
+ * las partidas.
+ */
+export function estadoDeLaClave(): "falta" | "mal" | "bien" {
+  if (!process.env.CLAVE_PARTIDAS_3DS?.trim()) return "falta";
+  const clave = claveDeFirma();
+  if (!clave) return "mal";
+  const prueba = 0x1234567890abcdefn % clave.n;
+  return potencia(potencia(prueba, clave.d, clave.n), clave.e, clave.n) === prueba ? "bien" : "mal";
 }
 
 function potencia(base: bigint, exponente: bigint, modulo: bigint) {

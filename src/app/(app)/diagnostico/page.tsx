@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import { estadoDeLaClave } from "@/lib/partida/oficial/firma-usum";
 import { requireCreadorPage } from "@/lib/auth";
 import { PageHeader } from "@/components/page-header";
 import { medirOcupacion, pesar, PLAN_GRATIS } from "@/lib/ocupacion";
@@ -141,6 +142,7 @@ export default async function DiagnosticoPage({
 
 /** Lo de la base de datos: lo que tarda, lo que ocupa y dónde está cada cosa */
 async function BaseDeDatos() {
+  const claveDePartidas = estadoDeLaClave();
   const [ida, conexion, ocupacion, copiasPesadas] = await Promise.all([
     medirIdaYVuelta(),
     Promise.resolve(leerConexion()),
@@ -363,6 +365,18 @@ async function BaseDeDatos() {
             malo={conexion.agrupada && !directaConfigurada}
           />
           <Dato etiqueta="Servidor de la base de datos" valor={conexion.servidor ?? "?"} />
+          {/* La de firmar partidas de USUM para la GTS: va en Vercel, no en el repositorio */}
+          <Dato
+            etiqueta="Clave de partidas de la GTS (CLAVE_PARTIDAS_3DS)"
+            valor={
+              claveDePartidas === "bien"
+                ? "puesta y válida"
+                : claveDePartidas === "falta"
+                  ? "FALTA — la GTS no puede escribir partidas"
+                  : "MAL — no es la clave buena (¿copiada a medias?)"
+            }
+            malo={claveDePartidas !== "bien"}
+          />
         </dl>
       </section>
     </>

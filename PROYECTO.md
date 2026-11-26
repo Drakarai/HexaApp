@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de noviembre de 2026 (**GTS, paso 3**: en Ultrasol/Ultraluna, cada uno sube su partida y se baja la nueva con el pokémon del otro dentro, firmada para que el juego la acepte; y subir la partida en la GTS pone al día el Equipo y PC como «Leer la partida»).
+Última actualización: 26 de noviembre de 2026 (Diagnóstico dice si la clave para firmar partidas de la GTS está puesta y es la buena).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -4118,8 +4118,11 @@ La pidió el usuario para el Hexalocke 3 y se cerró con él punto por punto.
   firma, **se vuelve a leer** (que cuadre, que esté el que llega y no el que
   se va) y se devuelve; no se guarda. **La clave de la firma no está en el
   repositorio** (es público y va en un CV): va en la variable de entorno
-  `CLAVE_PARTIDAS_3DS` de Vercel (`DER:EXPONENTE` en hexadecimal; ver
-  `.env.example`). Sin ella, la GTS dice que falta. Se probó con la partida
+  `CLAVE_PARTIDAS_3DS` de Vercel (`DER:EXPONENTE` en hexadecimal, marcada
+  como «Sensitive»; ver `.env.example`). Sin ella, la GTS dice que falta.
+  **Diagnóstico → Base de datos** dice si está puesta y si es la buena: firma
+  un número con la privada y lo comprueba con la pública (`estadoDeLaClave`),
+  porque una clave copiada a medias daría partidas que el juego rechaza. Se probó con la partida
   del usuario: deshacer el Ferropalmas del paso 1 con el Calyrex original da
   **la partida original byte a byte**.
 - **El que se va se busca por su constante de cifrado, su PID y su especie**,
@@ -4845,8 +4848,8 @@ a paso, como pidió el usuario:
 Pendiente de la GTS: escribir la partida de X/Y, Rubí Omega/Zafiro Alfa y
 Sol/Luna (otras tablas de bloques; X/Y y ROZA sin firma), apuntar el recibido
 en la Pokédex, que las estadísticas de un pokémon intercambiado sigan sumando
-lo que hizo con su dueño anterior, y una línea en la guía. **Para que funcione
-en producción hay que poner `CLAVE_PARTIDAS_3DS` en Vercel.**
+lo que hizo con su dueño anterior, y una línea en la guía. **En producción la clave
+va en `CLAVE_PARTIDAS_3DS` de Vercel**; Diagnóstico dice si está bien.
 
 **Estadísticas hechas**: lo que se saca de la repetición en jornadas, series,
 retos y final, los once galardones y las clasificaciones. Quedan las ideas que
