@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   meterEnMiPartidaAction,
@@ -31,6 +31,7 @@ import type { Familia } from "@/lib/partida/oficial/comun";
 import type { PartidaOficial } from "@/lib/partida/oficial";
 import { PonerAlDia } from "@/app/(app)/equipo/poner-al-dia";
 import { SpritePokemon } from "@/components/sprite-pokemon";
+import { AnimacionDelIntercambio } from "@/components/animacion-del-intercambio";
 import { Icono } from "@/components/icono";
 import { cx } from "@/lib/utils";
 
@@ -144,8 +145,27 @@ export function PanelDeLaGts({
   const porAprobar = intercambios.filter((i) => i.estado === "porAprobar");
   const hechos = intercambios.filter((i) => i.estado === "aceptada");
 
+  /**
+   * **La animación**, una vez por intercambio tuyo: al aceptarlo o, si te lo
+   * aceptaron a ti, la próxima vez que entres. Los vistos se apuntan en este
+   * dispositivo (es un adorno: si se borra, se vuelve a ver y ya está). Solo
+   * los de los últimos días, para no soltar una tanda vieja de golpe.
+   */
+  const [animando, setAnimando] = useState<IntercambioVisto | null>(null);
+  useEffect(() => {
+    const hace = Date.now() - 7 * 24 * 3600 * 1000;
+    const vistos = leerVistos();
+    const nuevo = hechos.find((i) => i.mio && !vistos.includes(i.ofertaId) && Date.parse(i.fecha) > hace);
+    if (nuevo) {
+      apuntarVisto(nuevo.ofertaId);
+      setAnimando(nuevo);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [intercambios]);
+
   return (
     <div className="space-y-5" data-gts>
+      {animando ? <Animacion intercambio={animando} alCerrar={() => setAnimando(null)} /> : null}
       <section className="card">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -395,6 +415,11 @@ export function PanelDeLaGts({
           {hechos.map((i) => (
             <div key={i.ofertaId} className="card" data-intercambio>
               <Intercambio intercambio={i} />
+              {i.mio ? (
+                <button type="button" className="btn-ghost btn-sm mt-3" onClick={() => setAnimando(i)}>
+                  <Icono emoji="🔁" /> Ver el intercambio
+                </button>
+              ) : null}
               {i.mio && yo && familia ? (
                 <MeterEnLaPartida intercambio={i} participantId={yo} familia={familia} />
               ) : null}
@@ -991,4 +1016,40 @@ function MeterEnLaPartida({
       ) : null}
     </div>
   );
+}
+
+const VISTOS = "gts-intercambios-vistos";
+
+function leerVistos(): string[] {
+  try {
+    const v = JSON.parse(localStorage.getItem(VISTOS) ?? "[]");
+    return Array.isArray(v) ? v : [];
+  } catch {
+    return [];
+  }
+}
+
+function apuntarVisto(id: string) {
+  try {
+    localStorage.setItem(VISTOS, JSON.stringify([...leerVistos(), id].slice(-100)));
+  } catch {
+    // Sin almacenamiento (ventana privada): se verá otra vez, nada más
+  }
+}
+
+/** Lo tuyo se va y lo del otro llega */
+function Animacion({ intercambio: i, alCerrar }: { intercambio: IntercambioVisto; alCerrar: () => void }) {
+  const [mio, suyo] = i.mio === "a" ? [i.a, i.b] : [i.b, i.a];
+  // Fijos mientras dura: si la página se refresca por detrás, la animación no vuelve a empezar
+  const [datos] = useState(() => ({
+    sale: { nombre: nombreDe(mio.ficha), pokemonId: mio.ficha.pokemonId, shiny: mio.ficha.shiny, dueno: mio.jugador.nombre },
+    llega: {
+      nombre: nombreDe(suyo.ficha),
+      pokemonId: suyo.ficha.pokemonId,
+      shiny: suyo.ficha.shiny,
+      sexo: suyo.ficha.sexo,
+      dueno: suyo.jugador.nombre,
+    },
+  }));
+  return <AnimacionDelIntercambio sale={datos.sale} llega={datos.llega} alCerrar={alCerrar} />;
 }

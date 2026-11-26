@@ -119,6 +119,11 @@ describe("GTS", () => {
     const oferta = draka.pagina.locator("[data-deposito-mio] [data-oferta]", { hasText: "Burbuja" });
     await oferta.getByRole("button", { name: "Aceptar" }).click();
     await draka.pagina.getByText("¡Intercambio hecho!").waitFor();
+    // La animación del intercambio sale sola, y se salta
+    const animacion = draka.pagina.locator("[data-animacion-intercambio]");
+    await animacion.waitFor();
+    await animacion.getByRole("button", { name: /Saltar|Seguir/ }).click();
+    await animacion.waitFor({ state: "detached" });
     await draka.pagina.locator("[data-intercambio]").first().waitFor();
     assert.equal(await boletos(), antes - 1);
 
