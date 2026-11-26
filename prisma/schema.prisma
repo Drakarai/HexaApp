@@ -2273,6 +2273,13 @@ model GtsOferta {
   createdAt     DateTime  @default(now())
   // Cuándo se hizo el intercambio, o cuándo se resolvió (rechazo, veto)
   resueltaEl    DateTime?
+  /**
+   * Cuándo se bajó cada uno su partida con el pokémon del otro ya dentro (ver
+   * lib/partida/oficial/escribir-usum.ts): el que lo puso y el que lo ofreció.
+   * Solo para enseñarlo; se puede volver a hacer.
+   */
+  metidoAlQueLoPuso  DateTime?
+  metidoAlQueOfrecio DateTime?
 
   deposito    GtsDeposito @relation(fields: [depositoId], references: [id], onDelete: Cascade)
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)

@@ -3,6 +3,8 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
+  meterEnMiPartidaAction,
+  pkDelIntercambioAction,
   aceptarOfertaDeLaGtsAction,
   depositarEnLaGtsAction,
   ofrecerEnLaGtsAction,
@@ -26,6 +28,8 @@ import {
 import { bytesDelHueco } from "@/lib/partida/oficial/gen67";
 import { fichaCompleta67 } from "@/lib/partida/oficial/ficha-gen67";
 import type { Familia } from "@/lib/partida/oficial/comun";
+import type { PartidaOficial } from "@/lib/partida/oficial";
+import { PonerAlDia } from "@/app/(app)/equipo/poner-al-dia";
 import { SpritePokemon } from "@/components/sprite-pokemon";
 import { Icono } from "@/components/icono";
 import { cx } from "@/lib/utils";
@@ -47,7 +51,7 @@ const plano = (texto: string | null | undefined) =>
 
 const base64 = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 
-function leerLaPartida(datos: Uint8Array, familia: Familia): DeLaPartida[] {
+function leerLaPartida(datos: Uint8Array, familia: Familia): { partida: PartidaOficial; huecos: DeLaPartida[] } {
   const partida = leerPartidaOficial(datos);
   if (partida.familia !== familia) {
     throw new PartidaOficialNoValida(
@@ -55,7 +59,7 @@ function leerLaPartida(datos: Uint8Array, familia: Familia): DeLaPartida[] {
     );
   }
   const generacion = familia === "xy" || familia === "oras" ? 6 : 7;
-  return partida.pokemon.flatMap((p) => {
+  const huecos = partida.pokemon.flatMap((p) => {
     const bytes = bytesDelHueco(datos, familia, p.donde);
     const ficha = bytes
       ? fichaCompleta67(bytes, generacion, familia === "usum")
@@ -79,6 +83,7 @@ function leerLaPartida(datos: Uint8Array, familia: Familia): DeLaPartida[] {
       },
     ];
   });
+  return { partida, huecos };
 }
 
 /** Los de la partida que pueden ser el elegido de la caja: por mote, o por especie si no tiene */
@@ -206,6 +211,7 @@ export function PanelDeLaGts({
 
       {abierta && familia ? (
         <SubirPartida
+          participantId={yo!}
           familia={familia}
           partida={partida}
           onPartida={setPartida}
@@ -389,6 +395,9 @@ export function PanelDeLaGts({
           {hechos.map((i) => (
             <div key={i.ofertaId} className="card" data-intercambio>
               <Intercambio intercambio={i} />
+              {i.mio && yo && familia ? (
+                <MeterEnLaPartida intercambio={i} participantId={yo} familia={familia} />
+              ) : null}
             </div>
           ))}
         </section>
@@ -504,22 +513,27 @@ function DepositoDeOtro({
 }
 
 function SubirPartida({
+  participantId,
   familia,
   partida,
   onPartida,
 }: {
+  participantId: string;
   familia: Familia;
   partida: DeLaPartida[] | null;
   onPartida: (p: DeLaPartida[] | null) => void;
 }) {
   const [error, setError] = useState<string | null>(null);
+  // La partida entera, para poner al día el Equipo y PC como en «Leer la partida»
+  const [entera, setEntera] = useState<PartidaOficial | null>(null);
   return (
     <section className="card" data-subir-partida>
       <h2 className="section-title">Tu partida</h2>
       <p className="muted mt-1">
         En este juego la GTS va con la partida: lo que pongas u ofrezcas se lee
         de ella (nivel, IV, EV, entrenador…), y es lo que luego hará falta para
-        meterlo en la del otro. Súbela tal y como está ahora, el «main».
+        meterlo en la del otro. Súbela tal y como está ahora, el «main»: de
+        paso se pone al día tu Equipo y PC, como con «Leer la partida».
       </p>
       {/* El botón del navegador habla en su idioma («Choose File»): se esconde y se pone uno propio */}
       <label className="btn-ghost btn-sm mt-3 inline-flex cursor-pointer">
@@ -532,20 +546,24 @@ function SubirPartida({
             const fichero = evento.target.files?.[0];
             if (!fichero) return;
             try {
-              const leidos = leerLaPartida(
+              const leida = leerLaPartida(
                 new Uint8Array(await fichero.arrayBuffer()),
                 familia,
               );
               setError(null);
-              onPartida(leidos);
+              setEntera(leida.partida);
+              onPartida(leida.huecos);
             } catch (e) {
               setError(
                 e instanceof PartidaOficialNoValida
                   ? e.message
                   : "No he podido leer esa partida.",
               );
+              setEntera(null);
               onPartida(null);
             }
+            // Para poder volver a subir el mismo fichero después de jugar
+            evento.target.value = "";
           }}
         />
       </label>
@@ -554,6 +572,12 @@ function SubirPartida({
         <p className="mt-2 text-sm text-emerald-300">
           Leída: {partida.length} pokémon.
         </p>
+      ) : null}
+      {entera ? (
+        <div className="mt-4 border-t border-white/5 pt-4">
+          <h3 className="rotulo mb-2">Tu Equipo y PC, como en la partida</h3>
+          <PonerAlDia participantId={participantId} partida={entera} plegado />
+        </div>
       ) : null}
     </section>
   );
@@ -851,5 +875,120 @@ function Estadisticas({
       <span className="mr-1 text-slate-500">{rotulo}</span>
       {valores.map((v, i) => `${NOMBRE_DE_ESTADISTICA[i]} ${v}`).join(" · ")}
     </p>
+  );
+}
+
+/** Bajar unos bytes como fichero, sin pasar por el servidor otra vez */
+function bajar(base64: string, nombre: string) {
+  const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const enlace = document.createElement("a");
+  enlace.href = URL.createObjectURL(new Blob([bytes], { type: "application/octet-stream" }));
+  enlace.download = nombre;
+  enlace.click();
+  setTimeout(() => URL.revokeObjectURL(enlace.href), 10_000);
+}
+
+/**
+ * **El paso 3**: meter en tu partida lo que te ha llegado. En Ultrasol y
+ * Ultraluna, la app escribe la partida (se sube la de ahora y se baja la nueva)
+ * y luego pone al día el Equipo y PC con ella, como «Leer la partida». En los
+ * demás juegos de 6ª y 7ª, se baja el pokémon para meterlo con PKHeX.
+ */
+function MeterEnLaPartida({
+  intercambio: i,
+  participantId,
+  familia,
+}: {
+  intercambio: IntercambioVisto;
+  participantId: string;
+  familia: Familia;
+}) {
+  const [ocupado, empezar] = useTransition();
+  const [mensaje, setMensaje] = useState<Resultado | null>(null);
+  const [nueva, setNueva] = useState<PartidaOficial | null>(null);
+  const llega = i.mio === "a" ? i.b.ficha : i.a.ficha;
+
+  if (familia !== "usum") {
+    return (
+      <div className="mt-4 border-t border-white/5 pt-4" data-meter>
+        <p className="text-sm text-slate-300">
+          En este juego la app aún no escribe la partida: bájate a {nombreDe(llega)} y mételo con PKHeX en lugar del tuyo.
+        </p>
+        <button
+          type="button"
+          className="btn-ghost btn-sm mt-2"
+          disabled={ocupado}
+          onClick={() =>
+            empezar(async () => {
+              const r = await pkDelIntercambioAction(i.ofertaId);
+              if (r.pk && r.nombre) bajar(r.pk, r.nombre);
+              setMensaje(r.error ? { error: r.error } : null);
+            })
+          }
+        >
+          <Icono emoji="⬇️" /> Bajar el pokémon
+        </button>
+        {mensaje?.error ? <p className="mt-2 text-sm text-rose-300">{mensaje.error}</p> : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-3 border-t border-white/5 pt-4" data-meter>
+      <p className="text-sm text-slate-300">
+        {i.metido
+          ? `Ya te bajaste tu partida con ${nombreDe(llega)}. Si hace falta, se puede volver a hacer.`
+          : `Mete a ${nombreDe(llega)} en tu partida: sube tu «main» de ahora y te bajas uno nuevo con el tuyo cambiado por él. Guarda una copia del viejo por si acaso.`}
+      </p>
+      <label className="btn-primary btn-sm inline-flex cursor-pointer">
+        <Icono emoji="🔁" /> {ocupado ? "Escribiendo la partida…" : "Subir mi partida y cambiarlo"}
+        <input
+          type="file"
+          className="sr-only"
+          aria-label="Tu partida para el intercambio"
+          disabled={ocupado}
+          onChange={(evento) => {
+            const fichero = evento.target.files?.[0];
+            evento.target.value = "";
+            if (!fichero) return;
+            setNueva(null);
+            setMensaje(null);
+            empezar(async () => {
+              const datos = new FormData();
+              datos.set("ofertaId", i.ofertaId);
+              datos.set("partida", fichero);
+              const r = await meterEnMiPartidaAction(datos).catch(() => ({
+                error: "No se ha podido hablar con el servidor.",
+                partida: undefined,
+                aviso: undefined,
+              }));
+              if (r.error || !r.partida) {
+                setMensaje({ error: r.error ?? "No ha llegado la partida." });
+                return;
+              }
+              bajar(r.partida, "main");
+              setMensaje({
+                aviso: `${r.aviso} Se ha bajado tu partida nueva («main»): ponla en lugar de la vieja, en la carpeta del emulador o con Checkpoint.`,
+              });
+              // Y el Equipo y PC, como en la partida nueva
+              try {
+                setNueva(leerPartidaOficial(Uint8Array.from(atob(r.partida), (c) => c.charCodeAt(0))));
+              } catch {
+                // Si no se lee, se queda sin poner al día: la partida está bien igual
+              }
+            });
+          }}
+        />
+      </label>
+      {mensaje ? (
+        <p className={cx("text-sm", mensaje.error ? "text-rose-300" : "text-emerald-300")}>{mensaje.error ?? mensaje.aviso}</p>
+      ) : null}
+      {nueva ? (
+        <div className="border-t border-white/5 pt-3">
+          <h3 className="rotulo mb-2">Tu Equipo y PC, como en la partida nueva</h3>
+          <PonerAlDia participantId={participantId} partida={nueva} plegado />
+        </div>
+      ) : null}
+    </div>
   );
 }

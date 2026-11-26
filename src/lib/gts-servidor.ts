@@ -433,6 +433,10 @@ export type IntercambioVisto = {
   fecha: string;
   a: { jugador: Jugador; ficha: FichaVista };
   b: { jugador: Jugador; ficha: FichaVista };
+  /** Qué lado es quien mira, si es uno de los dos */
+  mio: "a" | "b" | null;
+  /** Cuándo se bajó su partida con el del otro dentro, quien mira */
+  metido: string | null;
 };
 
 export type CapturaParaElegir = {
@@ -524,6 +528,8 @@ export async function getGts(
       fecha: (o.resueltaEl ?? o.createdAt).toISOString(),
       a: { jugador: quien(o.deposito.participantId), ficha: fichaVista(o.deposito.ficha, como(o.deposito.participantId), conAnil) },
       b: { jugador: quien(o.participantId), ficha: fichaVista(o.ficha, como(o.participantId), conAnil) },
+      mio: o.deposito.participantId === yo ? "a" : o.participantId === yo ? "b" : null,
+      metido: (o.deposito.participantId === yo ? o.metidoAlQueLoPuso : o.participantId === yo ? o.metidoAlQueOfrecio : null)?.toISOString() ?? null,
     };
   };
 

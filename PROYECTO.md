@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 26 de noviembre de 2026 (**la GTS del locke**, paso 2: intercambios entre jugadores en cada checkpoint de jornada, con boletos, modo oculto y veto; en los juegos de 6ª y 7ª, con la ficha leída de la partida).
+Última actualización: 26 de noviembre de 2026 (**GTS, paso 3**: en Ultrasol/Ultraluna, cada uno sube su partida y se baja la nueva con el pokémon del otro dentro, firmada para que el juego la acepte; y subir la partida en la GTS pone al día el Equipo y PC como «Leer la partida»).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -44,7 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Cada reto es **un cartel de duelo**: los dos frente a frente con el «VS», el que gana con corona y el que pierde apagado; los objetos del premio, plegados. Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
-| **GTS** | **Intercambios entre jugadores** en lockes de **tres o más** (nunca en un Soul Link), en *Combates*. La enciende quien administra en *Editar datos de la competición*, con dos opciones: **ficha a la vista** (sin ella, como la GTS de los juegos: solo especie, mote, nivel y sexo hasta recibirlo) y **veto** (la organización aprueba cada intercambio aceptado). **Se abre a cada uno al pasar el level cap de un checkpoint de jornada** y se cierra al acabarse esa jornada; lo que quede abierto caduca y vuelve a su dueño. **Boletos**: dos al empezar y uno por cada jornada acabada, sin tope, y cada intercambio gasta uno **a cada uno de los dos**. Se **pone** un pokémon de la caja (con un «Busco…» opcional), los demás mandan **ofertas** con uno suyo y quien lo puso **acepta o rechaza**; un pokémon solo está en un sitio de la GTS a la vez y al aceptar se cancela lo demás de esos dos. Hecho el intercambio, **cada uno pasa a la caja del otro y ocupa el sitio del que se fue** (hueco y ruta), con su historia, su ficha y sus combates; en su historia sale «Pasó de X a Y por la GTS» y «Capturado por X en…». Se puede usar ya en la jornada en curso y vale aunque sea una especie repetida. **En los juegos de 6ª y 7ª (Ultrasol/Ultraluna con el mod incluido) va con la partida**: se sube el `main`, se elige el pokémon (se encuentra solo por su mote) y su ficha —nivel, sexo, naturaleza, habilidad, objeto, movimientos, IV, EV, entrenador original y Poké Ball— sale del juego; en los demás, la de la app. Abajo, lo que espera a la organización y los intercambios hechos. |
+| **GTS** | **Intercambios entre jugadores** en lockes de **tres o más** (nunca en un Soul Link), en *Combates*. La enciende quien administra en *Editar datos de la competición*, con dos opciones: **ficha a la vista** (sin ella, como la GTS de los juegos: solo especie, mote, nivel y sexo hasta recibirlo) y **veto** (la organización aprueba cada intercambio aceptado). **Se abre a cada uno al pasar el level cap de un checkpoint de jornada** y se cierra al acabarse esa jornada; lo que quede abierto caduca y vuelve a su dueño. **Boletos**: dos al empezar y uno por cada jornada acabada, sin tope, y cada intercambio gasta uno **a cada uno de los dos**. Se **pone** un pokémon de la caja (con un «Busco…» opcional), los demás mandan **ofertas** con uno suyo y quien lo puso **acepta o rechaza**; un pokémon solo está en un sitio de la GTS a la vez y al aceptar se cancela lo demás de esos dos. Hecho el intercambio, **cada uno pasa a la caja del otro y ocupa el sitio del que se fue** (hueco y ruta), con su historia, su ficha y sus combates; en su historia sale «Pasó de X a Y por la GTS» y «Capturado por X en…». Se puede usar ya en la jornada en curso y vale aunque sea una especie repetida. **En los juegos de 6ª y 7ª (Ultrasol/Ultraluna con el mod incluido) va con la partida**: se sube el `main`, se elige el pokémon (se encuentra solo por su mote) y su ficha —nivel, sexo, naturaleza, habilidad, objeto, movimientos, IV, EV, entrenador original y Poké Ball— sale del juego; en los demás, la de la app. **Subir la partida en la GTS pone al día el Equipo y PC** igual que «Leer la partida» (la misma pieza, con la lista de cambios plegada). Abajo, lo que espera a la organización y los intercambios hechos. **Meterlo en la partida**: en cada intercambio hecho, cada uno de los dos **sube su `main` de ahora y se baja uno nuevo** con el suyo cambiado por el del otro, firmado para que Ultrasol/Ultraluna lo acepte; luego se pone al día el Equipo y PC con ella. El que llega ocupa el hueco del que se va; si el que se va estaba en el equipo y el que llega viene de una caja, va al primer hueco libre de las cajas y el equipo se corre. Conserva su entrenador original, como un intercambio de verdad. Volver a subir la nueva no lo mete dos veces. En los demás juegos de 6ª y 7ª, se baja el pokémon como `.pk7`/`.pk6` para meterlo con PKHeX. |
 | **Dualocke: el título por el juego** | En *Ajustes → Editar datos* de un dualocke, **«Las jornadas pueden dar el título aunque se pierda el juego»**, encendido por defecto (lo de siempre). Apagado, manda pasarse el juego: si uno pierde el locke (o se retira) gana el otro; si los dos se pasan la Liga, quien tenga **menos wipeos**, y con los mismos, las jornadas (y si también, la Jornada Final); si solo se la ha pasado uno y lleva menos wipeos de los que ya tiene el otro, ya ha ganado. Mientras no, no hay campeón aunque alguien lleve la mayoría. El marcador deja de decir «gana el locke» y «bola de partido», y la portada, el hall y el palmarés cuentan cómo se ganó («pasándose el juego con menos wipeos, 1 a 2»). |
 | **Wipeos** | Las veces que a alguien le han barrido el equipo entero en un combate. Se apuntan **sin límite** desde su perfil —con contra qué, cuándo y qué pasó— y se quitan de una en una si se apuntó mal. Las pone el propio jugador o quien administre el locke. Salen en su perfil y como 💥N en la clasificación. |
 | **Locke perdido** | **Lo puede marcar el propio jugador** desde su perfil, con «He perdido el locke» (y «Lo retomo» para deshacerlo), además de quien administra desde Competiciones: quien wipea y decide no seguir lo dice él. Un estado aparte de la retirada. Deja a esa persona fuera igual —no entra en emparejamientos, no cuenta para el MVP ni para el formato del final, y sus combates pendientes los gana el rival— pero se enseña como **locke perdido** y en rojo, no como retirada. Lo decide quien administra el locke y se puede deshacer. |
@@ -4113,6 +4113,26 @@ La pidió el usuario para el Hexalocke 3 y se cerró con él punto por punto.
 - **Aceptar reserva antes de cambiar**: el depósito pasa a «reservado» con una
   condición sobre su estado, para que dos clics a la vez no hagan dos
   intercambios.
+- **Escribir la partida (paso 3) va en el servidor**, porque firmar necesita
+  AES en modo ECB, que el navegador no tiene. La partida sube, se cambia, se
+  firma, **se vuelve a leer** (que cuadre, que esté el que llega y no el que
+  se va) y se devuelve; no se guarda. **La clave de la firma no está en el
+  repositorio** (es público y va en un CV): va en la variable de entorno
+  `CLAVE_PARTIDAS_3DS` de Vercel (`DER:EXPONENTE` en hexadecimal; ver
+  `.env.example`). Sin ella, la GTS dice que falta. Se probó con la partida
+  del usuario: deshacer el Ferropalmas del paso 1 con el Calyrex original da
+  **la partida original byte a byte**.
+- **El que se va se busca por su constante de cifrado, su PID y su especie**,
+  y si hay varios iguales (una partida tocada con PKHeX tiene clones), por los
+  bytes enteros. No se mira la posición: en la ventana no se toca nada, pero
+  pudo moverse de caja.
+- **De la caja al equipo no se escribe en el equipo**: las estadísticas de un
+  pokémon en el equipo solo las calcula el juego (y las especies del mod no
+  tienen sus bases en la app), así que va a la caja y el equipo se corre, como
+  al dejarlo en el PC. Si era el único del equipo, se pide dejar otro.
+- **El entrenador original se queda** (lo eligió el usuario): un recibido
+  puede desobedecer por encima de lo que permiten los sellos y gana más
+  experiencia, como en el juego. Tampoco se apunta en la Pokédex.
 
 ## 4. Reglas del locke que están implementadas
 
@@ -4212,7 +4232,11 @@ Piezas con truco:
   base de datos; `lib/gts-servidor.ts`, las consultas, `getGts` para la
   pantalla y `hacerIntercambio`; `actions/gts.ts`, las acciones;
   `app/(app)/gts/`, la pantalla. `lib/partida/oficial/ficha-gen67.ts` lee la
-  ficha entera de un pokémon de 6ª/7ª desde los bytes de su hueco.
+  ficha entera de un pokémon de 6ª/7ª desde los bytes de su hueco;
+  `escribir-usum.ts`, el cambio en la partida y sus comprobaciones (sin
+  claves, lo prueban los tests); `firma-usum.ts`, la firma, con la clave de
+  `CLAVE_PARTIDAS_3DS`. `app/(app)/equipo/poner-al-dia.tsx` es la mitad de
+  «Leer la partida» que enseña y aplica los cambios, compartida con la GTS.
 - `lib/titulos.ts` — los títulos de alguien y los que llevan puestos los
   jugadores de un locke (`getTitulosEquipadosDelLocke`, para la clasificación).
   `components/title-badge.tsx` es la chapa; `components/titles-section.tsx`, la
@@ -4814,14 +4838,15 @@ a paso, como pidió el usuario:
      comprobar cualquier versión nueva.
 2. **La GTS en la app — hecho** (ver su fila del apartado 2 y su decisión
    del 3). Ya guarda los bytes de cada pokémon puesto u ofrecido.
-3. **Unirlo**: al cerrarse un intercambio, cada uno sube su partida y se baja
-   la suya con el pokémon cambiado (los bytes de verdad del otro, guardados al
-   depositarlo), comprobada otra vez con el lector antes de dársela.
+3. **Meterlo en la partida — hecho** en Ultrasol/Ultraluna (ver la fila y
+   la decisión). En los demás juegos de 6ª y 7ª se baja el `.pk7`.
 4. Extras si gusta: intercambio prodigioso, bonos de intercambio en la Bolsa.
 
-Pendiente de la GTS: el paso 3 (bajarse la partida con el pokémon cambiado),
-que las estadísticas de un pokémon intercambiado sigan sumando lo que hizo
-con su dueño anterior, y una línea en la guía.
+Pendiente de la GTS: escribir la partida de X/Y, Rubí Omega/Zafiro Alfa y
+Sol/Luna (otras tablas de bloques; X/Y y ROZA sin firma), apuntar el recibido
+en la Pokédex, que las estadísticas de un pokémon intercambiado sigan sumando
+lo que hizo con su dueño anterior, y una línea en la guía. **Para que funcione
+en producción hay que poner `CLAVE_PARTIDAS_3DS` en Vercel.**
 
 **Estadísticas hechas**: lo que se saca de la repetición en jornadas, series,
 retos y final, los once galardones y las clasificaciones. Quedan las ideas que
@@ -5420,3 +5445,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 176. **El detalle de cada movimiento** al tocarlo en la ficha de combate: precisión, PP, prioridad, contacto, efectos con su probabilidad exacta y descripción, con los valores de la generación del locke.
 177. **GTS, paso 1**: escribir un pokémon en una partida de USUM con el mod (comprobaciones y firma), probado en Citra.
 178. **GTS, paso 2**: la GTS en la app, por checkpoints, con boletos, modo oculto y veto; en 6ª y 7ª, con la ficha leída de la partida.
+179. **GTS, paso 3**: la partida de Ultrasol/Ultraluna con el pokémon del otro dentro, firmada; y subir la partida en la GTS pone al día el Equipo y PC.
