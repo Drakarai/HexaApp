@@ -98,7 +98,7 @@ const GRUPOS: NavGroup[] = [
   {
     label: "La edición",
     icon: "📚",
-    children: [S.puntos, S.estadisticas, S.cementerio, S.actividad, S.levelCaps, S.reglas, S.palmares],
+    children: [S.puntos, S.estadisticas, S.cementerio, S.intercambios, S.actividad, S.levelCaps, S.reglas, S.palmares],
   },
   {
     label: "Lo mío",
@@ -306,7 +306,9 @@ export default async function AppLayout({
                     !(
                       perfil.sinJornadas &&
                       (item.href === S.puntos.href || item.href === S.estadisticas.href)
-                    ),
+                    ) &&
+                    // Solo si el locke tiene la GTS o el Prodigioso
+                    (item.href !== S.intercambios.href || conIntercambios),
                 )
                 .map((item) =>
                   item.href === S.puntos.href
@@ -314,7 +316,6 @@ export default async function AppLayout({
                     : item,
                 ),
               ...(perfil.sinJornadas ? [S.hall] : []),
-              ...(conIntercambios ? [S.intercambios] : []),
             ],
           },
         ]
