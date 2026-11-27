@@ -31,6 +31,7 @@ import {
   permitirCombateAction,
 } from "@/app/actions/matchdays";
 import { NewMatchdayForm, AddMatchForm, MatchResultForm, ElegirSerie, CambiarFormato } from "./matchday-forms";
+import { TablaDePuestos } from "./tabla-de-puestos";
 import { MvpBadge, type MvpCandidateView } from "@/components/mvp-badge";
 import { MatchTeams, type TeamSide } from "@/components/match-team";
 import { ReplayLink } from "@/components/replay-link";
@@ -640,6 +641,9 @@ export default async function MatchdaysPage() {
                       ))}
                     </ul>
                   )}
+
+                  {/* En un locke por puestos, la tabla de la jornada (ver lib/puestos.ts) */}
+                  <TablaDePuestos matchdayId={matchday.id} />
 
                   {/* En una serie los combates los pone ella (el tercero, si hace falta) */}
                   {canManage && !formato.multiple && !esSerie && participantOptions.length >= 2 ? (

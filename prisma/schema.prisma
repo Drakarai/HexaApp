@@ -648,6 +648,20 @@ model Competition {
   prodigiosoLegendarios Boolean @default(false)
   prodigiosoPorNivel    Boolean @default(true)
   /**
+   * **Clasificación por puestos** (ver lib/puestos.ts): si no es null, las
+   * victorias ya no dan puntos sueltos; al cerrarse cada jornada se hace su
+   * tabla y cada puesto se lleva los puntos de esta lista (el 1º, el primero:
+   * `[2, 2, 2, 1, 0, 0]`), sumados a los iniciales. `premiosPorPuesto`, lo que
+   * se le da a cada puesto (objetos de la Bolsa y tiradas de ruleta), por
+   * jornada y en la clasificación final. `retoPorJornada`: cada uno tiene que
+   * jugar al menos un reto en cada jornada, y quien no lo hace sale avisado.
+   */
+  puntosPorPuesto       Json?
+  premiosPorPuesto      Json?
+  retoPorJornada        Boolean @default(false)
+  // La jornada en curso cuando se encendió el reto obligatorio: las de antes no se miran
+  retoDesde             String?
+  /**
    * La clave del **enlace público** de la clasificación (`/clasificacion/<clave>`),
    * o null si no hay. Para que la siga gente de fuera sin cuenta: solo enseña
    * la tabla. Larga y al azar, así que no se adivina; cambiarla deja
@@ -1279,6 +1293,12 @@ model PointEntry {
   // poder rehacerlo si se corrige el resultado.
   sourceMatchId  String?  @unique
   /**
+   * Los puntos por el puesto en una jornada (clasificación por puestos): se
+   * borran y se vuelven a poner cada vez que cambia su tabla. Sin clave
+   * foránea, como los de los royales: al borrar la jornada se borran a mano.
+   */
+  sourceMatchdayId String?
+  /**
    * Y si viene de ganar un Battle Royale, con el royale. Es otro campo y no el
    * de arriba porque son tablas distintas; la idea es la misma: si se corrige
    * el orden de llegada, el punto se recoloca en vez de duplicarse.
@@ -1296,6 +1316,8 @@ model PointEntry {
 
   @@index([competitionId])
   @@index([participantId])
+
+  @@index([sourceMatchdayId])
 }
 
 // ---------------------------------------------------------------------------
@@ -1534,6 +1556,11 @@ model ChallengeMatch {
    */
   estadisticas   Json?
   estadisticasDe String?
+  /**
+   * La jornada en cuya ventana se creó el reto (la primera sin acabar), para
+   * saber quién ha hecho su reto en cada jornada (`retoPorJornada`).
+   */
+  matchdayId     String?
 
   competition  Competition      @relation(fields: [competitionId], references: [id], onDelete: Cascade)
   participantA Participant      @relation("ChallengePlayerA", fields: [participantAId], references: [id], onDelete: Cascade)
@@ -2322,4 +2349,22 @@ model IntercambioProdigioso {
 
   @@index([competitionId, createdAt])
   @@index([participantId])
+}
+
+/**
+ * **Lo que se le dio a alguien por su puesto**, en una jornada (`matchdayId`)
+ * o en la clasificación final (`matchdayId` null). `entregado` es la lista de
+ * lo que se metió de verdad, para poder quitarlo si la tabla cambia:
+ * `{ tipo: "objeto", itemId }` o `{ tipo: "ruleta", ticketId }`.
+ */
+model PremioDePuesto {
+  id            String   @id @default(cuid())
+  competitionId String
+  matchdayId    String?
+  participantId String
+  puesto        Int
+  entregado     Json     @default("[]")
+  createdAt     DateTime @default(now())
+
+  @@index([competitionId, matchdayId])
 }

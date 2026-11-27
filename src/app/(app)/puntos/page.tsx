@@ -18,6 +18,8 @@ import {
   quickAdjustPointsAction,
 } from "@/app/actions/points";
 import { PointsForms } from "./points-forms";
+import { ConfigDePuestos, RepartirPremiosFinales } from "./puestos-forms";
+import { leerPremiosPorPuesto, leerPuntosPorPuesto } from "@/lib/puestos";
 import {
   getGraficoClasificacion,
   movimientosEnLaTabla,
@@ -111,7 +113,7 @@ export default async function PointsPage() {
           {entry.sourceMatchId ? " · automático (jornada)" : ""}
         </p>
       </div>
-      {canManage && !entry.sourceMatchId ? (
+      {canManage && !entry.sourceMatchId && !entry.sourceMatchdayId ? (
         <form action={deletePointEntryAction}>
           <input type="hidden" name="entryId" value={entry.id} />
           <ConfirmSubmit message="¿Deshacer este movimiento de puntos?">
@@ -191,6 +193,10 @@ export default async function PointsPage() {
         />
 
       </section>
+      )}
+
+      {porJornadas || perfil.enSolitario ? null : (
+        <SeccionDePuestos competitionId={competition.id} canManage={canManage && !soloLectura(competition, canManage)} />
       )}
 
       <div className="mt-4">
@@ -309,6 +315,84 @@ export default async function PointsPage() {
           </>
         )}
       </section>
+    </>
+  );
+}
+
+/**
+ * **La clasificación por puestos** (ver lib/puestos.ts): qué da cada puesto,
+ * los premios de la clasificación final y, para quien administra, dónde se
+ * configura todo.
+ */
+async function SeccionDePuestos({ competitionId, canManage }: { competitionId: string; canManage: boolean }) {
+  const [locke, objetos, ruletas, finales, jugadores] = await Promise.all([
+    prisma.competition.findUniqueOrThrow({
+      where: { id: competitionId },
+      select: { puntosPorPuesto: true, premiosPorPuesto: true, retoPorJornada: true },
+    }),
+    prisma.item.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    prisma.roulette.findMany({ where: { competitionId }, orderBy: { createdAt: "asc" }, select: { id: true, name: true } }),
+    prisma.premioDePuesto.findMany({ where: { competitionId, matchdayId: null }, orderBy: { puesto: "asc" } }),
+    prisma.participant.findMany({ where: { competitionId }, select: { id: true, displayName: true } }),
+  ]);
+  const puntos = leerPuntosPorPuesto(locke.puntosPorPuesto);
+  const premios = leerPremiosPorPuesto(locke.premiosPorPuesto);
+  const nombreDeObjeto = new Map(objetos.map((o) => [o.id, o.name]));
+  const nombreDeRuleta = new Map(ruletas.map((r) => [r.id, r.name]));
+  const nombreDe = new Map(jugadores.map((j) => [j.id, j.displayName]));
+  const queDa = (i: number) =>
+    [
+      ...(premios[i]?.objetos ?? []).map((id) => nombreDeObjeto.get(id)).filter(Boolean),
+      premios[i]?.ruleta && nombreDeRuleta.get(premios[i].ruleta!) ? `tirada en ${nombreDeRuleta.get(premios[i].ruleta!)}` : null,
+    ]
+      .filter(Boolean)
+      .join(" + ") || "nada";
+
+  if (!puntos && !canManage) return null;
+  return (
+    <>
+      {puntos ? (
+        <section className="card mt-4" data-puestos>
+          <h2 className="section-title mb-1">Puntos por puesto</h2>
+          <p className="muted mb-3">
+            Cada jornada tiene su tabla: primero ganar, luego la diferencia de pokémon, luego los críticos hechos menos
+            los recibidos y luego la general. Cada puesto suma sus puntos y se lleva sus premios; la tabla de cada
+            jornada está en Jornadas.{locke.retoPorJornada ? " Hay que jugar al menos un reto por jornada: quien no, juega con el equipo a la vista." : ""}
+          </p>
+          <ul className="space-y-1 text-sm">
+            {puntos.map((p, i) => (
+              <li key={i} className="flex flex-wrap gap-x-2">
+                <span className="w-8 font-semibold text-white">{i + 1}º</span>
+                <span className="w-16 text-brand-200">{p === 1 ? "1 punto" : `${p} puntos`}</span>
+                <span className="text-slate-400">{queDa(i)}</span>
+              </li>
+            ))}
+          </ul>
+          <h3 className="rotulo mb-2 mt-4">Premios de la clasificación final</h3>
+          {finales.length ? (
+            <ul className="space-y-1 text-sm text-slate-300">
+              {finales.map((f) => (
+                <li key={f.id}>
+                  {f.puesto}º {nombreDe.get(f.participantId) ?? "?"}: {queDa(f.puesto - 1)}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted text-sm">Se reparten al acabar, con la clasificación general.</p>
+          )}
+          {canManage ? <RepartirPremiosFinales competitionId={competitionId} yaRepartidos={finales.length > 0} /> : null}
+        </section>
+      ) : null}
+      {canManage ? (
+        <ConfigDePuestos
+          competitionId={competitionId}
+          puntos={puntos}
+          premios={premios}
+          retoPorJornada={locke.retoPorJornada}
+          objetos={objetos.map((o) => ({ id: o.id, nombre: o.name }))}
+          ruletas={ruletas.map((r) => ({ id: r.id, nombre: r.name }))}
+        />
+      ) : null}
     </>
   );
 }

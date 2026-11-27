@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { puntosPorVictoria, recalcularPuestosDeLaJornada } from "@/lib/puestos-servidor";
 import { ajustarDesempate } from "@/lib/series";
 
 /**
@@ -93,10 +94,11 @@ async function resolverUnaVuelta(
 
       // El mismo punto que una victoria normal, con el mismo enlace al
       // combate, para que corregir el resultado luego siga funcionando
+      const porVictoria = await puntosPorVictoria(competitionId, jornada.pointsForWin);
       const datos = {
         competitionId,
         participantId: ganadorId,
-        delta: jornada.pointsForWin,
+        delta: porVictoria,
         reason: `${jornada.label}: victoria de ${ganador?.displayName ?? "?"} por retirada de ${perdedor?.displayName ?? "?"}`,
         createdById: autorId,
         sourceMatchId: combate.id,
@@ -104,7 +106,9 @@ async function resolverUnaVuelta(
       const existente = await prisma.pointEntry.findUnique({
         where: { sourceMatchId: combate.id },
       });
-      if (existente) {
+      if (!porVictoria) {
+        if (existente) await prisma.pointEntry.delete({ where: { id: existente.id } });
+      } else if (existente) {
         await prisma.pointEntry.update({ where: { id: existente.id }, data: datos });
       } else {
         await prisma.pointEntry.create({ data: datos });
@@ -114,6 +118,7 @@ async function resolverUnaVuelta(
 
     // Si es una serie al mejor de tres, que decida si hace falta el tercero
     await ajustarDesempate(jornada.id);
+    await recalcularPuestosDeLaJornada(jornada.id);
   }
 
   return resueltos;

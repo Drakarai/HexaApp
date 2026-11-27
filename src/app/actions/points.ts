@@ -146,6 +146,8 @@ export async function deletePointEntryAction(formData: FormData) {
   const entry = await prisma.pointEntry.findUnique({ where: { id } });
   if (!entry) return;
   await requireCompetitionManager(entry.competitionId);
+  // Los de un puesto de jornada los pone la tabla: borrados, volverían solos al recalcularla
+  if (entry.sourceMatchdayId) return;
 
   await prisma.pointEntry.delete({ where: { id } });
   const nombre = await nombresDeJugadores(entry.participantId);

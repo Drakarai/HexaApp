@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { mensajeDeError } from "@/lib/permiso";
 import { nombresDeJugadores, registrar } from "@/lib/registro";
 import { prisma } from "@/lib/db";
+import { jornadaDelReto } from "@/lib/puestos-servidor";
 import { formatoDeCombate } from "@/lib/formatos-de-combate";
 import { requireCompetitionManager } from "@/lib/competition";
 import { devolverPremio, sincronizarPremios } from "@/lib/premios";
@@ -51,6 +52,8 @@ export async function createChallengeAction(
       formato: formatoDeCombate(String(formData.get("formato") ?? "")).id,
       prize: String(formData.get("prize") ?? "").trim() || null,
       punishment: String(formData.get("punishment") ?? "").trim() || null,
+      // La jornada en curso: para el reto obligatorio de cada jornada (ver lib/puestos.ts)
+      matchdayId: await jornadaDelReto(competitionId),
     },
   });
 

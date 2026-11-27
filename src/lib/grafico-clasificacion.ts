@@ -108,6 +108,7 @@ export async function getGraficoClasificacion(
           delta: true,
           createdAt: true,
           sourceMatchId: true,
+          sourceMatchdayId: true,
         },
       }),
       prisma.death.findMany({
@@ -185,6 +186,9 @@ export async function getGraficoClasificacion(
     ),
   );
 
+  /** Las jornadas, acumuladas desde la primera: los puntos por puesto van con la suya */
+  const jornadasHasta = jugadas.map((_, indice) => new Set(jugadas.slice(0, indice + 1).map((jornada) => jornada.id)));
+
   const foto = (indice: number): Corte[] => {
     // El inicio: todos con los puntos de salida, sin muertes ni diferencia
     if (indice < 0) {
@@ -205,7 +209,9 @@ export async function getGraficoClasificacion(
     for (const entrada of entradas) {
       const cuenta = entrada.sourceMatchId
         ? combatesContados.has(entrada.sourceMatchId)
-        : entrada.createdAt <= corte;
+        : entrada.sourceMatchdayId
+          ? jornadasHasta[indice].has(entrada.sourceMatchdayId)
+          : entrada.createdAt <= corte;
       if (!cuenta) continue;
       puntos.set(
         entrada.participantId,

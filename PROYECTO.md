@@ -7,7 +7,7 @@
 >
 > **Este documento se actualiza con cada cambio.** Ver `CLAUDE.md`.
 
-Última actualización: 27 de noviembre de 2026 (los level caps se pueden mover de sitio).
+Última actualización: 27 de noviembre de 2026 (**clasificación por puestos**: cada jornada tiene su tabla, y cada puesto suma sus puntos y se lleva sus premios solo).
 
 Esta línea dice **solo lo último**: lo de antes está en la cronología del
 apartado 8, y lo de cada cosa en su fila del apartado 2.
@@ -44,6 +44,7 @@ Rama de trabajo: `claude/competition-management-app-k9ua86` (es la principal).
 | **Retos** | Cada reto es **un cartel de duelo**: los dos frente a frente con el «VS», el que gana con corona y el que pierde apagado; los objetos del premio, plegados. Piques sueltos entre dos, con premio, castigo y enlace a la repetición. Cuentan para victorias y derrotas, pero no dan puntos. El premio puede ser **texto libre** ("eliges su starter") y/o **objetos del catálogo**, que caen solos en la bolsa del que gane. El **castigo del que pierde se anuncia en la portada** hasta que un administrador lo da por cumplido. |
 | **Battle Royale** | Una jornada de royale no tiene parejas: nace con **un combate de todos contra todos** y todos los jugadores dentro. Al terminar se apunta el **orden de llegada** tocándolos en orden, el primero se lleva los puntos de la jornada, y queda la **crónica** de lo que pasó más la línea que escribe cada uno de lo suyo ("me tumbó Draka en el turno 3", cuántos le quedaban vivos). Los equipos se apuntan igual que en un combate normal. |
 | **Sorteo de préstamos** | Un bote de pokémon que se reparte al azar. Cualquiera que juegue **echa los suyos** al bote y queda apuntado quién puso cada uno; la organización elige **quién entra** (de 2 a 6) y reparte. Se baraja y se da uno a cada uno por turnos hasta seis por cabeza; **lo que sobra se queda en el bote**, a la vista, sin tirarlo. Repartir otra vez baraja desde cero. Nació para las jornadas de *Pokémon de Préstamo*, pero no cuelga de ninguna jornada: vale para lo que se quiera. |
+| **Clasificación por puestos** | Opcional por locke, en *Puntos → Clasificación por puestos* (quien administra). **Cada jornada tiene su tabla**: primero ganar, luego la diferencia de pokémon (salvados el ganador, debilitados el perdedor), luego **los críticos hechos menos los recibidos** (de las repeticiones; sin enlace cuentan 0) y luego la clasificación general sin esa jornada. **Cada puesto suma sus puntos** a los iniciales (los del Hexalocke 3: 2, 2, 2, 1, 0, 0) y las victorias dejan de dar puntos sueltos. **Los premios de cada puesto** (hasta dos objetos de la Bolsa y una tirada de una ruleta) **se dan solos al cerrarse la jornada**, y si luego se corrige un resultado se rehace todo: a quien cambia de puesto se le quita lo de antes (si aún lo tiene) y se le da lo nuevo. Mientras falta un combate, la tabla es provisional. Los mismos premios, para **la clasificación final**, con un botón en *Puntos*. Opción de **un reto obligatorio por jornada**: cada reto nuevo queda en la jornada en curso, y en la tabla sale «sin reto · equipo a la vista» a quien no ha jugado ninguno (desde la jornada en que se encendió). Al encenderlo a mitad de locke, las jornadas jugadas pasan a contar por puestos pero sus premios no se dan, salvo que se marque. Apagarlo devuelve cada victoria con su punto. |
 | **Intercambios** | En *La edición*, entre Cementerio y Actividad (si el locke tiene la GTS o el Prodigioso encendidos): **dos botones grandes**, con icono y descripción, que llevan a la GTS y al Intercambio Prodigioso. Lo que no está encendido o está en obras sale apagado y dice por qué. |
 | **Intercambio Prodigioso** | Das un pokémon de tu caja y **te llega otro al azar**, en el mismo hueco. **Por ahora solo en Ultrasol/Ultraluna random** (la modalidad del locke tiene que decir «Random»); en los demás juegos y en los nuzlockes sin randomizar sale «en obras». Se enciende en *Editar datos*, con dos modos: **parecido en BST** al que das (±10 %, se abre si no hay) o **del todo al azar**; y dos casillas: **la etapa que tendría a su nivel** (a 12 Gible, a 50 Garchomp; encendida de entrada) y **legendarios, míticos y Ultraentes** (apagada). Llega al **mismo nivel**, con naturaleza, IV, **movimientos y habilidad del todo al azar**, EV a 0, sin objeto, en Poké Ball, con tu entrenador y 1 entre 4096 de ser shiny. Toda la Pokédex hasta Paldea (USUM con el mod cuenta como 9ª). **Bonos**: uno por cada jornada acabada y, aparte, el objeto **«Bono prodigioso»** de la Bolsa, que la organización da como premio y se gasta solo al intercambiar (desde la Bolsa no se puede gastar). Se hace **en cualquier momento**, en tres pasos: subir la partida, **poner al día el Equipo y PC con ella** (obligatorio antes de seguir), elegir uno y confirmar. Te bajas la partida nueva con el que llega en su hueco del equipo o de la caja, y sale la animación del intercambio **en turquesa y sin entrenador**. En la app la captura pasa a ser el que llega («Llegó por el Intercambio Prodigioso, a cambio de X»), con la ruta del que se fue, pero **el mapa sigue enseñando el que se capturó allí**. Abajo, tus intercambios prodigiosos, con «Ver» para repetir la animación. |
 | **GTS** | **Intercambios entre jugadores** en lockes de **tres o más** (nunca en un Soul Link), en *Intercambios*. La enciende quien administra en *Editar datos de la competición*, con dos opciones: **ficha a la vista** (sin ella, como la GTS de los juegos: solo especie, mote, nivel y sexo hasta recibirlo) y **veto** (la organización aprueba cada intercambio aceptado). **Se abre a cada uno al pasar el level cap de un checkpoint de jornada** y se cierra al acabarse esa jornada; lo que quede abierto caduca y vuelve a su dueño. **Boletos**: dos al empezar y uno por cada jornada acabada, sin tope, y cada intercambio gasta uno **a cada uno de los dos**. Se **pone** un pokémon de la caja (con un «Busco…» opcional), los demás mandan **ofertas** con uno suyo y quien lo puso **acepta o rechaza**; un pokémon solo está en un sitio de la GTS a la vez y al aceptar se cancela lo demás de esos dos. Hecho el intercambio, **cada uno pasa a la caja del otro y ocupa el sitio del que se fue** (hueco y ruta), con su historia, su ficha y sus combates; en su historia sale «Pasó de X a Y por la GTS» y «Capturado por X en…». Se puede usar ya en la jornada en curso y vale aunque sea una especie repetida. **En los juegos de 6ª y 7ª (Ultrasol/Ultraluna con el mod incluido) va con la partida**: se sube el `main`, se elige el pokémon (se encuentra solo por su mote) y su ficha —nivel, sexo, naturaleza, habilidad, objeto, movimientos, IV, EV, entrenador original y Poké Ball— sale del juego; en los demás, la de la app. **Subir la partida en la GTS pone al día el Equipo y PC** igual que «Leer la partida» (la misma pieza, con la lista de cambios plegada). Abajo, lo que espera a la organización y los intercambios hechos. **Meterlo en la partida**: en cada intercambio hecho, cada uno de los dos **sube su `main` de ahora y se baja uno nuevo** con el suyo cambiado por el del otro, firmado para que Ultrasol/Ultraluna lo acepte; luego se pone al día el Equipo y PC con ella. El que llega ocupa el hueco del que se va; si el que se va estaba en el equipo y el que llega viene de una caja, va al primer hueco libre de las cajas y el equipo se corre. Conserva su entrenador original, como un intercambio de verdad. Volver a subir la nueva no lo mete dos veces. En los demás juegos de 6ª y 7ª, se baja el pokémon como `.pk7`/`.pk6` para meterlo con PKHeX. **La animación del intercambio**, como en los juegos pero con **la ball del logo de la HexaApp**: el que se va se vuelve silueta y entra en su ball, que sube; las dos balls se cruzan con un chispazo; baja la del otro, bota, se abre con un fogonazo y sale el que llega con «¡Bienvenido/a, X!» (según su sexo) y «Llega de Y por la GTS». Los pokémon van **con su sprite animado**, el de la ficha. Sale sola **una vez por intercambio** a cada uno de los dos (a quien acepta, al momento; al otro, al entrar en la GTS), de los últimos 7 días, y se puede repetir con «Ver el intercambio». Botón para saltarla; con «reducir movimiento», directa a la bienvenida. |
@@ -4078,6 +4079,30 @@ de siempre, y que cada locke pueda inventarse los suyos.
   que quien mira no juega (se pidió así): solo el nombre del locke, nada más de
   él. Un «solo de un locke» cuyo locke se ha borrado deja de salir.
 
+### La clasificación por puestos
+
+La pidió el grupo del Hexalocke 3 con dos fotos de sus reglas. Cada «liguilla»
+es una jornada (lo confirmó el usuario): con seis, los tres ganadores quedan
+del 1º al 3º y el mejor perdedor 4º.
+
+- **Los puntos de puesto se guardan como `PointEntry` con `sourceMatchdayId`**
+  y se borran y se vuelven a poner enteros cada vez que cambia algo de la
+  jornada (`recalcularPuestosDeLaJornada`, llamado desde guardar un resultado,
+  darlo por retirada, añadir o quitar un combate, las retiradas automáticas y
+  recuperar la jornada de la papelera; y otra vez cuando se lee su repetición,
+  que trae los críticos). No se pueden borrar a mano: volverían solos.
+- **La diferencia del perdedor es la del ganador en negativo**: en una jornada
+  todos juegan con el mismo número de pokémon, así que «más debilitados» es lo
+  mismo que «perder por menos».
+- **La general que desempata es la de antes de esa jornada**: sus propios
+  puntos de puesto no cuentan para ordenarla a ella misma.
+- **Los premios se apuntan en `PremioDePuesto`** con lo que se dio de verdad
+  (el objeto o el id de la tirada), para poder quitarlo si la tabla cambia. Un
+  objeto ya gastado se queda gastado; una tirada ya usada deja el saldo en
+  negativo.
+- **La gráfica de Puntos** reparte los puntos de puesto por su jornada, como
+  hace con los de cada combate.
+
 ### El Intercambio Prodigioso
 
 Se pidió para el Hexalocke 3 y se cerró con el usuario punto por punto.
@@ -4270,6 +4295,11 @@ Piezas con truco:
   se conserva (se apuntan seis seguidos del mismo) y el buscador y el mote se
   vacían remontándolos con `key`: los dos llevan estado propio y un `reset()`
   del formulario no los limpiaría.
+- `lib/puestos.ts` — la tabla de una jornada en la clasificación por puestos
+  (sin base de datos, con tests); `lib/puestos-servidor.ts`, sus puntos y sus
+  premios (`recalcularPuestosDeLaJornada`, `repartirPremiosFinales`) y la
+  jornada de un reto nuevo; `actions/puestos.ts`, la configuración;
+  `app/(app)/jornadas/tabla-de-puestos.tsx` y `app/(app)/puntos/puestos-forms.tsx`.
 - `lib/prodigioso.ts` — el Intercambio Prodigioso: qué especie llega y cómo
   se fabrica el pokémon de 7ª (sin base de datos, con tests);
   `lib/prodigioso-especies.json` (de `scripts/prodigioso.py`);
@@ -5508,3 +5538,4 @@ texto o un botón que usan para encontrar las cosas, cámbialo también en
 179. **GTS, paso 3**: la partida de Ultrasol/Ultraluna con el pokémon del otro dentro, firmada; y subir la partida en la GTS pone al día el Equipo y PC.
 180. **La animación del intercambio de la GTS**, con la ball del logo y los sprites animados.
 181. **El Intercambio Prodigioso** (USUM random) y el apartado **Intercambios** con la GTS y el Prodigioso.
+182. **Clasificación por puestos**: cada jornada con su tabla, puntos y premios por puesto que se dan solos, premios de la clasificación final y reto obligatorio por jornada.

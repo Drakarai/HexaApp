@@ -90,7 +90,7 @@ export async function getPapelera(competitionId: string) {
  * Devuelve una jornada de la papelera. Si alguien de los que jugaban ya no está
  * en el locke, no se puede: sus combates apuntarían a nadie. Se dice quién.
  */
-export async function restaurarJornada(id: string): Promise<{ error?: string; label?: string }> {
+export async function restaurarJornada(id: string): Promise<{ error?: string; label?: string; matchdayId?: string }> {
   const borrada = await prisma.jornadaBorrada.findUnique({ where: { id } });
   if (!borrada) return { error: "Esa jornada ya no está en la papelera." };
   const c = borrada.datos as unknown as Copia;
@@ -155,5 +155,5 @@ export async function restaurarJornada(id: string): Promise<{ error?: string; la
       : []),
     prisma.jornadaBorrada.delete({ where: { id } }),
   ]);
-  return { label: borrada.label };
+  return { label: borrada.label, matchdayId: c.jornada.id };
 }

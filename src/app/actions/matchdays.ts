@@ -8,6 +8,7 @@ import { mensajeDeError } from "@/lib/permiso";
 import { prisma } from "@/lib/db";
 import { requireCompetitionManager } from "@/lib/competition";
 import { resolverRetiradas } from "@/lib/retiradas";
+import { deshacerPuestosDeLaJornada, puntosPorVictoria, recalcularPuestosDeLaJornada } from "@/lib/puestos-servidor";
 import { emparejamientosDeJornada } from "@/lib/emparejamientos";
 import { alMejorDeDeLaJornada, perfilDeLocke } from "@/lib/perfiles-de-locke";
 import { ajustarDesempate } from "@/lib/series";
@@ -193,6 +194,8 @@ export async function deleteMatchdayAction(formData: FormData) {
   if (!matchday) return;
   const manager = await requireCompetitionManager(matchday.competitionId);
 
+  // Sus puntos y premios por puesto, fuera (al recuperarla se vuelven a calcular)
+  await deshacerPuestosDeLaJornada(matchday.competitionId, id);
   // A la papelera, no a la basura: se puede devolver unos días (ver lib/papelera)
   await borrarJornadaALaPapelera(id, manager.displayName);
   await registrar(matchday.competitionId, "jornadas", `Borra la ${matchday.label} (a la papelera)`);
@@ -220,6 +223,7 @@ export async function restaurarJornadaAction(
 
   const resultado = await restaurarJornada(id);
   if (resultado.error) return { error: resultado.error };
+  if (resultado.matchdayId) await recalcularPuestosDeLaJornada(resultado.matchdayId);
   await registrar(borrada.competitionId, "jornadas", `Recupera de la papelera la ${resultado.label}`);
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
@@ -304,6 +308,8 @@ export async function addMatchAction(
     `Añade el combate ${a?.displayName} vs ${b?.displayName} a la ${matchday.label}${fuera.length ? " (con permiso)" : ""}`,
   );
 
+  // Un combate más reabre la jornada: sus puntos y premios por puesto esperan a que se juegue
+  await recalcularPuestosDeLaJornada(matchday.id);
   revalidatePath("/jornadas");
   if (!fuera.length) return { success: "Emparejamiento añadido." };
   return {
@@ -359,13 +365,21 @@ export async function setMatchResultAction(formData: FormData) {
    * guardar el resultado no espera a Showdown, y quien abra luego los números
    * del combate los tiene sin esperar. Si falla, se leen al mirarlas.
    */
-  after(() => estadisticasDeUnCombate({ tipo: "jornada", id: matchId }).catch(() => {}));
+  after(() =>
+    estadisticasDeUnCombate({ tipo: "jornada", id: matchId })
+      .catch(() => {})
+      // Los críticos desempatan la tabla por puestos: con la repetición leída, se rehace
+      .then(() => recalcularPuestosDeLaJornada(match.matchdayId))
+      .catch(() => {}),
+  );
 
   const existing = await prisma.pointEntry.findUnique({
     where: { sourceMatchId: matchId },
   });
 
-  if (!winnerId) {
+  // En un locke por puestos la victoria no da puntos sueltos: salen de la tabla de la jornada
+  const porVictoria = await puntosPorVictoria(match.matchday.competitionId, match.matchday.pointsForWin);
+  if (!winnerId || !porVictoria) {
     if (existing) {
       await prisma.pointEntry.delete({ where: { id: existing.id } });
     }
@@ -377,7 +391,7 @@ export async function setMatchResultAction(formData: FormData) {
     const payload = {
       competitionId: match.matchday.competitionId,
       participantId: winnerId,
-      delta: match.matchday.pointsForWin,
+      delta: porVictoria,
       reason: `${match.matchday.label}: victoria de ${winner?.displayName ?? "?"}`,
       createdById: manager.id,
       sourceMatchId: matchId,
@@ -416,6 +430,7 @@ export async function setMatchResultAction(formData: FormData) {
   // Y si la jornada es una serie al mejor de tres, puede tocar añadir o quitar
   // el desempate: ver lib/series.ts
   await ajustarDesempate(match.matchdayId);
+  await recalcularPuestosDeLaJornada(match.matchdayId);
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
@@ -475,10 +490,11 @@ export async function darPorRetiradaAction(formData: FormData) {
     },
   });
 
+  const porVictoria = await puntosPorVictoria(match.matchday.competitionId, match.matchday.pointsForWin);
   const datos = {
     competitionId: match.matchday.competitionId,
     participantId: ganadorId,
-    delta: match.matchday.pointsForWin,
+    delta: porVictoria,
     reason: `${match.matchday.label}: victoria de ${ganador?.displayName ?? "?"} por retirada de ${perdedor?.displayName ?? "?"}`,
     createdById: manager.id,
     sourceMatchId: matchId,
@@ -486,11 +502,14 @@ export async function darPorRetiradaAction(formData: FormData) {
   const existente = await prisma.pointEntry.findUnique({
     where: { sourceMatchId: matchId },
   });
-  if (existente) {
+  if (!porVictoria) {
+    if (existente) await prisma.pointEntry.delete({ where: { id: existente.id } });
+  } else if (existente) {
     await prisma.pointEntry.update({ where: { id: existente.id }, data: datos });
   } else {
     await prisma.pointEntry.create({ data: datos });
   }
+  await recalcularPuestosDeLaJornada(match.matchdayId);
 
   await registrar(
     match.matchday.competitionId,
@@ -809,6 +828,7 @@ export async function deleteMatchAction(formData: FormData) {
   // Borrar el combate que faltaba también deja la jornada terminada
   await resolverRetiradas(match.matchday.competitionId, null);
   await ajustarDesempate(match.matchdayId);
+  await recalcularPuestosDeLaJornada(match.matchdayId);
 
   revalidatePath("/jornadas");
   revalidatePath("/puntos");
