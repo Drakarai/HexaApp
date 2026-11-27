@@ -505,9 +505,11 @@ model ItemOption {
   position Int     @default(0)
 
   /**
-   * Si la opción es **otro grupo ya creado**: quien la elige se lleva ese grupo
-   * a su bolsa, para gastarlo luego eligiendo dentro de él. Sin `apiSlug` ni
-   * imagen propios: se enseñan los del grupo.
+   * Si la opción es **otro objeto del catálogo** (un grupo ya creado o uno
+   * propio, de los que no son de los juegos): quien la elige se lo lleva a su
+   * bolsa, para gastarlo después (un grupo, eligiendo dentro). Sin `apiSlug`
+   * ni imagen propios: se enseñan los de ese objeto. La columna se llama
+   * `grupoId` porque al principio solo podían ser grupos.
    */
   grupoId  String?
 

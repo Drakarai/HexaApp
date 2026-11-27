@@ -135,9 +135,9 @@ export async function anadirOpcionAction(
   const itemId = String(formData.get("itemId") ?? "");
   if (!itemId) return { error: "No sé a qué grupo añadirlo." };
 
-  // Otro grupo ya creado como una opción más: quien lo elige se lo lleva a la bolsa
+  // Otro objeto del catálogo (un grupo o uno propio) como opción: quien lo elige se lo lleva a la bolsa
   const grupoId = String(formData.get("grupoId") ?? "").trim();
-  if (grupoId) return anadirGrupoComoOpcion(itemId, grupoId);
+  if (grupoId) return anadirDelCatalogo(itemId, grupoId);
 
   const apiSlug = slugDelFormulario(formData);
   const name =
@@ -169,17 +169,19 @@ export async function anadirOpcionAction(
 }
 
 /**
- * Mete un grupo dentro de otro. Sin vueltas: ni dentro de sí mismo ni de uno
- * que ya va metido en él (en cualquier nivel), que al gastarlo se daría
- * vueltas para siempre.
+ * Mete en un grupo **otro objeto del catálogo**: un grupo ya creado o uno
+ * propio (los de los juegos se añaden como siempre, sin ir a la bolsa: son
+ * cosas del juego, no de la app). Sin vueltas: un grupo ni dentro de sí mismo
+ * ni de uno que ya va metido en él (en cualquier nivel), que al gastarlo se
+ * daría vueltas para siempre.
  */
-async function anadirGrupoComoOpcion(itemId: string, grupoId: string): Promise<FormState> {
+async function anadirDelCatalogo(itemId: string, grupoId: string): Promise<FormState> {
   if (grupoId === itemId) return { error: "Un grupo no puede ir dentro de sí mismo." };
   const [grupo, yaEsta] = await Promise.all([
-    prisma.item.findUnique({ where: { id: grupoId }, select: { name: true, isGroup: true } }),
+    prisma.item.findUnique({ where: { id: grupoId }, select: { name: true, isGroup: true, apiSlug: true } }),
     prisma.itemOption.findFirst({ where: { itemId, grupoId }, select: { id: true } }),
   ]);
-  if (!grupo?.isGroup) return { error: "Eso no es un grupo del catálogo." };
+  if (!grupo || (!grupo.isGroup && grupo.apiSlug)) return { error: "Eso no es un grupo ni un objeto propio del catálogo." };
   if (yaEsta) return { error: `"${grupo.name}" ya está dentro.` };
   // ¿Está el de fuera metido, a cualquier profundidad, en el que se quiere meter?
   const vistos = new Set<string>();
@@ -417,7 +419,7 @@ export async function usarObjetoAction(
         optionName: opcion?.grupo?.name ?? opcion?.name ?? null,
       },
     }),
-    // Si lo elegido es otro grupo, va a la bolsa: se gasta luego, eligiendo dentro
+    // Si lo elegido es otro objeto del catálogo, va a la bolsa: se gasta luego (un grupo, eligiendo dentro)
     ...(opcion?.grupoId
       ? [
           prisma.bagEntry.upsert({
@@ -475,7 +477,7 @@ export async function deshacerUsoAction(usoId: string): Promise<FormState> {
     return { error: "Ese objeto ya no existe en el catálogo: no se puede devolver." };
   }
 
-  // Si se llevó otro grupo, se le quita; si ya lo ha gastado, no se puede deshacer
+  // Si se llevó otro objeto del catálogo, se le quita; si ya lo ha gastado, no se puede deshacer
   const opcion = uso.optionId
     ? await prisma.itemOption.findUnique({ where: { id: uso.optionId }, select: { grupoId: true } })
     : null;

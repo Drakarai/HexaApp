@@ -126,8 +126,8 @@ export function NuevaOpcion({
   /** El grupo no tiene nada dentro: se abre solo */
   vacio?: boolean;
   etiqueta?: string;
-  /** Los otros grupos del catálogo, para meter uno dentro de este */
-  grupos?: { id: string; name: string }[];
+  /** Los otros grupos y los objetos propios del catálogo, para meter uno dentro de este */
+  grupos?: { id: string; name: string; esGrupo: boolean }[];
 }) {
   const [estado, anadir] = useActionState<FormState, FormData>(
     anadirOpcionAction,
@@ -161,18 +161,27 @@ export function NuevaOpcion({
       {grupos.length ? (
         <div>
           <label className="label" htmlFor={`grupo-dentro-${itemId}`}>
-            …o un grupo ya creado
+            …o uno ya creado del catálogo
           </label>
           <select key={vuelta} id={`grupo-dentro-${itemId}`} name="grupoId" defaultValue="" className="input">
             <option value="">Ninguno</option>
-            {grupos.map((g) => (
-              <option key={g.id} value={g.id}>
-                {g.name}
-              </option>
-            ))}
+            {[
+              { rotulo: "Grupos", lista: grupos.filter((g) => g.esGrupo) },
+              { rotulo: "Objetos propios", lista: grupos.filter((g) => !g.esGrupo) },
+            ].map(({ rotulo, lista }) =>
+              lista.length ? (
+                <optgroup key={rotulo} label={rotulo}>
+                  {lista.map((g) => (
+                    <option key={g.id} value={g.id}>
+                      {g.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ) : null,
+            )}
           </select>
           <p className="mt-1 text-xs text-slate-500">
-            Quien lo elija se lleva ese grupo a la bolsa, y lo gasta después eligiendo dentro de él.
+            Quien lo elija se lo lleva a la bolsa para gastarlo después (un grupo, eligiendo dentro de él).
           </p>
         </div>
       ) : null}

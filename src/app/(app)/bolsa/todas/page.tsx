@@ -55,6 +55,8 @@ export default async function BolsasPage() {
     catalogoPedido,
     getBolsas({ competitionId: competition.id }, catalogoPedido),
   ]);
+  // Las opciones enlazadas a otro objeto del catálogo: cuáles son grupos, para marcarlas
+  const esGrupo = new Set(catalogo.filter((objeto) => objeto.isGroup).map((objeto) => objeto.id));
 
   return (
     <>
@@ -205,11 +207,13 @@ export default async function BolsasPage() {
                                 pequeno
                               />
                               <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
-                                {opcion.grupoId ? <Icono emoji="📦" /> : null}
-                                {opcion.grupoId ? " " : ""}
+                                {opcion.grupoId && esGrupo.has(opcion.grupoId) ? <Icono emoji="📦" /> : null}
+                                {opcion.grupoId && esGrupo.has(opcion.grupoId) ? " " : ""}
                                 {opcion.name}
                                 {opcion.grupoId ? (
-                                  <span className="block text-[11px] text-slate-500">grupo: se lleva a la bolsa</span>
+                                  <span className="block text-[11px] text-slate-500">
+                                    {esGrupo.has(opcion.grupoId) ? "grupo" : "objeto propio"}: se lleva a la bolsa
+                                  </span>
                                 ) : null}
                               </span>
                               <form action={borrarOpcionAction}>
@@ -238,8 +242,8 @@ export default async function BolsasPage() {
                         itemId={objeto.id}
                         vacio={objeto.options.length === 0}
                         grupos={catalogo
-                          .filter((otro) => otro.isGroup && otro.id !== objeto.id)
-                          .map((otro) => ({ id: otro.id, name: otro.name }))}
+                          .filter((otro) => (otro.isGroup || !otro.apiSlug) && otro.id !== objeto.id)
+                          .map((otro) => ({ id: otro.id, name: otro.name, esGrupo: otro.isGroup }))}
                       />
                     </div>
                   ) : null
@@ -295,8 +299,8 @@ export default async function BolsasPage() {
                       itemId={objeto.id}
                       etiqueta="＋ Convertirlo en grupo"
                       grupos={catalogo
-                        .filter((otro) => otro.isGroup && otro.id !== objeto.id)
-                        .map((otro) => ({ id: otro.id, name: otro.name }))}
+                        .filter((otro) => (otro.isGroup || !otro.apiSlug) && otro.id !== objeto.id)
+                        .map((otro) => ({ id: otro.id, name: otro.name, esGrupo: otro.isGroup }))}
                     />
                   </div>
                 )}
