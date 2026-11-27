@@ -1,3 +1,4 @@
+import { Icono } from "@/components/icono";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { esCreador, requireUser } from "@/lib/auth";
@@ -204,7 +205,12 @@ export default async function BolsasPage() {
                                 pequeno
                               />
                               <span className="min-w-0 flex-1 truncate text-sm text-slate-200">
+                                {opcion.grupoId ? <Icono emoji="📦" /> : null}
+                                {opcion.grupoId ? " " : ""}
                                 {opcion.name}
+                                {opcion.grupoId ? (
+                                  <span className="block text-[11px] text-slate-500">grupo: se lleva a la bolsa</span>
+                                ) : null}
                               </span>
                               <form action={borrarOpcionAction}>
                                 <input
@@ -231,6 +237,9 @@ export default async function BolsasPage() {
                       <NuevaOpcion
                         itemId={objeto.id}
                         vacio={objeto.options.length === 0}
+                        grupos={catalogo
+                          .filter((otro) => otro.isGroup && otro.id !== objeto.id)
+                          .map((otro) => ({ id: otro.id, name: otro.name }))}
                       />
                     </div>
                   ) : null
@@ -285,6 +294,9 @@ export default async function BolsasPage() {
                     <NuevaOpcion
                       itemId={objeto.id}
                       etiqueta="＋ Convertirlo en grupo"
+                      grupos={catalogo
+                        .filter((otro) => otro.isGroup && otro.id !== objeto.id)
+                        .map((otro) => ({ id: otro.id, name: otro.name }))}
                     />
                   </div>
                 )}

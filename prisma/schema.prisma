@@ -480,7 +480,9 @@ model Item {
   isGroup     Boolean  @default(false)
   createdAt   DateTime @default(now())
 
-  options       ItemOption[]
+  options       ItemOption[] @relation("OpcionesDelObjeto")
+  // Los grupos en los que va metido como una opción más (ver ItemOption.grupoId)
+  dentroDe      ItemOption[] @relation("GrupoComoOpcion")
   entries       BagEntry[]
   uses          BagUse[]
   premios       ChallengePrize[]
@@ -502,8 +504,16 @@ model ItemOption {
   image    String?
   position Int     @default(0)
 
-  item Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
-  uses BagUse[] @relation("UsoElegido")
+  /**
+   * Si la opción es **otro grupo ya creado**: quien la elige se lleva ese grupo
+   * a su bolsa, para gastarlo luego eligiendo dentro de él. Sin `apiSlug` ni
+   * imagen propios: se enseñan los del grupo.
+   */
+  grupoId  String?
+
+  item  Item     @relation("OpcionesDelObjeto", fields: [itemId], references: [id], onDelete: Cascade)
+  grupo Item?    @relation("GrupoComoOpcion", fields: [grupoId], references: [id], onDelete: Cascade)
+  uses  BagUse[] @relation("UsoElegido")
 
   @@index([itemId, position])
 }

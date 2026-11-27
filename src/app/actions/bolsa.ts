@@ -135,6 +135,10 @@ export async function anadirOpcionAction(
   const itemId = String(formData.get("itemId") ?? "");
   if (!itemId) return { error: "No sé a qué grupo añadirlo." };
 
+  // Otro grupo ya creado como una opción más: quien lo elige se lo lleva a la bolsa
+  const grupoId = String(formData.get("grupoId") ?? "").trim();
+  if (grupoId) return anadirGrupoComoOpcion(itemId, grupoId);
+
   const apiSlug = slugDelFormulario(formData);
   const name =
     String(formData.get("name") ?? "").trim() ||
@@ -162,6 +166,47 @@ export async function anadirOpcionAction(
 
   refrescar();
   return { success: `"${name}" añadido al grupo.` };
+}
+
+/**
+ * Mete un grupo dentro de otro. Sin vueltas: ni dentro de sí mismo ni de uno
+ * que ya va metido en él (en cualquier nivel), que al gastarlo se daría
+ * vueltas para siempre.
+ */
+async function anadirGrupoComoOpcion(itemId: string, grupoId: string): Promise<FormState> {
+  if (grupoId === itemId) return { error: "Un grupo no puede ir dentro de sí mismo." };
+  const [grupo, yaEsta] = await Promise.all([
+    prisma.item.findUnique({ where: { id: grupoId }, select: { name: true, isGroup: true } }),
+    prisma.itemOption.findFirst({ where: { itemId, grupoId }, select: { id: true } }),
+  ]);
+  if (!grupo?.isGroup) return { error: "Eso no es un grupo del catálogo." };
+  if (yaEsta) return { error: `"${grupo.name}" ya está dentro.` };
+  // ¿Está el de fuera metido, a cualquier profundidad, en el que se quiere meter?
+  const vistos = new Set<string>();
+  let porMirar = [grupoId];
+  while (porMirar.length) {
+    const dentro = await prisma.itemOption.findMany({
+      where: { itemId: { in: porMirar }, grupoId: { not: null } },
+      select: { grupoId: true },
+    });
+    const nuevos = dentro.map((o) => o.grupoId!).filter((id) => !vistos.has(id));
+    if (nuevos.includes(itemId)) {
+      return { error: `"${grupo.name}" ya lleva dentro a este grupo: se darían vueltas sin fin.` };
+    }
+    nuevos.forEach((id) => vistos.add(id));
+    porMirar = nuevos;
+  }
+  const ultima = await prisma.itemOption.findFirst({
+    where: { itemId },
+    orderBy: { position: "desc" },
+    select: { position: true },
+  });
+  await prisma.item.update({ where: { id: itemId }, data: { isGroup: true } });
+  await prisma.itemOption.create({
+    data: { itemId, grupoId, name: grupo.name, position: (ultima?.position ?? -1) + 1 },
+  });
+  refrescar();
+  return { success: `"${grupo.name}" añadido al grupo: quien lo elija se lo lleva a la bolsa.` };
 }
 
 export async function borrarOpcionAction(formData: FormData) {
@@ -309,7 +354,7 @@ export async function usarObjetoAction(
           name: true,
           isGroup: true,
           apiSlug: true,
-          options: { select: { id: true, name: true } },
+          options: { select: { id: true, name: true, grupoId: true, grupo: { select: { name: true } } } },
         },
       },
     },
@@ -369,16 +414,28 @@ export async function usarObjetoAction(
         itemId: entrada.item.id,
         itemName: entrada.item.name,
         optionId: opcion?.id ?? null,
-        optionName: opcion?.name ?? null,
+        optionName: opcion?.grupo?.name ?? opcion?.name ?? null,
       },
     }),
+    // Si lo elegido es otro grupo, va a la bolsa: se gasta luego, eligiendo dentro
+    ...(opcion?.grupoId
+      ? [
+          prisma.bagEntry.upsert({
+            where: { participantId_itemId: { participantId: entrada.participantId, itemId: opcion.grupoId } },
+            update: { quantity: { increment: 1 } },
+            create: { participantId: entrada.participantId, itemId: opcion.grupoId, quantity: 1 },
+          }),
+        ]
+      : []),
   ]);
 
   refrescar();
   return {
-    success: opcion
-      ? `Has usado ${entrada.item.name} y te quedas con ${opcion.name}.`
-      : `Has usado ${entrada.item.name}.`,
+    success: opcion?.grupoId
+      ? `Has usado ${entrada.item.name} y te llevas ${opcion.grupo?.name ?? opcion.name}: ya está en tu bolsa.`
+      : opcion
+        ? `Has usado ${entrada.item.name} y te quedas con ${opcion.name}.`
+        : `Has usado ${entrada.item.name}.`,
     entryId,
     usoId: uso.id,
   };
@@ -418,6 +475,19 @@ export async function deshacerUsoAction(usoId: string): Promise<FormState> {
     return { error: "Ese objeto ya no existe en el catálogo: no se puede devolver." };
   }
 
+  // Si se llevó otro grupo, se le quita; si ya lo ha gastado, no se puede deshacer
+  const opcion = uso.optionId
+    ? await prisma.itemOption.findUnique({ where: { id: uso.optionId }, select: { grupoId: true } })
+    : null;
+  const llevado = opcion?.grupoId
+    ? await prisma.bagEntry.findUnique({
+        where: { participantId_itemId: { participantId: uso.participantId, itemId: opcion.grupoId } },
+      })
+    : null;
+  if (opcion?.grupoId && !llevado) {
+    return { error: `Ya has gastado ${uso.optionName ?? "lo que te llevaste"}: este gasto no se puede deshacer.` };
+  }
+
   await prisma.$transaction([
     prisma.bagEntry.upsert({
       where: {
@@ -427,6 +497,13 @@ export async function deshacerUsoAction(usoId: string): Promise<FormState> {
       create: { participantId: uso.participantId, itemId: uso.itemId, quantity: 1 },
     }),
     prisma.bagUse.delete({ where: { id: uso.id } }),
+    ...(llevado
+      ? [
+          llevado.quantity > 1
+            ? prisma.bagEntry.update({ where: { id: llevado.id }, data: { quantity: { decrement: 1 } } })
+            : prisma.bagEntry.delete({ where: { id: llevado.id } }),
+        ]
+      : []),
   ]);
 
   refrescar();

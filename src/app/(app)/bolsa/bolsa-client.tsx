@@ -328,6 +328,10 @@ function Eleccion({
               <Dibujo src={opcion.image} nombre={opcion.name} pequeno />
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-100">
                 {opcion.name}
+                {/* Otro grupo: no se gasta aquí, va a la bolsa para elegir dentro luego */}
+                {opcion.grupoId ? (
+                  <span className="block text-[11px] font-normal text-slate-500">Va a tu bolsa: eliges dentro después</span>
+                ) : null}
               </span>
               <span aria-hidden className="shrink-0 text-slate-500">
                 ▸

@@ -16,6 +16,8 @@ export type OpcionDeObjeto = {
   name: string;
   /** Dirección, no imagen: ver lib/imagen-url.ts */
   image: string | null;
+  /** Si es otro grupo: quien la elige se lo lleva a la bolsa */
+  grupoId: string | null;
 };
 
 export type ObjetoDelCatalogo = {
@@ -68,6 +70,7 @@ export async function getCatalogo(): Promise<ObjetoDelCatalogo[]> {
   ]);
   const firmasObjeto = new Map(filasObjeto.map((fila) => [fila.id, fila.v]));
   const firmasOpcion = new Map(filasOpcion.map((fila) => [fila.id, fila.v]));
+  const nombreDe = new Map(objetos.map((objeto) => [objeto.id, objeto.name]));
 
   return objetos.map((objeto) => ({
     id: objeto.id,
@@ -79,12 +82,12 @@ export async function getCatalogo(): Promise<ObjetoDelCatalogo[]> {
     isGroup: objeto.isGroup || objeto.options.length > 0,
     options: objeto.options.map((opcion) => ({
       id: opcion.id,
-      name: opcion.name,
-      image: urlDeImagen(
-        "objeto-opcion",
-        opcion.id,
-        firmasOpcion.get(opcion.id),
-      ),
+      // Un grupo metido de opción se llama y se ve como él, aunque luego se le cambie
+      name: opcion.grupoId ? (nombreDe.get(opcion.grupoId) ?? opcion.name) : opcion.name,
+      image: opcion.grupoId
+        ? urlDeImagen("objeto", opcion.grupoId, firmasObjeto.get(opcion.grupoId))
+        : urlDeImagen("objeto-opcion", opcion.id, firmasOpcion.get(opcion.id)),
+      grupoId: opcion.grupoId,
     })),
     enBolsas: objeto._count.entries,
   }));

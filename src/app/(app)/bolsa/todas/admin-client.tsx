@@ -120,11 +120,14 @@ export function NuevaOpcion({
   itemId,
   vacio = false,
   etiqueta = "＋ Añadir un objeto al grupo",
+  grupos = [],
 }: {
   itemId: string;
   /** El grupo no tiene nada dentro: se abre solo */
   vacio?: boolean;
   etiqueta?: string;
+  /** Los otros grupos del catálogo, para meter uno dentro de este */
+  grupos?: { id: string; name: string }[];
 }) {
   const [estado, anadir] = useActionState<FormState, FormData>(
     anadirOpcionAction,
@@ -155,6 +158,24 @@ export function NuevaOpcion({
     >
       <input type="hidden" name="itemId" value={itemId} />
       <ObjetoPicker key={vuelta} />
+      {grupos.length ? (
+        <div>
+          <label className="label" htmlFor={`grupo-dentro-${itemId}`}>
+            …o un grupo ya creado
+          </label>
+          <select key={vuelta} id={`grupo-dentro-${itemId}`} name="grupoId" defaultValue="" className="input">
+            <option value="">Ninguno</option>
+            {grupos.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Quien lo elija se lleva ese grupo a la bolsa, y lo gasta después eligiendo dentro de él.
+          </p>
+        </div>
+      ) : null}
       <FormMessage state={estado} />
       <div className="flex gap-2">
         <SubmitButton className="btn-primary btn-sm">Añadir</SubmitButton>
