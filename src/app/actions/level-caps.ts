@@ -135,6 +135,40 @@ export async function deleteLevelCapAction(formData: FormData) {
 }
 
 /**
+ * **Mover un level cap** un puesto arriba o abajo (`direccion` «arriba» o
+ * «abajo»). Antes no se podía: uno nuevo iba siempre al final, y si se olvidaba
+ * uno había que borrar y volver a crear los de después (lo pidió el usuario).
+ * Se renumeran todos de 1 en adelante, porque los traídos de una plantilla
+ * podían compartir puesto. Ojo: los checkpoints de jornada van por orden, así
+ * que mover uno con «jornada después» cambia qué jornada le toca a cada uno.
+ */
+export async function moverLevelCapAction(formData: FormData) {
+  const id = String(formData.get("levelCapId") ?? "");
+  const arriba = formData.get("direccion") === "arriba";
+  const levelCap = await prisma.levelCap.findUnique({ where: { id }, select: { competitionId: true, label: true } });
+  if (!levelCap) return;
+  await requireCompetitionManager(levelCap.competitionId);
+
+  const todos = await prisma.levelCap.findMany({
+    where: { competitionId: levelCap.competitionId },
+    // El mismo orden que la pantalla
+    orderBy: { position: "asc" },
+    select: { id: true },
+  });
+  const i = todos.findIndex((l) => l.id === id);
+  const j = arriba ? i - 1 : i + 1;
+  if (i < 0 || j < 0 || j >= todos.length) return;
+  const orden = todos.map((l) => l.id);
+  [orden[i], orden[j]] = [orden[j], orden[i]];
+  await prisma.$transaction(
+    orden.map((idDelHito, puesto) => prisma.levelCap.update({ where: { id: idDelHito }, data: { position: puesto + 1 } })),
+  );
+  await registrar(levelCap.competitionId, "gimnasios", `Mueve el level cap «${levelCap.label}» ${arriba ? "arriba" : "abajo"}`);
+  revalidatePath("/level-caps");
+  revalidatePath("/");
+}
+
+/**
  * Pone o quita el checkpoint de jornada de un level cap (ver lib/checkpoints.ts).
  * La portada cambia con él, así que se refresca también.
  */

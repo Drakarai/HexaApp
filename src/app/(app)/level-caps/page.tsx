@@ -24,6 +24,7 @@ import { LevelCapArt } from "./level-cap-art";
 import {
   deleteLevelCapAction,
   toggleJornadaDespuesAction,
+  moverLevelCapAction,
 } from "@/app/actions/level-caps";
 import {
   checkpointAbierto,
@@ -254,10 +255,29 @@ export default async function LevelCapsPage({
     </>
   );
 
-  /** Los botones de quien administra: la jornada de después y borrar */
+  /** Los botones de quien administra: moverlo de sitio, la jornada de después y borrar */
   const botonesDeAdmin = (levelCap: (typeof levelCaps)[number]) =>
     canManage ? (
       <div className="flex shrink-0 items-center gap-1">
+        {(["arriba", "abajo"] as const).map((direccion) => {
+          const puesto = levelCaps.indexOf(levelCap);
+          const noPuede = direccion === "arriba" ? puesto <= 0 : puesto >= levelCaps.length - 1;
+          return (
+            <form key={direccion} action={moverLevelCapAction}>
+              <input type="hidden" name="levelCapId" value={levelCap.id} />
+              <input type="hidden" name="direccion" value={direccion} />
+              <button
+                type="submit"
+                className="btn-ghost btn-sm"
+                disabled={noPuede}
+                aria-label={`Mover ${levelCap.label} ${direccion}`}
+                title={direccion === "arriba" ? "Subirlo un puesto" : "Bajarlo un puesto"}
+              >
+                {direccion === "arriba" ? "↑" : "↓"}
+              </button>
+            </form>
+          );
+        })}
         {perfil.sinJornadas ? null : (
           <form action={toggleJornadaDespuesAction}>
             <input type="hidden" name="levelCapId" value={levelCap.id} />
